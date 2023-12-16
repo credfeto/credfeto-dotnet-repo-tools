@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Credfeto.Date.Interfaces;
 using Credfeto.Dotnet.Repo.Git.Exceptions;
 using LibGit2Sharp;
 using Branch = LibGit2Sharp.Branch;
@@ -214,12 +215,12 @@ public static class GitUtils
  */
     }
 
-    public static void Commit(Repository repo, string message)
+    public static void Commit(Repository repo, string message, ICurrentTimeSource currentTimeSource)
     {
         repo.Index.Add("*");
         repo.Index.Write();
 
-        Signature author = new(name: "Example", email: "example@example.com", when: DateTimeOffset.UtcNow);
+        Signature author = new(name: "Example", email: "example@example.com", when: currentTimeSource.UtcNow());
         Signature committer = author;
         repo.Commit(message: message, author: author, committer: committer, options: CommitOptions);
 
