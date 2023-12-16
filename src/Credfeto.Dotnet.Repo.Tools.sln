@@ -13,12 +13,24 @@ EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.Dotnet.Repo.Tools.Cmd", "Credfeto.Dotnet.Repo.Tools.Cmd\Credfeto.Dotnet.Repo.Tools.Cmd.csproj", "{2483BF4F-3827-4366-8FE0-A0D81592FCBC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.Dotnet.Repo.Git", "Credfeto.Dotnet.Repo.Git\Credfeto.Dotnet.Repo.Git.csproj", "{9820BDE5-6C81-4929-8159-2B609BFD114A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.Dotnet.Repo.Git.Tests", "Credfeto.Dotnet.Repo.Git.Tests\Credfeto.Dotnet.Repo.Git.Tests.csproj", "{CF338325-435E-448A-8BFD-725B6B57B673}"
+EndProject
 Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{2483BF4F-3827-4366-8FE0-A0D81592FCBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{2483BF4F-3827-4366-8FE0-A0D81592FCBC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2483BF4F-3827-4366-8FE0-A0D81592FCBC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2483BF4F-3827-4366-8FE0-A0D81592FCBC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9820BDE5-6C81-4929-8159-2B609BFD114A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9820BDE5-6C81-4929-8159-2B609BFD114A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9820BDE5-6C81-4929-8159-2B609BFD114A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9820BDE5-6C81-4929-8159-2B609BFD114A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF338325-435E-448A-8BFD-725B6B57B673}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF338325-435E-448A-8BFD-725B6B57B673}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF338325-435E-448A-8BFD-725B6B57B673}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF338325-435E-448A-8BFD-725B6B57B673}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
