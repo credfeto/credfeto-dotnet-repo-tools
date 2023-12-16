@@ -13,6 +13,8 @@ public static class GitUtils
 
     private static readonly FetchOptions FetchOptions = new() { Prune = true, TagFetchMode = TagFetchMode.None };
 
+    private static readonly CheckoutOptions CheckoutOptions = new() { CheckoutModifiers = CheckoutModifiers.Force };
+
     public static string GetFolderForRepo(string repoUrl)
     {
         string work = repoUrl.TrimEnd('/');
@@ -50,77 +52,46 @@ public static class GitUtils
 
     public static void ResetToMaster(Repository repo, string upstream = UPSTREAM)
     {
-        /*
-          function Git-ResetToMaster {
-           param(
-                   [string] $repoPath = $(throw "Git-ResetToMaster: repoPath not specified")
-               )
-
-               Log -message "Git-ResetToMaster: $repoPath"
-
-               $repack = IsOnRamDisk -Path $repoPath
-
-               [string]$upstream = "origin";
-               [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-               $head = Git-Get-HeadRev -repoPath $repoPath
-
-               [string]$defaultBranch = Git-GetDefaultBranch -repoPath $repoPath -upstream $upstream
-               [string]$upstreamBranch = "$upstream/$defaultBranch"
-
-               # junk any existing checked out files
-               & git -C $repoPath reset HEAD --hard 2>&1 | Out-Null
-               & git -C $repoPath clean -f -x -d 2>&1 | Out-Null
-               & git -C $repoPath checkout $defaultBranch 2>&1 | Out-Null
-               & git -C $repoPath reset HEAD --hard 2>&1 | Out-Null
-               & git -C $repoPath clean -f -x -d 2>&1 | Out-Null
-               & git -C $repoPath fetch --recurse-submodules 2>&1 | Out-Null
-
-               # NOTE Loses all local commits on master
-               & git -C $repoPath reset --hard $upstreamBranch 2>&1 | Out-Null
-               & git -C $repoPath remote update $upstream --prune 2>&1 | Out-Null
-               & git -C $repoPath prune 2>&1 | Out-Null
-
-               $newHead = Git-Get-HeadRev -repoPath $repoPath
-               if($head -ne $newHead) {
-                   if(!$repack) {
-                       # ONLY GC if head is different, i.e. something has changed
-                       & git -C $repoPath gc --aggressive --prune 2>&1 | Out-Null
-                   }
-               }
-
-               Git-RemoveAllLocalBranches -repoPath $repoPath
-
-               return $newHead
-           }
-         */
-
         Remote remote = repo.Network.Remotes[upstream] ?? throw new GitException($"Could not find upstream origin {upstream}");
 
-        repo.Network.Fetch(remote.Name, remote.FetchRefSpecs.Select(r => r.Specification), FetchOptions);
+        string defaultBranch = GetDefaultBranch(repo: repo, upstream: upstream);
+        FetchRemote(repo: repo, remote: remote);
+
+        // reset HEAD --hard
+        repo.Reset(resetMode: ResetMode.Hard, commit: repo.Head.Tip);
+
+        // & git -C $repoPath clean -f -x -d 2>&1 | Out-Null
+        repo.RemoveUntrackedFiles();
+
+        // & git -C $repoPath checkout $defaultBranch 2>&1 | Out-Null
+        repo.Checkout(tree: repo.Branches[defaultBranch].Tip.Tree, paths: null, options: CheckoutOptions);
+
+        // & git -C $repoPath reset HEAD --hard 2>&1 | Out-Null
+        repo.Reset(resetMode: ResetMode.Hard, commit: repo.Head.Tip);
+
+        // & git -C $repoPath clean -f -x -d 2>&1 | Out-Null
+        repo.RemoveUntrackedFiles();
+
+        // & git -C $repoPath fetch --recurse-submodules 2>&1 | Out-Null
+
+        //
+        // # NOTE Loses all local commits on master
+        // & git -C $repoPath reset --hard $upstreamBranch 2>&1 | Out-Null
+        repo.Reset(resetMode: ResetMode.Hard, commit: repo.Branches[upstream + "/" + defaultBranch].Tip);
+
+        // & git -C $repoPath remote update $upstream --prune 2>&1 | Out-Null
+        FetchRemote(repo: repo, remote: remote);
+
+        // & git -C $repoPath prune 2>&1 | Out-Null
+    }
+
+    private static void FetchRemote(Repository repo, Remote remote)
+    {
+        repo.Network.Fetch(url: remote.Name, remote.FetchRefSpecs.Select(r => r.Specification), options: FetchOptions);
     }
 
     public static void RemoveAllLocalBranches(Repository repo)
     {
-        /*
-               Log -message "Git-RemoveAllLocalBranches: $repoPath"
-
-               [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-               [string[]]$result = git -C $repoPath branch 2>&1
-               Log -message "Found: ..."
-               Log-Batch -messages $result
-               foreach($item in $result) {
-                   [string]$branch = $item.Trim()
-                   Log -message "Found: $branch"
-                   if(!$branch.StartsWith("* ")) {
-                       [string[]]$complete = git -C $repoPath branch -d $branch 2>&1
-                       Log -message "Removed: $branch : $complete"
-                   }
-               }
-
-                    */
-
         IReadOnlyList<Branch> branchesToRemove = repo.Branches.Where(IsLocalBranch)
                                                      .ToArray();
 
@@ -141,42 +112,8 @@ public static class GitUtils
         }
     }
 
-    public static IReadOnlyCollection<string> GetRemoteBranches(Repository repo, string upstream = "origin")
+    public static IReadOnlyCollection<string> GetRemoteBranches(Repository repo, string upstream = UPSTREAM)
     {
-        /*
-         Log -message "Git-GetRemoteBranches: $repoPath ($upstream)"
-
-           [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-           [string[]]$result = git -C $repoPath branch --remote 2>&1
-
-           $branches = @()
-
-           [string]$remotePrefix = "$upstream/"
-
-           Log -message "Looking for Remote Branches for : $remotePrefix"
-
-           foreach($item in $result) {
-               [string]$branch = $item.Trim()
-               if(!$branch.StartsWith($remotePrefix)) {
-                   Log -message "- Skipping $branch"
-                   continue
-               }
-
-               $branch = $branch.SubString($remotePrefix.Length)
-               $branch = $branch.Split(" ")[0]
-               if($branch -eq "HEAD") {
-                   Log -message "- Skipping $branch"
-                   continue
-               }
-
-               Log -message "+ Found $upstream/$branch"
-               $branches += $branch
-           }
-
-           return [string[]]$branches
-         */
-
         const string prefix = "refs/heads/";
 
         return repo.Branches.Where(IsRemoteBranch)
@@ -191,7 +128,7 @@ public static class GitUtils
         }
     }
 
-    public static string GetDefaultBranch(Repository repo, string upstream = "origin")
+    public static string GetDefaultBranch(Repository repo, string upstream = UPSTREAM)
     {
         Branch headBranch = repo.Branches.FirstOrDefault(IsHeadBranch) ?? throw new GitException($"Failed to find remote branches for {upstream}");
         string target = headBranch.Reference.TargetIdentifier ?? throw new GitException($"Failed to find remote branches for {upstream}");
