@@ -48,7 +48,10 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
             {
                 this.Output.WriteLine($"* Branch: {remoteBranch}");
             }
+        }
 
+        using (Repository repo = GitUtils.OpenOrClone(workDir: this.TempFolder, repoUrl: "https://github.com/credfeto/scratch.git"))
+        {
             GitUtils.RemoveAllLocalBranches(repo);
         }
     }
