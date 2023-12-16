@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.Dotnet.Repo.Git;
+using Credfeto.Dotnet.Repo.Tracking;
 using Credfeto.Package;
 using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
@@ -13,9 +14,7 @@ internal static class Updater
 {
     private const string UPSTREAM = "origin";
 
-    public static async Task UpdateRepositoriesAsync(string workFolder,
-                                                     IReadOnlyList<string> additionalSources,
-                                                     string? cacheFile,
+    public static async Task UpdateRepositoriesAsync(UpdateContext updateContext,
                                                      IReadOnlyList<string> repos,
                                                      IDiagnosticLogger logging,
                                                      IReadOnlyList<PackageUpdate> packages,
@@ -27,26 +26,19 @@ internal static class Updater
         {
             try
             {
-                await UpdateRepositoryAsync(workFolder: workFolder,
-                                            additionalSources: additionalSources,
-                                            logging: logging,
-                                            packages: packages,
-                                            packageUpdater: packageUpdater,
-                                            cancellationToken: cancellationToken,
-                                            repo: repo);
+                await UpdateRepositoryAsync(updateContext: updateContext, logging: logging, packages: packages, packageUpdater: packageUpdater, cancellationToken: cancellationToken, repo: repo);
             }
             finally
             {
-                if (!string.IsNullOrWhiteSpace(cacheFile))
+                if (!string.IsNullOrWhiteSpace(updateContext.Cache))
                 {
-                    await packageCache.SaveAsync(fileName: cacheFile, cancellationToken: CancellationToken.None);
+                    await packageCache.SaveAsync(fileName: updateContext.Cache, cancellationToken: CancellationToken.None);
                 }
             }
         }
     }
 
-    private static async Task UpdateRepositoryAsync(string workFolder,
-                                                    IReadOnlyList<string> additionalSources,
+    private static async Task UpdateRepositoryAsync(UpdateContext updateContext,
                                                     IDiagnosticLogger logging,
                                                     IReadOnlyList<PackageUpdate> packages,
                                                     IPackageUpdater packageUpdater,
@@ -55,12 +47,26 @@ internal static class Updater
     {
         logging.LogInformation($"Processing {repo}");
 
-        using (Repository repository = await GitUtils.OpenOrCloneAsync(workDir: workFolder, repoUrl: repo, cancellationToken: cancellationToken))
+        using (Repository repository = await GitUtils.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
+            string? lastKnownGoodBuild = await Status.GetAsync(fileName: updateContext.Tracking, repo: repo, cancellationToken: cancellationToken);
+
             bool first = true;
 
             foreach (PackageUpdate package in packages)
             {
+                if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repository.Head.Tip.Sha))
+                {
+                    // TODO: RepoBuild (No package version check)
+                    logging.LogInformation("Need to do a Repo build");
+                }
+
+                logging.LogInformation($"* Updating {package.PackageId}...");
+                PackageUpdateConfiguration config = BuildConfiguration(package);
+                IReadOnlyList<PackageVersion> updatesMade = await packageUpdater.UpdateAsync(basePath: repository.Info.WorkingDirectory,
+                                                                                             configuration: config,
+                                                                                             packageSources: updateContext.AdditionalSources,
+                                                                                             cancellationToken: cancellationToken);
                 IReadOnlyList<PackageVersion> updatesMade = await UpdateOnePackageInRepoAsync(additionalSources: additionalSources,
                                                                                               logging: logging,
                                                                                               packageUpdater: packageUpdater,
@@ -99,6 +105,44 @@ internal static class Updater
 
         Console.WriteLine($"Total updates: {updatesMade.Count}");
 
+                if (updatesMade.Count != 0)
+                {
+                    // TODO: Somewhere in this method check for existing branch for this package
+
+                    try
+                    {
+                        // TODO: RepoBuild (No package version check)
+
+                        // TODO:
+                        GitUtils.Commit(repo: repository, $"Updated {package.PackageId}", currentTimeSource: updateContext.TimeSource);
+
+                        lastKnownGoodBuild = repository.Head.Tip.Sha;
+                        await Status.SetAsync(fileName: updateContext.Tracking, repo: repo, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
+
+                        // TODO: Delete All branches for this package update
+                    }
+                    catch (Exception exception)
+                    {
+                        Console.WriteLine(exception);
+
+                        // TODO: Commit to branch, push, switch back to main branch
+                    }
+                    finally
+                    {
+                        if (first)
+                        {
+                            first = false;
+                        }
+                        else
+                        {
+                            GitUtils.ResetToMaster(repository);
+                        }
+                    }
+                }
+            }
+
+            // TODO: Check whether to create a release
+        }
         return updatesMade;
     }
 

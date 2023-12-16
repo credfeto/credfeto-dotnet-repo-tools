@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
+using Credfeto.Date.Interfaces;
 using Credfeto.Dotnet.Repo.Git;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Exceptions;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
@@ -84,7 +85,8 @@ internal static class Program
     {
         CancellationToken cancellationToken = CancellationToken.None;
 
-        if (!string.IsNullOrWhiteSpace(options.Work) && !string.IsNullOrWhiteSpace(options.Repositories) && !string.IsNullOrWhiteSpace(options.Packages))
+        if (!string.IsNullOrWhiteSpace(options.Work) && !string.IsNullOrWhiteSpace(options.Repositories) && !string.IsNullOrWhiteSpace(options.Packages) &&
+            !string.IsNullOrWhiteSpace(options.Tracking))
         {
             IServiceProvider services = ApplicationSetup.Setup(false);
 
@@ -106,6 +108,12 @@ internal static class Program
 
             IDiagnosticLogger logging = services.GetRequiredService<IDiagnosticLogger>();
             IPackageUpdater packageUpdater = services.GetRequiredService<IPackageUpdater>();
+
+            UpdateContext updateContext = new(WorkFolder: options.Work,
+                                              Cache: options.Cache,
+                                              Tracking: options.Tracking,
+                                              AdditionalSources: options.Source?.ToArray() ?? Array.Empty<string>(),
+                                              TimeSource: services.GetRequiredService<ICurrentTimeSource>());
 
             try
             {
