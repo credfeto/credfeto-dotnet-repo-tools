@@ -58,7 +58,7 @@
     <RepositoryUrl>https://github.com/credfeto/credfeto-dotnet-repo-tools</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
-    <!--    <ProjectReference Include="..\Credfeto.Package\Credfeto.Package.csproj" />-->
+    <ProjectReference Include="..\Credfeto.Dotnet.Repo.Git\Credfeto.Dotnet.Repo.Git.csproj"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1"/>

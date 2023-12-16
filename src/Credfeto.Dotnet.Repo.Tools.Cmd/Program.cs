@@ -2,10 +2,13 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
+using Credfeto.Dotnet.Repo.Git;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Exceptions;
+using Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
 using Credfeto.Package;
 using Credfeto.Package.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
@@ -78,96 +81,59 @@ internal static class Program
 
     private static async Task ParsedOkAsync(Options options)
     {
-        if (!string.IsNullOrWhiteSpace(options.Folder) && !string.IsNullOrWhiteSpace(options.PackageId))
+        CancellationToken cancellationToken = CancellationToken.None;
+
+        if (!string.IsNullOrWhiteSpace(options.Work) && !string.IsNullOrWhiteSpace(options.Repositories) && !string.IsNullOrWhiteSpace(options.Packages))
         {
             IServiceProvider services = ApplicationSetup.Setup(false);
+
+            IReadOnlyList<string> repos = await GitRepoList.LoadRepoListAsync(path: options.Repositories, cancellationToken: cancellationToken);
+
+            if (repos.Count == 0)
+            {
+                throw new InvalidOperationException("No Repositories found");
+            }
 
             IPackageCache packageCache = services.GetRequiredService<IPackageCache>();
 
             if (!string.IsNullOrWhiteSpace(options.Cache) && File.Exists(options.Cache))
             {
-                await packageCache.LoadAsync(fileName: options.Cache, cancellationToken: CancellationToken.None);
+                await packageCache.LoadAsync(fileName: options.Cache, cancellationToken: cancellationToken);
             }
+
+            // TODO: Load Packages file
+            string filename = options.Packages;
+            IReadOnlyList<PackageUpdate> packages = await LoadPackageUpdateConfigAsync(filename: filename, cancellationToken: cancellationToken);
 
             IDiagnosticLogger logging = services.GetRequiredService<IDiagnosticLogger>();
             IPackageUpdater packageUpdater = services.GetRequiredService<IPackageUpdater>();
 
-            PackageUpdateConfiguration config = BuildConfiguration(packageId: options.PackageId, options.Exclude?.ToArray() ?? Array.Empty<string>());
-            IReadOnlyList<PackageVersion> updatesMade = await packageUpdater.UpdateAsync(basePath: options.Folder,
-                                                                                         configuration: config,
-                                                                                         options.Source?.ToArray() ?? Array.Empty<string>(),
-                                                                                         cancellationToken: CancellationToken.None);
-
-            if (logging.IsErrored)
-            {
-                throw new PackageUpdateException();
-            }
-
-            Console.WriteLine($"Total updates: {updatesMade.Count}");
-
-            if (!string.IsNullOrWhiteSpace(options.Cache))
-            {
-                await packageCache.SaveAsync(fileName: options.Cache, cancellationToken: CancellationToken.None);
-            }
-
-            if (updatesMade.Count == 0)
-            {
-                throw new NoPackagesUpdatedException();
-            }
-
-            OutputPackageUpdateTags(updatesMade);
-
-            return;
+            await Updater.UpdateRepositoriesAsync(workFolder: options.Work,
+                                                  options.Source?.ToArray() ?? Array.Empty<string>(),
+                                                  cacheFile: options.Cache,
+                                                  repos: repos,
+                                                  logging: logging,
+                                                  packages: packages,
+                                                  packageUpdater: packageUpdater,
+                                                  cancellationToken: cancellationToken,
+                                                  packageCache: packageCache);
         }
 
         throw new InvalidOptionsException();
     }
 
-    private static PackageUpdateConfiguration BuildConfiguration(string packageId, IReadOnlyList<string> exclude)
+    private static async Task<IReadOnlyList<PackageUpdate>> LoadPackageUpdateConfigAsync(string filename, CancellationToken cancellationToken)
     {
-        PackageMatch packageMatch = ExtractSearchPackage(packageId);
-        Console.WriteLine($"Including {packageMatch.PackageId} (Using Prefix match: {packageMatch.Prefix})");
+        byte[] content = await File.ReadAllBytesAsync(path: filename, cancellationToken: cancellationToken);
 
-        IReadOnlyList<PackageMatch> excludedPackages = GetExcludedPackages(exclude);
+        IReadOnlyList<PackageUpdate> packages = JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: PackageConfigSerializationContext.Default.IReadOnlyListPackageUpdate) ??
+                                                Array.Empty<PackageUpdate>();
 
-        return new(PackageMatch: packageMatch, ExcludedPackages: excludedPackages);
-    }
-
-    private static void OutputPackageUpdateTags(IReadOnlyList<PackageVersion> updated)
-    {
-        foreach (PackageVersion package in updated)
+        if (packages.Count == 0)
         {
-            Console.WriteLine($"::set-env name={package.PackageId}::{package.Version}");
-        }
-    }
-
-    private static IReadOnlyList<PackageMatch> GetExcludedPackages(IReadOnlyList<string> excludes)
-    {
-        if (excludes.Count == 0)
-        {
-            return Array.Empty<PackageMatch>();
+            throw new InvalidOperationException("No packages found");
         }
 
-        List<PackageMatch> excludedPackages = new();
-
-        foreach (string exclude in excludes)
-        {
-            PackageMatch packageMatch = ExtractSearchPackage(exclude);
-
-            excludedPackages.Add(packageMatch);
-
-            Console.WriteLine($"Excluding {packageMatch.PackageId} (Using Prefix match: {packageMatch.Prefix})");
-        }
-
-        return excludedPackages;
-    }
-
-    private static PackageMatch ExtractSearchPackage(string exclude)
-    {
-        string[] parts = exclude.Split(separator: ':');
-
-        return parts.Length == 2
-            ? new(parts[0], StringComparer.InvariantCultureIgnoreCase.Equals(parts[1], y: "prefix"))
-            : new(parts[0], Prefix: false);
+        return packages;
     }
 }
