@@ -15,6 +15,15 @@ public static class GitUtils
 
     private static readonly CheckoutOptions CheckoutOptions = new() { CheckoutModifiers = CheckoutModifiers.Force };
 
+    private static readonly CloneOptions CloneOptions = new()
+                                                        {
+                                                            Checkout = false,
+                                                            IsBare = false,
+                                                            RecurseSubmodules = true,
+                                                            BranchName = "main",
+                                                            FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All }
+                                                        };
+
     public static string GetFolderForRepo(string repoUrl)
     {
         string work = repoUrl.TrimEnd('/');
@@ -74,7 +83,6 @@ public static class GitUtils
 
         // & git -C $repoPath fetch --recurse-submodules 2>&1 | Out-Null
 
-        //
         // # NOTE Loses all local commits on master
         // & git -C $repoPath reset --hard $upstreamBranch 2>&1 | Out-Null
         repo.Reset(resetMode: ResetMode.Hard, commit: repo.Branches[upstream + "/" + defaultBranch].Tip);
@@ -149,7 +157,7 @@ public static class GitUtils
 
     private static Repository CloneRepository(string workDir, string repoUrl)
     {
-        string? path = Repository.Clone(sourceUrl: repoUrl, workdirPath: workDir);
+        string? path = Repository.Clone(sourceUrl: repoUrl, workdirPath: workDir, options: CloneOptions);
 
         if (string.IsNullOrWhiteSpace(path))
         {
@@ -157,6 +165,12 @@ public static class GitUtils
         }
 
         return OpenRepository(path);
+    }
+
+    public static bool HasUncommittedChanges(Repository repo)
+    {
+        return repo.RetrieveStatus()
+                   .IsDirty;
     }
 
     private static Repository OpenRepository(string workDir)
@@ -206,48 +220,7 @@ $env:GIT_REDIRECT_STDERR="2>&1"
 
 
 
-   function Git-ResetToMaster {
-   param(
-           [string] $repoPath = $(throw "Git-ResetToMaster: repoPath not specified")
-       )
 
-       Log -message "Git-ResetToMaster: $repoPath"
-
-       $repack = IsOnRamDisk -Path $repoPath
-
-       [string]$upstream = "origin";
-       [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-       $head = Git-Get-HeadRev -repoPath $repoPath
-
-       [string]$defaultBranch = Git-GetDefaultBranch -repoPath $repoPath -upstream $upstream
-       [string]$upstreamBranch = "$upstream/$defaultBranch"
-
-       # junk any existing checked out files
-       & git -C $repoPath reset HEAD --hard 2>&1 | Out-Null
-       & git -C $repoPath clean -f -x -d 2>&1 | Out-Null
-       & git -C $repoPath checkout $defaultBranch 2>&1 | Out-Null
-       & git -C $repoPath reset HEAD --hard 2>&1 | Out-Null
-       & git -C $repoPath clean -f -x -d 2>&1 | Out-Null
-       & git -C $repoPath fetch --recurse-submodules 2>&1 | Out-Null
-
-       # NOTE Loses all local commits on master
-       & git -C $repoPath reset --hard $upstreamBranch 2>&1 | Out-Null
-       & git -C $repoPath remote update $upstream --prune 2>&1 | Out-Null
-       & git -C $repoPath prune 2>&1 | Out-Null
-
-       $newHead = Git-Get-HeadRev -repoPath $repoPath
-       if($head -ne $newHead) {
-           if(!$repack) {
-               # ONLY GC if head is different, i.e. something has changed
-               & git -C $repoPath gc --aggressive --prune 2>&1 | Out-Null
-           }
-       }
-
-       Git-RemoveAllLocalBranches -repoPath $repoPath
-
-       return $newHead
-   }
 
    function Git-HasUnCommittedChanges {
    param(
