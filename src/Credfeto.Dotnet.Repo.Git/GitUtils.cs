@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Credfeto.Dotnet.Repo.Git.Exceptions;
@@ -39,18 +40,56 @@ public static class GitUtils
         return CloneRepository(workDir: repoDir, repoUrl: repoUrl);
     }
 
+    public static IReadOnlyCollection<string> GetRemoteBranches(Repository repo, string upstream = "origin")
+    {
+        /*
+         Log -message "Git-GetRemoteBranches: $repoPath ($upstream)"
+
+           [string]$repoPath = GetRepoPath -repoPath $repoPath
+
+           [string[]]$result = git -C $repoPath branch --remote 2>&1
+
+           $branches = @()
+
+           [string]$remotePrefix = "$upstream/"
+
+           Log -message "Looking for Remote Branches for : $remotePrefix"
+
+           foreach($item in $result) {
+               [string]$branch = $item.Trim()
+               if(!$branch.StartsWith($remotePrefix)) {
+                   Log -message "- Skipping $branch"
+                   continue
+               }
+
+               $branch = $branch.SubString($remotePrefix.Length)
+               $branch = $branch.Split(" ")[0]
+               if($branch -eq "HEAD") {
+                   Log -message "- Skipping $branch"
+                   continue
+               }
+
+               Log -message "+ Found $upstream/$branch"
+               $branches += $branch
+           }
+
+           return [string[]]$branches
+         */
+
+        const string prefix = "refs/heads/";
+
+        return repo.Branches.Where(IsRemoteBranch)
+                   .Select(b => b.UpstreamBranchCanonicalName.Substring(prefix.Length))
+                   .ToArray();
+
+        bool IsRemoteBranch(Branch branch)
+        {
+            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) && branch.UpstreamBranchCanonicalName.StartsWith(prefix, StringComparison.Ordinal);
+        }
+    }
+
     public static string GetDefaultBranch(Repository repo, string upstream = "origin")
     {
-        // Log -message "Git-GetDefaultBranch: $repoPath ($upstream)"
-        //
-        //     [string]$repoPath = GetRepoPath -repoPath $repoPath
-        //
-        //     [string[]]$result = git -C $repoPath remote show $upstream 2>&1
-        //
-        //     [string] $branch =  $result | Select-String -Pattern 'HEAD branch: (.*)' -CaseSensitive | %{$_.Matches.Groups[1].value}
-        //
-        // return $branch.Trim()
-
         Branch headBranch = repo.Branches.FirstOrDefault(IsHeadBranch) ?? throw new GitException($"Failed to find remote branches for {upstream}");
         string target = headBranch.Reference.TargetIdentifier ?? throw new GitException($"Failed to find remote branches for {upstream}");
         string prefix = string.Concat(str0: "refs/remotes/", str1: upstream, str2: "/");

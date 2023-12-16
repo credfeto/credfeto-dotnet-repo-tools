@@ -1,4 +1,5 @@
-﻿using FunFair.Test.Common;
+﻿using System.Collections.Generic;
+using FunFair.Test.Common;
 using LibGit2Sharp;
 using Xunit;
 using Xunit.Abstractions;
@@ -40,6 +41,13 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
 
             string branch = GitUtils.GetDefaultBranch(repo);
             this.Output.WriteLine($"Default Branch: {branch}");
+
+            IReadOnlyCollection<string> remoteBranches = GitUtils.GetRemoteBranches(repo);
+
+            foreach (string remoteBranch in remoteBranches)
+            {
+                this.Output.WriteLine($"* Branch: {remoteBranch}");
+            }
         }
     }
 }
