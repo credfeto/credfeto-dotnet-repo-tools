@@ -48,6 +48,8 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
             {
                 this.Output.WriteLine($"* Branch: {remoteBranch}");
             }
+
+            GitUtils.RemoveAllLocalBranches(repo);
         }
     }
 }

@@ -40,6 +40,47 @@ public static class GitUtils
         return CloneRepository(workDir: repoDir, repoUrl: repoUrl);
     }
 
+    public static void RemoveAllLocalBranches(Repository repo)
+    {
+        /*
+               Log -message "Git-RemoveAllLocalBranches: $repoPath"
+
+               [string]$repoPath = GetRepoPath -repoPath $repoPath
+
+               [string[]]$result = git -C $repoPath branch 2>&1
+               Log -message "Found: ..."
+               Log-Batch -messages $result
+               foreach($item in $result) {
+                   [string]$branch = $item.Trim()
+                   Log -message "Found: $branch"
+                   if(!$branch.StartsWith("* ")) {
+                       [string[]]$complete = git -C $repoPath branch -d $branch 2>&1
+                       Log -message "Removed: $branch : $complete"
+                   }
+               }
+
+                    */
+
+        IReadOnlyList<Branch> branchesToRemove = repo.Branches.Where(IsLocalBranch)
+                                                     .ToArray();
+
+        foreach (Branch branch in branchesToRemove)
+        {
+            if (StringComparer.Ordinal.Equals(x: repo.Head.CanonicalName, y: branch.CanonicalName))
+            {
+                // don't try and delete the current branch
+                continue;
+            }
+
+            repo.Branches.Remove(branch);
+        }
+
+        static bool IsLocalBranch(Branch branch)
+        {
+            return !branch.IsRemote;
+        }
+    }
+
     public static IReadOnlyCollection<string> GetRemoteBranches(Repository repo, string upstream = "origin")
     {
         /*
@@ -80,11 +121,13 @@ public static class GitUtils
 
         return repo.Branches.Where(IsRemoteBranch)
                    .Select(b => b.UpstreamBranchCanonicalName.Substring(prefix.Length))
+                   .Where(b => !StringComparer.Ordinal.Equals(x: b, y: "HEAD"))
                    .ToArray();
 
         bool IsRemoteBranch(Branch branch)
         {
-            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) && branch.UpstreamBranchCanonicalName.StartsWith(prefix, StringComparison.Ordinal);
+            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) &&
+                   branch.UpstreamBranchCanonicalName.StartsWith(value: prefix, comparisonType: StringComparison.Ordinal);
         }
     }
 
