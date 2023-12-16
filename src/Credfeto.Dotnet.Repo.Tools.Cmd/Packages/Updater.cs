@@ -60,7 +60,7 @@ internal static class Updater
             foreach (PackageUpdate package in packages)
             {
                 logging.LogInformation($"* Updating {package.PackageId}...");
-                PackageUpdateConfiguration config = BuildConfiguration(packageId: package.PackageId, exclude: package.Exclude);
+                PackageUpdateConfiguration config = BuildConfiguration(package);
                 IReadOnlyList<PackageVersion> updatesMade = await packageUpdater.UpdateAsync(basePath: repository.Info.WorkingDirectory,
                                                                                              configuration: config,
                                                                                              packageSources: additionalSources,
@@ -83,28 +83,28 @@ internal static class Updater
         }
     }
 
-    private static PackageUpdateConfiguration BuildConfiguration(string packageId, IReadOnlyList<string> exclude)
+    private static PackageUpdateConfiguration BuildConfiguration(PackageUpdate package)
     {
-        PackageMatch packageMatch = ExtractSearchPackage(packageId);
+        PackageMatch packageMatch = new(PackageId: package.PackageId, Prefix: !package.ExactMatch);
         Console.WriteLine($"Including {packageMatch.PackageId} (Using Prefix match: {packageMatch.Prefix})");
 
-        IReadOnlyList<PackageMatch> excludedPackages = GetExcludedPackages(exclude);
+        IReadOnlyList<PackageMatch> excludedPackages = GetExcludedPackages(package.Exclude);
 
         return new(PackageMatch: packageMatch, ExcludedPackages: excludedPackages);
     }
 
-    private static IReadOnlyList<PackageMatch> GetExcludedPackages(IReadOnlyList<string> excludes)
+    private static IReadOnlyList<PackageMatch> GetExcludedPackages(IReadOnlyList<PackageExclude> excludes)
     {
         if (excludes.Count == 0)
         {
             return Array.Empty<PackageMatch>();
         }
 
-        List<PackageMatch> excludedPackages = new();
+        List<PackageMatch> excludedPackages = [];
 
-        foreach (string exclude in excludes)
+        foreach (PackageExclude exclude in excludes)
         {
-            PackageMatch packageMatch = ExtractSearchPackage(exclude);
+            PackageMatch packageMatch = new(PackageId: exclude.PackageId, Prefix: !exclude.ExactMatch);
 
             excludedPackages.Add(packageMatch);
 
@@ -112,14 +112,5 @@ internal static class Updater
         }
 
         return excludedPackages;
-    }
-
-    private static PackageMatch ExtractSearchPackage(string exclude)
-    {
-        string[] parts = exclude.Split(separator: ':');
-
-        return parts.Length == 2
-            ? new(parts[0], StringComparer.InvariantCultureIgnoreCase.Equals(parts[1], y: "prefix"))
-            : new(parts[0], Prefix: false);
     }
 }

@@ -12,6 +12,8 @@ namespace Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
                              IncludeFields = false)]
 [JsonSerializable(typeof(PackageUpdate))]
 [JsonSerializable(typeof(IReadOnlyList<PackageUpdate>))]
+[JsonSerializable(typeof(PackageExclude))]
+[JsonSerializable(typeof(IReadOnlyList<PackageExclude>))]
 internal sealed partial class PackageConfigSerializationContext : JsonSerializerContext
 {
 }
