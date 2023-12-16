@@ -1,0 +1,40 @@
+name: "Repo: Update Labels"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/labels.yml'
+      - '.github/workflows/update-labels.yml'
+
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+
+jobs:
+  update-labels-config:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - name: "Checkout Source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{secrets.SOURCE_PUSH_TOKEN}}
+      - name: "Update Github label config"
+        if: success()
+        uses: crazy-max/ghaction-github-labeler@v5.0.0
+        with:
+          github-token: ${{secrets.SOURCE_PUSH_TOKEN}}
+          yaml-file: .github/labels.yml
+          skip-delete: true
+          dry-run: false
+          exclude: |
+            help*
+            *issue
+

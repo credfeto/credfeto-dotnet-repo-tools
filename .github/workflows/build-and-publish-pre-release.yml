@@ -1,0 +1,109 @@
+name: "Build: Pre-Release"
+
+on:
+  push:
+    paths:
+      - 'db/**/*'
+      - 'src/**/*'
+      - '.github/actions/build/action.yml'
+      - '.github/actions/build-tools/action.yml'
+      - '.github/actions/dotnet/action.yml'
+      - '.github/actions/dotnet-tool/action.yml'
+      - '.github/actions/dotnet-publish/action.yml'
+      - '.github/actions/npm/action.yml'
+      - '.github/actions/nuget/action.yml'
+      - '.github/actions/sql/action.yml'
+      - '.github/actions/sarif/action.yml'
+      - '.github/workflows/build-and-publish-pre-release.yml'
+    branches-ignore:
+      - 'release/*'
+      - 'hotfix/*'
+
+# Don't cancel anything in progress
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}-pre-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  security-events: write
+
+jobs:
+  build-pre-release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+
+      - name: "Checkout Source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "Check Repo Visibility"
+        uses: credfeto/action-repo-visibility@v1.2.0
+        id: visibility
+        with:
+          repository: ${{github.repository}}
+          token: ${{secrets.GITHUB_TOKEN}}
+
+      - name: "Check Runner details"
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            core.info('Name: ${{runner.name}}');
+            core.info('OS: ${{runner.os}}');
+
+      - name: "Enable Local nuget feeds if caching"
+        if: startsWith(runner.name, 'buildagent-')
+        id: nuget-local-cache
+        shell: bash
+        run: |
+          {
+            echo "NUGET_BAGET_CACHE=${{vars.NUGET_BAGET_CACHE}}"
+            echo "PRERELEASE_BAGET_CACHE=${{vars.PRERELEASE_BAGET_CACHE}}"
+            echo "RELEASE_BAGET_CACHE=${{vars.RELEASE_BAGET_CACHE}}"
+          }>> "$GITHUB_OUTPUT"
+
+      - name: "Build and deploy"
+        uses: ./.github/actions/build
+        with:
+          PRODUCTION_BUILD: False
+          NPM_PRODUCTION_PACKAGER_VERSION: ${{vars.PRODUCTION_PACKAGER_VERSION}}
+          NPM_CONTENT_PACKAGE_WALLET_PASSWORD: ${{secrets.CONTENT_PACKAGE_WALLET_PASSWORD}}
+          NPM_PACKAGE_STORE_SIGNING_WALLET: ${{secrets.PACKAGE_STORE_SIGNING_WALLET}}
+          NPM_PACKAGE_STORE_SIGNING_WALLET_PASSWORD: ${{secrets.PACKAGE_STORE_SIGNING_WALLET_PASSWORD}}
+          NUGET_PUBLIC_RESTORE_FEED_CACHE: ${{steps.nuget-local-cache.outputs.NUGET_BAGET_CACHE}}
+          NUGET_PUBLIC_RESTORE_FEED: ${{vars.NUGET_PUBLIC_RESTORE_FEED}}
+          NUGET_ADDITIONAL_RESTORE_FEED_RELEASE_CACHE: ${{steps.nuget-local-cache.outputs.RELEASE_BAGET_CACHE}}
+          NUGET_ADDITIONAL_RESTORE_FEED_PRERELEASE_CACHE: ${{steps.nuget-local-cache.outputs.PRERELEASE_BAGET_CACHE}}
+          NUGET_ADDITIONAL_RESTORE_FEED_RELEASE: ${{vars.NUGET_ADDITIONAL_RESTORE_FEED_RELEASE}}
+          NUGET_ADDITIONAL_RESTORE_FEED_PRERELEASE: ${{vars.NUGET_ADDITIONAL_RESTORE_FEED_PRERELEASE}}
+          NUGET_PACK: ${{vars.NUGET_PACK}}
+          NUGET_FEED: ${{secrets.NUGET_FEED}}
+          NUGET_SYMBOL_FEED: ${{secrets.NUGET_SYMBOL_FEED}}
+          NUGET_API_KEY: ${{secrets.NUGET_API_KEY}}
+          SLEET_CONFIG: ${{secrets.SLEET_CONFIG}}
+          SLEET_FEED: "dotnet-prerelease"
+          OCTOPUS_SERVER: ${{vars.OCTOPUS_SERVER}}
+          OCTOPUS_SPACE_NAME: ${{vars.OCTOPUS_SPACE}}
+          OCTOPUS_PROJECT: ${{vars.OCTOPUS_PROJECT}}
+          OCTOPUS_CHANNEL: ${{vars.OCTOPUS_PRERELEASE_CHANNEL}}
+          OCTOPUS_DEPLOY_TO: ${{vars.OCTOPUS_DEPLOYTO_PRERELEASE}}
+          OCTOPUS_API_KEY: ${{secrets.OCTOPUS_API_KEY}}
+          OCTOPUS_DEPLOY_PACKAGE: ${{vars.OCTOPUS_DEPLOY_PACKAGE}}
+          OCTOPUS_DEPLOY_PACKAGE_ZIP: ${{vars.OCTOPUS_DEPLOY_PACKAGE_ZIP}}
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          REPO_VISIBILITY: ${{env.REPO_STATUS}}
+          CREATE_RELEASE: false
+
+      - name: "Build Version"
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            core.info('Version: \u001b[38;5;6m${{env.BUILD_VERSION}}');
+            core.notice('Version: ${{env.BUILD_VERSION}}');
+

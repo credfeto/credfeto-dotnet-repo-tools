@@ -1,0 +1,261 @@
+--- # Build and deploy packages
+name: 'Build Dotnet'
+description: 'Builds and deploys the source'
+inputs:
+  # General
+  PRODUCTION_BUILD:
+    description: 'Whether to build a production build'
+    required: true
+
+  # NUGET
+  NUGET_PACK:
+    description: 'Whether to pack packages with feeds'
+    required: false
+  NUGET_FEED:
+    description: 'Nuget feed to push packages to'
+    required: false
+  NUGET_SYMBOL_FEED:
+    description: 'Nuget feed to push packages symbols to'
+    required: false
+  NUGET_API_KEY:
+    description: 'API key to authenticate when pushing packages'
+    required: false
+  SLEET_CONFIG:
+    description: 'Sleet config file'
+    required: false
+  SLEET_FEED:
+    description: 'Sleet feed to push packages to'
+    required: false
+
+  # General
+  BUILD_VERSION:
+    description: 'Build version'
+    required: true
+
+  RELEASE_NOTES:
+    description: 'Release notes'
+    required: false
+
+  BUILD_SQL:
+    description: 'Whether to build SQL DB'
+    required: true
+
+  # GENERAL
+  GITHUB_TOKEN:
+    description: 'Github Token'
+    required: true
+  REPO_VISIBILITY:
+    description: 'Visibility of the repo'
+    required: true
+
+  # Octopus
+  OCTOPUS_DEPLOY_PACKAGE:
+    description: 'Package (root) to deploy'
+    required: false
+  OCTOPUS_DEPLOY_PACKAGE_ZIP:
+    description: 'Package (root) to deploy when zipped'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+
+  ############################################################################################################
+  # DOTNET BUILD
+  ############################################################################################################
+
+  - name: "Dotnet: Define Master build settings"
+    if: env.Release == 'false'
+    working-directory: ${{github.workspace}}/src
+    shell: bash
+    run: echo "DOTNET_RELEASE_DEFINES=/p:IsProduction=false" >> "$GITHUB_ENV"
+
+  - name: "Dotnet: Define Release build settings"
+    if: env.Release == 'false'
+    working-directory: ${{github.workspace}}/src
+    shell: bash
+    run: echo "DOTNET_RELEASE_DEFINES=/p:IsProduction=True" >> "$GITHUB_ENV"
+
+  - name: "Dotnet: Restore packages"
+    working-directory: ${{github.workspace}}/src
+    shell: bash
+    run: dotnet restore -nodeReuse:False -p:NoWarn=MSB4241 || dotnet restore -nodeReuse:False -verbosity:d -p:NoWarn=MSB4241 -p:SuppressNETCoreSdkPreviewMessage=true
+    env:
+      DOTNET_ROOT: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_INSTALL_DIR: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_MULTILEVEL_LOOKUP: "false"
+      DOTNET_NOLOGO: "true"
+      DOTNET_PRINT_TELEMETRY_MESSAGE: "false"
+      DOTNET_ReadyToRun: "0"
+      DOTNET_TC_QuickJitForLoops: "1"
+      DOTNET_TieredPGO: "1"
+
+  - name: "Dotnet: Build (Non-Release)"
+    working-directory: ${{github.workspace}}/src
+    shell: bash
+    run: dotnet build --configuration Release "/p:Version=${{inputs.BUILD_VERSION}}" "/p:EnableSarif=True" "/p:IsProduction=${{inputs.PRODUCTION_BUILD}}" -nodeReuse:False -p:NoWarn=MSB4241 -p:SuppressNETCoreSdkPreviewMessage=true ${{env.DOTNET_RELEASE_DEFINES}}
+    env:
+      ReleaseNotes: ${{inputs.RELEASE_NOTES}}
+      DOTNET_ROOT: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_INSTALL_DIR: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_MULTILEVEL_LOOKUP: "false"
+      DOTNET_NOLOGO: "true"
+      DOTNET_PRINT_TELEMETRY_MESSAGE: "false"
+      DOTNET_ReadyToRun: "0"
+      DOTNET_TC_QuickJitForLoops: "1"
+      DOTNET_TieredPGO: "1"
+
+  ## RUN TESTS
+  - name: "Dotnet: Test"
+    working-directory: ${{github.workspace}}/src
+    shell: bash
+    run: dotnet test --no-build --no-restore -noConsoleLogger --configuration Release "/p:Version=${{inputs.BUILD_VERSION}}" "/p:IsProduction=${{inputs.PRODUCTION_BUILD}}" --filter FullyQualifiedName\!~Integration --logger:"trx;LogFilePrefix=testResults" --results-directory ../test-results -nodeReuse:False -p:NoWarn=MSB4241 -p:SuppressNETCoreSdkPreviewMessage=true
+    env:
+      ReleaseNotes: ${{inputs.RELEASE_NOTES}}
+      DOTNET_ROOT: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_INSTALL_DIR: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_MULTILEVEL_LOOKUP: "false"
+      DOTNET_NOLOGO: "true"
+      DOTNET_PRINT_TELEMETRY_MESSAGE: "false"
+      DOTNET_ReadyToRun: "0"
+      DOTNET_TC_QuickJitForLoops: "1"
+      DOTNET_TieredPGO: "1"
+
+  # ############################################################################################################
+  # # DATABASE BUILD
+  # ############################################################################################################
+  - name: "SQL: Build"
+    if: inputs.BUILD_SQL == 'true'
+    uses: ./.github/actions/sql
+    with:
+      BUILD_VERSION: ${{inputs.BUILD_VERSION}}
+      OCTOPUS_DEPLOY_PACKAGE: ${{inputs.OCTOPUS_DEPLOY_PACKAGE}}
+      OCTOPUS_DEPLOY_PACKAGE_ZIP: ${{inputs.OCTOPUS_DEPLOY_PACKAGE_ZIP}}
+
+  ############################################################################################################
+  # Publish ready for deploy to octopus
+  ############################################################################################################
+  - name: "Dotnet: Pack Packages for Octopus (win-x64)"
+    if: inputs.OCTOPUS_DEPLOY_PACKAGE != ''
+    uses: ./.github/actions/dotnet-publish
+    with:
+      PRODUCTION_BUILD: ${{inputs.PRODUCTION_BUILD}}
+      BUILD_VERSION: ${{inputs.BUILD_VERSION}}
+      RELEASE_NOTES: ${{inputs.RELEASE_NOTES}}
+      PLATFORM: "win-x64"
+      OCTOPUS_DEPLOY_PACKAGE: ${{inputs.OCTOPUS_DEPLOY_PACKAGE}}
+      OCTOPUS_DEPLOY_PACKAGE_ZIP: ${{inputs.OCTOPUS_DEPLOY_PACKAGE_ZIP}}
+
+  - name: "Dotnet: Pack Packages for Octopus (linux-x64)"
+    if: inputs.OCTOPUS_DEPLOY_PACKAGE != ''
+    uses: ./.github/actions/dotnet-publish
+    with:
+      PRODUCTION_BUILD: ${{inputs.PRODUCTION_BUILD}}
+      BUILD_VERSION: ${{inputs.BUILD_VERSION}}
+      RELEASE_NOTES: ${{inputs.RELEASE_NOTES}}
+      PLATFORM: "linux-x64"
+      OCTOPUS_DEPLOY_PACKAGE: ${{inputs.OCTOPUS_DEPLOY_PACKAGE}}
+      OCTOPUS_DEPLOY_PACKAGE_ZIP: ${{inputs.OCTOPUS_DEPLOY_PACKAGE_ZIP}}
+
+  - name: "Dotnet: Pack Packages for Octopus (linux-arm64)"
+    if: inputs.OCTOPUS_DEPLOY_PACKAGE != ''
+    uses: ./.github/actions/dotnet-publish
+    with:
+      PRODUCTION_BUILD: ${{inputs.PRODUCTION_BUILD}}
+      BUILD_VERSION: ${{inputs.BUILD_VERSION}}
+      RELEASE_NOTES: ${{inputs.RELEASE_NOTES}}
+      PLATFORM: "linux-arm64"
+      OCTOPUS_DEPLOY_PACKAGE: ${{inputs.OCTOPUS_DEPLOY_PACKAGE}}
+      OCTOPUS_DEPLOY_PACKAGE_ZIP: ${{inputs.OCTOPUS_DEPLOY_PACKAGE_ZIP}}
+
+  ############################################################################################################
+  # DOTNET PUSH TO NUGET
+  ############################################################################################################
+  - name: "Dotnet: Pack tool"
+    if: inputs.NUGET_PACK == 'true'
+    working-directory: ${{github.workspace}}/src
+    shell: bash
+    run: dotnet pack --configuration Release "/p:Version=${{inputs.BUILD_VERSION}}" "/p:IsProduction=${{inputs.PRODUCTION_BUILD}}" --no-restore -nodeReuse:False -p:NoWarn=MSB4241
+    env:
+      ReleaseNotes: ${{inputs.RELEASE_NOTES}}
+      DOTNET_ROOT: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_INSTALL_DIR: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_MULTILEVEL_LOOKUP: "false"
+      DOTNET_NOLOGO: "true"
+      DOTNET_PRINT_TELEMETRY_MESSAGE: "false"
+      DOTNET_ReadyToRun: "0"
+      DOTNET_TC_QuickJitForLoops: "1"
+      DOTNET_TieredPGO: "1"
+
+  - name: "Dotnet: Copy packed to dist"
+    if: inputs.NUGET_PACK == 'true'
+    shell: bash
+    run: |
+      shopt -s globstar
+      [ ! -d ../dist ] && mkdir ../dist
+      cp **/*.nupkg ../dist
+    working-directory: ${{github.workspace}}/src
+
+  - name: "Dotnet: Publish Packages to Nuget (Without separate symbol feed)"
+    if: |-
+      inputs.NUGET_API_KEY != '' &&
+      inputs.NUGET_API_KEY != 'SLEET' &&
+      inputs.NUGET_PACK == 'true' &&
+      (inputs.NUGET_SYMBOL_FEED == '' || inputs.NUGET_SYMBOL_FEED == ' ')
+    shell: bash
+    run: dotnet pushpackages --folder dist --api-key "${{inputs.NUGET_API_KEY}}" --source ${{inputs.NUGET_FEED}}
+    env:
+      DOTNET_ROOT: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_INSTALL_DIR: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_MULTILEVEL_LOOKUP: "false"
+      DOTNET_NOLOGO: "true"
+      DOTNET_PRINT_TELEMETRY_MESSAGE: "false"
+      DOTNET_ReadyToRun: "0"
+      DOTNET_TC_QuickJitForLoops: "1"
+      DOTNET_TieredPGO: "1"
+
+  - name: "Dotnet: Publish Packages to Nuget (With separate symbol feed)"
+    if: |-
+      inputs.NUGET_API_KEY != '' &&
+      inputs.NUGET_API_KEY != 'SLEET' &&
+      inputs.NUGET_PACK == 'true' &&
+      !(inputs.NUGET_SYMBOL_FEED == '' || inputs.NUGET_SYMBOL_FEED == ' ')
+    shell: bash
+    run: dotnet pushpackages --folder dist --api-key "${{inputs.NUGET_API_KEY}}" --source ${{inputs.NUGET_FEED}} --symbol-source ${{inputs.NUGET_SYMBOL_FEED}}
+    env:
+      DOTNET_ROOT: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_INSTALL_DIR: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_MULTILEVEL_LOOKUP: "false"
+      DOTNET_NOLOGO: "true"
+      DOTNET_PRINT_TELEMETRY_MESSAGE: "false"
+      DOTNET_ReadyToRun: "0"
+      DOTNET_TC_QuickJitForLoops: "1"
+      DOTNET_TieredPGO: "1"
+
+  - name: "Dotnet: Publish Packages Generate Sleet Config"
+    if: |-
+      inputs.NUGET_API_KEY == 'SLEET' &&
+      inputs.NUGET_PACK == 'true' &&
+      !(inputs.NUGET_SYMBOL_FEED == '' || inputs.NUGET_SYMBOL_FEED == ' ')
+    uses: joutvhu/write-file@v1
+    with:
+      path: sleet.json
+      contents: ${{ inputs.SLEET_CONFIG }}
+      write_mode: overwrite
+
+  - name: "Dotnet: Publish Packages to Nuget (Using Sleet)"
+    if: |-
+      inputs.NUGET_API_KEY == 'SLEET' &&
+      inputs.NUGET_PACK == 'true' &&
+      !(inputs.NUGET_SYMBOL_FEED == '' || inputs.NUGET_SYMBOL_FEED == ' ')
+    shell: bash
+    run: dotnet sleet push "${{github.workspace}}/dist" --config sleet.json --source ${{inputs.SLEET_FEED}}
+    env:
+      DOTNET_ROOT: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_INSTALL_DIR: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+      DOTNET_MULTILEVEL_LOOKUP: "false"
+      DOTNET_NOLOGO: "true"
+      DOTNET_PRINT_TELEMETRY_MESSAGE: "false"
+      DOTNET_ReadyToRun: "0"
+      DOTNET_TC_QuickJitForLoops: "1"
+      DOTNET_TieredPGO: "1"

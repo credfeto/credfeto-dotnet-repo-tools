@@ -1,0 +1,40 @@
+--- # Build and deploy packages
+name: 'Upload sarif files'
+description: 'Builds and deploys the source'
+inputs:
+  # GENERAL
+  GITHUB_TOKEN:
+    description: 'Github Token'
+    required: true
+  REPO_VISIBILITY:
+    description: 'Visibility of the repo'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: "Sarif Files to upload"
+      shell: bash
+      working-directory: ${{github.workspace}}/results
+      run: |
+        ls -la
+        rm -rf *.Tests.sarif
+        echo "Hash: ${{ hashfiles('**/*.sarif') }}"
+        echo "SARIF_HASH=${{ hashfiles('**/*.sarif') }}" >> $GITHUB_ENV
+
+    - if: inputs.REPO_VISIBILITY == 'public' && env.SARIF_HASH != ''
+      name: "Upload SARIF file for diagnostics"
+      id: sarif
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: ${{github.workspace}}/results
+        token: ${{github.token}}
+        wait-for-processing: true
+
+    - if: inputs.REPO_VISIBILITY == 'public' && env.SARIF_HASH != ''
+      name: "Sarif Upload Summary"
+      uses: actions/github-script@v7.0.1
+      with:
+        script: |
+          core.info('Sarif Upload Completed');
+          core.notice('sarifId: ${{steps.sarif.outputs.sarif-id}}');

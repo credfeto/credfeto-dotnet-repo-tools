@@ -1,0 +1,309 @@
+name: "PR: Lint"
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, ready_for_review, unlocked]
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+
+env:
+  HEAD_REF: ${{github.head_ref}}
+  BASE_REF: ${{github.base_ref}}
+jobs:
+  info:
+    if: endsWith(github.repository, '-template')
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - name: "Info"
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            core.info('Branch: ${{env.HEAD_REF}}');
+            core.info('Base Branch: ${{env.BASE_REF}}');
+            core.info('Repo: ${{github.repository}}');
+            core.info('Owner: ${{github.repository_owner}}');
+
+#  include-JIRA-ticket:
+#    if: github.event.pull_request.draft == false
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: "Initialise Workspace"
+#        shell: bash
+#        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+#      - name: "Checkout Source"
+#        uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 0
+#      - if: |-
+#          !endsWith(github.repository, '-template')
+#          && !startsWith(github.head_ref, 'release/')
+#          && !startsWith(github.head_ref, 'hotfix/')
+#        uses: seferov/pr-lint-action@v1.2.0
+#        with:
+#          title-regex: '^\[FF\-\d*?\](:)?(\ )'
+#          error-message: 'Add Jira Ticket ID to your title'
+
+  include-changelog-entry:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
+        shell: bash
+        run: echo "CHANGES=$(git diff --exit-code --no-patch --merge-base origin/main CHANGELOG.md 2> /dev/null && echo 0 || echo $?)" >> "$GITHUB_ENV"
+      - if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template')) && env.CHANGES == '0'
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            core.setFailed('Changelog has not changed')
+
+  change-log-entry-is-in-unreleased:
+    if: github.event.pull_request.draft == false
+    # As LibGit2Sharp doesn't work on 20.04
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - name: "Checkout Source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: "Get version from global.json"
+        if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
+        uses: credfeto/action-dotnet-version-detect@v1.3.0
+        with:
+          file: src/global.json
+          fallback: 8.0.*
+      - name: "Install dotnet"
+        if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
+        uses: actions/setup-dotnet@v4.0.0
+        env:
+          GITHUB_TOKEN: ${{secrets.SOURCE_PUSH_TOKEN}}
+          DDOTNET_ROOT: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+          DOTNET_INSTALL_DIR: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+          DOTNET_MULTILEVEL_LOOKUP: "false"
+          DOTNET_NOLOGO: "true"
+          DOTNET_PRINT_TELEMETRY_MESSAGE: "false"
+          DOTNET_ReadyToRun: "0"
+          DOTNET_TC_QuickJitForLoops: "1"
+          DOTNET_TieredPGO: "1"
+        with:
+          dotnet-version: |
+            6.0.*
+            7.0.*
+            8.0.*
+            ${{env.DOTNET_VERSION}}
+      - name: "Check Runner details"
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            core.info('Name: ${{runner.name}}');
+            core.info('OS: ${{runner.os}}');
+      - name: "Enable Local nuget feeds if caching"
+        if: startsWith(runner.name, 'buildagent-')
+        id: nuget-local-cache
+        shell: bash
+        run: |
+          {
+            echo "NUGET_BAGET_CACHE=${{vars.NUGET_BAGET_CACHE}}"
+            echo "PRERELEASE_BAGET_CACHE=${{vars.PRERELEASE_BAGET_CACHE}}"
+            echo "RELEASE_BAGET_CACHE=${{vars.RELEASE_BAGET_CACHE}}"
+          }>> "$GITHUB_OUTPUT"
+      - name: "Configure nuget feeds"
+        if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
+        uses: ./.github/actions/nuget
+        with:
+          NUGET_PUBLIC_RESTORE_FEED_CACHE: ${{steps.nuget-local-cache.outputs.NUGET_BAGET_CACHE}}
+          NUGET_PUBLIC_RESTORE_FEED: ${{vars.NUGET_PUBLIC_RESTORE_FEED}}
+          NUGET_ADDITIONAL_RESTORE_FEED_RELEASE_CACHE: ${{steps.nuget-local-cache.outputs.RELEASE_BAGET_CACHE}}
+          NUGET_ADDITIONAL_RESTORE_FEED_PRERELEASE_CACHE: ""
+          NUGET_ADDITIONAL_RESTORE_FEED_RELEASE: ${{vars.NUGET_ADDITIONAL_RESTORE_FEED_RELEASE}}
+          NUGET_ADDITIONAL_RESTORE_FEED_PRERELEASE: ""
+      - name: "Enable dotnet tools"
+        if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
+        shell: bash
+        run: dotnet new tool-manifest
+        env:
+          DDOTNET_ROOT: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+          DOTNET_INSTALL_DIR: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+          DOTNET_MULTILEVEL_LOOKUP: "false"
+          DOTNET_NOLOGO: "true"
+          DOTNET_PRINT_TELEMETRY_MESSAGE: "false"
+          DOTNET_ReadyToRun: "0"
+          DOTNET_TC_QuickJitForLoops: "1"
+          DOTNET_TieredPGO: "1"
+      - name: "Install Changelog tool"
+        if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
+        uses: ./.github/actions/dotnet-tool
+        with:
+          TOOL_NAME: Credfeto.ChangeLog.Cmd
+      - name: "Check Changelog"
+        if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
+        shell: bash
+        run: dotnet changelog --changelog CHANGELOG.md --check-insert "origin/${{github.base_ref}}"
+        env:
+          DDOTNET_ROOT: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+          DOTNET_INSTALL_DIR: "${{github.workspace}}/.dotnet/${{github.sha}}-${{github.run_id}}-${{github.run_number}}-${{github.run_attempt}}"
+          DOTNET_MULTILEVEL_LOOKUP: "false"
+          DOTNET_NOLOGO: "true"
+          DOTNET_PRINT_TELEMETRY_MESSAGE: "false"
+          DOTNET_ReadyToRun: "0"
+          DOTNET_TC_QuickJitForLoops: "1"
+          DOTNET_TieredPGO: "1"
+
+  does-not-contain-secrets:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - name: "Checkout Source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: "Check for leaks"
+        uses: DariuszPorowski/github-action-gitleaks@v2.0.9
+        id: gitleaks
+        with:
+          config: .gitleaks.toml
+          report_format: "sarif"
+          fail: true
+          redact: true
+          verbose: true
+          log_level: info
+
+  has-no-merge-conflicts:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - name: "Checkout Source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: "Check for merge conflicts"
+        uses: olivernybroe/action-conflict-finder@v4.0
+
+  has-no-file-or-folder-case-sensitivity-issues:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - name: "Checkout Source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: "Check for case conflicts"
+        uses: credfeto/action-case-checker@v1.3.0
+
+  no-ignored-files:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - name: "Checkout Source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: "Check for ignored files"
+        uses: credfeto/action-no-ignored-files@v1.2.0
+
+  dependency-review:
+    # Check that there are no dependencies with security problems in the PR
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - uses: credfeto/action-repo-visibility@v1.2.0
+        id: visibility
+        with:
+          # optional parameter defaults to the current repo
+          repository: ${{github.repository}}
+          # optional parameter defaults to the current user
+          token: ${{github.token}}
+      - name: "Checkout Source"
+        if: steps.visibility.outputs.is_public == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 'Dependency Review'
+        if: steps.visibility.outputs.is_public == 'true'
+        uses: actions/dependency-review-action@v3.1.4
+
+  no-merge-commits:
+    # Check that there are no merge commits in the PR
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - name: "Checkout Source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: "Check for merge commits"
+        uses: greenled/no-merge-commits-check@v1.0.1
+
+  lint-code:
+    if: |-
+      github.event.pull_request.draft == false &&
+      ( !startsWith(github.head_ref, 'release/') && !startsWith(github.head_ref, 'hotfix/') )
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - name: "Checkout Source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: "Run Linter"
+        uses: github/super-linter@v5.0.0
+        env:
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{secrets.SOURCE_PUSH_TOKEN}}
+          MULTI_STATUS: true
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_ANSIBLE: true
+          VALIDATE_BASH: true
+          VALIDATE_CSS: true
+          VALIDATE_ENV: true
+          VALIDATE_DOCKERFILE: true
+          VALIDATE_DOCKERFILE_HADOLINT: true
+          VALIDATE_GITHUB_ACTIONS: true
+          VALIDATE_JSON: true
+          VALIDATE_MD: true
+          VALIDATE_POWERSHELL: true
+          VALIDATE_PYTHON: true
+          VALIDATE_PYTHON_PYLINT: true
+          VALIDATE_SQL: true
+          VALIDATE_TYPESCRIPT_ES: true
+          VALIDATE_XML: true
+          VALIDATE_YAML: true
+

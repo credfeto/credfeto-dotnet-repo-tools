@@ -1,0 +1,243 @@
+name: "PR: Find branches without PR's"
+
+on:
+  push:
+    branches:
+      - "main"
+    paths:
+      - ".github/workflows/create-prs-for-stale-branches.yml"
+  schedule:
+    - cron: "0 1 * * *"
+
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: false
+
+jobs:
+  build-matrix:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - name: "Info"
+        shell: bash
+        run: |
+          echo "Repo: ${{github.repository}}"
+          echo "Owner: ${{github.repository_owner}}"
+
+      - name: "Ensure JQ is installed"
+        shell: bash
+        run: sudo apt install -y jq
+      - name: "Checkout Source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+          repository: ${{github.repository}}
+
+      - name: "Create matrix of branches"
+        id: set-matrix
+        shell: bash
+        run: |
+          echo "branches=$(git branch --remote --format='%(refname:short)' | grep -Po 'origin/\K[^*]*' | grep -vE 'HEAD|release/|hotfix/' | jq -R -s -c 'split("\n")[:-1]')" >> "$GITHUB_OUTPUT"
+    outputs:
+      branches: ${{steps.set-matrix.outputs.branches}}
+
+  check-branch:
+    needs: build-matrix
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    strategy:
+      matrix:
+        branch: ${{fromJson(needs.build-matrix.outputs.branches)}}
+    env:
+      BRANCH: ${{matrix.branch}}
+      CREATE_DRAFT: true
+      REPO_STATUS: private
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - name: "Checkout Source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+          repository: ${{github.repository}}
+
+      - name: "Check Repo Visibility"
+        if: github.repository_owner != 'funfair-tech'
+        uses: credfeto/action-repo-visibility@v1.2.0
+        id: visibility
+        with:
+          repository: ${{github.repository}}
+          token: ${{secrets.GITHUB_TOKEN}}
+
+      - name: "Override DRAFT Flag"
+        if: github.repository_owner != 'funfair-tech' && env.REPO_STATUS == 'private'
+        shell: bash
+        run: echo "CREATE_DRAFT=false" >> "$GITHUB_ENV"
+
+      - name: "Branch Detection"
+        id: detection
+        shell: bash
+        run: |
+          echo "defaultbranch=$(git remote show origin | grep -Po 'HEAD\sbranch:\s+\K[^.*]*')" >> "$GITHUB_OUTPUT"
+          echo "DEFAULT_BRANCH=$(git remote show origin | grep -Po 'HEAD\sbranch:\s+\K[^.*]*')" >> "$GITHUB_ENV"
+
+      # On Default branch
+      - name: "On Default Branch"
+        if: steps.detection.outputs.defaultbranch == matrix.branch
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            core.info("On Default branch - don't do anything");
+
+      # On Non-Default branch
+      - name: "On Non-Default branch"
+        if: steps.detection.outputs.defaultbranch != matrix.branch
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            core.info('On non-default branch');
+
+      - name: "Find Existing PR"
+        if: steps.detection.outputs.defaultbranch != matrix.branch
+        uses: juliangruber/find-pull-request-action@v1.8.0
+        id: find-pull-request
+        with:
+          branch: "${{env.BRANCH}}"
+
+      - name: "Display Found PR"
+        if: steps.detection.outputs.defaultbranch != matrix.branch
+        shell: bash
+        run: echo "Pull Request ${{steps.find-pull-request.outputs.number}} (${{steps.find-pull-request.outputs.head-sha}})"
+      - name: "Check Branch Status"
+        if: steps.detection.outputs.defaultbranch != matrix.branch && steps.find-pull-request.outputs.number == ''
+        shell: bash
+        run:
+          echo "Check to see if ${{env.DEFAULT_BRANCH}} is ahead or behind ${{matrix.branch}}..."
+          git rev-list --left-right --count "origin/${{env.DEFAULT_BRANCH}}...origin/${{matrix.branch}}"
+          git rev-list --left-right --count "origin/${{env.DEFAULT_BRANCH}}...origin/${{matrix.branch}}" | awk '{ print "${{env.BRANCH}} is behind ${{env.DEFAULT_BRANCH}} by "$1" commit(s)" }'
+          git rev-list --left-right --count "origin/${{env.DEFAULT_BRANCH}}...origin/${{matrix.branch}}" | awk '{ print "${{matrix.BRANCH}} is ahead of ${{env.DEFAULT_BRANCH}} by "$2" commit(s)" }'
+        env:
+          DEFAULT_BRANCH: ${{steps.detection.outputs.defaultbranch}}
+      - name: "Get last update time of branch"
+        if: steps.detection.outputs.defaultbranch != matrix.branch && steps.find-pull-request.outputs.number == ''
+        id: lastupdate
+        shell: bash
+        run: echo "time=$(git log -1 --format=@%ct origin/${{env.BRANCH}})" >> "$GITHUB_OUTPUT"
+
+      - name: "Check Ahead and Behind Status"
+        if: steps.detection.outputs.defaultbranch != matrix.branch && steps.find-pull-request.outputs.number == ''
+        id: aheadbehind
+        shell: bash
+        run: >
+          { \
+            git rev-list --left-right --count "origin/${{env.DEFAULT_BRANCH}}...origin/${{env.BRANCH}}" \
+              | awk '{ print "behind="$1 }' ; \
+            git rev-list --left-right --count "origin/${{env.DEFAULT_BRANCH}}...origin/${{env.BRANCH}}" \
+              | awk '{ print "ahead="$2 }' ; \
+            echo "dayssinceupdate=$((($(date +%s)-$(date +%s --date ${{env.LAST_UPDATE}}))/(3600*24)))" ; \
+            echo "COMMIT_MSG=$(git log -1 --pretty=%B "${{env.ORIGIN_DEFAULT_BRANCH}}")" ; \
+          } >> "$GITHUB_OUTPUT"
+        env:
+          DEFAULT_BRANCH: ${{steps.detection.outputs.defaultbranch}}
+          ORIGIN_DEFAULT_BRANCH: origin/${{steps.detection.outputs.defaultbranch}}
+          LAST_UPDATE: ${{steps.lastupdate.outputs.time}}
+
+      # Non-default - ahead of default branch, and no -re-existing PR then create one.
+      - name: "Read PR Template"
+        if: |-
+          steps.detection.outputs.defaultbranch != matrix.branch
+          && steps.find-pull-request.outputs.number == ''
+          && steps.aheadbehind.outputs.ahead != 0
+          && steps.aheadbehind.outputs.dayssinceupdate > 7
+        id: pr-template
+        uses: juliangruber/read-file-action@v1.1.6
+        with:
+          path: ./.github/PULL_REQUEST_TEMPLATE.md
+
+      - name: "Create PR"
+        if: |-
+          steps.detection.outputs.defaultbranch != matrix.branch
+          && steps.find-pull-request.outputs.number == ''
+          && steps.aheadbehind.outputs.ahead != 0
+          && steps.aheadbehind.outputs.dayssinceupdate > 7
+        id: open-pr
+        uses: repo-sync/pull-request@v2.12
+        with:
+          source_branch: ${{matrix.branch}}       # If blank, default: triggered branch
+          destination_branch: ${{steps.detection.outputs.defaultbranch}}            # If blank, default: master
+          pr_assignee: "${{github.actor}}"    # Comma-separated list (no spaces)
+          pr_label: "auto-pr,stale"             # Comma-separated list (no spaces)
+          pr_draft: ${{env.CREATE_DRAFT}}                        # Creates pull request as draft
+          pr_title: "${{steps.aheadbehind.outputs.COMMIT_MSG}} [No commits for ${{steps.aheadbehind.outputs.dayssinceupdate}} days]"
+          pr_body: "${{steps.pr-template.outputs.content}}"
+          github_token: ${{github.token}}
+
+      - name: "New PR Details"
+        if: |-
+          steps.detection.outputs.defaultbranch != matrix.branch
+          && steps.find-pull-request.outputs.number == ''
+          && steps.aheadbehind.outputs.ahead != 0
+          && steps.aheadbehind.outputs.dayssinceupdate > 7
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            core.info('URL: ${{steps.open-pr.outputs.pr_url}}');
+            core.info('PR: ${{steps.open-pr.outputs.pr_number}}');
+            core.info('CF: ${{steps.open-pr.outputs.has_changed_files}}');
+
+      - name: "Update PR Labels"
+        if: steps.open-pr.outputs.pr_number != ''
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{secrets.SOURCE_PUSH_TOKEN}}
+          configuration-path: .github/labeler.yml
+          sync-labels: true
+          pr-number: ${{steps.open-pr.outputs.pr_number}}
+
+      - name: "Rebase"
+        if: |-
+          steps.detection.outputs.defaultbranch != matrix.branch
+          && steps.find-pull-request.outputs.number == ''
+          && steps.aheadbehind.outputs.behind != 0
+          && steps.aheadbehind.outputs.ahead != 0
+          && steps.aheadbehind.outputs.dayssinceupdate > 7
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            core.info('Rebase?');
+
+      - name: "Delete Branch"
+        if: |-
+          steps.detection.outputs.defaultbranch != matrix.branch
+          && steps.find-pull-request.outputs.number == ''
+          && steps.aheadbehind.outputs.ahead == '0'
+          && steps.aheadbehind.outputs.dayssinceupdate > 60
+        uses: dawidd6/action-delete-branch@v3.1.0
+        with:
+          github_token: ${{secrets.SOURCE_PUSH_TOKEN}}
+          branches: ${{matrix.branch}}
+
+      - name: "Statistics"
+        if: |-
+          steps.detection.outputs.defaultbranch != matrix.branch
+          && steps.find-pull-request.outputs.number == ''
+        uses: actions/github-script@v7.0.1
+        with:
+          script: |
+            core.info('Ahead: ${{steps.aheadbehind.outputs.ahead}}');
+            core.info('Behind: ${{steps.aheadbehind.outputs.behind}}');
+            core.info('Last Commit: ${{steps.aheadbehind.outputs.dayssinceupdate}} days ago');
+

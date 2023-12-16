@@ -1,0 +1,35 @@
+name: TODO
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+
+permissions:
+  issues: write
+  repository-projects: read
+  contents: read
+
+jobs:
+  todos:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: derjuulsn/todo-issue@main
+        with:
+          excludePattern: '(node_modules/)'
+          autoAssign: 'true'
+          keywords: 'TODO'
+          blobLines: 7
+          blobLinesBefore: 2
+          caseSensitive: false
+          label: true
+          reopenClosed: true
+
+        env:
+          GITHUB_TOKEN: ${{secrets.SOURCE_PUSH_TOKEN}}

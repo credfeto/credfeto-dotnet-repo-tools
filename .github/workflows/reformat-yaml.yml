@@ -1,0 +1,49 @@
+name: "Standardise: YAML format"
+
+on:
+  push:
+    branches-ignore:
+      - "release/*"
+      - "hotfix/*"
+    paths:
+      - '**.yml'
+      - '**.yaml'
+
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  standardise-yaml-files:
+
+    if: |-
+      github.event.pull_request.draft == false
+      && ( !startsWith(github.head_ref, 'release/')
+      && !startsWith(github.head_ref, 'hotfix/') )
+      && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Initialise Workspace"
+        shell: bash
+        run: sudo chown -R "$USER:$USER" "$GITHUB_WORKSPACE"
+      - name: "Checkout Source"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{secrets.SOURCE_PUSH_TOKEN}}
+      - name: "Reformat"
+        uses: credfeto/action-yaml-format@v1.3.2
+      - name: "Commit Changes"
+        uses: stefanzweifel/git-auto-commit-action@v5.0.0
+        with:
+          commit_message: "[Reformat] YAML Files to common format"
+          file_pattern: "*.yml"
+          commit_user_name: "fun-ymlfmt[bot]"
+          commit_user_email: "credfeto@users.noreply.github.com"
+          commit_author: "fun-ymlfmt[bot] <credfeto@users.noreply.github.com>"
+          skip_dirty_check: false
+
