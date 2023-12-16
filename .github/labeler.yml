@@ -32,3 +32,9 @@
  - any: [ './**/*.md' ]
 "github-actions":
  - any: [ '.github/workflows/*.yml' ]
+"Credfeto.Dotnet.Repo.Git":
+ - any: [ 'src/Credfeto.Dotnet.Repo.Git/**/*' ]
+"Credfeto.Dotnet.Repo.Git.Tests":
+ - any: [ 'src/Credfeto.Dotnet.Repo.Git.Tests/**/*' ]
+"Cmd":
+ - any: [ 'src/Credfeto.Dotnet.Repo.Tools.Cmd/**/*' ]
