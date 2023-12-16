@@ -11,5 +11,9 @@ ProjectSection(SolutionItems) = preProject
 	..\README.md = ..\README.md
 EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.Dotnet.Repo.Tools.Cmd", "Credfeto.Dotnet.Repo.Tools.Cmd\Credfeto.Dotnet.Repo.Tools.Cmd.csproj", "{2483BF4F-3827-4366-8FE0-A0D81592FCBC}"
+EndProject
 Global
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+	EndGlobalSection
 EndGlobal
