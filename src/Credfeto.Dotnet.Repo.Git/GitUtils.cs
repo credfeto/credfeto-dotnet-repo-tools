@@ -31,12 +31,12 @@ public static class GitUtils
 
         if (Directory.Exists(repoDir))
         {
-            return OpenRepository(workDir);
+            return OpenRepository(repoDir);
 
             // TODO: Also switch to main & fetch
         }
 
-        return CloneRepository(workDir: workDir, repoUrl: repoUrl);
+        return CloneRepository(workDir: repoDir, repoUrl: repoUrl);
     }
 
     public static string GetDefaultBranch(Repository repo, string upstream = "origin")
@@ -53,7 +53,7 @@ public static class GitUtils
 
         Branch headBranch = repo.Branches.FirstOrDefault(IsHeadBranch) ?? throw new GitException($"Failed to find remote branches for {upstream}");
         string target = headBranch.Reference.TargetIdentifier ?? throw new GitException($"Failed to find remote branches for {upstream}");
-        string prefix = "refs/heads/" + upstream + "/";
+        string prefix = string.Concat(str0: "refs/remotes/", str1: upstream, str2: "/");
 
         if (target.StartsWith(value: prefix, comparisonType: StringComparison.Ordinal))
         {

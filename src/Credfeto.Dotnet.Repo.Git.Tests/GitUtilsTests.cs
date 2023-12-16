@@ -39,7 +39,7 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
             this.Output.WriteLine($"Repo: {repo.Info.Path}");
 
             string branch = GitUtils.GetDefaultBranch(repo);
-            this.Output.WriteLine($"Default Repo: {branch}");
+            this.Output.WriteLine($"Default Branch: {branch}");
         }
     }
 }
