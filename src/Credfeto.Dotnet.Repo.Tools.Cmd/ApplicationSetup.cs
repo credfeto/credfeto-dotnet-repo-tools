@@ -1,4 +1,5 @@
 using System;
+using Credfeto.Date;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Services;
 using Credfeto.Package;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,7 @@ internal static class ApplicationSetup
         return new ServiceCollection().AddSingleton<ILogger>(logger)
                                       .AddSingleton<IDiagnosticLogger>(logger)
                                       .AddSingleton(typeof(ILogger<>), typeof(LoggerProxy<>))
+                                      .AddDate()
                                       .AddPackageUpdater()
                                       .BuildServiceProvider();
     }
