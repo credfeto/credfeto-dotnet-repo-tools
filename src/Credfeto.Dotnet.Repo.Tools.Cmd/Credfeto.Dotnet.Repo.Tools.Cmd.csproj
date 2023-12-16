@@ -27,7 +27,7 @@
     <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     <TieredCompilation>true</TieredCompilation>
     <TieredPGO>true</TieredPGO>
-    <ToolCommandName>updatepackages</ToolCommandName>
+    <ToolCommandName>updaterepo</ToolCommandName>
     <TreatSpecificWarningsAsErrors/>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <UseSystemResourceKeys>true</UseSystemResourceKeys>
@@ -64,6 +64,7 @@
     <PackageReference Include="CommandLineParser" Version="2.9.1"/>
     <PackageReference Include="Credfeto.Enumeration.Source.Generation.Attributes" Version="1.1.1.168"/>
     <PackageReference Include="Credfeto.Extensions.Linq" Version="1.0.12.90"/>
+    <PackageReference Include="Credfeto.Package" Version="1.10.41.233"/>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0"/>
   </ItemGroup>
   <ItemGroup>
