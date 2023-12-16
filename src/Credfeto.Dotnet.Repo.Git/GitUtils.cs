@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Linq;
 using Credfeto.Dotnet.Repo.Git.Exceptions;
 using LibGit2Sharp;
 
@@ -35,6 +37,35 @@ public static class GitUtils
         }
 
         return CloneRepository(workDir: workDir, repoUrl: repoUrl);
+    }
+
+    public static string GetDefaultBranch(Repository repo, string upstream = "origin")
+    {
+        // Log -message "Git-GetDefaultBranch: $repoPath ($upstream)"
+        //
+        //     [string]$repoPath = GetRepoPath -repoPath $repoPath
+        //
+        //     [string[]]$result = git -C $repoPath remote show $upstream 2>&1
+        //
+        //     [string] $branch =  $result | Select-String -Pattern 'HEAD branch: (.*)' -CaseSensitive | %{$_.Matches.Groups[1].value}
+        //
+        // return $branch.Trim()
+
+        Branch headBranch = repo.Branches.FirstOrDefault(IsHeadBranch) ?? throw new GitException($"Failed to find remote branches for {upstream}");
+        string target = headBranch.Reference.TargetIdentifier ?? throw new GitException($"Failed to find remote branches for {upstream}");
+        string prefix = "refs/heads/" + upstream + "/";
+
+        if (target.StartsWith(value: prefix, comparisonType: StringComparison.Ordinal))
+        {
+            return target.Substring(prefix.Length);
+        }
+
+        throw new GitException($"Failed to find HEAD branch for remote {upstream}");
+
+        bool IsHeadBranch(Branch branch)
+        {
+            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) && StringComparer.Ordinal.Equals(x: branch.UpstreamBranchCanonicalName, y: "refs/heads/HEAD");
+        }
     }
 
     private static Repository CloneRepository(string workDir, string repoUrl)
