@@ -126,3 +126,11 @@
    color: "96f7d2"
    description: "Changes in Credfeto.Dotnet.Repo.Tools.Cmd project"
 
+ - name: "Credfeto.Dotnet.Repo.Tracking"
+   color: "96f7d2"
+   description: "Changes in Credfeto.Dotnet.Repo.Tracking project"
+
+ - name: "Credfeto.Dotnet.Repo.Tracking.Tests"
+   color: "0e8a16"
+   description: "Changes in Credfeto.Dotnet.Repo.Tracking.Tests project"
+
