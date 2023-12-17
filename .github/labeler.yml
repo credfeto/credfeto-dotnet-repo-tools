@@ -38,3 +38,7 @@
  - any: [ 'src/Credfeto.Dotnet.Repo.Git.Tests/**/*' ]
 "Cmd":
  - any: [ 'src/Credfeto.Dotnet.Repo.Tools.Cmd/**/*' ]
+"Credfeto.Dotnet.Repo.Tracking":
+ - any: [ 'src/Credfeto.Dotnet.Repo.Tracking/**/*' ]
+"Credfeto.Dotnet.Repo.Tracking.Tests":
+ - any: [ 'src/Credfeto.Dotnet.Repo.Tracking.Tests/**/*' ]
