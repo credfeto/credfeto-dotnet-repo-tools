@@ -18,8 +18,6 @@ public static class GitUtils
 
     private static readonly CloneOptions GitCloneOptions = new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
 
-    private static readonly PushOptions GitPushOptions = new();
-
     private static readonly CommitOptions GitCommitOptions = new() { AllowEmptyCommit = false, AmendPreviousCommit = false };
 
     public static string GetFolderForRepo(string repoUrl)
@@ -213,11 +211,13 @@ public static class GitUtils
     public static async ValueTask PushAsync(Repository repo, CancellationToken cancellationToken)
     {
         await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, arguments: "push", cancellationToken: cancellationToken);
+        Console.WriteLine("Pushed!");
     }
 
     public static async ValueTask PushOriginAsync(Repository repo, string branchName, string upstream, CancellationToken cancellationToken)
     {
         await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, $"--set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
+        Console.WriteLine("Pushed!");
     }
 
     public static bool DoesBranchExist(Repository repo, string branchName, string upstream = UPSTREAM)
@@ -249,13 +249,13 @@ public static class GitUtils
         return repo.Submodules.Any();
     }
 
-    public static void RemoveBranchesForPrefix(Repository repo, string branchForUpdate, string branchPrefix, string upstream)
+    public static async ValueTask RemoveBranchesForPrefixAsync(Repository repo, string branchForUpdate, string branchPrefix, string upstream, CancellationToken cancellationToken)
     {
         IReadOnlyList<Branch> branchesToRemove = [..repo.Branches.Where(IsMatchingBranch)];
 
         foreach (Branch branch in branchesToRemove)
         {
-            DeleteBranch(repo, branch.FriendlyName);
+            await DeleteBranchAsync(repo: repo, branch: branch.FriendlyName, upstream: upstream, cancellationToken: cancellationToken);
         }
 
         bool IsCurrentBranch(Branch branch)
