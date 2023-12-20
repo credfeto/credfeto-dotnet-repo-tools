@@ -153,7 +153,7 @@ internal static class Program
             return;
         }
 
-        await packageCache.LoadAsync(fileName: packageCacheFile, cancellationToken: cancellationToken);
+        await packageCache.SaveAsync(fileName: packageCacheFile, cancellationToken: cancellationToken);
     }
 
     private static ValueTask LoadTrackingCacheAsync(string? trackingFile, ITrackingCache trackingCache, in CancellationToken cancellationToken)

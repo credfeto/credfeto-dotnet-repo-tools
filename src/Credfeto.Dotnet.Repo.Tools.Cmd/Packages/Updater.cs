@@ -92,7 +92,7 @@ internal static class Updater
         PackageMatch packageMatch = new(PackageId: package.PackageId, Prefix: !package.ExactMatch);
         Console.WriteLine($"Including {packageMatch.PackageId} (Using Prefix match: {packageMatch.Prefix})");
 
-        IReadOnlyList<PackageMatch> excludedPackages = GetExcludedPackages(package.Exclude);
+        IReadOnlyList<PackageMatch> excludedPackages = GetExcludedPackages(package.Exclude ?? Array.Empty<PackageExclude>());
 
         return new(PackageMatch: packageMatch, ExcludedPackages: excludedPackages);
     }
