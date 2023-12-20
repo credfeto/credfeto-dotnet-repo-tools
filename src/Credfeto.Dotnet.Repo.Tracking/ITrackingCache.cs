@@ -5,9 +5,9 @@ namespace Credfeto.Dotnet.Repo.Tracking;
 
 public interface ITrackingCache
 {
-    Task LoadAsync(string fileName, CancellationToken cancellationToken);
+    ValueTask LoadAsync(string fileName, CancellationToken cancellationToken);
 
-    Task SaveAsync(string fileName, CancellationToken cancellationToken);
+    ValueTask SaveAsync(string fileName, CancellationToken cancellationToken);
 
     string? Get(string repoUrl);
 

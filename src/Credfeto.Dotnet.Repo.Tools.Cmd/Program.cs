@@ -9,6 +9,7 @@ using CommandLine;
 using Credfeto.Dotnet.Repo.Git;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Exceptions;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
+using Credfeto.Dotnet.Repo.Tracking;
 using Credfeto.Package;
 using Credfeto.Package.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
@@ -95,31 +96,87 @@ internal static class Program
             }
 
             IPackageCache packageCache = services.GetRequiredService<IPackageCache>();
+            ITrackingCache trackingCache = services.GetRequiredService<ITrackingCache>();
 
-            if (!string.IsNullOrWhiteSpace(options.Cache) && File.Exists(options.Cache))
-            {
-                await packageCache.LoadAsync(fileName: options.Cache, cancellationToken: cancellationToken);
-            }
+            await LoadPackageCacheAsync(packageCacheFile: options.Cache, packageCache: packageCache, cancellationToken: cancellationToken);
+            await LoadTrackingCacheAsync(trackingFile: options.Tracking, trackingCache: trackingCache, cancellationToken: cancellationToken);
 
-            // TODO: Load Packages file
             string filename = options.Packages;
             IReadOnlyList<PackageUpdate> packages = await LoadPackageUpdateConfigAsync(filename: filename, cancellationToken: cancellationToken);
 
             IDiagnosticLogger logging = services.GetRequiredService<IDiagnosticLogger>();
             IPackageUpdater packageUpdater = services.GetRequiredService<IPackageUpdater>();
 
-            await Updater.UpdateRepositoriesAsync(workFolder: options.Work,
-                                                  options.Source?.ToArray() ?? Array.Empty<string>(),
-                                                  cacheFile: options.Cache,
-                                                  repos: repos,
-                                                  logging: logging,
-                                                  packages: packages,
-                                                  packageUpdater: packageUpdater,
-                                                  cancellationToken: cancellationToken,
-                                                  packageCache: packageCache);
+            try
+            {
+                await Updater.UpdateRepositoriesAsync(workFolder: options.Work,
+                                                      options.Source?.ToArray() ?? Array.Empty<string>(),
+                                                      cacheFile: options.Cache,
+                                                      repos: repos,
+                                                      logging: logging,
+                                                      packages: packages,
+                                                      packageUpdater: packageUpdater,
+                                                      cancellationToken: cancellationToken,
+                                                      packageCache: packageCache);
+            }
+            finally
+            {
+                await SavePackageCacheAsync(packageCacheFile: options.Cache, packageCache: packageCache, cancellationToken: cancellationToken);
+                await SaveTrackingCacheAsync(trackingFile: options.Tracking, trackingCache: trackingCache, cancellationToken: cancellationToken);
+            }
         }
 
         throw new InvalidOptionsException();
+    }
+
+    private static ValueTask SaveTrackingCacheAsync(string? trackingFile, ITrackingCache trackingCache, in CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(trackingFile))
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        return trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
+    }
+
+    private static async ValueTask SavePackageCacheAsync(string? packageCacheFile, IPackageCache packageCache, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(packageCacheFile))
+        {
+            return;
+        }
+
+        await packageCache.LoadAsync(fileName: packageCacheFile, cancellationToken: cancellationToken);
+    }
+
+    private static ValueTask LoadTrackingCacheAsync(string? trackingFile, ITrackingCache trackingCache, in CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(trackingFile))
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        if (!File.Exists(trackingFile))
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        return trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: cancellationToken);
+    }
+
+    private static async ValueTask LoadPackageCacheAsync(string? packageCacheFile, IPackageCache packageCache, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(packageCacheFile))
+        {
+            return;
+        }
+
+        if (!File.Exists(packageCacheFile))
+        {
+            return;
+        }
+
+        await packageCache.LoadAsync(fileName: packageCacheFile, cancellationToken: cancellationToken);
     }
 
     private static async Task<IReadOnlyList<PackageUpdate>> LoadPackageUpdateConfigAsync(string filename, CancellationToken cancellationToken)

@@ -59,6 +59,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Credfeto.Dotnet.Repo.Git\Credfeto.Dotnet.Repo.Git.csproj"/>
+    <ProjectReference Include="..\Credfeto.Dotnet.Repo.Tracking\Credfeto.Dotnet.Repo.Tracking.csproj"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1"/>

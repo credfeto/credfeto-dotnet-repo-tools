@@ -29,7 +29,7 @@ public sealed class TrackingCache : ITrackingCache
         this._changed = false;
     }
 
-    public async Task LoadAsync(string fileName, CancellationToken cancellationToken)
+    public async ValueTask LoadAsync(string fileName, CancellationToken cancellationToken)
     {
         this._logger.LoadingCache(fileName);
 
@@ -47,11 +47,11 @@ public sealed class TrackingCache : ITrackingCache
         }
     }
 
-    public Task SaveAsync(string fileName, CancellationToken cancellationToken)
+    public async ValueTask SaveAsync(string fileName, CancellationToken cancellationToken)
     {
         if (!this._changed)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         this._logger.SavingCache(fileName);
@@ -60,7 +60,7 @@ public sealed class TrackingCache : ITrackingCache
 
         string content = JsonSerializer.Serialize(value: toWrite, jsonTypeInfo: this._typeInfo);
 
-        return File.WriteAllTextAsync(path: fileName, contents: content, cancellationToken: cancellationToken);
+        await File.WriteAllTextAsync(path: fileName, contents: content, cancellationToken: cancellationToken);
     }
 
     public string? Get(string repoUrl)

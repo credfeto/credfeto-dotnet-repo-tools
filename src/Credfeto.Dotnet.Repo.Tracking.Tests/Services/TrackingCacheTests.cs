@@ -55,7 +55,8 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
     {
         string trackingFile = Path.Combine(path1: this.TempFolder, $"{Guid.NewGuid().ToString()}.json");
 
-        return Assert.ThrowsAsync<FileNotFoundException>(() => this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: CancellationToken.None));
+        return Assert.ThrowsAsync<FileNotFoundException>(() => this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: CancellationToken.None)
+                                                                   .AsTask());
     }
 
     [Fact]
@@ -64,7 +65,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         string trackingFile = Path.Combine(path1: this.TempFolder, $"{Guid.NewGuid().ToString()}.json");
         this.Output.WriteLine(trackingFile);
 
-        await File.WriteAllTextAsync(trackingFile, "{}", CancellationToken.None);
+        await File.WriteAllTextAsync(path: trackingFile, contents: "{}", cancellationToken: CancellationToken.None);
 
         await this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: CancellationToken.None);
 
@@ -82,7 +83,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         string trackingFile = Path.Combine(path1: this.TempFolder, $"{Guid.NewGuid().ToString()}.json");
         this.Output.WriteLine(trackingFile);
 
-        await File.WriteAllTextAsync(trackingFile, "{\"Test1\":\"Hello World\",\"Test2\":\"Banana\"}", CancellationToken.None);
+        await File.WriteAllTextAsync(path: trackingFile, contents: "{\"Test1\":\"Hello World\",\"Test2\":\"Banana\"}", cancellationToken: CancellationToken.None);
 
         await this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: CancellationToken.None);
 
