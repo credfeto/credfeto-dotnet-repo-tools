@@ -184,27 +184,6 @@ public static class GitUtils
     {
         return repo.RetrieveStatus()
                    .IsDirty;
-
-/*
-     function Git-HasUnCommittedChanges {
-   param(
-       [string] $repoPath = $(throw "Git-HasUnCommittedChanges: repoPath not specified")
-       )
-
-       Log -message "Git-HasUnCommittedChanges: $repoPath"
-
-       [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-       [string[]]$result = git -C $repoPath diff --no-patch --exit-code 2>&1
-       if(!$?) {
-           Log-Batch -messages $result
-           return $true
-       }
-
-       Log-Batch -messages $result
-       return $false
-   }
- */
     }
 
     public static void Commit(Repository repo, string message, ICurrentTimeSource currentTimeSource)
@@ -215,140 +194,35 @@ public static class GitUtils
         Signature author = new(name: "Example", email: "example@example.com", currentTimeSource.UtcNow());
         Signature committer = author;
         repo.Commit(message: message, author: author, committer: committer, options: GitCommitOptions);
-
-        /* function Git-Commit {
-             param(
-                 [string] $repoPath = $(throw "Git-Commit: repoPath not specified"),
-                 [string] $message = $(throw "Git-Commit: message not specified")
-                 )
-
-                 Log -message "Git-Commit: $repoPath ($message)"
-
-                 [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-                 & git -C $repoPath add -A 2>&1 | Out-Null
-                 & git -C $repoPath commit -m"$message" 2>&1 | Out-Null
-             }
-            */
     }
 
-    public static void CommitNamed(Repository repo, string message, params string[] files)
+    public static void CommitNamed(Repository repo, string message, ICurrentTimeSource currentTimeSource, params string[] files)
     {
-        /*
-            function Git-Commit-Named {
-            param(
-                [string] $repoPath = $(throw "Git-Commit-Named: repoPath not specified"),
-                [string] $message = $(throw "Git-Commit-Named: message not specified"),
-                [String[]] $files = $(throw "Git-Commit-Named: files not specified")
-                )
+        foreach (string file in files)
+        {
+            repo.Index.Add(file);
+        }
 
-                Log -message "Git-Commit-Named: $repoPath ($message)"
+        repo.Index.Write();
 
-                [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-                foreach($file in $files) {
-                    [string]$fileUnix = $file.Replace("\", "/")
-                    Log -message "Staging $fileUnix"
-                    & git -C $repoPath add $fileUnix 2>&1 | Out-Null
-                }
-
-                & git -C $repoPath commit -m"$message" 2>&1 | Out-Null
-            }
-            */
+        Signature author = new(name: "Example", email: "example@example.com", currentTimeSource.UtcNow());
+        Signature committer = author;
+        repo.Commit(message: message, author: author, committer: committer, options: GitCommitOptions);
     }
 
-    public static void Push(Repository repo, string upstream = UPSTREAM)
+    public static async ValueTask PushAsync(Repository repo, CancellationToken cancellationToken)
     {
-        Remote remote = repo.Network.Remotes[upstream] ?? throw new GitException($"Could not find upstream origin {upstream}");
-
-        repo.Network.Push(remote: remote, remote.PushRefSpecs.Select(r => r.Specification), pushOptions: GitPushOptions);
-
-        /*
-            function Git-Push {
-           param(
-               [string] $repoPath = $(throw "Git-Push: repoPath not specified")
-               )
-
-               Log -message "Git-Push: $repoPath"
-
-               [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-               & git -C $repoPath push | Out-Null
-           }
-        */
+        await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, arguments: "push", cancellationToken: cancellationToken);
     }
 
-    public static void PushOrigin(Repository repo, string branchName, string upstream = UPSTREAM)
+    public static async ValueTask PushOriginAsync(Repository repo, string branchName, string upstream, CancellationToken cancellationToken)
     {
-        Remote remote = repo.Network.Remotes[upstream] ?? throw new GitException($"Could not find upstream origin {upstream}");
-
-        repo.Network.Push(remote: remote, remote.PushRefSpecs.Select(r => r.Specification), pushOptions: GitPushOptions);
-
-        /*
-
-           function Git-PushOrigin {
-           param(
-               [string] $repoPath = $(throw "Git-PushOrigin: repoPath not specified"),
-               [string] $branchName = $(throw "Git-PushOrigin: branchName not specified")
-               )
-
-               Log -message "Git-PushOrigin: $repoPath ($branchName)"
-
-               [string]$upstream = "origin";
-
-               Git-ValidateBranchName -branchName $branchName -method "Git-PushOrigin"
-
-               [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-               & git -C $repoPath push --set-upstream $upstream $branchName -v 2>&1 | Out-Null
-           }
-
-         */
+        await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, $"--set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
     }
 
     public static bool DoesBranchExist(Repository repo, string branchName, string upstream = UPSTREAM)
     {
         return repo.Branches.Any(b => StringComparer.Ordinal.Equals(x: b.FriendlyName, y: branchName));
-
-        /*
-         function Git-DoesBranchExist {
-           param(
-               [string] $repoPath = $(throw "Git-DoesBranchExist: repoPath not specified"),
-               [string] $branchName = $(throw "Git-DoesBranchExist: branchName not specified")
-               )
-
-               Log -message "Git-DoesBranchExist: $repoPath ($branchName)"
-
-               [string]$upstream = "origin";
-               [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-               [string]$defaultBranch = Git-GetDefaultBranch -repoPath $repoPath -upstream $upstream
-               [string]$upstreamBranch = "$upstream/$defaultBranch"
-
-               Git-ValidateBranchName -branchName $branchName -method "Git-DoesBranchExist"
-
-               [string[]]$result = git -C $repoPath branch --remote 2>&1
-
-               [string]$regex = $branchName.replace(".", "\.") + "$"
-
-               $result -match $regex
-               if($result -eq $null) {
-            return $false;
-               }
-
-               [string]$result = $result.Trim()
-               if($result -eq $branchName) {
-                   return $true
-               }
-
-               [string]$upstreamBranch = "$upstream/$branchName"
-               if($result -eq $upstreamBranch) {
-                   return $true
-               }
-
-               return $false
-           }
-         */
     }
 
     public static void CreateBranch(Repository repo, string branchName)
@@ -373,38 +247,37 @@ public static class GitUtils
     public static bool HasSubmodules(Repository repo)
     {
         return repo.Submodules.Any();
-        /*
-         function Git-HasSubmodules {
-               param(
-               [string] $repoPath = $(throw "Git-HasSubmodules: repoPath not specified")
-               )
-
-               Log -message "Git-HasSubmodules: $repoPath"
-
-               [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-               [string[]]$result = git -C $repoPath submodule 2>&1
-
-               if(!$?) {
-                   Log-Batch -messages $result
-                   Log -message "Failed to get submodules."
-                   return $false
-               }
-
-               if($result -eq $null -or $result.Trim() -eq "")  {
-                   return $false
-               }
-
-               Log -message "Submodules found:"
-               Log -message $result
-
-               return $true
-           }
-         */
     }
 
-    public static void RemoveBranchesForPrefix(Repository repo, string branchForUpdate, string branchPrefix)
+    public static void RemoveBranchesForPrefix(Repository repo, string branchForUpdate, string branchPrefix, string upstream)
     {
+        IReadOnlyList<Branch> branchesToRemove = [..repo.Branches.Where(IsMatchingBranch)];
+
+        foreach (Branch branch in branchesToRemove)
+        {
+            DeleteBranch(repo, branch.FriendlyName);
+        }
+
+        bool IsCurrentBranch(Branch branch)
+        {
+            return StringComparer.Ordinal.Equals(x: repo.Head.CanonicalName, y: branch.CanonicalName);
+        }
+
+        bool IsMatchingBranch(Branch branch)
+        {
+            if (IsCurrentBranch(branch))
+            {
+                return false;
+            }
+
+            if (StringComparer.Ordinal.Equals(x: branch.FriendlyName, y: branchForUpdate))
+            {
+                return false;
+            }
+
+            return branch.FriendlyName.StartsWith(value: branchPrefix, comparisonType: StringComparison.Ordinal);
+        }
+
         /*
           function Git-RemoveBranchesForPrefix {
              param(
@@ -439,26 +312,21 @@ public static class GitUtils
          */
     }
 
+    private static async ValueTask DeleteBranchAsync(Repository repo, string branch, string upstream, CancellationToken cancellationToken)
+    {
+        await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, $"branch -D {branch}", cancellationToken: cancellationToken);
+
+        string upstreamBranch = string.Concat(str0: upstream, str1: "/", str2: branch);
+
+        if (repo.Branches.Any(b => b.FriendlyName == upstreamBranch))
+        {
+            await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, $"push ${upstream} :{branch}", cancellationToken: cancellationToken);
+        }
+    }
+
     public static DateTimeOffset GetLastCommitDate(Repository repo)
     {
         return repo.Head.Tip.Author.When;
-
-        /*
-          function Get-GetLastCommitDate {
-             param(
-                 [string] $repoPath = $(throw "Get-GetLastCommitDate: repoPath not specified")
-                 )
-
-                 Log -message "Git-GetLastCommitDate: $repoPath"
-
-                 [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-                 $unixTime = git -C $repoPath log -1 --format=%ct 2>&1
-
-                 [DateTime]$when = [DateTimeOffset]::FromUnixTimeSeconds($unixTime).UtcDateTime
-
-                 return $wh
-         */
     }
 
     private static Repository OpenRepository(string workDir)
