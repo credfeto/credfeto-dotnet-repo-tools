@@ -7,17 +7,6 @@ using System.Threading.Tasks;
 using Credfeto.Date.Interfaces;
 using Credfeto.Dotnet.Repo.Git.Exceptions;
 using LibGit2Sharp;
-using Branch = LibGit2Sharp.Branch;
-using CheckoutModifiers = LibGit2Sharp.CheckoutModifiers;
-using CheckoutOptions = LibGit2Sharp.CheckoutOptions;
-using CloneOptions = LibGit2Sharp.CloneOptions;
-using FetchOptions = LibGit2Sharp.FetchOptions;
-using PushOptions = LibGit2Sharp.PushOptions;
-using Remote = LibGit2Sharp.Remote;
-using Repository = LibGit2Sharp.Repository;
-using ResetMode = LibGit2Sharp.ResetMode;
-using Signature = LibGit2Sharp.Signature;
-using TagFetchMode = LibGit2Sharp.TagFetchMode;
 
 namespace Credfeto.Dotnet.Repo.Git;
 
@@ -25,22 +14,13 @@ public static class GitUtils
 {
     private const string UPSTREAM = "origin";
 
-    private static readonly FetchOptions FetchOptions = new() { Prune = true, TagFetchMode = TagFetchMode.None };
+    private static readonly CheckoutOptions GitCheckoutOptions = new() { CheckoutModifiers = CheckoutModifiers.Force };
 
-    private static readonly CheckoutOptions CheckoutOptions = new() { CheckoutModifiers = CheckoutModifiers.Force };
+    private static readonly CloneOptions GitCloneOptions = new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
 
-    private static readonly CloneOptions CloneOptions = new()
-                                                        {
-                                                            Checkout = false,
-                                                            IsBare = false,
-                                                            RecurseSubmodules = true,
-                                                            BranchName = "main",
-                                                            FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All }
-                                                        };
+    private static readonly PushOptions GitPushOptions = new();
 
-    private static readonly PushOptions PushOptions = new();
-
-    private static readonly CommitOptions CommitOptions = new() { AllowEmptyCommit = false, AmendPreviousCommit = false };
+    private static readonly CommitOptions GitCommitOptions = new() { AllowEmptyCommit = false, AmendPreviousCommit = false };
 
     public static string GetFolderForRepo(string repoUrl)
     {
@@ -88,7 +68,7 @@ public static class GitUtils
 
         await CleanRepoAsync(repo: repo, cancellationToken: cancellationToken);
 
-        repo.Checkout(tree: repo.Branches[defaultBranch].Tip.Tree, paths: null, options: CheckoutOptions);
+        repo.Checkout(tree: repo.Branches[defaultBranch].Tip.Tree, paths: null, options: GitCheckoutOptions);
 
         repo.Reset(resetMode: ResetMode.Hard, commit: repo.Head.Tip);
 
@@ -184,7 +164,7 @@ public static class GitUtils
     private static async ValueTask<Repository> CloneRepositoryAsync(string workDir, string destinationPath, string repoUrl, CancellationToken cancellationToken)
     {
         string? path = IsHttps(repoUrl)
-            ? Repository.Clone(sourceUrl: repoUrl, workdirPath: destinationPath, options: CloneOptions)
+            ? Repository.Clone(sourceUrl: repoUrl, workdirPath: destinationPath, options: GitCloneOptions)
             : await CloneSshAsync(sourceUrl: repoUrl, workdirPath: workDir, destinationPath: destinationPath, cancellationToken: cancellationToken);
 
         if (string.IsNullOrWhiteSpace(path))
@@ -236,7 +216,7 @@ public static class GitUtils
 
         Signature author = new(name: "Example", email: "example@example.com", currentTimeSource.UtcNow());
         Signature committer = author;
-        repo.Commit(message: message, author: author, committer: committer, options: CommitOptions);
+        repo.Commit(message: message, author: author, committer: committer, options: GitCommitOptions);
 
         /* function Git-Commit {
              param(
@@ -283,7 +263,7 @@ public static class GitUtils
     {
         Remote remote = repo.Network.Remotes[upstream] ?? throw new GitException($"Could not find upstream origin {upstream}");
 
-        repo.Network.Push(remote: remote, remote.PushRefSpecs.Select(r => r.Specification), pushOptions: PushOptions);
+        repo.Network.Push(remote: remote, remote.PushRefSpecs.Select(r => r.Specification), pushOptions: GitPushOptions);
 
         /*
             function Git-Push {
@@ -304,7 +284,7 @@ public static class GitUtils
     {
         Remote remote = repo.Network.Remotes[upstream] ?? throw new GitException($"Could not find upstream origin {upstream}");
 
-        repo.Network.Push(remote: remote, remote.PushRefSpecs.Select(r => r.Specification), pushOptions: PushOptions);
+        repo.Network.Push(remote: remote, remote.PushRefSpecs.Select(r => r.Specification), pushOptions: GitPushOptions);
 
         /*
 
