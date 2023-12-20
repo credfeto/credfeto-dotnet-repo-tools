@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FunFair.Test.Common;
@@ -10,6 +11,10 @@ namespace Credfeto.Dotnet.Repo.Git.Tests;
 
 public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
 {
+    private const string UPSTREAM = "origin";
+    private const string REPO_HTTPS = "https://github.com/credfeto/scratch.git";
+    private const string REPO_SSH = "git@github.com:credfeto/scratch.git";
+
     public GitUtilsTests(ITestOutputHelper output)
         : base(output)
     {
@@ -28,18 +33,47 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
     [Fact]
     public Task CanCloneSshAsync()
     {
-        return this.CloneTestCommonAsync("git@github.com:credfeto/scratch.git", CancellationToken.None);
+        return this.CloneTestCommonAsync(uri: REPO_SSH, cancellationToken: CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task CreateBranchSshAsync()
+    {
+        CancellationToken cancellationToken = CancellationToken.None;
+
+        using (Repository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: REPO_SSH, cancellationToken: cancellationToken))
+        {
+            this.Output.WriteLine($"Repo: {repo.Info.Path}");
+
+            string newBranch = $"delete-me/{Guid.NewGuid()}".Replace(oldValue: "-", newValue: string.Empty, comparisonType: StringComparison.Ordinal)
+                                                            .ToLowerInvariant();
+
+            if (GitUtils.DoesBranchExist(repo: repo, branchName: newBranch))
+            {
+                GitUtils.RemoveAllLocalBranches(repo);
+            }
+
+            GitUtils.CreateBranch(repo: repo, branchName: newBranch);
+
+            Assert.True(GitUtils.DoesBranchExist(repo: repo, branchName: newBranch), userMessage: "Branch should exist");
+
+            await GitUtils.ResetToMasterAsync(repo: repo, upstream: UPSTREAM, cancellationToken: cancellationToken);
+
+            GitUtils.RemoveAllLocalBranches(repo);
+
+            Assert.False(GitUtils.DoesBranchExist(repo: repo, branchName: newBranch), userMessage: "Branch should not exist");
+        }
     }
 
     [Fact]
     public Task CanCloneHttpsAsync()
     {
-        return this.CloneTestCommonAsync("https://github.com/credfeto/scratch.git", CancellationToken.None);
+        return this.CloneTestCommonAsync(uri: REPO_HTTPS, cancellationToken: CancellationToken.None);
     }
 
     private async Task CloneTestCommonAsync(string uri, CancellationToken cancellationToken)
     {
-        using (Repository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken))
+        using (Repository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken: cancellationToken))
         {
             this.Output.WriteLine($"Repo: {repo.Info.Path}");
 
@@ -54,7 +88,7 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
             }
         }
 
-        using (Repository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken))
+        using (Repository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken: cancellationToken))
         {
             GitUtils.RemoveAllLocalBranches(repo);
         }

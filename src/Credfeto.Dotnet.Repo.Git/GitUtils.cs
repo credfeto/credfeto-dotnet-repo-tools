@@ -101,23 +101,21 @@ public static class GitUtils
 
     public static void RemoveAllLocalBranches(Repository repo)
     {
-        IReadOnlyList<Branch> branchesToRemove = repo.Branches.Where(IsLocalBranch)
-                                                     .ToArray();
+        IReadOnlyList<Branch> branchesToRemove = [..repo.Branches.Where(b => IsLocalBranch(b) && !IsCurrentBranch(b))];
 
         foreach (Branch branch in branchesToRemove)
         {
-            if (StringComparer.Ordinal.Equals(x: repo.Head.CanonicalName, y: branch.CanonicalName))
-            {
-                // don't try and delete the current branch
-                continue;
-            }
-
             repo.Branches.Remove(branch);
         }
 
         static bool IsLocalBranch(Branch branch)
         {
             return !branch.IsRemote;
+        }
+
+        bool IsCurrentBranch(Branch branch)
+        {
+            return StringComparer.Ordinal.Equals(x: repo.Head.CanonicalName, y: branch.CanonicalName);
         }
     }
 
@@ -353,116 +351,22 @@ public static class GitUtils
          */
     }
 
-    public static void CreateBranch(Repository repo, string branchName, string upstream = UPSTREAM)
+    public static void CreateBranch(Repository repo, string branchName)
     {
-        /*
-         function Git-DeleteBranch {
-           param(
-               [string] $repoPath = $(throw "Git-DeleteBranch: repoPath not specified"),
-               [string] $branchName = $(throw "Git-DeleteBranch: branchName not specified")
-               )
+        Branch? existingBranch = repo.Branches.FirstOrDefault(b => StringComparer.Ordinal.Equals(x: b.FriendlyName, y: branchName));
 
-               Log -message "Git-DeleteBranch: $repoPath ($branchName)"
+        if (existingBranch is not null)
+        {
+            repo.Checkout(tree: existingBranch.Tip.Tree, paths: null, options: GitCheckoutOptions);
 
-               [string]$upstream = "origin"
+            return;
+        }
 
-               Git-ValidateBranchName -branchName $branchName -method "Git-DeleteBranch"
-
-               [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-               [bool]$branchExists = Git-DoesBranchExist -branchName $branchName -repoPath $repoPath
-               if($branchExists) {
-                   & git -C $repoPath branch -D $branchName 2>&1 | Out-Null
-               }
-
-               [string]$upstreamBranch = "$upstream/$branchName"
-               [bool]$branchExists = Git-DoesBranchExist -branchName $upstreamBranch -repoPath $repoPath
-               if($branchExists) {
-                   & git -C $repoPath push $upstream ":$branchName" 2>&1 | Out-Null
-               }
-
-               return $true;
-           }
-         */
-    }
-
-    public static void ValidateBranchName(string branchName)
-    {
-        /*
-          function Git-ValidateBranchName {
-             param (
-                 [string] $branchName = $(throw "Git-ValidateBranchName: branchName not specified"),
-                 [string] $method = $(throw "Git-ValidateBranchName: method not specified")
-
-             )
-
-                 if($branchName -eq $null) {
-                     throw "$($method) : Invalid branch (null)"
-                 }
-
-                 if($branchName -eq "") {
-                     throw "$($method) : Invalid branch: [$branchName]"
-                 }
-
-                 if($branchName.Contains("//")) {
-                     throw "$($method) : Invalid branch: [$branchName]"
-                 }
-             }
-         */
-    }
-
-    public static void Renormalize(Repository repo)
-    {
-        /*
-         function Git-ReNormalise {
-           param(
-               [string] $repoPath = $(throw "Git-ReNormalise: repoPath not specified")
-               )
-
-               Log -message "Git-ReNormalise: $repoPath"
-
-               [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-               & git -C $repoPath add . --renormalize 2>&1 | Out-Null
-               [bool]$hasChanged = Git-HasUnCommittedChanges -repoPath $repoPath
-               if($hasChanged -eq $true) {
-                   & git -C $repoPath commit -m"Renormalised files" 2>&1 | Out-Null
-                   & git -C $repoPath push 2>&1 | Out-Null
-               }
-           }
-         */
+        repo.Branches.Add(name: branchName, commit: repo.Head.Tip);
     }
 
     public static string GetHeadRev(Repository repository)
     {
-        /*
-         function Git-Get-HeadRev {
-           param(
-               [string] $repoPath = $(throw "Git-Get-HeadRev: repoPath not specified")
-               )
-
-               Log -message "Git-Get-HeadRev: $repoPath"
-
-               [string]$repoPath = GetRepoPath -repoPath $repoPath
-
-               [string[]]$result = git -C $repoPath rev-parse HEAD 2>&1
-
-               Log -message "Head Rev"
-               Log-Batch -messages $result
-
-               if(!$?) {
-                   Log-Batch -messages $result
-                   Log -message "Failed to get head rev"
-                   return $null
-               }
-
-               [string]$rev = $result.Trim()
-               Log -message "Head Rev: $rev"
-
-               return $rev
-           }
-         */
-
         return repository.Head.Tip.Sha;
     }
 
