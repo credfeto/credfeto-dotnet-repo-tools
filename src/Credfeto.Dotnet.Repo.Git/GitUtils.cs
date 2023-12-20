@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Credfeto.Date.Interfaces;
 using Credfeto.Dotnet.Repo.Git.Exceptions;
 using LibGit2Sharp;
@@ -57,7 +59,7 @@ public static class GitUtils
         return folder;
     }
 
-    public static Repository OpenOrClone(string workDir, string repoUrl)
+    public static async ValueTask<Repository> OpenOrCloneAsync(string workDir, string repoUrl, CancellationToken cancellationToken)
     {
         string repoDir = Path.Combine(path1: workDir, GetFolderForRepo(repoUrl));
 
@@ -65,48 +67,41 @@ public static class GitUtils
         {
             Repository repo = OpenRepository(repoDir);
 
-            ResetToMaster(repo);
+            await ResetToMasterAsync(repo: repo, upstream: UPSTREAM, cancellationToken: cancellationToken);
 
             return repo;
 
             // TODO: Also switch to main & fetch
         }
 
-        return CloneRepository(workDir: repoDir, repoUrl: repoUrl);
+        return await CloneRepositoryAsync(workDir: workDir, destinationPath: repoDir, repoUrl: repoUrl, cancellationToken: cancellationToken);
     }
 
-    public static void ResetToMaster(Repository repo, string upstream = UPSTREAM)
+    public static async ValueTask ResetToMasterAsync(Repository repo, string upstream, CancellationToken cancellationToken)
     {
         Remote remote = repo.Network.Remotes[upstream] ?? throw new GitException($"Could not find upstream origin {upstream}");
 
         string defaultBranch = GetDefaultBranch(repo: repo, upstream: upstream);
-        FetchRemote(repo: repo, remote: remote);
+        await FetchRemoteAsync(repo: repo, remote: remote, cancellationToken: cancellationToken);
 
-        // reset HEAD --hard
         repo.Reset(resetMode: ResetMode.Hard, commit: repo.Head.Tip);
 
-        // & git -C $repoPath clean -f -x -d 2>&1 | Out-Null
-        repo.RemoveUntrackedFiles();
+        await CleanRepoAsync(repo: repo, cancellationToken: cancellationToken);
 
-        // & git -C $repoPath checkout $defaultBranch 2>&1 | Out-Null
         repo.Checkout(tree: repo.Branches[defaultBranch].Tip.Tree, paths: null, options: CheckoutOptions);
 
-        // & git -C $repoPath reset HEAD --hard 2>&1 | Out-Null
         repo.Reset(resetMode: ResetMode.Hard, commit: repo.Head.Tip);
 
-        // & git -C $repoPath clean -f -x -d 2>&1 | Out-Null
-        repo.RemoveUntrackedFiles();
-
-        // & git -C $repoPath fetch --recurse-submodules 2>&1 | Out-Null
+        await CleanRepoAsync(repo: repo, cancellationToken: cancellationToken);
 
         // # NOTE Loses all local commits on master
         // & git -C $repoPath reset --hard $upstreamBranch 2>&1 | Out-Null
         repo.Reset(resetMode: ResetMode.Hard, commit: repo.Branches[upstream + "/" + defaultBranch].Tip);
 
-        // & git -C $repoPath remote update $upstream --prune 2>&1 | Out-Null
-        FetchRemote(repo: repo, remote: remote);
+        await FetchRemoteAsync(repo: repo, remote: remote, cancellationToken: cancellationToken);
 
         // & git -C $repoPath prune 2>&1 | Out-Null
+        await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, arguments: "prune", cancellationToken: cancellationToken);
 
         if (HasUncommittedChanges(repo: repo))
         {
@@ -114,9 +109,14 @@ public static class GitUtils
         }
     }
 
-    private static void FetchRemote(Repository repo, Remote remote)
+    private static async Task CleanRepoAsync(Repository repo, CancellationToken cancellationToken)
     {
-        repo.Network.Fetch(url: remote.Name, remote.FetchRefSpecs.Select(r => r.Specification), options: FetchOptions);
+        await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, arguments: "clean -f -x -d", cancellationToken: cancellationToken);
+    }
+
+    private static ValueTask<(string[] Output, int ExitCode)> FetchRemoteAsync(Repository repo, Remote remote, in CancellationToken cancellationToken)
+    {
+        return GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, $"fetch --prune --recurse-submodules {remote.Name}", cancellationToken: cancellationToken);
     }
 
     public static void RemoveAllLocalBranches(Repository repo)
@@ -176,9 +176,16 @@ public static class GitUtils
         }
     }
 
-    private static Repository CloneRepository(string workDir, string repoUrl)
+    internal static bool IsHttps(string repoUrl)
     {
-        string? path = Repository.Clone(sourceUrl: repoUrl, workdirPath: workDir, options: CloneOptions);
+        return repoUrl.StartsWith(value: "https://", comparisonType: StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static async ValueTask<Repository> CloneRepositoryAsync(string workDir, string destinationPath, string repoUrl, CancellationToken cancellationToken)
+    {
+        string? path = IsHttps(repoUrl)
+            ? Repository.Clone(sourceUrl: repoUrl, workdirPath: destinationPath, options: CloneOptions)
+            : await CloneSshAsync(sourceUrl: repoUrl, workdirPath: workDir, destinationPath: destinationPath, cancellationToken: cancellationToken);
 
         if (string.IsNullOrWhiteSpace(path))
         {
@@ -186,6 +193,13 @@ public static class GitUtils
         }
 
         return OpenRepository(path);
+    }
+
+    private static async ValueTask<string?> CloneSshAsync(string sourceUrl, string workdirPath, string destinationPath, CancellationToken cancellationToken)
+    {
+        await GitCommandLine.ExecAsync(repoPath: workdirPath, $"clone --recurse-submodules {sourceUrl} {destinationPath}", cancellationToken: cancellationToken);
+
+        return destinationPath;
     }
 
     public static bool HasUncommittedChanges(Repository repo)
@@ -220,7 +234,7 @@ public static class GitUtils
         repo.Index.Add("*");
         repo.Index.Write();
 
-        Signature author = new(name: "Example", email: "example@example.com", when: currentTimeSource.UtcNow());
+        Signature author = new(name: "Example", email: "example@example.com", currentTimeSource.UtcNow());
         Signature committer = author;
         repo.Commit(message: message, author: author, committer: committer, options: CommitOptions);
 

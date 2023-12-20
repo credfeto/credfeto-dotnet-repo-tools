@@ -11,6 +11,8 @@ namespace Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
 
 internal static class Updater
 {
+    private const string UPSTREAM = "origin";
+
     public static async Task UpdateRepositoriesAsync(string workFolder,
                                                      IReadOnlyList<string> additionalSources,
                                                      string? cacheFile,
@@ -53,20 +55,18 @@ internal static class Updater
     {
         logging.LogInformation($"Processing {repo}");
 
-        using (Repository repository = GitUtils.OpenOrClone(workDir: workFolder, repoUrl: repo))
+        using (Repository repository = await GitUtils.OpenOrCloneAsync(workDir: workFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
             bool first = true;
 
             foreach (PackageUpdate package in packages)
             {
-                logging.LogInformation($"* Updating {package.PackageId}...");
-                PackageUpdateConfiguration config = BuildConfiguration(package);
-                IReadOnlyList<PackageVersion> updatesMade = await packageUpdater.UpdateAsync(basePath: repository.Info.WorkingDirectory,
-                                                                                             configuration: config,
-                                                                                             packageSources: additionalSources,
-                                                                                             cancellationToken: cancellationToken);
-
-                Console.WriteLine($"Total updates: {updatesMade.Count}");
+                IReadOnlyList<PackageVersion> updatesMade = await UpdateOnePackageInRepoAsync(additionalSources: additionalSources,
+                                                                                              logging: logging,
+                                                                                              packageUpdater: packageUpdater,
+                                                                                              cancellationToken: cancellationToken,
+                                                                                              package: package,
+                                                                                              repository: repository);
 
                 if (updatesMade.Count != 0)
                 {
@@ -76,11 +76,30 @@ internal static class Updater
                     }
                     else
                     {
-                        GitUtils.ResetToMaster(repository);
+                        await GitUtils.ResetToMasterAsync(repository, UPSTREAM, cancellationToken);
                     }
                 }
             }
         }
+    }
+
+    private static async Task<IReadOnlyList<PackageVersion>> UpdateOnePackageInRepoAsync(IReadOnlyList<string> additionalSources,
+                                                                                         IDiagnosticLogger logging,
+                                                                                         IPackageUpdater packageUpdater,
+                                                                                         PackageUpdate package,
+                                                                                         Repository repository,
+                                                                                         CancellationToken cancellationToken)
+    {
+        logging.LogInformation($"* Updating {package.PackageId}...");
+        PackageUpdateConfiguration config = BuildConfiguration(package);
+        IReadOnlyList<PackageVersion> updatesMade = await packageUpdater.UpdateAsync(basePath: repository.Info.WorkingDirectory,
+                                                                                     configuration: config,
+                                                                                     packageSources: additionalSources,
+                                                                                     cancellationToken: cancellationToken);
+
+        Console.WriteLine($"Total updates: {updatesMade.Count}");
+
+        return updatesMade;
     }
 
     private static PackageUpdateConfiguration BuildConfiguration(PackageUpdate package)

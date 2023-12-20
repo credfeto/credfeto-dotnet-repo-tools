@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using FunFair.Test.Common;
 using LibGit2Sharp;
 using Xunit;
@@ -23,19 +25,21 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
         Assert.Equal(expected: expected, actual: actual);
     }
 
-    [Fact(Skip = "No SSH Support yet")]
-    public void CanCloneSsh()
+    [Fact]
+    public Task CanCloneSshAsync()
     {
-        using (Repository repo = GitUtils.OpenOrClone(workDir: this.TempFolder, repoUrl: "git@github.com:credfeto/scratch.git"))
-        {
-            this.Output.WriteLine($"Repo: {repo.Info.Path}");
-        }
+        return this.CloneTestCommonAsync("git@github.com:credfeto/scratch.git", CancellationToken.None);
     }
 
     [Fact]
-    public void CanCloneHttps()
+    public Task CanCloneHttpsAsync()
     {
-        using (Repository repo = GitUtils.OpenOrClone(workDir: this.TempFolder, repoUrl: "https://github.com/credfeto/scratch.git"))
+        return this.CloneTestCommonAsync("https://github.com/credfeto/scratch.git", CancellationToken.None);
+    }
+
+    private async Task CloneTestCommonAsync(string uri, CancellationToken cancellationToken)
+    {
+        using (Repository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken))
         {
             this.Output.WriteLine($"Repo: {repo.Info.Path}");
 
@@ -50,7 +54,7 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
             }
         }
 
-        using (Repository repo = GitUtils.OpenOrClone(workDir: this.TempFolder, repoUrl: "https://github.com/credfeto/scratch.git"))
+        using (Repository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken))
         {
             GitUtils.RemoveAllLocalBranches(repo);
         }
