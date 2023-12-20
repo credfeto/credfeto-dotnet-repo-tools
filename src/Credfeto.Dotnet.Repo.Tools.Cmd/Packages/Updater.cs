@@ -31,7 +31,12 @@ internal static class Updater
             {
                 if (!string.IsNullOrWhiteSpace(updateContext.Cache))
                 {
-                    await packageCache.SaveAsync(fileName: updateContext.Cache, cancellationToken: CancellationToken.None);
+                    await packageCache.SaveAsync(fileName: updateContext.Cache, cancellationToken: cancellationToken);
+                }
+
+                if (!string.IsNullOrWhiteSpace(updateContext.Tracking))
+                {
+                    await updateContext.TrackingCache.SaveAsync(fileName: updateContext.Tracking, cancellationToken: cancellationToken);
                 }
             }
         }
@@ -48,7 +53,7 @@ internal static class Updater
 
         using (Repository repository = await GitUtils.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
-            string? lastKnownGoodBuild = await updateContext.Tracking.Get(repo: repo);
+            string? lastKnownGoodBuild = updateContext.TrackingCache.Get(repo);
 
             bool first = true;
 
@@ -75,7 +80,7 @@ internal static class Updater
                     }
                     else
                     {
-                        await GitUtils.ResetToMasterAsync(repository, UPSTREAM, cancellationToken);
+                        await GitUtils.ResetToMasterAsync(repo: repository, upstream: UPSTREAM, cancellationToken: cancellationToken);
                     }
                 }
             }

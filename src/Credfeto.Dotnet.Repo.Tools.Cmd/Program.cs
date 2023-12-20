@@ -112,14 +112,13 @@ internal static class Program
             UpdateContext updateContext = new(WorkFolder: options.Work,
                                               Cache: options.Cache,
                                               Tracking: options.Tracking,
+                                              TrackingCache: trackingCache,
                                               AdditionalSources: options.Source?.ToArray() ?? Array.Empty<string>(),
                                               TimeSource: services.GetRequiredService<ICurrentTimeSource>());
 
             try
             {
-                await Updater.UpdateRepositoriesAsync(workFolder: options.Work,
-                                                      options.Source?.ToArray() ?? Array.Empty<string>(),
-                                                      cacheFile: options.Cache,
+                await Updater.UpdateRepositoriesAsync(updateContext: updateContext,
                                                       repos: repos,
                                                       logging: logging,
                                                       packages: packages,
