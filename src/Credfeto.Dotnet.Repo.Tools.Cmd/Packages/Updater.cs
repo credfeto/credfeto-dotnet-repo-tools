@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.ChangeLog;
+using Credfeto.Date.Interfaces;
 using Credfeto.Dotnet.Repo.Git;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Build;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Exceptions;
@@ -11,12 +14,15 @@ using Credfeto.Package;
 using FunFair.BuildCheck.Runner.Services;
 using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
+using NuGet.Versioning;
 
 namespace Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
 
 internal static class Updater
 {
     private const string UPSTREAM = "origin";
+
+    private const string CHANGELOG_ENTRYTYPE = "Changed";
 
     public static async Task UpdateRepositoriesAsync(UpdateContext updateContext,
                                                      IReadOnlyList<string> repos,
@@ -72,6 +78,14 @@ internal static class Updater
                 return;
             }
 
+            if (!ChangeLogDetector.TryFindChangeLog(repository, out string? changeLogFileName))
+            {
+                logger.LogInformation("No dotnet files found");
+                updateContext.TrackingCache.Set(repoUrl: repo, value: repository.Head.Tip.Sha);
+
+                return;
+            }
+
             BuildSettings buildSettings = DotNetBuild.LoadBuildSettings(new ProjectLoader(), projects: projects);
 
             int totalUpdates = 0;
@@ -101,12 +115,19 @@ internal static class Updater
 
                     bool ok = await PostUpdateCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken, sourceDirectory: sourceDirectory, buildSettings: buildSettings);
 
-                    if (ok)
-                    {
-                        // TODO: commit changes, push update last known good build.
-                        await CommitToRepositoryAsync(repo: repository, package: package, builtOk: ok, cancellationToken: cancellationToken);
-                    }
-                    else
+                    NuGetVersion version = updatesMade.Select(x => x.Version)
+                                                      .OrderByDescending(x => x.Version)
+                                                      .First();
+
+                    await CommitToRepositoryAsync(repo: repository,
+                                                  package: package,
+                                                  version.ToString(),
+                                                  changeLogFileName,
+                                                  builtOk: ok,
+                                                  currentTimeSource: updateContext.TimeSource,
+                                                  cancellationToken: cancellationToken);
+
+                    if (!ok)
                     {
                         await GitUtils.ResetToMasterAsync(repo: repository, upstream: UPSTREAM, cancellationToken: cancellationToken);
                     }
@@ -120,9 +141,56 @@ internal static class Updater
         }
     }
 
-    private static async ValueTask CommitToRepositoryAsync(Repository repo, PackageUpdate package, bool builtOk, CancellationToken cancellationToken)
+    private static async ValueTask CommitToRepositoryAsync(Repository repo,
+                                                           PackageUpdate package,
+                                                           string version,
+                                                           string changeLogFileName,
+                                                           bool builtOk,
+                                                           ICurrentTimeSource currentTimeSource,
+                                                           CancellationToken cancellationToken)
     {
-        await Task.Delay(millisecondsDelay: 1, cancellationToken: cancellationToken);
+        string branchPrefix = $"depends/update-{package.PackageId}/".ToLowerInvariant();
+        string branchForUpdate = branchPrefix + version;
+
+        if (builtOk)
+        {
+            await ChangeLogUpdater.RemoveEntryAsync(changeLogFileName: changeLogFileName,
+                                                    type: CHANGELOG_ENTRYTYPE,
+                                                    $"Dependencies - Updated {package.PackageId} to ",
+                                                    cancellationToken: cancellationToken);
+            await ChangeLogUpdater.AddEntryAsync(changeLogFileName: changeLogFileName,
+                                                 type: CHANGELOG_ENTRYTYPE,
+                                                 $"Dependencies - Updated {package.PackageId} to {version}",
+                                                 cancellationToken: cancellationToken);
+
+            GitUtils.Commit(repo: repo, $"[Dependencies] Updating {package.PackageId} ({package.PackageType}) to {version}", currentTimeSource: currentTimeSource);
+            await GitUtils.PushAsync(repo: repo, cancellationToken: cancellationToken);
+            await GitUtils.RemoveBranchesForPrefixAsync(repo: repo, branchForUpdate: branchForUpdate, branchPrefix: branchPrefix, upstream: UPSTREAM, cancellationToken: cancellationToken);
+        }
+        else
+        {
+            if (GitUtils.DoesBranchExist(repo: repo, branchName: branchForUpdate))
+            {
+                // nothing to do
+                return;
+            }
+
+            GitUtils.CreateBranch(repo: repo, branchName: branchForUpdate);
+
+            await ChangeLogUpdater.RemoveEntryAsync(changeLogFileName: changeLogFileName,
+                                                    type: CHANGELOG_ENTRYTYPE,
+                                                    $"Dependencies - Updated {package.PackageId} to ",
+                                                    cancellationToken: cancellationToken);
+            await ChangeLogUpdater.AddEntryAsync(changeLogFileName: changeLogFileName,
+                                                 type: CHANGELOG_ENTRYTYPE,
+                                                 $"Dependencies - Updated {package.PackageId} to {version}",
+                                                 cancellationToken: cancellationToken);
+
+            GitUtils.Commit(repo: repo, $"[Dependencies] Updating {package.PackageId} ({package.PackageType}) to {version}", currentTimeSource: currentTimeSource);
+            await GitUtils.PushOriginAsync(repo: repo, branchName: branchForUpdate, upstream: UPSTREAM, cancellationToken: cancellationToken);
+
+            await GitUtils.RemoveBranchesForPrefixAsync(repo: repo, branchForUpdate: branchForUpdate, branchPrefix: branchPrefix, upstream: UPSTREAM, cancellationToken: cancellationToken);
+        }
     }
 
     private static async Task<bool> PostUpdateCheckAsync(IReadOnlyList<string> solutions, string sourceDirectory, BuildSettings buildSettings, ILogger logger, CancellationToken cancellationToken)
