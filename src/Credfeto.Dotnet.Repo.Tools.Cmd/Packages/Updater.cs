@@ -90,7 +90,7 @@ internal static class Updater
         if (!HasDotNetFiles(repository: repository, out string? sourceDirectory, out IReadOnlyList<string>? solutions, out IReadOnlyList<string>? projects))
         {
             logger.LogInformation("No dotnet files found");
-            updateContext.TrackingCache.Set(repoUrl: repo, value: GitUtils.GetHeadRev(repository));
+            await updateContext.UpdateTrackingAsync(repo: repo, GitUtils.GetHeadRev(repository), cancellationToken: cancellationToken);
 
             return;
         }
@@ -98,7 +98,7 @@ internal static class Updater
         if (!ChangeLogDetector.TryFindChangeLog(repository: repository, out string? changeLogFileName))
         {
             logger.LogInformation("No changelog found");
-            updateContext.TrackingCache.Set(repoUrl: repo, value: GitUtils.GetHeadRev(repository));
+            await updateContext.UpdateTrackingAsync(repo: repo, GitUtils.GetHeadRev(repository), cancellationToken: cancellationToken);
 
             return;
         }
@@ -149,14 +149,14 @@ internal static class Updater
     {
         bool updated = false;
 
-        if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: GitUtils.GetHeadRev(repository)))
+        if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, GitUtils.GetHeadRev(repository)))
         {
             await SolutionCheck.PreCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken);
 
             await DotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, logger: logger, cancellationToken: cancellationToken);
 
             lastKnownGoodBuild = GitUtils.GetHeadRev(repository);
-            updateContext.TrackingCache.Set(repoUrl: repo, value: lastKnownGoodBuild);
+            await updateContext.UpdateTrackingAsync(repo: repo, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
         }
 
         IReadOnlyList<PackageVersion> updatesMade = await UpdatePackagesAsync(updateContext: updateContext,
@@ -209,7 +209,8 @@ internal static class Updater
         if (ok)
         {
             string headRev = GitUtils.GetHeadRev(repository);
-            updateContext.TrackingCache.Set(repoUrl: repo, value: headRev);
+
+            await updateContext.UpdateTrackingAsync(repo: repo, value: headRev, cancellationToken: cancellationToken);
 
             return headRev;
         }
