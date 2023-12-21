@@ -28,11 +28,11 @@ internal static class Updater
         {
             try
             {
-                await UpdateRepositoryAsync(updateContext: updateContext, logging: logger, packages: packages, packageUpdater: packageUpdater, cancellationToken: cancellationToken, repo: repo);
+                await UpdateRepositoryAsync(updateContext: updateContext, logger: logger, packages: packages, packageUpdater: packageUpdater, cancellationToken: cancellationToken, repo: repo);
             }
             catch (SolutionCheckFailedException exception)
             {
-                logger.LogError(exception, "Solution check failed");
+                logger.LogError(exception: exception, message: "Solution check failed");
             }
             finally
             {
@@ -50,13 +50,13 @@ internal static class Updater
     }
 
     private static async Task UpdateRepositoryAsync(UpdateContext updateContext,
-                                                    IDiagnosticLogger logging,
+                                                    IDiagnosticLogger logger,
                                                     IReadOnlyList<PackageUpdate> packages,
                                                     IPackageUpdater packageUpdater,
                                                     string repo,
                                                     CancellationToken cancellationToken)
     {
-        logging.LogInformation($"Processing {repo}");
+        logger.LogInformation($"Processing {repo}");
 
         using (Repository repository = await GitUtils.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
@@ -64,44 +64,67 @@ internal static class Updater
 
             if (!HasDotNetFiles(repository: repository, out IReadOnlyList<string>? solutions))
             {
-                logging.LogInformation("No dotnet files found");
+                logger.LogInformation("No dotnet files found");
                 updateContext.TrackingCache.Set(repoUrl: repo, value: repository.Head.Tip.Sha);
 
                 return;
             }
 
-            bool first = true;
+            int totalUpdates = 0;
 
             foreach (PackageUpdate package in packages)
             {
                 if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repository.Head.Tip.Sha))
                 {
-                    await SolutionCheck.PreCheckAsync(solutions: solutions, logging: logging, cancellationToken: cancellationToken);
+                    await SolutionCheck.PreCheckAsync(solutions: solutions, logging: logger, cancellationToken: cancellationToken);
 
                     lastKnownGoodBuild = repository.Head.Tip.Sha;
                     updateContext.TrackingCache.Set(repoUrl: repo, value: lastKnownGoodBuild);
                 }
 
-                logging.LogInformation($"* Updating {package.PackageId}...");
-                PackageUpdateConfiguration config = BuildConfiguration(package);
-                IReadOnlyList<PackageVersion> updatesMade = await packageUpdater.UpdateAsync(basePath: repository.Info.WorkingDirectory,
-                                                                                             configuration: config,
-                                                                                             packageSources: updateContext.AdditionalSources,
-                                                                                             cancellationToken: cancellationToken);
+                IReadOnlyList<PackageVersion> updatesMade = await UpdatePackagesAsync(updateContext: updateContext,
+                                                                                      packageUpdater: packageUpdater,
+                                                                                      package: package,
+                                                                                      repository: repository,
+                                                                                      logger: logger,
+                                                                                      cancellationToken: cancellationToken);
 
                 if (updatesMade.Count != 0)
                 {
-                    if (first)
+                    ++totalUpdates;
+
+                    bool checkOk = await SolutionCheck.PostCheckAsync(solutions: solutions, logging: logger, cancellationToken: cancellationToken);
+
+                    if (checkOk)
                     {
-                        first = false;
+                        // TODO: commit changes, push update last known good build.
                     }
-                    else
-                    {
-                        await GitUtils.ResetToMasterAsync(repo: repository, upstream: UPSTREAM, cancellationToken: cancellationToken);
-                    }
+
+                    await GitUtils.ResetToMasterAsync(repo: repository, upstream: UPSTREAM, cancellationToken: cancellationToken);
                 }
             }
+
+            if (totalUpdates == 0)
+            {
+                // Attempt to create release
+            }
         }
+    }
+
+    private static async ValueTask<IReadOnlyList<PackageVersion>> UpdatePackagesAsync(UpdateContext updateContext,
+                                                                                      IPackageUpdater packageUpdater,
+                                                                                      PackageUpdate package,
+                                                                                      Repository repository,
+                                                                                      ILogger logger,
+                                                                                      CancellationToken cancellationToken)
+    {
+        logger.LogInformation($"* Updating {package.PackageId}...");
+        PackageUpdateConfiguration config = BuildConfiguration(package);
+
+        return await packageUpdater.UpdateAsync(basePath: repository.Info.WorkingDirectory,
+                                                configuration: config,
+                                                packageSources: updateContext.AdditionalSources,
+                                                cancellationToken: cancellationToken);
     }
 
     private static bool HasDotNetFiles(Repository repository, [NotNullWhen(true)] out IReadOnlyList<string>? solutions)
