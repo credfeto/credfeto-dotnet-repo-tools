@@ -31,8 +31,6 @@ internal static class SolutionCheck
             if (errors != 0)
             {
                 allOk = false;
-
-                break;
             }
         }
 

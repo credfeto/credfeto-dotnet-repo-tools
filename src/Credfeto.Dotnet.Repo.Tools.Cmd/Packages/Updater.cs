@@ -78,7 +78,8 @@ internal static class Updater
                 {
                     await SolutionCheck.PreCheckAsync(solutions: solutions, logging: logging, cancellationToken: cancellationToken);
 
-                    updateContext.TrackingCache.Set(repoUrl: repo, value: repository.Head.Tip.Sha);
+                    lastKnownGoodBuild = repository.Head.Tip.Sha;
+                    updateContext.TrackingCache.Set(repoUrl: repo, value: lastKnownGoodBuild);
                 }
 
                 logging.LogInformation($"* Updating {package.PackageId}...");
