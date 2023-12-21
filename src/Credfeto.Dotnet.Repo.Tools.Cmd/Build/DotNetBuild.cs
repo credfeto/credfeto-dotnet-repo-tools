@@ -142,7 +142,7 @@ internal static class DotNetBuild
         {
             logger.LogInformation("Publishing no framework...");
             await ExecRequireCleanAsync(basePath: basePath,
-                                        $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
+                                        $"publish -warnaserror -p:PublishSingleFile=true --configuration:Releases -r:linux-x64 --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
                                         logger: logger,
                                         cancellationToken: cancellationToken);
         }
@@ -150,7 +150,7 @@ internal static class DotNetBuild
         {
             logger.LogInformation($"Publishing {framework}...");
             await ExecRequireCleanAsync(basePath: basePath,
-                                        $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --framework:{framework} --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
+                                        $"publish -warnaserror -p:PublishSingleFile=true --configuration:Releases -r:linux-x64 --framework:{framework} --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
                                         logger: logger,
                                         cancellationToken: cancellationToken);
         }
@@ -161,7 +161,7 @@ internal static class DotNetBuild
         logger.LogInformation("Packing...");
 
         return ExecRequireCleanAsync(basePath: basePath,
-                                     $"pack --no-restore -nodeReuse:False --configuration=Release -p:Version={BUILD_VERSION} {NO_WARN}",
+                                     $"pack --no-restore -nodeReuse:False --configuration=Releases -p:Version={BUILD_VERSION} {NO_WARN}",
                                      logger: logger,
                                      cancellationToken: cancellationToken);
     }
@@ -171,7 +171,7 @@ internal static class DotNetBuild
         logger.LogInformation("Testing...");
 
         return ExecRequireCleanAsync(basePath: basePath,
-                                     $"test --no-build --no-restore -nodeReuse:False --configuration Release -p:Version={BUILD_VERSION} --filter FullyQualifiedName\\!~Integration {NO_WARN}",
+                                     $"test --no-build --no-restore -nodeReuse:False --configuration Releases -p:Version={BUILD_VERSION} --filter FullyQualifiedName\\!~Integration {NO_WARN}",
                                      logger: logger,
                                      cancellationToken: cancellationToken);
     }
@@ -181,7 +181,7 @@ internal static class DotNetBuild
         logger.LogInformation("Building...");
 
         return ExecRequireCleanAsync(basePath: basePath,
-                                     $"build --no-restore -warnAsError -nodeReuse:False --configuration=Release -p:Version={BUILD_VERSION} {NO_WARN}",
+                                     $"build --no-restore -warnAsError -nodeReuse:False --configuration=Releases -p:Version={BUILD_VERSION} {NO_WARN}",
                                      logger: logger,
                                      cancellationToken: cancellationToken);
     }
@@ -197,7 +197,7 @@ internal static class DotNetBuild
     {
         logger.LogInformation("Cleaning...");
 
-        return ExecRequireCleanAsync(basePath: basePath, $"clean --configuration=Release -nodeReuse:False {NO_WARN}", logger: logger, cancellationToken: cancellationToken);
+        return ExecRequireCleanAsync(basePath: basePath, $"clean --configuration=Releases -nodeReuse:False {NO_WARN}", logger: logger, cancellationToken: cancellationToken);
     }
 
     private static async Task StopBuildServerAsync(string basePath, ILogger logger, CancellationToken cancellationToken)
@@ -252,6 +252,7 @@ internal static class DotNetBuild
             // string error = await process.StandardError.ReadToEndAsync(cancellationToken);
 #else
             string output = await process.StandardOutput.ReadToEndAsync();
+
             // string error = await process.StandardError.ReadToEndAsync();
 #endif
 
