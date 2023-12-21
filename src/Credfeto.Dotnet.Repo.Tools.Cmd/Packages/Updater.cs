@@ -5,8 +5,10 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.Dotnet.Repo.Git;
+using Credfeto.Dotnet.Repo.Tools.Cmd.Build;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Exceptions;
 using Credfeto.Package;
+using FunFair.BuildCheck.Runner.Services;
 using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
 
@@ -18,10 +20,10 @@ internal static class Updater
 
     public static async Task UpdateRepositoriesAsync(UpdateContext updateContext,
                                                      IReadOnlyList<string> repos,
-                                                     IDiagnosticLogger logger,
                                                      IReadOnlyList<PackageUpdate> packages,
                                                      IPackageUpdater packageUpdater,
                                                      IPackageCache packageCache,
+                                                     ILogger logger,
                                                      CancellationToken cancellationToken)
     {
         foreach (string repo in repos)
@@ -50,10 +52,10 @@ internal static class Updater
     }
 
     private static async Task UpdateRepositoryAsync(UpdateContext updateContext,
-                                                    IDiagnosticLogger logger,
                                                     IReadOnlyList<PackageUpdate> packages,
                                                     IPackageUpdater packageUpdater,
                                                     string repo,
+                                                    ILogger logger,
                                                     CancellationToken cancellationToken)
     {
         logger.LogInformation($"Processing {repo}");
@@ -62,7 +64,7 @@ internal static class Updater
         {
             string? lastKnownGoodBuild = updateContext.TrackingCache.Get(repo);
 
-            if (!HasDotNetFiles(repository: repository, out IReadOnlyList<string>? solutions))
+            if (!HasDotNetFiles(repository: repository, out string? sourceDirectory, out IReadOnlyList<string>? solutions, out IReadOnlyList<string>? projects))
             {
                 logger.LogInformation("No dotnet files found");
                 updateContext.TrackingCache.Set(repoUrl: repo, value: repository.Head.Tip.Sha);
@@ -70,13 +72,17 @@ internal static class Updater
                 return;
             }
 
+            BuildSettings buildSettings = DotNetBuild.LoadBuildSettings(new ProjectLoader(), projects: projects);
+
             int totalUpdates = 0;
 
             foreach (PackageUpdate package in packages)
             {
                 if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repository.Head.Tip.Sha))
                 {
-                    await SolutionCheck.PreCheckAsync(solutions: solutions, logging: logger, cancellationToken: cancellationToken);
+                    await SolutionCheck.PreCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken);
+
+                    await DotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, logger: logger, cancellationToken: cancellationToken);
 
                     lastKnownGoodBuild = repository.Head.Tip.Sha;
                     updateContext.TrackingCache.Set(repoUrl: repo, value: lastKnownGoodBuild);
@@ -93,14 +99,17 @@ internal static class Updater
                 {
                     ++totalUpdates;
 
-                    bool checkOk = await SolutionCheck.PostCheckAsync(solutions: solutions, logging: logger, cancellationToken: cancellationToken);
+                    bool ok = await PostUpdateCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken, sourceDirectory: sourceDirectory, buildSettings: buildSettings);
 
-                    if (checkOk)
+                    if (ok)
                     {
                         // TODO: commit changes, push update last known good build.
+                        await CommitToRepositoryAsync(repo: repository, package: package, builtOk: ok, cancellationToken: cancellationToken);
                     }
-
-                    await GitUtils.ResetToMasterAsync(repo: repository, upstream: UPSTREAM, cancellationToken: cancellationToken);
+                    else
+                    {
+                        await GitUtils.ResetToMasterAsync(repo: repository, upstream: UPSTREAM, cancellationToken: cancellationToken);
+                    }
                 }
             }
 
@@ -109,6 +118,35 @@ internal static class Updater
                 // Attempt to create release
             }
         }
+    }
+
+    private static async ValueTask CommitToRepositoryAsync(Repository repo, PackageUpdate package, bool builtOk, CancellationToken cancellationToken)
+    {
+        await Task.Delay(millisecondsDelay: 1, cancellationToken: cancellationToken);
+    }
+
+    private static async Task<bool> PostUpdateCheckAsync(IReadOnlyList<string> solutions, string sourceDirectory, BuildSettings buildSettings, ILogger logger, CancellationToken cancellationToken)
+    {
+        bool ok = false;
+
+        try
+        {
+            bool checkOk = await SolutionCheck.PostCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken);
+
+            if (checkOk)
+            {
+                await DotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, logger: logger, cancellationToken: cancellationToken);
+
+                ok = true;
+            }
+        }
+        catch (DotNetBuildErrorException exception)
+        {
+            logger.LogError(exception: exception, message: "Build failed");
+            ok = false;
+        }
+
+        return ok;
     }
 
     private static async ValueTask<IReadOnlyList<PackageVersion>> UpdatePackagesAsync(UpdateContext updateContext,
@@ -127,27 +165,47 @@ internal static class Updater
                                                 cancellationToken: cancellationToken);
     }
 
-    private static bool HasDotNetFiles(Repository repository, [NotNullWhen(true)] out IReadOnlyList<string>? solutions)
+    private static bool HasDotNetFiles(Repository repository,
+                                       [NotNullWhen(true)] out string? sourceDirectory,
+                                       [NotNullWhen(true)] out IReadOnlyList<string>? solutions,
+                                       [NotNullWhen(true)] out IReadOnlyList<string>? projects)
     {
-        string[] foundSolutions = Directory.GetFiles(path: repository.Info.WorkingDirectory, searchPattern: "*.sln", searchOption: SearchOption.AllDirectories);
+        string sourceFolder = Path.Combine(path1: repository.Info.WorkingDirectory, path2: "src");
+
+        if (!Directory.Exists(sourceFolder))
+        {
+            sourceDirectory = null;
+            solutions = null;
+            projects = null;
+
+            return false;
+        }
+
+        string[] foundSolutions = Directory.GetFiles(path: sourceFolder, searchPattern: "*.sln", searchOption: SearchOption.AllDirectories);
 
         if (foundSolutions.Length == 0)
         {
+            sourceDirectory = null;
             solutions = null;
+            projects = null;
 
             return false;
         }
 
-        string[] foundProjects = Directory.GetFiles(path: repository.Info.WorkingDirectory, searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories);
+        string[] foundProjects = Directory.GetFiles(path: sourceFolder, searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories);
 
         if (foundProjects.Length == 0)
         {
+            sourceDirectory = null;
             solutions = null;
+            projects = null;
 
             return false;
         }
 
+        sourceDirectory = sourceFolder;
         solutions = foundSolutions;
+        projects = foundProjects;
 
         return true;
     }

@@ -2,10 +2,12 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Exceptions;
+using Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
 using FunFair.BuildCheck.Interfaces;
 using FunFair.BuildCheck.Runner;
+using Microsoft.Extensions.Logging;
 
-namespace Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
+namespace Credfeto.Dotnet.Repo.Tools.Cmd.Build;
 
 internal static class SolutionCheck
 {
@@ -13,7 +15,7 @@ internal static class SolutionCheck
 
     private static readonly IProjectClassifier ProjectClassifier = new ProjectClassifier();
 
-    public static async ValueTask PreCheckAsync(IReadOnlyList<string> solutions, IDiagnosticLogger logging, CancellationToken cancellationToken)
+    public static async ValueTask PreCheckAsync(IReadOnlyList<string> solutions, ILogger logger, CancellationToken cancellationToken)
     {
         bool allOk = true;
 
@@ -25,7 +27,7 @@ internal static class SolutionCheck
                                                       warningsAsErrors: true,
                                                       frameworkSettings: FrameworkSettings,
                                                       projectClassifier: ProjectClassifier,
-                                                      logger: logging,
+                                                      logger: logger,
                                                       cancellationToken: cancellationToken);
 
             if (errors != 0)
@@ -40,7 +42,7 @@ internal static class SolutionCheck
         }
     }
 
-    public static async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions, IDiagnosticLogger logging, CancellationToken cancellationToken)
+    public static async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions, ILogger logger, CancellationToken cancellationToken)
     {
         bool allOk = true;
 
@@ -52,7 +54,7 @@ internal static class SolutionCheck
                                                       warningsAsErrors: true,
                                                       frameworkSettings: FrameworkSettings,
                                                       projectClassifier: ProjectClassifier,
-                                                      logger: logging,
+                                                      logger: logger,
                                                       cancellationToken: cancellationToken);
 
             if (errors != 0)
