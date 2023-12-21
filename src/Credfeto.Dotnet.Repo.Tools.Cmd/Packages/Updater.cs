@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.Dotnet.Repo.Git;
@@ -55,6 +56,14 @@ internal static class Updater
         {
             string? lastKnownGoodBuild = updateContext.TrackingCache.Get(repo);
 
+            if (!HasDotNetFiles(repository))
+            {
+                logging.LogInformation("No dotnet files found");
+                updateContext.TrackingCache.Set(repo, repository.Head.Tip.Sha);
+
+                return;
+            }
+
             bool first = true;
 
             foreach (PackageUpdate package in packages)
@@ -85,6 +94,12 @@ internal static class Updater
                 }
             }
         }
+    }
+
+    private static bool HasDotNetFiles(Repository repository)
+    {
+        return Directory.GetFiles(repository.Info.WorkingDirectory, "*.csproj", SearchOption.AllDirectories)
+                        .Length != 0;
     }
 
     private static PackageUpdateConfiguration BuildConfiguration(PackageUpdate package)
