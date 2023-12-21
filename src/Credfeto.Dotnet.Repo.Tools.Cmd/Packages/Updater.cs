@@ -113,22 +113,16 @@ internal static class Updater
                 {
                     ++totalUpdates;
 
-                    bool ok = await PostUpdateCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken, sourceDirectory: sourceDirectory, buildSettings: buildSettings);
-
-                    NuGetVersion version = GetUpdateVersion(updatesMade);
-
-                    await CommitToRepositoryAsync(repo: repository,
-                                                  package: package,
-                                                  version.ToString(),
-                                                  changeLogFileName,
-                                                  builtOk: ok,
-                                                  currentTimeSource: updateContext.TimeSource,
-                                                  cancellationToken: cancellationToken);
-
-                    if (!ok)
-                    {
-                        await GitUtils.ResetToMasterAsync(repo: repository, upstream: UPSTREAM, cancellationToken: cancellationToken);
-                    }
+                    await OnPackageUpdateAsync(updateContext: updateContext,
+                                               logger: logger,
+                                               cancellationToken: cancellationToken,
+                                               solutions: solutions,
+                                               sourceDirectory: sourceDirectory,
+                                               buildSettings: buildSettings,
+                                               updatesMade: updatesMade,
+                                               repository: repository,
+                                               package: package,
+                                               changeLogFileName: changeLogFileName);
                 }
             }
 
@@ -136,6 +130,35 @@ internal static class Updater
             {
                 // Attempt to create release
             }
+        }
+    }
+
+    private static async Task OnPackageUpdateAsync(UpdateContext updateContext,
+                                                   IReadOnlyList<string> solutions,
+                                                   string sourceDirectory,
+                                                   BuildSettings buildSettings,
+                                                   IReadOnlyList<PackageVersion> updatesMade,
+                                                   Repository repository,
+                                                   PackageUpdate package,
+                                                   string changeLogFileName,
+                                                   ILogger logger,
+                                                   CancellationToken cancellationToken)
+    {
+        bool ok = await PostUpdateCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken, sourceDirectory: sourceDirectory, buildSettings: buildSettings);
+
+        NuGetVersion version = GetUpdateVersion(updatesMade);
+
+        await CommitToRepositoryAsync(repo: repository,
+                                      package: package,
+                                      version.ToString(),
+                                      changeLogFileName: changeLogFileName,
+                                      builtOk: ok,
+                                      currentTimeSource: updateContext.TimeSource,
+                                      cancellationToken: cancellationToken);
+
+        if (!ok)
+        {
+            await GitUtils.ResetToMasterAsync(repo: repository, upstream: UPSTREAM, cancellationToken: cancellationToken);
         }
     }
 
