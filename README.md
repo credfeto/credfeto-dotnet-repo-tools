@@ -2,6 +2,17 @@
 
 Dotnet/C# repository tools
 
+## Running
+
+```bash
+dotnet updaterepo \
+    --repositories /home/markr/work/personal/auto-update-config/personal/repos.lst \
+    --work /home/markr/temp \
+    --tracking /home/markr/temp/tracking.json \
+    --cache /home/markr/temp/cache.json \
+    --packages /home/markr/work/personal/auto-update-config/packages.json
+```
+
 ## Build Status
 
 | Branch  | Status                                                                                                                                                                                                                                                    |
