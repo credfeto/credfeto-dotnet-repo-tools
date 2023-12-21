@@ -3,6 +3,7 @@ using Credfeto.Date;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Services;
 using Credfeto.Dotnet.Repo.Tracking;
 using Credfeto.Package;
+using FunFair.BuildVersion.Detection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -20,6 +21,7 @@ internal static class ApplicationSetup
                                       .AddDate()
                                       .AddPackageUpdater()
                                       .AddTracking()
+                                      .AddBuildVersionDetection(new BranchSettings(null, null))
                                       .BuildServiceProvider();
     }
 }

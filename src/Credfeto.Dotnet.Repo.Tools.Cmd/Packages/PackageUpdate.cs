@@ -8,13 +8,13 @@ namespace Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
 public sealed class PackageUpdate
 {
     [JsonConstructor]
-    public PackageUpdate(string packageId, string packageType, bool exactMatch, bool versionBumpPackage, bool versionBumpWhenReferenced, IReadOnlyList<PackageExclude>? exclude)
+    public PackageUpdate(string packageId, string packageType, bool exactMatch, bool versionBumpPackage, bool prohibitVersionBumpWhenReferenced, IReadOnlyList<PackageExclude>? exclude)
     {
         this.PackageId = packageId;
         this.PackageType = packageType;
         this.ExactMatch = exactMatch;
         this.VersionBumpPackage = versionBumpPackage;
-        this.VersionBumpWhenReferenced = versionBumpWhenReferenced;
+        this.ProhibitVersionBumpWhenReferenced = prohibitVersionBumpWhenReferenced;
         this.Exclude = exclude;
     }
 
@@ -30,7 +30,7 @@ public sealed class PackageUpdate
     public bool VersionBumpPackage { get; }
 
     [JsonPropertyName("prohibit-version-bump-when-referenced")]
-    public bool VersionBumpWhenReferenced { get; }
+    public bool ProhibitVersionBumpWhenReferenced { get; }
 
     public IReadOnlyList<PackageExclude>? Exclude { get; }
 }

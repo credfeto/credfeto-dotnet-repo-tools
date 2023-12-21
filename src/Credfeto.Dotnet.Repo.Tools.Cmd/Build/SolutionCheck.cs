@@ -65,4 +65,31 @@ internal static class SolutionCheck
 
         return allOk;
     }
+
+    public static async ValueTask ReleaseCheckAsync(IReadOnlyList<string> solutions, ILogger logger, CancellationToken cancellationToken)
+    {
+        bool allOk = true;
+
+        foreach (string solution in solutions)
+        {
+            // TODO: make sure that it allows different versions of packages.
+            int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
+                                                      preReleaseBuild: false,
+                                                      warningsAsErrors: true,
+                                                      frameworkSettings: FrameworkSettings,
+                                                      projectClassifier: ProjectClassifier,
+                                                      logger: logger,
+                                                      cancellationToken: cancellationToken);
+
+            if (errors != 0)
+            {
+                allOk = false;
+            }
+        }
+
+        if (!allOk)
+        {
+            throw new SolutionCheckFailedException();
+        }
+    }
 }
