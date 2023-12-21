@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.Dotnet.Repo.Git;
+using Credfeto.Dotnet.Repo.Tools.Cmd.Exceptions;
 using Credfeto.Package;
 using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
@@ -16,7 +18,7 @@ internal static class Updater
 
     public static async Task UpdateRepositoriesAsync(UpdateContext updateContext,
                                                      IReadOnlyList<string> repos,
-                                                     IDiagnosticLogger logging,
+                                                     IDiagnosticLogger logger,
                                                      IReadOnlyList<PackageUpdate> packages,
                                                      IPackageUpdater packageUpdater,
                                                      IPackageCache packageCache,
@@ -26,7 +28,11 @@ internal static class Updater
         {
             try
             {
-                await UpdateRepositoryAsync(updateContext: updateContext, logging: logging, packages: packages, packageUpdater: packageUpdater, cancellationToken: cancellationToken, repo: repo);
+                await UpdateRepositoryAsync(updateContext: updateContext, logging: logger, packages: packages, packageUpdater: packageUpdater, cancellationToken: cancellationToken, repo: repo);
+            }
+            catch (SolutionCheckFailedException exception)
+            {
+                logger.LogError(exception, "Solution check failed");
             }
             finally
             {
@@ -56,10 +62,10 @@ internal static class Updater
         {
             string? lastKnownGoodBuild = updateContext.TrackingCache.Get(repo);
 
-            if (!HasDotNetFiles(repository))
+            if (!HasDotNetFiles(repository: repository, out IReadOnlyList<string>? solutions))
             {
                 logging.LogInformation("No dotnet files found");
-                updateContext.TrackingCache.Set(repo, repository.Head.Tip.Sha);
+                updateContext.TrackingCache.Set(repoUrl: repo, value: repository.Head.Tip.Sha);
 
                 return;
             }
@@ -70,8 +76,9 @@ internal static class Updater
             {
                 if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repository.Head.Tip.Sha))
                 {
-                    // TODO: RepoBuild (No package version check)
-                    logging.LogInformation("Need to do a Repo build");
+                    await SolutionCheck.PreCheckAsync(solutions: solutions, logging: logging, cancellationToken: cancellationToken);
+
+                    updateContext.TrackingCache.Set(repoUrl: repo, value: repository.Head.Tip.Sha);
                 }
 
                 logging.LogInformation($"* Updating {package.PackageId}...");
@@ -96,10 +103,29 @@ internal static class Updater
         }
     }
 
-    private static bool HasDotNetFiles(Repository repository)
+    private static bool HasDotNetFiles(Repository repository, [NotNullWhen(true)] out IReadOnlyList<string>? solutions)
     {
-        return Directory.GetFiles(repository.Info.WorkingDirectory, "*.csproj", SearchOption.AllDirectories)
-                        .Length != 0;
+        string[] foundSolutions = Directory.GetFiles(path: repository.Info.WorkingDirectory, searchPattern: "*.sln", searchOption: SearchOption.AllDirectories);
+
+        if (foundSolutions.Length == 0)
+        {
+            solutions = null;
+
+            return false;
+        }
+
+        string[] foundProjects = Directory.GetFiles(path: repository.Info.WorkingDirectory, searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories);
+
+        if (foundProjects.Length == 0)
+        {
+            solutions = null;
+
+            return false;
+        }
+
+        solutions = foundSolutions;
+
+        return true;
     }
 
     private static PackageUpdateConfiguration BuildConfiguration(PackageUpdate package)

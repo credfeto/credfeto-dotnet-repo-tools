@@ -120,7 +120,7 @@ internal static class Program
             {
                 await Updater.UpdateRepositoriesAsync(updateContext: updateContext,
                                                       repos: repos,
-                                                      logging: logging,
+                                                      logger: logging,
                                                       packages: packages,
                                                       packageUpdater: packageUpdater,
                                                       cancellationToken: cancellationToken,

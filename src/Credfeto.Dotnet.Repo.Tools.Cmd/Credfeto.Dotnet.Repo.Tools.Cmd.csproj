@@ -67,6 +67,7 @@
     <PackageReference Include="Credfeto.Enumeration.Source.Generation.Attributes" Version="1.1.1.168"/>
     <PackageReference Include="Credfeto.Extensions.Linq" Version="1.0.12.90"/>
     <PackageReference Include="Credfeto.Package" Version="1.10.41.233"/>
+    <PackageReference Include="FunFair.BuildCheck.Runner" Version="474.0.16.225-refactor"/>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0"/>
   </ItemGroup>
   <ItemGroup>
