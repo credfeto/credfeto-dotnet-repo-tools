@@ -115,9 +115,7 @@ internal static class Updater
 
                     bool ok = await PostUpdateCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken, sourceDirectory: sourceDirectory, buildSettings: buildSettings);
 
-                    NuGetVersion version = updatesMade.Select(x => x.Version)
-                                                      .OrderByDescending(x => x.Version)
-                                                      .First();
+                    NuGetVersion version = GetUpdateVersion(updatesMade);
 
                     await CommitToRepositoryAsync(repo: repository,
                                                   package: package,
@@ -139,6 +137,13 @@ internal static class Updater
                 // Attempt to create release
             }
         }
+    }
+
+    private static NuGetVersion GetUpdateVersion(IReadOnlyList<PackageVersion> updatesMade)
+    {
+        return updatesMade.Select(x => x.Version)
+                          .OrderByDescending(x => x.Version)
+                          .First();
     }
 
     private static async ValueTask CommitToRepositoryAsync(Repository repo,
