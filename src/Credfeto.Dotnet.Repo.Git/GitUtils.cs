@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Credfeto.Date.Interfaces;
 using Credfeto.Dotnet.Repo.Git.Exceptions;
 using LibGit2Sharp;
 
@@ -17,8 +16,6 @@ public static class GitUtils
     private static readonly CheckoutOptions GitCheckoutOptions = new() { CheckoutModifiers = CheckoutModifiers.Force };
 
     private static readonly CloneOptions GitCloneOptions = new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
-
-    private static readonly CommitOptions GitCommitOptions = new() { AllowEmptyCommit = false, AmendPreviousCommit = false };
 
     public static string GetFolderForRepo(string repoUrl)
     {
@@ -184,28 +181,20 @@ public static class GitUtils
                    .IsDirty;
     }
 
-    public static void Commit(Repository repo, string message, ICurrentTimeSource currentTimeSource)
+    public static async ValueTask CommitAsync(Repository repo, string message, CancellationToken cancellationToken)
     {
-        repo.Index.Add("*");
-        repo.Index.Write();
-
-        Signature author = new(name: "Example", email: "example@example.com", currentTimeSource.UtcNow());
-        Signature committer = author;
-        repo.Commit(message: message, author: author, committer: committer, options: GitCommitOptions);
+        await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, arguments: "add -A", cancellationToken: cancellationToken);
+        await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, $"commit -m \"{message}\"", cancellationToken: cancellationToken);
     }
 
-    public static void CommitNamed(Repository repo, string message, ICurrentTimeSource currentTimeSource, params string[] files)
+    public static async ValueTask CommitNamedAsync(Repository repo, string message, IReadOnlyList<string> files, CancellationToken cancellationToken)
     {
         foreach (string file in files)
         {
-            repo.Index.Add(file);
+            await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, $"add {file}", cancellationToken: cancellationToken);
         }
 
-        repo.Index.Write();
-
-        Signature author = new(name: "Example", email: "example@example.com", currentTimeSource.UtcNow());
-        Signature committer = author;
-        repo.Commit(message: message, author: author, committer: committer, options: GitCommitOptions);
+        await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, $"commit -m \"{message}\"", cancellationToken: cancellationToken);
     }
 
     public static async ValueTask PushAsync(Repository repo, CancellationToken cancellationToken)

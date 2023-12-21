@@ -105,9 +105,9 @@ internal static class DotNetBuild
 
     public static async ValueTask BuildAsync(string basePath, BuildSettings buildSettings, ILogger logger, CancellationToken cancellationToken)
     {
-        logger.LogInformation("Building...");
+        logger.LogInformation($"Building {basePath}...");
 
-        await StopBuildServerAsync(basePath: basePath, cancellationToken: cancellationToken);
+        await StopBuildServerAsync(basePath: basePath, logger: logger, cancellationToken: cancellationToken);
 
         try
         {
@@ -132,7 +132,7 @@ internal static class DotNetBuild
         }
         finally
         {
-            await StopBuildServerAsync(basePath: basePath, cancellationToken: cancellationToken);
+            await StopBuildServerAsync(basePath: basePath, logger: logger, cancellationToken: cancellationToken);
         }
     }
 
@@ -140,15 +140,17 @@ internal static class DotNetBuild
     {
         if (string.IsNullOrWhiteSpace(framework))
         {
+            logger.LogInformation("Publishing no framework...");
             await ExecRequireCleanAsync(basePath: basePath,
-                                        $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --framework:{framework} --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false $noWarn -nodeReuse:False {NO_WARN}",
+                                        $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
                                         logger: logger,
                                         cancellationToken: cancellationToken);
         }
         else
         {
+            logger.LogInformation($"Publishing {framework}...");
             await ExecRequireCleanAsync(basePath: basePath,
-                                        $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false $noWarn -nodeReuse:False {NO_WARN}",
+                                        $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --framework:{framework} --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
                                         logger: logger,
                                         cancellationToken: cancellationToken);
         }
@@ -156,6 +158,8 @@ internal static class DotNetBuild
 
     private static ValueTask DotNetPackAsync(string basePath, ILogger logger, in CancellationToken cancellationToken)
     {
+        logger.LogInformation("Packing...");
+
         return ExecRequireCleanAsync(basePath: basePath,
                                      $"pack --no-restore -nodeReuse:False --configuration=Release -p:Version={BUILD_VERSION} {NO_WARN}",
                                      logger: logger,
@@ -164,6 +168,8 @@ internal static class DotNetBuild
 
     private static ValueTask DotNetTestAsync(string basePath, ILogger logger, in CancellationToken cancellationToken)
     {
+        logger.LogInformation("Testing...");
+
         return ExecRequireCleanAsync(basePath: basePath,
                                      $"test --no-build --no-restore -nodeReuse:False --configuration Release -p:Version={BUILD_VERSION} --filter FullyQualifiedName\\!~Integration {NO_WARN}",
                                      logger: logger,
@@ -172,6 +178,8 @@ internal static class DotNetBuild
 
     private static ValueTask DotNetBuildAsync(string basePath, ILogger logger, in CancellationToken cancellationToken)
     {
+        logger.LogInformation("Building...");
+
         return ExecRequireCleanAsync(basePath: basePath,
                                      $"build --no-restore -warnAsError -nodeReuse:False --configuration=Release -p:Version={BUILD_VERSION} {NO_WARN}",
                                      logger: logger,
@@ -180,16 +188,21 @@ internal static class DotNetBuild
 
     private static ValueTask DotNetRestoreAsync(string basePath, ILogger logger, in CancellationToken cancellationToken)
     {
+        logger.LogInformation("Restoring...");
+
         return ExecRequireCleanAsync(basePath: basePath, $"restore -nodeReuse:False -r:linux-x64 {NO_WARN}", logger: logger, cancellationToken: cancellationToken);
     }
 
     private static ValueTask DotNetCleanAsync(string basePath, ILogger logger, in CancellationToken cancellationToken)
     {
+        logger.LogInformation("Cleaning...");
+
         return ExecRequireCleanAsync(basePath: basePath, $"clean --configuration=Release -nodeReuse:False {NO_WARN}", logger: logger, cancellationToken: cancellationToken);
     }
 
-    private static async Task StopBuildServerAsync(string basePath, CancellationToken cancellationToken)
+    private static async Task StopBuildServerAsync(string basePath, ILogger logger, CancellationToken cancellationToken)
     {
+        logger.LogInformation("Stopping build server...");
         await ExecAsync(basePath: basePath, arguments: "build-server shutdown", cancellationToken: cancellationToken);
     }
 
@@ -223,7 +236,7 @@ internal static class DotNetBuild
                                    RedirectStandardOutput = true,
                                    RedirectStandardError = true,
                                    UseShellExecute = false,
-                                   CreateNoWindow = true,
+                                   CreateNoWindow = true
                                };
 
         using (Process? process = Process.Start(psi))
