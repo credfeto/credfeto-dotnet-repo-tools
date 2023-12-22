@@ -109,15 +109,16 @@ internal static class Program
             options.Require(accessor: o => o.Packages, out string? packagesFileName) && options.Require(accessor: o => o.Tracking, out string? trackingFileName) &&
             options.Require(accessor: o => o.Template, out string? templateRepository))
         {
-            string? cacheFileName = options.Cache;
             await PerformUpdatesAsync(options: options,
                                       repositoriesFileName: repositoriesFileName,
                                       templateRepository: templateRepository,
-                                      cacheFileName: cacheFileName,
+                                      cacheFileName: options.Cache,
                                       trackingFileName: trackingFileName,
                                       packagesFileName: packagesFileName,
                                       workFolder: workFolder,
                                       cancellationToken: cancellationToken);
+
+            return;
         }
 
         throw new InvalidOptionsException();
