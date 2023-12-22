@@ -26,6 +26,9 @@ public sealed class Options
     [Option(shortName: 's', longName: "source", Required = false, HelpText = "Urls to additional NuGet feeds to load")]
     public IEnumerable<string>? Source { get; init; }
 
+    [Option(shortName: 'm', longName: "template", Required = true, HelpText = "template repository to use")]
+    public string? Template { get; init; }
+
     // [Option(shortName: 'p', longName: "package-id", Required = true, HelpText = "Package Id to check for updates")]
     // public string? PackageId { get; init; }
     //

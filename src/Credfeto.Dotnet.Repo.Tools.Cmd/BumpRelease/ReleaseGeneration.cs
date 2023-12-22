@@ -9,6 +9,7 @@ using Credfeto.ChangeLog;
 using Credfeto.Date.Interfaces;
 using Credfeto.Dotnet.Repo.Git;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Build;
+using Credfeto.Dotnet.Repo.Tools.Cmd.DotNet;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Exceptions;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
 using Credfeto.Dotnet.Repo.Tracking;
@@ -54,6 +55,7 @@ internal static class ReleaseGeneration
                                                           string changeLogFileName,
                                                           string basePath,
                                                           BuildSettings buildSettings,
+                                                          DotNetVersionSettings dotNetSettings,
                                                           IReadOnlyList<string> solutions,
                                                           IReadOnlyList<PackageUpdate> packages,
                                                           ICurrentTimeSource timeSource,
@@ -86,7 +88,13 @@ internal static class ReleaseGeneration
         // *********************************************************
         // * 3 CODE QUALITY AND BUILD
 
-        if (await ShouldNeverReleaseCodeQualityAsync(repo: repo, basePath: basePath, buildSettings: buildSettings, solutions: solutions, logger: logger, cancellationToken: cancellationToken))
+        if (await ShouldNeverReleaseCodeQualityAsync(repo: repo,
+                                                     basePath: basePath,
+                                                     buildSettings: buildSettings,
+                                                     solutions: solutions,
+                                                     dotNetSettings: dotNetSettings,
+                                                     logger: logger,
+                                                     cancellationToken: cancellationToken))
         {
             return;
         }
@@ -142,13 +150,14 @@ internal static class ReleaseGeneration
     private static async ValueTask<bool> ShouldNeverReleaseCodeQualityAsync(string repo,
                                                                             string basePath,
                                                                             BuildSettings buildSettings,
+                                                                            DotNetVersionSettings dotNetSettings,
                                                                             IReadOnlyList<string> solutions,
                                                                             ILogger logger,
                                                                             CancellationToken cancellationToken)
     {
         try
         {
-            await SolutionCheck.ReleaseCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken);
+            await SolutionCheck.ReleaseCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, logger: logger, cancellationToken: cancellationToken);
         }
         catch (SolutionCheckFailedException)
         {
@@ -339,7 +348,7 @@ internal static class ReleaseGeneration
 
         bool IsMatch(PackageUpdate package)
         {
-            return StringComparer.InvariantCultureIgnoreCase.Equals(candidate, y: package.PackageId);
+            return StringComparer.InvariantCultureIgnoreCase.Equals(x: candidate, y: package.PackageId);
         }
     }
 

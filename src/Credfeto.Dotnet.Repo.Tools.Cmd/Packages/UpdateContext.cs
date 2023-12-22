@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.Date.Interfaces;
+using Credfeto.Dotnet.Repo.Tools.Cmd.DotNet;
 using Credfeto.Dotnet.Repo.Tracking;
 using FunFair.BuildVersion.Interfaces;
 
@@ -14,6 +15,7 @@ public sealed record UpdateContext(
     string? Cache,
     string Tracking,
     IReadOnlyList<string> AdditionalSources,
+    DotNetVersionSettings DotNetSettings,
     ICurrentTimeSource TimeSource,
     ITrackingCache TrackingCache,
     IVersionDetector VersionDetector)

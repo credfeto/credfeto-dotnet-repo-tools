@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.Dotnet.Repo.Tools.Cmd.DotNet;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Exceptions;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
 using FunFair.BuildCheck.Interfaces;
@@ -11,12 +12,12 @@ namespace Credfeto.Dotnet.Repo.Tools.Cmd.Build;
 
 internal static class SolutionCheck
 {
-    private static readonly IFrameworkSettings FrameworkSettings = new FrameworkSettings();
-
     private static readonly IProjectClassifier ProjectClassifier = new ProjectClassifier();
 
-    public static async ValueTask PreCheckAsync(IReadOnlyList<string> solutions, ILogger logger, CancellationToken cancellationToken)
+    public static async ValueTask PreCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, ILogger logger, CancellationToken cancellationToken)
     {
+        IFrameworkSettings frameworkSettings = new FrameworkSettings(dotNetSettings);
+
         bool allOk = true;
 
         foreach (string solution in solutions)
@@ -25,7 +26,7 @@ internal static class SolutionCheck
             int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
                                                       preReleaseBuild: true,
                                                       warningsAsErrors: true,
-                                                      frameworkSettings: FrameworkSettings,
+                                                      frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
                                                       logger: logger,
                                                       cancellationToken: cancellationToken);
@@ -42,8 +43,10 @@ internal static class SolutionCheck
         }
     }
 
-    public static async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions, ILogger logger, CancellationToken cancellationToken)
+    public static async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, ILogger logger, CancellationToken cancellationToken)
     {
+        IFrameworkSettings frameworkSettings = new FrameworkSettings(dotNetSettings);
+
         bool allOk = true;
 
         foreach (string solution in solutions)
@@ -52,7 +55,7 @@ internal static class SolutionCheck
             int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
                                                       preReleaseBuild: true,
                                                       warningsAsErrors: true,
-                                                      frameworkSettings: FrameworkSettings,
+                                                      frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
                                                       logger: logger,
                                                       cancellationToken: cancellationToken);
@@ -66,8 +69,9 @@ internal static class SolutionCheck
         return allOk;
     }
 
-    public static async ValueTask ReleaseCheckAsync(IReadOnlyList<string> solutions, ILogger logger, CancellationToken cancellationToken)
+    public static async ValueTask ReleaseCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, ILogger logger, CancellationToken cancellationToken)
     {
+        IFrameworkSettings frameworkSettings = new FrameworkSettings(dotNetSettings);
         bool allOk = true;
 
         foreach (string solution in solutions)
@@ -76,7 +80,7 @@ internal static class SolutionCheck
             int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
                                                       preReleaseBuild: false,
                                                       warningsAsErrors: true,
-                                                      frameworkSettings: FrameworkSettings,
+                                                      frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
                                                       logger: logger,
                                                       cancellationToken: cancellationToken);

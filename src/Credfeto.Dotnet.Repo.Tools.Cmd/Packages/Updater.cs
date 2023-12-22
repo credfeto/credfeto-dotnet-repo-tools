@@ -9,6 +9,7 @@ using Credfeto.ChangeLog;
 using Credfeto.Dotnet.Repo.Git;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Build;
 using Credfeto.Dotnet.Repo.Tools.Cmd.BumpRelease;
+using Credfeto.Dotnet.Repo.Tools.Cmd.DotNet;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Exceptions;
 using Credfeto.Package;
 using FunFair.BuildCheck.Runner.Services;
@@ -127,14 +128,15 @@ internal static class Updater
                                                                                         packageUpdater: packageUpdater,
                                                                                         repo: repo,
                                                                                         repository: repository,
-                                                                                        logger: logger,
-                                                                                        cancellationToken: cancellationToken,
                                                                                         solutions: solutions,
                                                                                         sourceDirectory: sourceDirectory,
                                                                                         buildSettings: buildSettings,
+                                                                                        dotNetSettings: updateContext.DotNetSettings,
                                                                                         package: package,
                                                                                         changeLogFileName: changeLogFileName,
-                                                                                        lastKnownGoodBuild: lastKnownGoodBuild);
+                                                                                        lastKnownGoodBuild: lastKnownGoodBuild,
+                                                                                        logger: logger,
+                                                                                        cancellationToken: cancellationToken);
 
             if (updated)
             {
@@ -150,6 +152,7 @@ internal static class Updater
                                                             changeLogFileName: changeLogFileName,
                                                             basePath: sourceDirectory,
                                                             buildSettings: buildSettings,
+                                                            dotNetSettings: updateContext.DotNetSettings,
                                                             solutions: solutions,
                                                             packages: packages,
                                                             timeSource: updateContext.TimeSource,
@@ -167,6 +170,7 @@ internal static class Updater
                                                                                                            IReadOnlyList<string> solutions,
                                                                                                            string sourceDirectory,
                                                                                                            BuildSettings buildSettings,
+                                                                                                           DotNetVersionSettings dotNetSettings,
                                                                                                            PackageUpdate package,
                                                                                                            string changeLogFileName,
                                                                                                            string? lastKnownGoodBuild,
@@ -177,7 +181,7 @@ internal static class Updater
 
         if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, GitUtils.GetHeadRev(repository)))
         {
-            await SolutionCheck.PreCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken);
+            await SolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, logger: logger, cancellationToken: cancellationToken);
 
             await DotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, logger: logger, cancellationToken: cancellationToken);
 
@@ -226,7 +230,12 @@ internal static class Updater
                                                                  ILogger logger,
                                                                  CancellationToken cancellationToken)
     {
-        bool ok = await PostUpdateCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken, sourceDirectory: sourceDirectory, buildSettings: buildSettings);
+        bool ok = await PostUpdateCheckAsync(solutions: solutions,
+                                             sourceDirectory: sourceDirectory,
+                                             buildSettings: buildSettings,
+                                             dotNetSettings: updateContext.DotNetSettings,
+                                             logger: logger,
+                                             cancellationToken: cancellationToken);
 
         NuGetVersion version = GetUpdateVersion(updatesMade);
 
@@ -299,13 +308,18 @@ internal static class Updater
         await GitUtils.CommitAsync(repo: repository, $"[Dependencies] Updating {package.PackageId} ({package.PackageType}) to {version}", cancellationToken: cancellationToken);
     }
 
-    private static async Task<bool> PostUpdateCheckAsync(IReadOnlyList<string> solutions, string sourceDirectory, BuildSettings buildSettings, ILogger logger, CancellationToken cancellationToken)
+    private static async Task<bool> PostUpdateCheckAsync(IReadOnlyList<string> solutions,
+                                                         string sourceDirectory,
+                                                         BuildSettings buildSettings,
+                                                         DotNetVersionSettings dotNetSettings,
+                                                         ILogger logger,
+                                                         CancellationToken cancellationToken)
     {
         bool ok = false;
 
         try
         {
-            bool checkOk = await SolutionCheck.PostCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken);
+            bool checkOk = await SolutionCheck.PostCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, logger: logger, cancellationToken: cancellationToken);
 
             if (checkOk)
             {
