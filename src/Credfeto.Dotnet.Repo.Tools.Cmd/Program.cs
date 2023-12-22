@@ -13,6 +13,7 @@ using Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
 using Credfeto.Dotnet.Repo.Tracking;
 using Credfeto.Package;
 using Credfeto.Package.Exceptions;
+using FunFair.BuildVersion.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Credfeto.Dotnet.Repo.Tools.Cmd;
@@ -114,7 +115,8 @@ internal static class Program
                                               Tracking: options.Tracking,
                                               TrackingCache: trackingCache,
                                               AdditionalSources: options.Source?.ToArray() ?? Array.Empty<string>(),
-                                              TimeSource: services.GetRequiredService<ICurrentTimeSource>());
+                                              TimeSource: services.GetRequiredService<ICurrentTimeSource>(),
+                                              VersionDetector: services.GetRequiredService<IVersionDetector>());
 
             try
             {

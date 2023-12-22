@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Credfeto.ChangeLog;
 using Credfeto.Dotnet.Repo.Git;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Build;
+using Credfeto.Dotnet.Repo.Tools.Cmd.BumpRelease;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Exceptions;
 using Credfeto.Package;
 using FunFair.BuildCheck.Runner.Services;
@@ -17,6 +18,7 @@ using NuGet.Versioning;
 
 namespace Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
 
+// TODO: Make Class non-static and use DI
 internal static class Updater
 {
     private const string UPSTREAM = "origin";
@@ -131,6 +133,17 @@ internal static class Updater
         if (totalUpdates == 0)
         {
             // Attempt to create release
+            await ReleaseGeneration.TryCreateNextPatchAsync(repo: repo,
+                                                            repository: repository,
+                                                            changeLogFileName: changeLogFileName,
+                                                            basePath: sourceDirectory,
+                                                            buildSettings: buildSettings,
+                                                            solutions: solutions,
+                                                            packages: packages,
+                                                            timeSource: updateContext.TimeSource,
+                                                            versionDetector: updateContext.VersionDetector,
+                                                            logger: logger,
+                                                            cancellationToken: cancellationToken);
         }
     }
 

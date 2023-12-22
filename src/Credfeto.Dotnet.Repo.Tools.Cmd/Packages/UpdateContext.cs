@@ -4,11 +4,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.Date.Interfaces;
 using Credfeto.Dotnet.Repo.Tracking;
+using FunFair.BuildVersion.Interfaces;
 
 namespace Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
 
 [DebuggerDisplay("Work: {WorkFolder} Additional Sources: {AdditionalSources.Count}")]
-public sealed record UpdateContext(string WorkFolder, string? Cache, string Tracking, IReadOnlyList<string> AdditionalSources, ICurrentTimeSource TimeSource, ITrackingCache TrackingCache)
+public sealed record UpdateContext(
+    string WorkFolder,
+    string? Cache,
+    string Tracking,
+    IReadOnlyList<string> AdditionalSources,
+    ICurrentTimeSource TimeSource,
+    ITrackingCache TrackingCache,
+    IVersionDetector VersionDetector)
 {
     public async ValueTask UpdateTrackingAsync(string repo, string? value, CancellationToken cancellationToken)
     {

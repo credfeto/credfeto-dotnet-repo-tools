@@ -18,6 +18,7 @@ using NuGet.Versioning;
 
 namespace Credfeto.Dotnet.Repo.Tools.Cmd.BumpRelease;
 
+// TODO: Make Class non-static and use DI
 internal static class ReleaseGeneration
 {
     private const int DEFAULT_BUILD_NUMBER = 101;
@@ -49,7 +50,7 @@ internal static class ReleaseGeneration
 
     public static async ValueTask TryCreateNextPatchAsync(string repo,
                                                           Repository repository,
-                                                          string changeLogFile,
+                                                          string changeLogFileName,
                                                           string basePath,
                                                           BuildSettings buildSettings,
                                                           IReadOnlyList<string> solutions,
@@ -71,7 +72,7 @@ internal static class ReleaseGeneration
         // * 2 RELEASE NOTES AND DURATION
         if (await ShouldNeverReleaseTimeAndContentBasedAsync(repo: repo,
                                                              repository: repository,
-                                                             changeLogFile: changeLogFile,
+                                                             changeLogFile: changeLogFileName,
                                                              packages: packages,
                                                              timeSource: timeSource,
                                                              cancellationToken: cancellationToken))
@@ -95,7 +96,7 @@ internal static class ReleaseGeneration
             return;
         }
 
-        await CreateAsync(repo: repo, repository: repository, changeLogFile: changeLogFile, versionDetector: versionDetector, cancellationToken: cancellationToken);
+        await CreateAsync(repo: repo, repository: repository, changeLogFileName: changeLogFileName, versionDetector: versionDetector, cancellationToken: cancellationToken);
     }
 
     private static bool ShouldNeverReleaseFuzzyRules(string repo, Repository repository, in BuildSettings buildSettings)
@@ -252,11 +253,11 @@ internal static class ReleaseGeneration
         // TODO Log
     }
 
-    public static async ValueTask CreateAsync(string repo, Repository repository, string changeLogFile, IVersionDetector versionDetector, CancellationToken cancellationToken)
+    public static async ValueTask CreateAsync(string repo, Repository repository, string changeLogFileName, IVersionDetector versionDetector, CancellationToken cancellationToken)
     {
         string nextVersion = GetNextVersion(repository: repository, versionDetector: versionDetector);
 
-        await ChangeLogUpdater.CreateReleaseAsync(changeLogFileName: changeLogFile, version: nextVersion, pending: false, cancellationToken: cancellationToken);
+        await ChangeLogUpdater.CreateReleaseAsync(changeLogFileName: changeLogFileName, version: nextVersion, pending: false, cancellationToken: cancellationToken);
 
         await GitUtils.CommitAsync(repo: repository, $"Changelog for {nextVersion}", cancellationToken: cancellationToken);
         await GitUtils.PushAsync(repo: repository, cancellationToken: cancellationToken);
