@@ -8,13 +8,19 @@ using FunFair.BuildCheck.Interfaces;
 using FunFair.BuildCheck.Runner;
 using Microsoft.Extensions.Logging;
 
-namespace Credfeto.Dotnet.Repo.Tools.Cmd.Build;
+namespace Credfeto.Dotnet.Repo.Tools.Cmd.Build.Services;
 
-internal static class SolutionCheck
+public sealed class SolutionCheck : ISolutionCheck
 {
     private static readonly IProjectClassifier ProjectClassifier = new ProjectClassifier();
+    private readonly ILogger<SolutionCheck> _logger;
 
-    public static async ValueTask PreCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, ILogger logger, CancellationToken cancellationToken)
+    public SolutionCheck(ILogger<SolutionCheck> logger)
+    {
+        this._logger = logger;
+    }
+
+    public async ValueTask PreCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, ILogger logger, CancellationToken cancellationToken)
     {
         IFrameworkSettings frameworkSettings = new FrameworkSettings(dotNetSettings);
 
@@ -28,7 +34,7 @@ internal static class SolutionCheck
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
-                                                      logger: logger,
+                                                      logger: this._logger,
                                                       cancellationToken: cancellationToken);
 
             if (errors != 0)
@@ -43,7 +49,7 @@ internal static class SolutionCheck
         }
     }
 
-    public static async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, ILogger logger, CancellationToken cancellationToken)
+    public async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, ILogger logger, CancellationToken cancellationToken)
     {
         IFrameworkSettings frameworkSettings = new FrameworkSettings(dotNetSettings);
 
@@ -57,7 +63,7 @@ internal static class SolutionCheck
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
-                                                      logger: logger,
+                                                      logger: this._logger,
                                                       cancellationToken: cancellationToken);
 
             if (errors != 0)
@@ -69,7 +75,7 @@ internal static class SolutionCheck
         return allOk;
     }
 
-    public static async ValueTask ReleaseCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, ILogger logger, CancellationToken cancellationToken)
+    public async ValueTask ReleaseCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, CancellationToken cancellationToken)
     {
         IFrameworkSettings frameworkSettings = new FrameworkSettings(dotNetSettings);
         bool allOk = true;
@@ -82,7 +88,7 @@ internal static class SolutionCheck
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
-                                                      logger: logger,
+                                                      logger: this._logger,
                                                       cancellationToken: cancellationToken);
 
             if (errors != 0)

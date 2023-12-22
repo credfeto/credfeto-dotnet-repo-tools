@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -230,12 +229,6 @@ public static class GitUtils
         }
 
         repo.Branches.Add(name: branchName, commit: repo.Head.Tip);
-    }
-
-    [SuppressMessage("Microsoft.Naming", "CA1055: Uri return values should not be strings", Justification = "Simpler in this case")]
-    public static string GetUrl(Repository repository, string upstream)
-    {
-        return repository.Network.Remotes[upstream].Url;
     }
 
     public static string GetHeadRev(Repository repository)

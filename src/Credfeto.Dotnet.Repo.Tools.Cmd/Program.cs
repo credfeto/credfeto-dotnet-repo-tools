@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
-using Credfeto.Date.Interfaces;
 using Credfeto.Dotnet.Repo.Git;
 using Credfeto.Dotnet.Repo.Tools.Cmd.DotNet;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Exceptions;
@@ -15,7 +14,6 @@ using Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
 using Credfeto.Dotnet.Repo.Tracking;
 using Credfeto.Package;
 using Credfeto.Package.Exceptions;
-using FunFair.BuildVersion.Interfaces;
 using LibGit2Sharp;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -151,28 +149,19 @@ internal static class Program
 
         IReadOnlyList<PackageUpdate> packages = await LoadPackageUpdateConfigAsync(filename: packagesFileName, cancellationToken: cancellationToken);
 
-        IDiagnosticLogger logging = services.GetRequiredService<IDiagnosticLogger>();
-        IPackageUpdater packageUpdater = services.GetRequiredService<IPackageUpdater>();
+        IUpdater updater = services.GetRequiredService<IUpdater>();
 
         using (Repository templateRepo = await GitUtils.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
             UpdateContext updateContext = await BuildUpdateContextAsync(options: options,
                                                                         templateRepo: templateRepo,
-                                                                        cancellationToken: cancellationToken,
                                                                         workFolder: workFolder,
                                                                         trackingFileName: trackingFileName,
-                                                                        trackingCache: trackingCache,
-                                                                        services: services);
+                                                                        cancellationToken: cancellationToken);
 
             try
             {
-                await Updater.UpdateRepositoriesAsync(updateContext: updateContext,
-                                                      repos: repos,
-                                                      logger: logging,
-                                                      packages: packages,
-                                                      packageUpdater: packageUpdater,
-                                                      cancellationToken: cancellationToken,
-                                                      packageCache: packageCache);
+                await updater.UpdateRepositoriesAsync(updateContext: updateContext, repositories: repos, packages: packages, cancellationToken: cancellationToken);
             }
             finally
             {
@@ -188,36 +177,24 @@ internal static class Program
                            .ToArray();
     }
 
-    private static async ValueTask<UpdateContext> BuildUpdateContextAsync(Options options,
-                                                                          Repository templateRepo,
-                                                                          string workFolder,
-                                                                          string trackingFileName,
-                                                                          ITrackingCache trackingCache,
-                                                                          IServiceProvider services,
-                                                                          CancellationToken cancellationToken)
+    private static async ValueTask<UpdateContext> BuildUpdateContextAsync(Options options, Repository templateRepo, string workFolder, string trackingFileName, CancellationToken cancellationToken)
     {
         DotNetVersionSettings dotNetSettings = await GlobalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.Info.WorkingDirectory, cancellationToken: cancellationToken);
 
         // TODO: check to see what SDKs are installed throw if the one in the sdk isn't installed.
 
         return new(WorkFolder: workFolder,
-                   Cache: options.Cache,
-                   Tracking: trackingFileName,
-                   TrackingCache: trackingCache,
+                   CacheFileName: options.Cache,
+                   TrackingFileName: trackingFileName,
                    DotNetSettings: dotNetSettings,
-                   AdditionalSources: options.Source?.ToArray() ?? Array.Empty<string>(),
-                   TimeSource: services.GetRequiredService<ICurrentTimeSource>(),
-                   VersionDetector: services.GetRequiredService<IVersionDetector>());
+                   AdditionalSources: options.Source?.ToArray() ?? Array.Empty<string>());
     }
 
     private static ValueTask SaveTrackingCacheAsync(string? trackingFile, ITrackingCache trackingCache, in CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(trackingFile))
-        {
-            return ValueTask.CompletedTask;
-        }
-
-        return trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
+        return string.IsNullOrWhiteSpace(trackingFile)
+            ? ValueTask.CompletedTask
+            : trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
     }
 
     private static async ValueTask SavePackageCacheAsync(string? packageCacheFile, IPackageCache packageCache, CancellationToken cancellationToken)
