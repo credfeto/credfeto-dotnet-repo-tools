@@ -46,7 +46,7 @@ internal static class ReleaseGeneration
     private static readonly IReadOnlyList<RepoMatch> NeverRelease =
     [
         new(Repo: "template", MatchType: MatchType.CONTAINS, Include: true),
-        new(Repo: "git@github.com:funfair-tech/funfair-server-content-package.git", MatchType: MatchType.EXACT, Include: true),
+        new(Repo: "git@github.com:funfair-tech/funfair-server-content-package.git", MatchType: MatchType.EXACT, Include: true)
     ];
 
     public static async ValueTask TryCreateNextPatchAsync(string repo,
@@ -77,7 +77,7 @@ internal static class ReleaseGeneration
                                                              changeLogFile: changeLogFileName,
                                                              packages: packages,
                                                              timeSource: timeSource,
-                                                             logger,
+                                                             logger: logger,
                                                              cancellationToken: cancellationToken))
         {
             return;
@@ -94,19 +94,25 @@ internal static class ReleaseGeneration
         // *********************************************************
         // * 4 Dispatch
 
-        if (ShouldNeverReleaseFuzzyRules(repo: repo, repository: repository, buildSettings: buildSettings, logger))
+        if (ShouldNeverReleaseFuzzyRules(repo: repo, repository: repository, buildSettings: buildSettings, logger: logger))
         {
             return;
         }
 
-        await CreateAsync(repo: repo, repository: repository, changeLogFileName: changeLogFileName, versionDetector: versionDetector, trackingCache, logger, cancellationToken: cancellationToken);
+        await CreateAsync(repo: repo,
+                          repository: repository,
+                          changeLogFileName: changeLogFileName,
+                          versionDetector: versionDetector,
+                          trackingCache: trackingCache,
+                          logger: logger,
+                          cancellationToken: cancellationToken);
     }
 
     private static bool ShouldNeverReleaseFuzzyRules(string repo, Repository repository, in BuildSettings buildSettings, ILogger logger)
     {
         if (HasPendingDependencyUpdateBranches(repository))
         {
-            Skip(repo: repo, skippingReason: "FOUND PENDING UPDATE BRANCHES", logger);
+            Skip(repo: repo, skippingReason: "FOUND PENDING UPDATE BRANCHES", logger: logger);
 
             return true;
         }
@@ -123,12 +129,12 @@ internal static class ReleaseGeneration
                 return false;
             }
 
-            Skip(repo: repo, skippingReason: "CONTAINS PUBLISHABLE EXECUTABLES", logger);
+            Skip(repo: repo, skippingReason: "CONTAINS PUBLISHABLE EXECUTABLES", logger: logger);
 
             return true;
         }
 
-        Skip(repo: repo, skippingReason: "EXPLICITLY PROHIBITED", logger);
+        Skip(repo: repo, skippingReason: "EXPLICITLY PROHIBITED", logger: logger);
 
         return true;
     }
@@ -146,7 +152,7 @@ internal static class ReleaseGeneration
         }
         catch (SolutionCheckFailedException)
         {
-            Skip(repo: repo, skippingReason: "FAILED RELEASE CHECK", logger);
+            Skip(repo: repo, skippingReason: "FAILED RELEASE CHECK", logger: logger);
 
             return true;
         }
@@ -157,7 +163,7 @@ internal static class ReleaseGeneration
         }
         catch (DotNetBuildErrorException)
         {
-            Skip(repo: repo, skippingReason: "DOES NOT BUILD", logger);
+            Skip(repo: repo, skippingReason: "DOES NOT BUILD", logger: logger);
 
             return true;
         }
@@ -175,7 +181,9 @@ internal static class ReleaseGeneration
     {
         string releaseNotes = await ChangeLogReader.ExtractReleaseNodesFromFileAsync(changeLogFileName: changeLogFile, version: "Unreleased", cancellationToken: cancellationToken);
 
-        int autoUpdateCount = IsAllAutoUpdates(releaseNotes: releaseNotes, packages: packages);
+        int autoUpdateCount = IsAllAutoUpdates(releaseNotes: releaseNotes, packages: packages, logger: logger);
+
+        logger.LogInformation($"Change log update score: {autoUpdateCount}");
 
         DateTimeOffset lastCommitDate = GitUtils.GetLastCommitDate(repository);
         DateTimeOffset now = timeSource.UtcNow();
@@ -211,7 +219,7 @@ internal static class ReleaseGeneration
 
         if (!shouldCreateRelease)
         {
-            Skip(repo: repo, skippingReason: skippingReason, logger);
+            Skip(repo: repo, skippingReason: skippingReason, logger: logger);
 
             return true;
         }
@@ -274,7 +282,7 @@ internal static class ReleaseGeneration
 
         logger.LogInformation($"{repo}: RELEASE CREATED: {nextVersion}");
 
-        trackingCache.Set(repo, GitUtils.GetHeadRev(repository));
+        trackingCache.Set(repoUrl: repo, GitUtils.GetHeadRev(repository));
 
         string releaseBranch = $"release/{nextVersion}";
         GitUtils.CreateBranch(repo: repository, branchName: releaseBranch);
@@ -283,35 +291,39 @@ internal static class ReleaseGeneration
         throw new ReleaseCreatedException($"Releases {nextVersion} created for {repo}");
     }
 
-    private static int IsAllAutoUpdates(string releaseNotes, IReadOnlyList<PackageUpdate> packages)
+    private static int ScoreCount(string releaseNotes, Regex regex, int scoreMultiplier)
     {
+        return regex.Matches(releaseNotes)
+                    .Count * scoreMultiplier;
+    }
+
+    private static int IsAllAutoUpdates(string releaseNotes, IReadOnlyList<PackageUpdate> packages, ILogger logger)
+    {
+        if (string.IsNullOrWhiteSpace(releaseNotes))
+        {
+            return 0;
+        }
+
         int updateCount = 0;
 
-        updateCount += ChangeLogParsingRegex.GeoIp()
-                                            .Matches(releaseNotes)
-                                            .Count + ScoreMultipliers.GeoIp;
+        updateCount += ScoreCount(releaseNotes: releaseNotes, ChangeLogParsingRegex.GeoIp(), scoreMultiplier: ScoreMultipliers.GeoIp);
 
-        updateCount += ChangeLogParsingRegex.DotNetSdk()
-                                            .Matches(releaseNotes)
-                                            .Count * ScoreMultipliers.DotNet;
+        updateCount += ScoreCount(releaseNotes: releaseNotes, ChangeLogParsingRegex.DotNetSdk(), scoreMultiplier: ScoreMultipliers.DotNet);
 
-        foreach (Match packageMatch in ChangeLogParsingRegex.Dependencies()
-                                                            .Matches(releaseNotes))
+        foreach (string packageId in ChangeLogParsingRegex.Dependencies()
+                                                          .Matches(releaseNotes)
+                                                          .Select(packageMatch => packageMatch.Groups["PackageId"].Value))
         {
-            // Package Update
-            string packageId = packageMatch.Groups["PackageId"].Value;
-
             if (IsPackageConsideredForVersionUpdate(packageUpdates: packages, packageId: packageId))
             {
-                //Log -message "Found Matching Update: $packageName"
+                logger.LogInformation($"Found Matching Update: {packageId}");
                 updateCount += ScoreMultipliers.MatchedPackage;
             }
             else
             {
+                logger.LogInformation($"Skipping Ignored Update: {packageId}");
                 updateCount += ScoreMultipliers.IgnoredPackage;
             }
-
-            //Log -message "Skipping Ignored Update: $packageName"
         }
 
         return updateCount;
@@ -319,9 +331,16 @@ internal static class ReleaseGeneration
 
     private static bool IsPackageConsideredForVersionUpdate(IReadOnlyList<PackageUpdate> packageUpdates, string packageId)
     {
-        return packageUpdates.Where(package => StringComparer.InvariantCultureIgnoreCase.Equals(packageId.TrimEnd('.'), y: package.PackageId))
+        string candidate = packageId.TrimEnd('.');
+
+        return packageUpdates.Where(IsMatch)
                              .Select(package => !package.ProhibitVersionBumpWhenReferenced)
                              .FirstOrDefault(true);
+
+        bool IsMatch(PackageUpdate package)
+        {
+            return StringComparer.InvariantCultureIgnoreCase.Equals(candidate, y: package.PackageId);
+        }
     }
 
     private static string GetNextVersion(Repository repository, IVersionDetector versionDetector)
