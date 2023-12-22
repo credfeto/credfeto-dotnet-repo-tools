@@ -11,6 +11,7 @@ using Credfeto.Dotnet.Repo.Git;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Build;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Exceptions;
 using Credfeto.Dotnet.Repo.Tools.Cmd.Packages;
+using Credfeto.Dotnet.Repo.Tracking;
 using FunFair.BuildVersion.Interfaces;
 using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
@@ -57,6 +58,7 @@ internal static class ReleaseGeneration
                                                           IReadOnlyList<PackageUpdate> packages,
                                                           ICurrentTimeSource timeSource,
                                                           IVersionDetector versionDetector,
+                                                          ITrackingCache trackingCache,
                                                           ILogger logger,
                                                           CancellationToken cancellationToken)
     {
@@ -75,6 +77,7 @@ internal static class ReleaseGeneration
                                                              changeLogFile: changeLogFileName,
                                                              packages: packages,
                                                              timeSource: timeSource,
+                                                             logger,
                                                              cancellationToken: cancellationToken))
         {
             return;
@@ -91,19 +94,19 @@ internal static class ReleaseGeneration
         // *********************************************************
         // * 4 Dispatch
 
-        if (ShouldNeverReleaseFuzzyRules(repo: repo, repository: repository, buildSettings: buildSettings))
+        if (ShouldNeverReleaseFuzzyRules(repo: repo, repository: repository, buildSettings: buildSettings, logger))
         {
             return;
         }
 
-        await CreateAsync(repo: repo, repository: repository, changeLogFileName: changeLogFileName, versionDetector: versionDetector, cancellationToken: cancellationToken);
+        await CreateAsync(repo: repo, repository: repository, changeLogFileName: changeLogFileName, versionDetector: versionDetector, trackingCache, logger, cancellationToken: cancellationToken);
     }
 
-    private static bool ShouldNeverReleaseFuzzyRules(string repo, Repository repository, in BuildSettings buildSettings)
+    private static bool ShouldNeverReleaseFuzzyRules(string repo, Repository repository, in BuildSettings buildSettings, ILogger logger)
     {
         if (HasPendingDependencyUpdateBranches(repository))
         {
-            Skip(repo: repo, skippingReason: "FOUND PENDING UPDATE BRANCHES");
+            Skip(repo: repo, skippingReason: "FOUND PENDING UPDATE BRANCHES", logger);
 
             return true;
         }
@@ -120,12 +123,12 @@ internal static class ReleaseGeneration
                 return false;
             }
 
-            Skip(repo: repo, skippingReason: "CONTAINS PUBLISHABLE EXECUTABLES");
+            Skip(repo: repo, skippingReason: "CONTAINS PUBLISHABLE EXECUTABLES", logger);
 
             return true;
         }
 
-        Skip(repo: repo, skippingReason: "EXPLICITLY PROHIBITED");
+        Skip(repo: repo, skippingReason: "EXPLICITLY PROHIBITED", logger);
 
         return true;
     }
@@ -143,7 +146,7 @@ internal static class ReleaseGeneration
         }
         catch (SolutionCheckFailedException)
         {
-            Skip(repo: repo, skippingReason: "FAILED RELEASE CHECK");
+            Skip(repo: repo, skippingReason: "FAILED RELEASE CHECK", logger);
 
             return true;
         }
@@ -154,7 +157,7 @@ internal static class ReleaseGeneration
         }
         catch (DotNetBuildErrorException)
         {
-            Skip(repo: repo, skippingReason: "DOES NOT BUILD");
+            Skip(repo: repo, skippingReason: "DOES NOT BUILD", logger);
 
             return true;
         }
@@ -167,6 +170,7 @@ internal static class ReleaseGeneration
                                                                                     string changeLogFile,
                                                                                     IReadOnlyList<PackageUpdate> packages,
                                                                                     ICurrentTimeSource timeSource,
+                                                                                    ILogger logger,
                                                                                     CancellationToken cancellationToken)
     {
         string releaseNotes = await ChangeLogReader.ExtractReleaseNodesFromFileAsync(changeLogFileName: changeLogFile, version: "Unreleased", cancellationToken: cancellationToken);
@@ -207,7 +211,7 @@ internal static class ReleaseGeneration
 
         if (!shouldCreateRelease)
         {
-            Skip(repo: repo, skippingReason: skippingReason);
+            Skip(repo: repo, skippingReason: skippingReason, logger);
 
             return true;
         }
@@ -248,12 +252,18 @@ internal static class ReleaseGeneration
         }
     }
 
-    private static void Skip(string repo, string skippingReason)
+    private static void Skip(string repo, string skippingReason, ILogger logger)
     {
-        // TODO Log
+        logger.LogInformation($"{repo}: RELEASE SKIPPED: {skippingReason}");
     }
 
-    public static async ValueTask CreateAsync(string repo, Repository repository, string changeLogFileName, IVersionDetector versionDetector, CancellationToken cancellationToken)
+    public static async ValueTask CreateAsync(string repo,
+                                              Repository repository,
+                                              string changeLogFileName,
+                                              IVersionDetector versionDetector,
+                                              ITrackingCache trackingCache,
+                                              ILogger logger,
+                                              CancellationToken cancellationToken)
     {
         string nextVersion = GetNextVersion(repository: repository, versionDetector: versionDetector);
 
@@ -261,6 +271,10 @@ internal static class ReleaseGeneration
 
         await GitUtils.CommitAsync(repo: repository, $"Changelog for {nextVersion}", cancellationToken: cancellationToken);
         await GitUtils.PushAsync(repo: repository, cancellationToken: cancellationToken);
+
+        logger.LogInformation($"{repo}: RELEASE CREATED: {nextVersion}");
+
+        trackingCache.Set(repo, GitUtils.GetHeadRev(repository));
 
         string releaseBranch = $"release/{nextVersion}";
         GitUtils.CreateBranch(repo: repository, branchName: releaseBranch);

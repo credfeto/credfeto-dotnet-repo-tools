@@ -33,28 +33,40 @@ internal static class Updater
                                                      ILogger logger,
                                                      CancellationToken cancellationToken)
     {
-        foreach (string repo in repos)
+        try
         {
-            try
+            foreach (string repo in repos)
             {
-                await UpdateRepositoryAsync(updateContext: updateContext, logger: logger, packages: packages, packageUpdater: packageUpdater, cancellationToken: cancellationToken, repo: repo);
-            }
-            catch (SolutionCheckFailedException exception)
-            {
-                logger.LogError(exception: exception, message: "Solution check failed");
-            }
-            finally
-            {
-                if (!string.IsNullOrWhiteSpace(updateContext.Cache))
+                try
                 {
-                    await packageCache.SaveAsync(fileName: updateContext.Cache, cancellationToken: cancellationToken);
+                    await UpdateRepositoryAsync(updateContext: updateContext, logger: logger, packages: packages, packageUpdater: packageUpdater, cancellationToken: cancellationToken, repo: repo);
                 }
+                catch (SolutionCheckFailedException exception)
+                {
+                    logger.LogError(exception: exception, message: "Solution check failed");
+                }
+                catch (DotNetBuildErrorException exception)
+                {
+                    logger.LogError(exception: exception, message: "Build failed");
+                }
+                finally
+                {
+                    if (!string.IsNullOrWhiteSpace(updateContext.Cache))
+                    {
+                        await packageCache.SaveAsync(fileName: updateContext.Cache, cancellationToken: cancellationToken);
+                    }
 
-                if (!string.IsNullOrWhiteSpace(updateContext.Tracking))
-                {
-                    await updateContext.TrackingCache.SaveAsync(fileName: updateContext.Tracking, cancellationToken: cancellationToken);
+                    if (!string.IsNullOrWhiteSpace(updateContext.Tracking))
+                    {
+                        await updateContext.TrackingCache.SaveAsync(fileName: updateContext.Tracking, cancellationToken: cancellationToken);
+                    }
                 }
             }
+        }
+        catch (ReleaseCreatedException exception)
+        {
+            logger.LogInformation(exception: exception, message: "Release created - aborting run");
+            logger.LogInformation(exception.Message);
         }
     }
 
@@ -132,7 +144,7 @@ internal static class Updater
 
         if (totalUpdates == 0)
         {
-            // Attempt to create release
+            // no updates in this run - so might be able to create a release
             await ReleaseGeneration.TryCreateNextPatchAsync(repo: repo,
                                                             repository: repository,
                                                             changeLogFileName: changeLogFileName,
@@ -142,6 +154,7 @@ internal static class Updater
                                                             packages: packages,
                                                             timeSource: updateContext.TimeSource,
                                                             versionDetector: updateContext.VersionDetector,
+                                                            trackingCache: updateContext.TrackingCache,
                                                             logger: logger,
                                                             cancellationToken: cancellationToken);
         }
