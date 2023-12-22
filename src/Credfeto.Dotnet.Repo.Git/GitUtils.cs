@@ -211,7 +211,12 @@ public static class GitUtils
 
     public static bool DoesBranchExist(Repository repo, string branchName, string upstream = UPSTREAM)
     {
-        return repo.Branches.Any(b => StringComparer.Ordinal.Equals(x: b.FriendlyName, y: branchName));
+        return repo.Branches.Any(Match);
+
+        bool Match(Branch branch)
+        {
+            return StringComparer.OrdinalIgnoreCase.Equals(x: branch.FriendlyName, y: branchName);
+        }
     }
 
     public static void CreateBranch(Repository repo, string branchName)
@@ -259,12 +264,12 @@ public static class GitUtils
                 return false;
             }
 
-            if (StringComparer.Ordinal.Equals(x: branch.FriendlyName, y: branchForUpdate))
+            if (StringComparer.OrdinalIgnoreCase.Equals(x: branch.FriendlyName, y: branchForUpdate))
             {
                 return false;
             }
 
-            return branch.FriendlyName.StartsWith(value: branchPrefix, comparisonType: StringComparison.Ordinal);
+            return branch.FriendlyName.StartsWith(value: branchPrefix, comparisonType: StringComparison.OrdinalIgnoreCase);
         }
 
         /*
