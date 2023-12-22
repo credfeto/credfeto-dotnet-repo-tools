@@ -121,7 +121,7 @@ internal static class Program
             return;
         }
 
-        throw new InvalidOptionsException();
+        throw new InvalidOptionsException("No valid option selected");
     }
 
     private static async ValueTask PerformUpdatesAsync(Options options,
