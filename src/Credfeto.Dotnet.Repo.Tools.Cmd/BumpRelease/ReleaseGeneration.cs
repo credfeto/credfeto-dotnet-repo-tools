@@ -41,6 +41,12 @@ internal static class ReleaseGeneration
         new(Repo: "funfair-content-package-builder", MatchType: MatchType.CONTAINS, Include: true)
     ];
 
+    private static readonly IReadOnlyList<RepoMatch> NeverRelease =
+    [
+        new(Repo: "template", MatchType: MatchType.CONTAINS, Include: true),
+        new(Repo: "git@github.com:funfair-tech/funfair-server-content-package.git", MatchType: MatchType.EXACT, Include: true),
+    ];
+
     public static async ValueTask TryCreateNextPatchAsync(string repo,
                                                           Repository repository,
                                                           string changeLogFile,
@@ -56,13 +62,112 @@ internal static class ReleaseGeneration
         // *********************************************************
         // * 1 TEMPLATE REPOS
 
-        if (repo.Contains(value: "template", comparisonType: StringComparison.OrdinalIgnoreCase))
+        if (ShouldNeverAutoReleaseRepo(repo))
         {
             return;
         }
 
         // *********************************************************
         // * 2 RELEASE NOTES AND DURATION
+        if (await ShouldNeverReleaseTimeAndContentBasedAsync(repo: repo,
+                                                             repository: repository,
+                                                             changeLogFile: changeLogFile,
+                                                             packages: packages,
+                                                             timeSource: timeSource,
+                                                             cancellationToken: cancellationToken))
+        {
+            return;
+        }
+
+        // *********************************************************
+        // * 3 CODE QUALITY AND BUILD
+
+        if (await ShouldNeverReleaseCodeQualityAsync(repo: repo, basePath: basePath, buildSettings: buildSettings, solutions: solutions, logger: logger, cancellationToken: cancellationToken))
+        {
+            return;
+        }
+
+        // *********************************************************
+        // * 4 Dispatch
+
+        if (ShouldNeverReleaseFuzzyRules(repo: repo, repository: repository, buildSettings: buildSettings))
+        {
+            return;
+        }
+
+        await CreateAsync(repo: repo, repository: repository, changeLogFile: changeLogFile, versionDetector: versionDetector, cancellationToken: cancellationToken);
+    }
+
+    private static bool ShouldNeverReleaseFuzzyRules(string repo, Repository repository, in BuildSettings buildSettings)
+    {
+        if (HasPendingDependencyUpdateBranches(repository))
+        {
+            Skip(repo: repo, skippingReason: "FOUND PENDING UPDATE BRANCHES");
+
+            return true;
+        }
+
+        if (ShouldAlwaysCreatePatchRelease(repo))
+        {
+            return false;
+        }
+
+        if (CheckRepoForAllowedAutoUpgrade(repo))
+        {
+            if (!buildSettings.Publishable)
+            {
+                return false;
+            }
+
+            Skip(repo: repo, skippingReason: "CONTAINS PUBLISHABLE EXECUTABLES");
+
+            return true;
+        }
+
+        Skip(repo: repo, skippingReason: "EXPLICITLY PROHIBITED");
+
+        return true;
+    }
+
+    private static async ValueTask<bool> ShouldNeverReleaseCodeQualityAsync(string repo,
+                                                                            string basePath,
+                                                                            BuildSettings buildSettings,
+                                                                            IReadOnlyList<string> solutions,
+                                                                            ILogger logger,
+                                                                            CancellationToken cancellationToken)
+    {
+        try
+        {
+            await SolutionCheck.ReleaseCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken);
+        }
+        catch (SolutionCheckFailedException)
+        {
+            Skip(repo: repo, skippingReason: "FAILED RELEASE CHECK");
+
+            return true;
+        }
+
+        try
+        {
+            await DotNetBuild.BuildAsync(basePath: basePath, buildSettings: buildSettings, logger: logger, cancellationToken: cancellationToken);
+        }
+        catch (DotNetBuildErrorException)
+        {
+            Skip(repo: repo, skippingReason: "DOES NOT BUILD");
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static async ValueTask<bool> ShouldNeverReleaseTimeAndContentBasedAsync(string repo,
+                                                                                    Repository repository,
+                                                                                    string changeLogFile,
+                                                                                    IReadOnlyList<PackageUpdate> packages,
+                                                                                    ICurrentTimeSource timeSource,
+                                                                                    CancellationToken cancellationToken)
+    {
         string releaseNotes = await ChangeLogReader.ExtractReleaseNodesFromFileAsync(changeLogFileName: changeLogFile, version: "Unreleased", cancellationToken: cancellationToken);
 
         int autoUpdateCount = IsAllAutoUpdates(releaseNotes: releaseNotes, packages: packages);
@@ -103,75 +208,17 @@ internal static class ReleaseGeneration
         {
             Skip(repo: repo, skippingReason: skippingReason);
 
-            return;
+            return true;
         }
 
-        // *********************************************************
-        // * 3 CODE QUALITY AND BUILD
+        return false;
+    }
 
-        try
-        {
-            await SolutionCheck.ReleaseCheckAsync(solutions: solutions, logger: logger, cancellationToken: cancellationToken);
-        }
-        catch (SolutionCheckFailedException)
-        {
-            Skip(repo: repo, skippingReason: "FAILED RELEASE CHECK");
-
-            return;
-        }
-
-        try
-        {
-            await DotNetBuild.BuildAsync(basePath: basePath, buildSettings: buildSettings, logger: logger, cancellationToken: cancellationToken);
-        }
-        catch (DotNetBuildErrorException)
-        {
-            Skip(repo: repo, skippingReason: "DOES NOT BUILD");
-        }
-
-        // *********************************************************
-        // * 4 Dispatch
-
-        bool hasPendingDependencyUpdateBranches = HasPendingDependencyUpdateBranches(repository);
-
-        if (!hasPendingDependencyUpdateBranches)
-        {
-            if (ShouldAlwaysCreatePatchRelease(repo))
-            {
-                await CreateAsync(repo: repo, repository: repository, changeLogFile: changeLogFile, versionDetector: versionDetector, cancellationToken: cancellationToken);
-            }
-            else
-            {
-                bool allowUpdates = CheckRepoForAllowedAutoUpgrade(repo);
-
-                if (allowUpdates)
-                {
-                    if (!buildSettings.Publishable)
-                    {
-                        await CreateAsync(repo: repo, repository: repository, changeLogFile: changeLogFile, versionDetector: versionDetector, cancellationToken: cancellationToken);
-                    }
-                    else
-                    {
-                        if (ShouldAlwaysCreatePatchRelease(repo))
-                        {
-                            await CreateAsync(repo: repo, repository: repository, changeLogFile: changeLogFile, versionDetector: versionDetector, cancellationToken: cancellationToken);
-                        }
-                        else
-                        {
-                            Skip(repo: repo, skippingReason: "CONTAINS PUBLISHABLE EXECUTABLES");
-                        }
-                    }
-                }
-                else
-                {
-                    Skip(repo: repo, skippingReason: "EXPLICITLY PROHIBITED");
-                }
-            }
-        }
-        else
-        {
-            Skip(repo: repo, skippingReason: "FOUND PENDING UPDATE BRANCHES");
-        }
+    private static bool ShouldNeverAutoReleaseRepo(string repo)
+    {
+        return NeverRelease.Where(match => match.IsMatch(repo))
+                           .Select(match => match.Include)
+                           .FirstOrDefault();
     }
 
     private static bool CheckRepoForAllowedAutoUpgrade(string repo)
@@ -223,67 +270,36 @@ internal static class ReleaseGeneration
 
     private static int IsAllAutoUpdates(string releaseNotes, IReadOnlyList<PackageUpdate> packages)
     {
-        const RegexOptions regexOptions = RegexOptions.Singleline | RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture;
-        TimeSpan regexTimeout = TimeSpan.FromSeconds(value: 1);
-
-        Regex packageUpdateRegex = new(pattern: @"^\s*\-\s*Dependencies\s*\-\s*Updated\s+(?<PackageId>.+(\.+)*?)\sto\s+(\d+\..*)$", options: regexOptions, matchTimeout: regexTimeout);
-
         int updateCount = 0;
 
-        bool hasContent = false;
+        updateCount += ChangeLogParsingRegex.GeoIp()
+                                            .Matches(releaseNotes)
+                                            .Count + ScoreMultipliers.GeoIp;
 
-        foreach (string line in releaseNotes.Split(Environment.NewLine))
+        updateCount += ChangeLogParsingRegex.DotNetSdk()
+                                            .Matches(releaseNotes)
+                                            .Count * ScoreMultipliers.DotNet;
+
+        foreach (Match packageMatch in ChangeLogParsingRegex.Dependencies()
+                                                            .Matches(releaseNotes))
         {
-            if (line.StartsWith('#'))
+            // Package Update
+            string packageId = packageMatch.Groups["PackageId"].Value;
+
+            if (IsPackageConsideredForVersionUpdate(packageUpdates: packages, packageId: packageId))
             {
-                continue;
+                //Log -message "Found Matching Update: $packageName"
+                updateCount += ScoreMultipliers.MatchedPackage;
+            }
+            else
+            {
+                updateCount += ScoreMultipliers.IgnoredPackage;
             }
 
-            if (string.IsNullOrWhiteSpace(line))
-            {
-                continue;
-            }
-
-            hasContent = true;
-
-            Match packageMatches = packageUpdateRegex.Match(line);
-
-            if (packageMatches.Success)
-            {
-                // Package Update
-                string packageId = packageMatches.Groups["PackageId"].Value;
-
-                if (IsPackageConsideredForVersionUpdate(packageUpdates: packages, packageId: packageId))
-                {
-                    //Log -message "Found Matching Update: $packageName"
-                    updateCount++;
-                }
-
-                //Log -message "Skipping Ignored Update: $packageName"
-                continue;
-            }
-
-            if (Regex.IsMatch(input: line, pattern: "^\\s*\\-\\s*GEOIP\\s*\\-\\s*", options: regexOptions, matchTimeout: regexTimeout))
-            {
-                // GEO-IP update
-                updateCount++;
-
-                continue;
-            }
-
-            if (line.StartsWith(value: "- SDK - Updated DotNet SDK to ", comparisonType: StringComparison.Ordinal))
-            {
-                // Dotnet version update
-                updateCount += 1000;
-            }
+            //Log -message "Skipping Ignored Update: $packageName"
         }
 
-        if (hasContent)
-        {
-            return updateCount;
-        }
-
-        return 0;
+        return updateCount;
     }
 
     private static bool IsPackageConsideredForVersionUpdate(IReadOnlyList<PackageUpdate> packageUpdates, string packageId)
@@ -298,6 +314,14 @@ internal static class ReleaseGeneration
         NuGetVersion version = versionDetector.FindVersion(repository: repository, buildNumber: DEFAULT_BUILD_NUMBER);
 
         return new NuGetVersion(major: version.Major, minor: version.Minor, version.Patch + 1).ToString();
+    }
+
+    private static class ScoreMultipliers
+    {
+        public const int MatchedPackage = 1;
+        public const int IgnoredPackage = 0;
+        public const int GeoIp = 1;
+        public const int DotNet = 1000;
     }
 
     private enum MatchType
