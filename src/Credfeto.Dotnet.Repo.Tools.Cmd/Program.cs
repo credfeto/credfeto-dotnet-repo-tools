@@ -109,71 +109,91 @@ internal static class Program
             options.Require(accessor: o => o.Packages, out string? packagesFileName) && options.Require(accessor: o => o.Tracking, out string? trackingFileName) &&
             options.Require(accessor: o => o.Template, out string? templateRepository))
         {
-            IServiceProvider services = ApplicationSetup.Setup(false);
-
-            IReadOnlyList<string> repos = ExcludeTemplateRepo(await GitRepoList.LoadRepoListAsync(path: repositoriesFileName, cancellationToken: cancellationToken),
-                                                              templateRepository: templateRepository);
-
-            if (repos.Count == 0)
-            {
-                throw new InvalidOperationException("No Repositories found");
-            }
-
-            IPackageCache packageCache = services.GetRequiredService<IPackageCache>();
-            ITrackingCache trackingCache = services.GetRequiredService<ITrackingCache>();
-
-            await LoadPackageCacheAsync(packageCacheFile: options.Cache, packageCache: packageCache, cancellationToken: cancellationToken);
-            await LoadTrackingCacheAsync(trackingFile: options.Tracking, trackingCache: trackingCache, cancellationToken: cancellationToken);
-
-            IReadOnlyList<PackageUpdate> packages = await LoadPackageUpdateConfigAsync(filename: packagesFileName, cancellationToken: cancellationToken);
-
-            IDiagnosticLogger logging = services.GetRequiredService<IDiagnosticLogger>();
-            IPackageUpdater packageUpdater = services.GetRequiredService<IPackageUpdater>();
-
-            using (Repository templateRepo = await GitUtils.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
-            {
-                UpdateContext updateContext = await BuildUpdateContextAsync(options: options,
-                                                                            templateRepo: templateRepo,
-                                                                            cancellationToken: cancellationToken,
-                                                                            workFolder: workFolder,
-                                                                            trackingFileName: trackingFileName,
-                                                                            trackingCache: trackingCache,
-                                                                            services: services);
-
-                try
-                {
-                    await Updater.UpdateRepositoriesAsync(updateContext: updateContext,
-                                                          repos: repos,
-                                                          logger: logging,
-                                                          packages: packages,
-                                                          packageUpdater: packageUpdater,
-                                                          cancellationToken: cancellationToken,
-                                                          packageCache: packageCache);
-                }
-                finally
-                {
-                    await SavePackageCacheAsync(packageCacheFile: options.Cache, packageCache: packageCache, cancellationToken: cancellationToken);
-                    await SaveTrackingCacheAsync(trackingFile: options.Tracking, trackingCache: trackingCache, cancellationToken: cancellationToken);
-                }
-            }
+            string? cacheFileName = options.Cache;
+            await PerformUpdatesAsync(options: options,
+                                      repositoriesFileName: repositoriesFileName,
+                                      templateRepository: templateRepository,
+                                      cacheFileName: cacheFileName,
+                                      trackingFileName: trackingFileName,
+                                      packagesFileName: packagesFileName,
+                                      workFolder: workFolder,
+                                      cancellationToken: cancellationToken);
         }
 
         throw new InvalidOptionsException();
     }
 
-    private static string[] ExcludeTemplateRepo(IReadOnlyList<string> repos, string templateRepository)
+    private static async ValueTask PerformUpdatesAsync(Options options,
+                                                       string repositoriesFileName,
+                                                       string templateRepository,
+                                                       string? cacheFileName,
+                                                       string trackingFileName,
+                                                       string packagesFileName,
+                                                       string workFolder,
+                                                       CancellationToken cancellationToken)
     {
-        return repos.Where(repo => !StringComparer.InvariantCultureIgnoreCase.Equals(x: templateRepository, y: repo))
-                    .ToArray();
+        IServiceProvider services = ApplicationSetup.Setup(false);
+
+        IReadOnlyList<string> repos = ExcludeTemplateRepo(await GitRepoList.LoadRepoListAsync(path: repositoriesFileName, cancellationToken: cancellationToken),
+                                                          templateRepository: templateRepository);
+
+        if (repos.Count == 0)
+        {
+            throw new InvalidOperationException("No Repositories found");
+        }
+
+        IPackageCache packageCache = services.GetRequiredService<IPackageCache>();
+        ITrackingCache trackingCache = services.GetRequiredService<ITrackingCache>();
+
+        await LoadPackageCacheAsync(packageCacheFile: cacheFileName, packageCache: packageCache, cancellationToken: cancellationToken);
+        await LoadTrackingCacheAsync(trackingFile: trackingFileName, trackingCache: trackingCache, cancellationToken: cancellationToken);
+
+        IReadOnlyList<PackageUpdate> packages = await LoadPackageUpdateConfigAsync(filename: packagesFileName, cancellationToken: cancellationToken);
+
+        IDiagnosticLogger logging = services.GetRequiredService<IDiagnosticLogger>();
+        IPackageUpdater packageUpdater = services.GetRequiredService<IPackageUpdater>();
+
+        using (Repository templateRepo = await GitUtils.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
+        {
+            UpdateContext updateContext = await BuildUpdateContextAsync(options: options,
+                                                                        templateRepo: templateRepo,
+                                                                        cancellationToken: cancellationToken,
+                                                                        workFolder: workFolder,
+                                                                        trackingFileName: trackingFileName,
+                                                                        trackingCache: trackingCache,
+                                                                        services: services);
+
+            try
+            {
+                await Updater.UpdateRepositoriesAsync(updateContext: updateContext,
+                                                      repos: repos,
+                                                      logger: logging,
+                                                      packages: packages,
+                                                      packageUpdater: packageUpdater,
+                                                      cancellationToken: cancellationToken,
+                                                      packageCache: packageCache);
+            }
+            finally
+            {
+                await SavePackageCacheAsync(packageCacheFile: cacheFileName, packageCache: packageCache, cancellationToken: cancellationToken);
+                await SaveTrackingCacheAsync(trackingFile: trackingFileName, trackingCache: trackingCache, cancellationToken: cancellationToken);
+            }
+        }
     }
 
-    private static async Task<UpdateContext> BuildUpdateContextAsync(Options options,
-                                                                     Repository templateRepo,
-                                                                     string workFolder,
-                                                                     string trackingFileName,
-                                                                     ITrackingCache trackingCache,
-                                                                     IServiceProvider services,
-                                                                     CancellationToken cancellationToken)
+    private static IReadOnlyList<string> ExcludeTemplateRepo(IReadOnlyList<string> repositories, string templateRepository)
+    {
+        return repositories.Where(repositoryUrl => !StringComparer.InvariantCultureIgnoreCase.Equals(x: templateRepository, y: repositoryUrl))
+                           .ToArray();
+    }
+
+    private static async ValueTask<UpdateContext> BuildUpdateContextAsync(Options options,
+                                                                          Repository templateRepo,
+                                                                          string workFolder,
+                                                                          string trackingFileName,
+                                                                          ITrackingCache trackingCache,
+                                                                          IServiceProvider services,
+                                                                          CancellationToken cancellationToken)
     {
         DotNetVersionSettings dotNetSettings = await GlobalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.Info.WorkingDirectory, cancellationToken: cancellationToken);
 
@@ -239,7 +259,7 @@ internal static class Program
         await packageCache.LoadAsync(fileName: packageCacheFile, cancellationToken: cancellationToken);
     }
 
-    private static async Task<IReadOnlyList<PackageUpdate>> LoadPackageUpdateConfigAsync(string filename, CancellationToken cancellationToken)
+    private static async ValueTask<IReadOnlyList<PackageUpdate>> LoadPackageUpdateConfigAsync(string filename, CancellationToken cancellationToken)
     {
         byte[] content = await File.ReadAllBytesAsync(path: filename, cancellationToken: cancellationToken);
 

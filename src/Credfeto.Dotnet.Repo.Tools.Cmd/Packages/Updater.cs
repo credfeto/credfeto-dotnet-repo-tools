@@ -164,18 +164,18 @@ internal static class Updater
         }
     }
 
-    private static async Task<(bool updated, string? lastKnownGoodBuild)> ProcessRepoOnePackageUpdateAsync(UpdateContext updateContext,
-                                                                                                           IPackageUpdater packageUpdater,
-                                                                                                           Repository repository,
-                                                                                                           IReadOnlyList<string> solutions,
-                                                                                                           string sourceDirectory,
-                                                                                                           BuildSettings buildSettings,
-                                                                                                           DotNetVersionSettings dotNetSettings,
-                                                                                                           PackageUpdate package,
-                                                                                                           string changeLogFileName,
-                                                                                                           string? lastKnownGoodBuild,
-                                                                                                           ILogger logger,
-                                                                                                           CancellationToken cancellationToken)
+    private static async ValueTask<(bool updated, string? lastKnownGoodBuild)> ProcessRepoOnePackageUpdateAsync(UpdateContext updateContext,
+                                                                                                                IPackageUpdater packageUpdater,
+                                                                                                                Repository repository,
+                                                                                                                IReadOnlyList<string> solutions,
+                                                                                                                string sourceDirectory,
+                                                                                                                BuildSettings buildSettings,
+                                                                                                                DotNetVersionSettings dotNetSettings,
+                                                                                                                PackageUpdate package,
+                                                                                                                string changeLogFileName,
+                                                                                                                string? lastKnownGoodBuild,
+                                                                                                                ILogger logger,
+                                                                                                                CancellationToken cancellationToken)
     {
         bool updated = false;
 
@@ -306,12 +306,12 @@ internal static class Updater
         await GitUtils.CommitAsync(repo: repository, $"[Dependencies] Updating {package.PackageId} ({package.PackageType}) to {version}", cancellationToken: cancellationToken);
     }
 
-    private static async Task<bool> PostUpdateCheckAsync(IReadOnlyList<string> solutions,
-                                                         string sourceDirectory,
-                                                         BuildSettings buildSettings,
-                                                         DotNetVersionSettings dotNetSettings,
-                                                         ILogger logger,
-                                                         CancellationToken cancellationToken)
+    private static async ValueTask<bool> PostUpdateCheckAsync(IReadOnlyList<string> solutions,
+                                                              string sourceDirectory,
+                                                              BuildSettings buildSettings,
+                                                              DotNetVersionSettings dotNetSettings,
+                                                              ILogger logger,
+                                                              CancellationToken cancellationToken)
     {
         bool ok = false;
 
