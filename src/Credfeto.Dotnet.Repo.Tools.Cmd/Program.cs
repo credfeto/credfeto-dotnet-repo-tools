@@ -111,7 +111,8 @@ internal static class Program
         {
             IServiceProvider services = ApplicationSetup.Setup(false);
 
-            IReadOnlyList<string> repos = await GitRepoList.LoadRepoListAsync(path: repositoriesFileName, cancellationToken: cancellationToken);
+            IReadOnlyList<string> repos = ExcludeTemplateRepo(await GitRepoList.LoadRepoListAsync(path: repositoriesFileName, cancellationToken: cancellationToken),
+                                                              templateRepository: templateRepository);
 
             if (repos.Count == 0)
             {
@@ -160,6 +161,12 @@ internal static class Program
         throw new InvalidOptionsException();
     }
 
+    private static string[] ExcludeTemplateRepo(IReadOnlyList<string> repos, string templateRepository)
+    {
+        return repos.Where(repo => !StringComparer.InvariantCultureIgnoreCase.Equals(x: templateRepository, y: repo))
+                    .ToArray();
+    }
+
     private static async Task<UpdateContext> BuildUpdateContextAsync(Options options,
                                                                      Repository templateRepo,
                                                                      string workFolder,
@@ -169,6 +176,8 @@ internal static class Program
                                                                      CancellationToken cancellationToken)
     {
         DotNetVersionSettings dotNetSettings = await GlobalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.Info.WorkingDirectory, cancellationToken: cancellationToken);
+
+        // TODO: check to see what SDKs are installed throw if the one in the sdk isn't installed.
 
         return new(WorkFolder: workFolder,
                    Cache: options.Cache,
