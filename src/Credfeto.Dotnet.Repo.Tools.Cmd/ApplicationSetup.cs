@@ -31,7 +31,7 @@ internal static class ApplicationSetup
                                       .AddSingleton<ISolutionCheck, SolutionCheck>()
                                       .AddSingleton<IDotNetBuild, DotNetBuild>()
                                       .AddSingleton<IReleaseGeneration, ReleaseGeneration>()
-                                      .AddSingleton<IUpdater, Updater>()
+                                      .AddSingleton<IBulkPackageUpdater, BulkPackageUpdater>()
                                       .BuildServiceProvider();
     }
 }
