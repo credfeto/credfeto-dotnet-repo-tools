@@ -50,8 +50,7 @@ internal static class ReleaseGeneration
         new(Repo: "git@github.com:funfair-tech/funfair-server-content-package.git", MatchType: MatchType.EXACT, Include: true)
     ];
 
-    public static async ValueTask TryCreateNextPatchAsync(string repo,
-                                                          Repository repository,
+    public static async ValueTask TryCreateNextPatchAsync(Repository repository,
                                                           string changeLogFileName,
                                                           string basePath,
                                                           BuildSettings buildSettings,
@@ -64,17 +63,19 @@ internal static class ReleaseGeneration
                                                           ILogger logger,
                                                           CancellationToken cancellationToken)
     {
+        string repoUrl = GitUtils.GetUrl(repository, GitConstants.Upstream);
+
         // *********************************************************
         // * 1 TEMPLATE REPOS
 
-        if (ShouldNeverAutoReleaseRepo(repo))
+        if (ShouldNeverAutoReleaseRepo(repoUrl))
         {
             return;
         }
 
         // *********************************************************
         // * 2 RELEASE NOTES AND DURATION
-        if (await ShouldNeverReleaseTimeAndContentBasedAsync(repo: repo,
+        if (await ShouldNeverReleaseTimeAndContentBasedAsync(repoUrl: repoUrl,
                                                              repository: repository,
                                                              changeLogFile: changeLogFileName,
                                                              packages: packages,
@@ -88,7 +89,7 @@ internal static class ReleaseGeneration
         // *********************************************************
         // * 3 CODE QUALITY AND BUILD
 
-        if (await ShouldNeverReleaseCodeQualityAsync(repo: repo,
+        if (await ShouldNeverReleaseCodeQualityAsync(repoUrl: repoUrl,
                                                      basePath: basePath,
                                                      buildSettings: buildSettings,
                                                      solutions: solutions,
@@ -102,12 +103,12 @@ internal static class ReleaseGeneration
         // *********************************************************
         // * 4 Dispatch
 
-        if (ShouldNeverReleaseFuzzyRules(repo: repo, repository: repository, buildSettings: buildSettings, logger: logger))
+        if (ShouldNeverReleaseFuzzyRules(repoUrl: repoUrl, repository: repository, buildSettings: buildSettings, logger: logger))
         {
             return;
         }
 
-        await CreateAsync(repo: repo,
+        await CreateAsync(repoUrl: repoUrl,
                           repository: repository,
                           changeLogFileName: changeLogFileName,
                           versionDetector: versionDetector,
@@ -116,38 +117,38 @@ internal static class ReleaseGeneration
                           cancellationToken: cancellationToken);
     }
 
-    private static bool ShouldNeverReleaseFuzzyRules(string repo, Repository repository, in BuildSettings buildSettings, ILogger logger)
+    private static bool ShouldNeverReleaseFuzzyRules(string repoUrl, Repository repository, in BuildSettings buildSettings, ILogger logger)
     {
         if (HasPendingDependencyUpdateBranches(repository))
         {
-            Skip(repo: repo, skippingReason: "FOUND PENDING UPDATE BRANCHES", logger: logger);
+            Skip(repo: repoUrl, skippingReason: "FOUND PENDING UPDATE BRANCHES", logger: logger);
 
             return true;
         }
 
-        if (ShouldAlwaysCreatePatchRelease(repo))
+        if (ShouldAlwaysCreatePatchRelease(repoUrl))
         {
             return false;
         }
 
-        if (CheckRepoForAllowedAutoUpgrade(repo))
+        if (CheckRepoForAllowedAutoUpgrade(repoUrl))
         {
             if (!buildSettings.Publishable)
             {
                 return false;
             }
 
-            Skip(repo: repo, skippingReason: "CONTAINS PUBLISHABLE EXECUTABLES", logger: logger);
+            Skip(repo: repoUrl, skippingReason: "CONTAINS PUBLISHABLE EXECUTABLES", logger: logger);
 
             return true;
         }
 
-        Skip(repo: repo, skippingReason: "EXPLICITLY PROHIBITED", logger: logger);
+        Skip(repo: repoUrl, skippingReason: "EXPLICITLY PROHIBITED", logger: logger);
 
         return true;
     }
 
-    private static async ValueTask<bool> ShouldNeverReleaseCodeQualityAsync(string repo,
+    private static async ValueTask<bool> ShouldNeverReleaseCodeQualityAsync(string repoUrl,
                                                                             string basePath,
                                                                             BuildSettings buildSettings,
                                                                             DotNetVersionSettings dotNetSettings,
@@ -161,7 +162,7 @@ internal static class ReleaseGeneration
         }
         catch (SolutionCheckFailedException)
         {
-            Skip(repo: repo, skippingReason: "FAILED RELEASE CHECK", logger: logger);
+            Skip(repo: repoUrl, skippingReason: "FAILED RELEASE CHECK", logger: logger);
 
             return true;
         }
@@ -172,7 +173,7 @@ internal static class ReleaseGeneration
         }
         catch (DotNetBuildErrorException)
         {
-            Skip(repo: repo, skippingReason: "DOES NOT BUILD", logger: logger);
+            Skip(repo: repoUrl, skippingReason: "DOES NOT BUILD", logger: logger);
 
             return true;
         }
@@ -180,7 +181,7 @@ internal static class ReleaseGeneration
         return false;
     }
 
-    private static async ValueTask<bool> ShouldNeverReleaseTimeAndContentBasedAsync(string repo,
+    private static async ValueTask<bool> ShouldNeverReleaseTimeAndContentBasedAsync(string repoUrl,
                                                                                     Repository repository,
                                                                                     string changeLogFile,
                                                                                     IReadOnlyList<PackageUpdate> packages,
@@ -228,7 +229,7 @@ internal static class ReleaseGeneration
 
         if (!shouldCreateRelease)
         {
-            Skip(repo: repo, skippingReason: skippingReason, logger: logger);
+            Skip(repo: repoUrl, skippingReason: skippingReason, logger: logger);
 
             return true;
         }
@@ -274,7 +275,7 @@ internal static class ReleaseGeneration
         logger.LogInformation($"{repo}: RELEASE SKIPPED: {skippingReason}");
     }
 
-    public static async ValueTask CreateAsync(string repo,
+    public static async ValueTask CreateAsync(string repoUrl,
                                               Repository repository,
                                               string changeLogFileName,
                                               IVersionDetector versionDetector,
@@ -289,15 +290,15 @@ internal static class ReleaseGeneration
         await GitUtils.CommitAsync(repo: repository, $"Changelog for {nextVersion}", cancellationToken: cancellationToken);
         await GitUtils.PushAsync(repo: repository, cancellationToken: cancellationToken);
 
-        logger.LogInformation($"{repo}: RELEASE CREATED: {nextVersion}");
+        logger.LogInformation($"{repoUrl}: RELEASE CREATED: {nextVersion}");
 
-        trackingCache.Set(repoUrl: repo, GitUtils.GetHeadRev(repository));
+        trackingCache.Set(repoUrl: repoUrl, GitUtils.GetHeadRev(repository));
 
         string releaseBranch = $"release/{nextVersion}";
         GitUtils.CreateBranch(repo: repository, branchName: releaseBranch);
         await GitUtils.PushOriginAsync(repo: repository, branchName: releaseBranch, upstream: UPSTREAM, cancellationToken: cancellationToken);
 
-        throw new ReleaseCreatedException($"Releases {nextVersion} created for {repo}");
+        throw new ReleaseCreatedException($"Releases {nextVersion} created for {repoUrl}");
     }
 
     private static int ScoreCount(string releaseNotes, Regex regex, int scoreMultiplier)

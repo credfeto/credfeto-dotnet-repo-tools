@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -11,8 +12,6 @@ namespace Credfeto.Dotnet.Repo.Git;
 
 public static class GitUtils
 {
-    private const string UPSTREAM = "origin";
-
     private static readonly CheckoutOptions GitCheckoutOptions = new() { CheckoutModifiers = CheckoutModifiers.Force };
 
     private static readonly CloneOptions GitCloneOptions = new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
@@ -42,7 +41,7 @@ public static class GitUtils
         {
             Repository repo = OpenRepository(repoDir);
 
-            await ResetToMasterAsync(repo: repo, upstream: UPSTREAM, cancellationToken: cancellationToken);
+            await ResetToMasterAsync(repo: repo, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
             return repo;
 
@@ -114,7 +113,7 @@ public static class GitUtils
         }
     }
 
-    public static IReadOnlyCollection<string> GetRemoteBranches(Repository repo, string upstream = UPSTREAM)
+    public static IReadOnlyCollection<string> GetRemoteBranches(Repository repo, string upstream)
     {
         const string prefix = "refs/heads/";
 
@@ -130,7 +129,7 @@ public static class GitUtils
         }
     }
 
-    public static string GetDefaultBranch(Repository repo, string upstream = UPSTREAM)
+    public static string GetDefaultBranch(Repository repo, string upstream)
     {
         Branch headBranch = repo.Branches.FirstOrDefault(IsHeadBranch) ?? throw new GitException($"Failed to find remote branches for {upstream}");
         string target = headBranch.Reference.TargetIdentifier ?? throw new GitException($"Failed to find remote branches for {upstream}");
@@ -209,7 +208,7 @@ public static class GitUtils
         Console.WriteLine("Pushed!");
     }
 
-    public static bool DoesBranchExist(Repository repo, string branchName, string upstream = UPSTREAM)
+    public static bool DoesBranchExist(Repository repo, string branchName)
     {
         return repo.Branches.Any(Match);
 
@@ -231,6 +230,12 @@ public static class GitUtils
         }
 
         repo.Branches.Add(name: branchName, commit: repo.Head.Tip);
+    }
+
+    [SuppressMessage("Microsoft.Naming", "CA1055: Uri return values should not be strings", Justification = "Simpler in this case")]
+    public static string GetUrl(Repository repository, string upstream)
+    {
+        return repository.Network.Remotes[upstream].Url;
     }
 
     public static string GetHeadRev(Repository repository)
@@ -271,39 +276,6 @@ public static class GitUtils
 
             return branch.FriendlyName.StartsWith(value: branchPrefix, comparisonType: StringComparison.OrdinalIgnoreCase);
         }
-
-        /*
-          function Git-RemoveBranchesForPrefix {
-             param(
-                 [string]$repoPath = $(throw "Git-RemoveBranchesForPrefix: repoPath not specified"),
-                 [string]$branchForUpdate = $(throw "Git-RemoveBranchesForPrefix: branchForUpdate not specified"),
-                 [string]$branchPrefix = $(throw "Git-RemoveBranchesForPrefix: branchPrefix not specified")
-                 )
-
-                 Log -message "Git-RemoveBranchesForPrefix: $repoPath ($branchForUpdate, $branchPrefix)"
-
-                 [string]$upstream = "origin"
-
-                 Git-ValidateBranchName -branchName $branchPrefix -method "Git-RemoveBranchesForPrefix"
-
-                 [string[]]$remoteBranches = Git-GetRemoteBranches -repoPath $repoFolder -upstream $upstream
-
-                 Log -message "Looking for branches to remove based on prefix: $branchPrefix"
-                 foreach($branch in $remoteBranches) {
-                     if($branchForUpdate) {
-                         if($branch -eq $branchForUpdate) {
-                             Log -message "- Skipping branch just pushed to: $branch"
-                             continue
-                         }
-                     }
-
-                     if($branch.StartsWith($branchPrefix)) {
-                         Log -message "+ Deleting older branch for package: $branch"
-                         Git-DeleteBranch -branchName $branch -repoPath $repoFolder
-                     }
-                 }
-             }
-         */
     }
 
     private static async ValueTask DeleteBranchAsync(Repository repo, string branch, string upstream, CancellationToken cancellationToken)

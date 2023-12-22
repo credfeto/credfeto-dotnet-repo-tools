@@ -77,10 +77,10 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
         {
             this.Output.WriteLine($"Repo: {repo.Info.Path}");
 
-            string branch = GitUtils.GetDefaultBranch(repo);
+            string branch = GitUtils.GetDefaultBranch(repo, GitConstants.Upstream);
             this.Output.WriteLine($"Default Branch: {branch}");
 
-            IReadOnlyCollection<string> remoteBranches = GitUtils.GetRemoteBranches(repo);
+            IReadOnlyCollection<string> remoteBranches = GitUtils.GetRemoteBranches(repo, GitConstants.Upstream);
 
             foreach (string remoteBranch in remoteBranches)
             {

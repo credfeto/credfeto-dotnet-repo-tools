@@ -82,10 +82,20 @@ internal static class Updater
 
         using (Repository repository = await GitUtils.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
+            string repoUrl = GitUtils.GetUrl(repository, GitConstants.Upstream);
+
+            if (!ChangeLogDetector.TryFindChangeLog(repository: repository, out string? changeLogFileName))
+            {
+                logger.LogInformation("No changelog found");
+                await updateContext.UpdateTrackingAsync(repo: repoUrl, GitUtils.GetHeadRev(repository), cancellationToken: cancellationToken);
+
+                return;
+            }
+
             await ProcessRepoUpdatesAsync(updateContext: updateContext,
                                           packages: packages,
                                           packageUpdater: packageUpdater,
-                                          repo: repo,
+                                          changeLogFileName: changeLogFileName,
                                           logger: logger,
                                           cancellationToken: cancellationToken,
                                           repository: repository);
@@ -95,25 +105,18 @@ internal static class Updater
     private static async Task ProcessRepoUpdatesAsync(UpdateContext updateContext,
                                                       IReadOnlyList<PackageUpdate> packages,
                                                       IPackageUpdater packageUpdater,
-                                                      string repo,
                                                       Repository repository,
+                                                      string changeLogFileName,
                                                       ILogger logger,
                                                       CancellationToken cancellationToken)
     {
-        string? lastKnownGoodBuild = updateContext.TrackingCache.Get(repo);
+        string repoUrl = GitUtils.GetUrl(repository, GitConstants.Upstream);
+        string? lastKnownGoodBuild = updateContext.TrackingCache.Get(repoUrl);
 
         if (!HasDotNetFiles(repository: repository, out string? sourceDirectory, out IReadOnlyList<string>? solutions, out IReadOnlyList<string>? projects))
         {
             logger.LogInformation("No dotnet files found");
-            await updateContext.UpdateTrackingAsync(repo: repo, GitUtils.GetHeadRev(repository), cancellationToken: cancellationToken);
-
-            return;
-        }
-
-        if (!ChangeLogDetector.TryFindChangeLog(repository: repository, out string? changeLogFileName))
-        {
-            logger.LogInformation("No changelog found");
-            await updateContext.UpdateTrackingAsync(repo: repo, GitUtils.GetHeadRev(repository), cancellationToken: cancellationToken);
+            await updateContext.UpdateTrackingAsync(repo: repoUrl, GitUtils.GetHeadRev(repository), cancellationToken: cancellationToken);
 
             return;
         }
@@ -126,7 +129,6 @@ internal static class Updater
         {
             (bool updated, lastKnownGoodBuild) = await ProcessRepoOnePackageUpdateAsync(updateContext: updateContext,
                                                                                         packageUpdater: packageUpdater,
-                                                                                        repo: repo,
                                                                                         repository: repository,
                                                                                         solutions: solutions,
                                                                                         sourceDirectory: sourceDirectory,
@@ -147,8 +149,7 @@ internal static class Updater
         if (totalUpdates == 0)
         {
             // no updates in this run - so might be able to create a release
-            await ReleaseGeneration.TryCreateNextPatchAsync(repo: repo,
-                                                            repository: repository,
+            await ReleaseGeneration.TryCreateNextPatchAsync(repository: repository,
                                                             changeLogFileName: changeLogFileName,
                                                             basePath: sourceDirectory,
                                                             buildSettings: buildSettings,
@@ -165,7 +166,6 @@ internal static class Updater
 
     private static async Task<(bool updated, string? lastKnownGoodBuild)> ProcessRepoOnePackageUpdateAsync(UpdateContext updateContext,
                                                                                                            IPackageUpdater packageUpdater,
-                                                                                                           string repo,
                                                                                                            Repository repository,
                                                                                                            IReadOnlyList<string> solutions,
                                                                                                            string sourceDirectory,
@@ -186,7 +186,7 @@ internal static class Updater
             await DotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, logger: logger, cancellationToken: cancellationToken);
 
             lastKnownGoodBuild = GitUtils.GetHeadRev(repository);
-            await updateContext.UpdateTrackingAsync(repo: repo, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
+            await updateContext.UpdateTrackingAsync(repo: GitUtils.GetUrl(repository, GitConstants.Upstream), value: lastKnownGoodBuild, cancellationToken: cancellationToken);
         }
 
         IReadOnlyList<PackageVersion> updatesMade = await UpdatePackagesAsync(updateContext: updateContext,
@@ -205,7 +205,6 @@ internal static class Updater
                                                                  sourceDirectory: sourceDirectory,
                                                                  buildSettings: buildSettings,
                                                                  updatesMade: updatesMade,
-                                                                 repo: repo,
                                                                  repository: repository,
                                                                  package: package,
                                                                  changeLogFileName: changeLogFileName,
@@ -223,7 +222,6 @@ internal static class Updater
                                                                  string sourceDirectory,
                                                                  BuildSettings buildSettings,
                                                                  IReadOnlyList<PackageVersion> updatesMade,
-                                                                 string repo,
                                                                  Repository repository,
                                                                  PackageUpdate package,
                                                                  string changeLogFileName,
@@ -245,7 +243,7 @@ internal static class Updater
         {
             string headRev = GitUtils.GetHeadRev(repository);
 
-            await updateContext.UpdateTrackingAsync(repo: repo, value: headRev, cancellationToken: cancellationToken);
+            await updateContext.UpdateTrackingAsync(repo: GitUtils.GetUrl(repository, GitConstants.Upstream), value: headRev, cancellationToken: cancellationToken);
 
             return headRev;
         }
