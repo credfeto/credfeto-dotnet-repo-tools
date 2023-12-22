@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -21,6 +22,24 @@ internal static class ReleaseGeneration
 {
     private const int DEFAULT_BUILD_NUMBER = 101;
     private const string UPSTREAM = "upstream";
+
+    private static readonly IReadOnlyList<RepoMatch> AllowedAutoUpgrade =
+    [
+        new(Repo: "git@github.com:funfair-tech/funfair-server-content-package.git", MatchType: MatchType.EXACT, Include: false),
+        new(Repo: "code-analysis", MatchType: MatchType.CONTAINS, Include: false)
+    ];
+
+    private static readonly IReadOnlyList<RepoMatch> AlwaysMatch =
+    [
+        new(Repo: "template", MatchType: MatchType.CONTAINS, Include: false),
+        new(Repo: "credfeto", MatchType: MatchType.CONTAINS, Include: true),
+        new(Repo: "BuildBot", MatchType: MatchType.CONTAINS, Include: true),
+        new(Repo: "CoinBot", MatchType: MatchType.CONTAINS, Include: true),
+        new(Repo: "funfair-server-balance-bot", MatchType: MatchType.CONTAINS, Include: true),
+        new(Repo: "funfair-build-check", MatchType: MatchType.CONTAINS, Include: true),
+        new(Repo: "funfair-build-version", MatchType: MatchType.CONTAINS, Include: true),
+        new(Repo: "funfair-content-package-builder", MatchType: MatchType.CONTAINS, Include: true)
+    ];
 
     public static async ValueTask TryCreateNextPatchAsync(string repo,
                                                           Repository repository,
@@ -157,62 +176,16 @@ internal static class ReleaseGeneration
 
     private static bool CheckRepoForAllowedAutoUpgrade(string repo)
     {
-        if (StringComparer.Ordinal.Equals(x: repo, y: "git@github.com:funfair-tech/funfair-server-content-package.git"))
-        {
-            return false;
-        }
-
-        if (repo.Contains(value: "code-analysis", comparisonType: StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        return true;
+        return AllowedAutoUpgrade.Where(match => match.IsMatch(repo))
+                                 .Select(match => match.Include)
+                                 .FirstOrDefault(true);
     }
 
     private static bool ShouldAlwaysCreatePatchRelease(string repo)
     {
-        if (repo.Contains(value: "template", comparisonType: StringComparison.Ordinal))
-        {
-            return false;
-        }
-
-        if (repo.Contains(value: "credfeto", comparisonType: StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        if (repo.Contains(value: "BuildBot", comparisonType: StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        if (repo.Contains(value: "CoinBot", comparisonType: StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        if (repo.Contains(value: "funfair-server-balance-bot", comparisonType: StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        if (repo.Contains(value: "funfair-build-check", comparisonType: StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        if (repo.Contains(value: "funfair-build-version", comparisonType: StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        if (repo.Contains(value: "funfair-content-package-builder", comparisonType: StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        return false;
+        return AlwaysMatch.Where(match => match.IsMatch(repo))
+                          .Select(match => match.Include)
+                          .FirstOrDefault();
     }
 
     private static bool HasPendingDependencyUpdateBranches(Repository repository)
@@ -325,6 +298,23 @@ internal static class ReleaseGeneration
         NuGetVersion version = versionDetector.FindVersion(repository: repository, buildNumber: DEFAULT_BUILD_NUMBER);
 
         return new NuGetVersion(major: version.Major, minor: version.Minor, version.Patch + 1).ToString();
+    }
+
+    private enum MatchType
+    {
+        EXACT,
+        CONTAINS
+    }
+
+    [DebuggerDisplay("{Repo}: {MatchType} Include : {Include}")]
+    private readonly record struct RepoMatch(string Repo, MatchType MatchType, bool Include)
+    {
+        public bool IsMatch(string repo)
+        {
+            return this.MatchType == MatchType.EXACT
+                ? StringComparer.OrdinalIgnoreCase.Equals(x: repo, y: this.Repo)
+                : repo.Contains(value: this.Repo, comparisonType: StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     private static class ReleaseSettings
