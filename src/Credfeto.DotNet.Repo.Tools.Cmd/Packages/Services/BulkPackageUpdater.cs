@@ -455,6 +455,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
     private static async ValueTask<IReadOnlyList<PackageUpdate>> LoadPackageUpdateConfigAsync(string filename, CancellationToken cancellationToken)
     {
+        // TODO if path is a URL then download the file rather than reading it
+
         byte[] content = await File.ReadAllBytesAsync(path: filename, cancellationToken: cancellationToken);
 
         IReadOnlyList<PackageUpdate> packages = JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: PackageConfigSerializationContext.Default.IReadOnlyListPackageUpdate) ??

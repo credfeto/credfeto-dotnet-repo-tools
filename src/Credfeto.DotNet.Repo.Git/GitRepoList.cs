@@ -10,6 +10,7 @@ public static class GitRepoList
 {
     public static async ValueTask<IReadOnlyList<string>> LoadRepoListAsync(string path, CancellationToken cancellationToken)
     {
+        // Todo if path is a URL then download the file
         IReadOnlyList<string> lines = await File.ReadAllLinesAsync(path, cancellationToken);
 
         return lines.Where(l => !string.IsNullOrWhiteSpace(l))
