@@ -117,9 +117,9 @@ public static class GitUtils
         const string prefix = "refs/heads/";
 
         return repo.Branches.Where(IsRemoteBranch)
-            .Select(b => b.UpstreamBranchCanonicalName.Substring(prefix.Length))
-            .Where(b => !StringComparer.Ordinal.Equals(x: b, y: "HEAD"))
-            .ToArray();
+                   .Select(b => b.UpstreamBranchCanonicalName.Substring(prefix.Length))
+                   .Where(b => !StringComparer.Ordinal.Equals(x: b, y: "HEAD"))
+                   .ToArray();
 
         bool IsRemoteBranch(Branch branch)
         {
@@ -176,7 +176,7 @@ public static class GitUtils
     public static bool HasUncommittedChanges(Repository repo)
     {
         return repo.RetrieveStatus()
-            .IsDirty;
+                   .IsDirty;
     }
 
     public static async ValueTask CommitAsync(Repository repo, string message, CancellationToken cancellationToken)
@@ -198,13 +198,13 @@ public static class GitUtils
     public static async ValueTask PushAsync(Repository repo, CancellationToken cancellationToken)
     {
         await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, arguments: "push", cancellationToken: cancellationToken);
-        Console.WriteLine("Pushed!");
+        Console.WriteLine($"Pushed {repo.Refs.Head.CanonicalName}!");
     }
 
     public static async ValueTask PushOriginAsync(Repository repo, string branchName, string upstream, CancellationToken cancellationToken)
     {
         await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, $"--set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
-        Console.WriteLine("Pushed!");
+        Console.WriteLine($"Pushed {repo.Refs.Head.CanonicalName} to {upstream}!");
     }
 
     public static bool DoesBranchExist(Repository repo, string branchName)
