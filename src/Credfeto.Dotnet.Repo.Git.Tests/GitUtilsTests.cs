@@ -29,13 +29,13 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
         Assert.Equal(expected: expected, actual: actual);
     }
 
-    [Fact]
+    [Fact(Skip = "Requires SSH to be setup")]
     public Task CanCloneSshAsync()
     {
         return this.CloneTestCommonAsync(uri: REPO_SSH, cancellationToken: CancellationToken.None);
     }
 
-    [Fact]
+    [Fact(Skip = "Requires SSH to be setup")]
     public async Task CreateBranchSshAsync()
     {
         CancellationToken cancellationToken = CancellationToken.None;
