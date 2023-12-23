@@ -114,23 +114,23 @@
    color: "ff0000"
    description: "This pull request should not be merged yey"
 
- - name: "Credfeto.Dotnet.Repo.Git"
+ - name: "Credfeto.DotNet.Repo.Git"
    color: "96f7d2"
-   description: "Changes in Credfeto.Dotnet.Repo.Git project"
+   description: "Changes in Credfeto.DotNet.Repo.Git project"
 
- - name: "Credfeto.Dotnet.Repo.Git.Tests"
+ - name: "Credfeto.DotNet.Repo.Git.Tests"
    color: "0e8a16"
-   description: "Changes in Credfeto.Dotnet.Repo.Git.Tests project"
+   description: "Changes in Credfeto.DotNet.Repo.Git.Tests project"
 
  - name: "Cmd"
    color: "96f7d2"
-   description: "Changes in Credfeto.Dotnet.Repo.Tools.Cmd project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Cmd project"
 
- - name: "Credfeto.Dotnet.Repo.Tracking"
+ - name: "Credfeto.DotNet.Repo.Tracking"
    color: "96f7d2"
-   description: "Changes in Credfeto.Dotnet.Repo.Tracking project"
+   description: "Changes in Credfeto.DotNet.Repo.Tracking project"
 
- - name: "Credfeto.Dotnet.Repo.Tracking.Tests"
+ - name: "Credfeto.DotNet.Repo.Tracking.Tests"
    color: "0e8a16"
-   description: "Changes in Credfeto.Dotnet.Repo.Tracking.Tests project"
+   description: "Changes in Credfeto.DotNet.Repo.Tracking.Tests project"
 
