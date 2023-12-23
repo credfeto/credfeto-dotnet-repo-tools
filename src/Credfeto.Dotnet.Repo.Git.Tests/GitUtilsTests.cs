@@ -11,7 +11,6 @@ namespace Credfeto.Dotnet.Repo.Git.Tests;
 
 public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
 {
-    private const string UPSTREAM = "origin";
     private const string REPO_HTTPS = "https://github.com/credfeto/scratch.git";
     private const string REPO_SSH = "git@github.com:credfeto/scratch.git";
 
@@ -57,7 +56,7 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
 
             Assert.True(GitUtils.DoesBranchExist(repo: repo, branchName: newBranch), userMessage: "Branch should exist");
 
-            await GitUtils.ResetToMasterAsync(repo: repo, upstream: UPSTREAM, cancellationToken: cancellationToken);
+            await GitUtils.ResetToMasterAsync(repo: repo, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
             GitUtils.RemoveAllLocalBranches(repo);
 

@@ -23,7 +23,6 @@ namespace Credfeto.Dotnet.Repo.Tools.Cmd.BumpRelease.Services;
 public sealed class ReleaseGeneration : IReleaseGeneration
 {
     private const int DEFAULT_BUILD_NUMBER = 101;
-    private const string UPSTREAM = "upstream";
 
     private static readonly IReadOnlyList<RepoMatch> AllowedAutoUpgrade =
     [
@@ -134,7 +133,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         string releaseBranch = $"release/{nextVersion}";
         GitUtils.CreateBranch(repo: repoContext.Repository, branchName: releaseBranch);
-        await GitUtils.PushOriginAsync(repo: repoContext.Repository, branchName: releaseBranch, upstream: UPSTREAM, cancellationToken: cancellationToken);
+        await GitUtils.PushOriginAsync(repo: repoContext.Repository, branchName: releaseBranch, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
         throw new ReleaseCreatedException($"Releases {nextVersion} created for {repoContext.ClonePath}");
     }
@@ -275,13 +274,23 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
     private static bool HasPendingDependencyUpdateBranches(in RepoContext repoContext)
     {
-        IReadOnlyCollection<string> branches = GitUtils.GetRemoteBranches(repo: repoContext.Repository, upstream: UPSTREAM);
+        IReadOnlyCollection<string> branches = GitUtils.GetRemoteBranches(repo: repoContext.Repository, upstream: GitConstants.Upstream);
 
         return branches.Any(IsDependencyBranch);
 
         static bool IsDependencyBranch(string branch)
         {
+            return IsPackageUpdaterBranch(branch) || IsDependabotBranch(branch);
+        }
+
+        static bool IsPackageUpdaterBranch(string branch)
+        {
             return branch.StartsWith(value: "depends/", comparisonType: StringComparison.Ordinal) && !branch.StartsWith(value: "/preview/", comparisonType: StringComparison.Ordinal);
+        }
+
+        static bool IsDependabotBranch(string branch)
+        {
+            return branch.StartsWith(value: "dependabot/", comparisonType: StringComparison.Ordinal);
         }
     }
 

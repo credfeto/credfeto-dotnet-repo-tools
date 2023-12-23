@@ -22,9 +22,7 @@ namespace Credfeto.Dotnet.Repo.Tools.Cmd.Packages.Services;
 
 public sealed class BulkPackageUpdater : IBulkPackageUpdater
 {
-    private const string UPSTREAM = "origin";
-
-    private const string CHANGELOG_ENTRYTYPE = "Changed";
+    private const string CHANGELOG_ENTRY_TYPE = "Changed";
     private readonly IDotNetBuild _dotNetBuild;
     private readonly ILogger<BulkPackageUpdater> _logger;
     private readonly IPackageCache _packageCache;
@@ -264,7 +262,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             return headRev;
         }
 
-        await GitUtils.ResetToMasterAsync(repo: repoContext.Repository, upstream: UPSTREAM, cancellationToken: cancellationToken);
+        await GitUtils.ResetToMasterAsync(repo: repoContext.Repository, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
         return null;
     }
@@ -289,7 +287,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                         Guid.NewGuid()
                                                             .ToString(),
                                                         branchPrefix: branchPrefix,
-                                                        upstream: UPSTREAM,
+                                                        upstream: GitConstants.Upstream,
                                                         cancellationToken: cancellationToken);
         }
         else
@@ -303,11 +301,11 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             GitUtils.CreateBranch(repo: repoContext.Repository, branchName: branchForUpdate);
 
             await CommitChangeWithChangelogAsync(repoContext: repoContext, package: package, version: version, cancellationToken: cancellationToken);
-            await GitUtils.PushOriginAsync(repo: repoContext.Repository, branchName: branchForUpdate, upstream: UPSTREAM, cancellationToken: cancellationToken);
+            await GitUtils.PushOriginAsync(repo: repoContext.Repository, branchName: branchForUpdate, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
             await GitUtils.RemoveBranchesForPrefixAsync(repo: repoContext.Repository,
                                                         branchForUpdate: branchForUpdate,
                                                         branchPrefix: branchPrefix,
-                                                        upstream: UPSTREAM,
+                                                        upstream: GitConstants.Upstream,
                                                         cancellationToken: cancellationToken);
         }
     }
@@ -315,11 +313,11 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     private static async ValueTask CommitChangeWithChangelogAsync(RepoContext repoContext, PackageUpdate package, string version, CancellationToken cancellationToken)
     {
         await ChangeLogUpdater.RemoveEntryAsync(changeLogFileName: repoContext.ChangeLogFileName,
-                                                type: CHANGELOG_ENTRYTYPE,
+                                                type: CHANGELOG_ENTRY_TYPE,
                                                 $"Dependencies - Updated {package.PackageId} to ",
                                                 cancellationToken: cancellationToken);
         await ChangeLogUpdater.AddEntryAsync(changeLogFileName: repoContext.ChangeLogFileName,
-                                             type: CHANGELOG_ENTRYTYPE,
+                                             type: CHANGELOG_ENTRY_TYPE,
                                              $"Dependencies - Updated {package.PackageId} to {version}",
                                              cancellationToken: cancellationToken);
 
