@@ -62,6 +62,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         IReadOnlyList<PackageUpdate> packages = await LoadPackageUpdateConfigAsync(filename: packagesFileName, cancellationToken: cancellationToken);
 
+        // TODO: Build project with the cached packages and run update on it.
+
         using (Repository templateRepo = await GitUtils.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
             UpdateContext updateContext = await BuildUpdateContextAsync(options: options,
