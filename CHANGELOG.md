@@ -10,6 +10,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Initial bulk package update
 ### Fixed
 ### Changed
+- Dependencies - Updated Meziantou.Analyzer to 2.0.127
 ### Removed
 ### Deployment Changes
 
