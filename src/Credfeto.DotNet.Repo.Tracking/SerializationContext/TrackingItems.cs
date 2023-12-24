@@ -13,5 +13,6 @@ internal sealed class TrackingItems
         this._cache = cache;
     }
 
-    [JsonIgnore] public IReadOnlyDictionary<string, string> Cache => this._cache;
+    [JsonIgnore]
+    public IReadOnlyDictionary<string, string> Cache => this._cache;
 }

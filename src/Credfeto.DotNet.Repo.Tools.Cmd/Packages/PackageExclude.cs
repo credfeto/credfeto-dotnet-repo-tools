@@ -15,5 +15,6 @@ public sealed class PackageExclude
 
     public string PackageId { get; }
 
-    [JsonPropertyName("exact-match")] public bool ExactMatch { get; }
+    [JsonPropertyName("exact-match")]
+    public bool ExactMatch { get; }
 }

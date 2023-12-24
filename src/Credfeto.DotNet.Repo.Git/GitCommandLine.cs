@@ -10,16 +10,16 @@ internal static class GitCommandLine
     public static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(string repoPath, string arguments, CancellationToken cancellationToken)
     {
         ProcessStartInfo psi = new()
-        {
-            FileName = "git",
-            WorkingDirectory = repoPath,
-            Arguments = arguments,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            Environment = { ["GIT_REDIRECT_STDERR"] = "2>&1" }
-        };
+                               {
+                                   FileName = "git",
+                                   WorkingDirectory = repoPath,
+                                   Arguments = arguments,
+                                   RedirectStandardOutput = true,
+                                   RedirectStandardError = true,
+                                   UseShellExecute = false,
+                                   CreateNoWindow = true,
+                                   Environment = { ["GIT_REDIRECT_STDERR"] = "2>&1" }
+                               };
 
         using (Process? process = Process.Start(psi))
         {
@@ -30,6 +30,7 @@ internal static class GitCommandLine
 
 #if NET7_0_OR_GREATER
             string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
+
             //string error = await process.StandardError.ReadToEndAsync(cancellationToken);
 #else
             string output = await process.StandardOutput.ReadToEndAsync();

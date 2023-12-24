@@ -30,12 +30,12 @@ public sealed class SolutionCheck : ISolutionCheck
         {
             // TODO: make sure that it allows different versions of packages.
             int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                preReleaseBuild: true,
-                warningsAsErrors: true,
-                frameworkSettings: frameworkSettings,
-                projectClassifier: ProjectClassifier,
-                logger: this._logger,
-                cancellationToken: cancellationToken);
+                                                      preReleaseBuild: true,
+                                                      warningsAsErrors: true,
+                                                      frameworkSettings: frameworkSettings,
+                                                      projectClassifier: ProjectClassifier,
+                                                      logger: this._logger,
+                                                      cancellationToken: cancellationToken);
 
             if (errors != 0)
             {
@@ -59,12 +59,12 @@ public sealed class SolutionCheck : ISolutionCheck
         {
             // TODO: make sure that it allows different versions of packages.
             int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                preReleaseBuild: true,
-                warningsAsErrors: true,
-                frameworkSettings: frameworkSettings,
-                projectClassifier: ProjectClassifier,
-                logger: this._logger,
-                cancellationToken: cancellationToken);
+                                                      preReleaseBuild: true,
+                                                      warningsAsErrors: true,
+                                                      frameworkSettings: frameworkSettings,
+                                                      projectClassifier: ProjectClassifier,
+                                                      logger: this._logger,
+                                                      cancellationToken: cancellationToken);
 
             if (errors != 0)
             {
@@ -84,12 +84,12 @@ public sealed class SolutionCheck : ISolutionCheck
         {
             // TODO: make sure that it allows different versions of packages.
             int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                preReleaseBuild: false,
-                warningsAsErrors: true,
-                frameworkSettings: frameworkSettings,
-                projectClassifier: ProjectClassifier,
-                logger: this._logger,
-                cancellationToken: cancellationToken);
+                                                      preReleaseBuild: false,
+                                                      warningsAsErrors: true,
+                                                      frameworkSettings: frameworkSettings,
+                                                      projectClassifier: ProjectClassifier,
+                                                      logger: this._logger,
+                                                      cancellationToken: cancellationToken);
 
             if (errors != 0)
             {

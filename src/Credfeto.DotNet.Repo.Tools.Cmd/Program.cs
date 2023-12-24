@@ -63,8 +63,8 @@ internal static class Program
     private static Task<ParserResult<Options>> ParseOptionsAsync(string[] args)
     {
         return Parser.Default.ParseArguments<Options>(args)
-            .WithNotParsed(NotParsed)
-            .WithParsedAsync(ParsedOkAsync);
+                     .WithNotParsed(NotParsed)
+                     .WithParsedAsync(ParsedOkAsync);
     }
 
     private static void NotParsed(IEnumerable<Error> errors)
@@ -97,16 +97,21 @@ internal static class Program
     {
         CancellationToken cancellationToken = CancellationToken.None;
 
-        if (IsBulkPackageUpdate(options: options, out string? workFolder, out string? repositoriesFileName, out string? packagesFileName, out string? trackingFileName, out string? templateRepository))
+        if (IsBulkPackageUpdate(options: options,
+                                out string? workFolder,
+                                out string? repositoriesFileName,
+                                out string? packagesFileName,
+                                out string? trackingFileName,
+                                out string? templateRepository))
         {
             await PerformBulkPackageUpdatesAsync(options: options,
-                repositoriesFileName: repositoriesFileName,
-                templateRepository: templateRepository,
-                cacheFileName: options.Cache,
-                trackingFileName: trackingFileName,
-                packagesFileName: packagesFileName,
-                workFolder: workFolder,
-                cancellationToken: cancellationToken);
+                                                 repositoriesFileName: repositoriesFileName,
+                                                 templateRepository: templateRepository,
+                                                 cacheFileName: options.Cache,
+                                                 trackingFileName: trackingFileName,
+                                                 packagesFileName: packagesFileName,
+                                                 workFolder: workFolder,
+                                                 cancellationToken: cancellationToken);
 
             return;
         }
@@ -115,11 +120,11 @@ internal static class Program
     }
 
     private static bool IsBulkPackageUpdate(Options options,
-        [NotNullWhen(true)] out string? workFolder,
-        [NotNullWhen(true)] out string? repositoriesFileName,
-        [NotNullWhen(true)] out string? packagesFileName,
-        [NotNullWhen(true)] out string? trackingFileName,
-        [NotNullWhen(true)] out string? templateRepository)
+                                            [NotNullWhen(true)] out string? workFolder,
+                                            [NotNullWhen(true)] out string? repositoriesFileName,
+                                            [NotNullWhen(true)] out string? packagesFileName,
+                                            [NotNullWhen(true)] out string? trackingFileName,
+                                            [NotNullWhen(true)] out string? templateRepository)
     {
         bool hasWork = options.Require(accessor: o => o.Work, value: out workFolder);
         bool hasRepositories = options.Require(accessor: o => o.Repositories, value: out repositoriesFileName);
@@ -131,18 +136,18 @@ internal static class Program
     }
 
     private static async ValueTask PerformBulkPackageUpdatesAsync(Options options,
-        string repositoriesFileName,
-        string templateRepository,
-        string? cacheFileName,
-        string trackingFileName,
-        string packagesFileName,
-        string workFolder,
-        CancellationToken cancellationToken)
+                                                                  string repositoriesFileName,
+                                                                  string templateRepository,
+                                                                  string? cacheFileName,
+                                                                  string trackingFileName,
+                                                                  string packagesFileName,
+                                                                  string workFolder,
+                                                                  CancellationToken cancellationToken)
     {
         IServiceProvider services = ApplicationSetup.Setup(false);
 
         IReadOnlyList<string> repositories = ExcludeTemplateRepo(await GitRepoList.LoadRepoListAsync(path: repositoriesFileName, cancellationToken: cancellationToken),
-            templateRepository: templateRepository);
+                                                                 templateRepository: templateRepository);
 
         if (repositories.Count == 0)
         {
@@ -152,18 +157,18 @@ internal static class Program
         IBulkPackageUpdater bulkPackageUpdater = services.GetRequiredService<IBulkPackageUpdater>();
 
         await bulkPackageUpdater.BulkUpdateAsync(options: options,
-            templateRepository: templateRepository,
-            cacheFileName: cacheFileName,
-            trackingFileName: trackingFileName,
-            packagesFileName: packagesFileName,
-            workFolder: workFolder,
-            repositories: repositories,
-            cancellationToken: cancellationToken);
+                                                 templateRepository: templateRepository,
+                                                 cacheFileName: cacheFileName,
+                                                 trackingFileName: trackingFileName,
+                                                 packagesFileName: packagesFileName,
+                                                 workFolder: workFolder,
+                                                 repositories: repositories,
+                                                 cancellationToken: cancellationToken);
     }
 
     private static IReadOnlyList<string> ExcludeTemplateRepo(IReadOnlyList<string> repositories, string templateRepository)
     {
         return repositories.Where(repositoryUrl => !StringComparer.InvariantCultureIgnoreCase.Equals(x: templateRepository, y: repositoryUrl))
-            .ToArray();
+                           .ToArray();
     }
 }

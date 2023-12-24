@@ -45,7 +45,7 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
             this.Output.WriteLine($"Repo: {repo.Info.Path}");
 
             string newBranch = $"delete-me/{Guid.NewGuid()}".Replace(oldValue: "-", newValue: string.Empty, comparisonType: StringComparison.Ordinal)
-                .ToLowerInvariant();
+                                                            .ToLowerInvariant();
 
             if (GitUtils.DoesBranchExist(repo: repo, branchName: newBranch))
             {
@@ -76,10 +76,10 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
         {
             this.Output.WriteLine($"Repo: {repo.Info.Path}");
 
-            string branch = GitUtils.GetDefaultBranch(repo, GitConstants.Upstream);
+            string branch = GitUtils.GetDefaultBranch(repo: repo, upstream: GitConstants.Upstream);
             this.Output.WriteLine($"Default Branch: {branch}");
 
-            IReadOnlyCollection<string> remoteBranches = GitUtils.GetRemoteBranches(repo, GitConstants.Upstream);
+            IReadOnlyCollection<string> remoteBranches = GitUtils.GetRemoteBranches(repo: repo, upstream: GitConstants.Upstream);
 
             foreach (string remoteBranch in remoteBranches)
             {

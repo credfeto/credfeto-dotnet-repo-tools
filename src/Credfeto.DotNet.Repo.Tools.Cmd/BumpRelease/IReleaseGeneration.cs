@@ -11,12 +11,12 @@ namespace Credfeto.DotNet.Repo.Tools.Cmd.BumpRelease;
 public interface IReleaseGeneration
 {
     ValueTask TryCreateNextPatchAsync(RepoContext repoContext,
-        string basePath,
-        BuildSettings buildSettings,
-        DotNetVersionSettings dotNetSettings,
-        IReadOnlyList<string> solutions,
-        IReadOnlyList<PackageUpdate> packages,
-        CancellationToken cancellationToken);
+                                      string basePath,
+                                      BuildSettings buildSettings,
+                                      DotNetVersionSettings dotNetSettings,
+                                      IReadOnlyList<string> solutions,
+                                      IReadOnlyList<PackageUpdate> packages,
+                                      CancellationToken cancellationToken);
 
     ValueTask CreateAsync(RepoContext repoContext, CancellationToken cancellationToken);
 }

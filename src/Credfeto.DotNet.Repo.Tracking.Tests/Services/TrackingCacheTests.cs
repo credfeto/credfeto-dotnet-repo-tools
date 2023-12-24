@@ -28,7 +28,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
     public void GetNonExistent()
     {
         string? value = this._trackingCache.Get(Guid.NewGuid()
-            .ToString());
+                                                    .ToString());
         Assert.Null(value);
     }
 
@@ -36,13 +36,13 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
     public void SetAndGet()
     {
         string repoUrl = Guid.NewGuid()
-            .ToString();
+                             .ToString();
 
         string? value = this._trackingCache.Get(repoUrl);
         Assert.Null(value);
 
         string expected = Guid.NewGuid()
-            .ToString();
+                              .ToString();
 
         this._trackingCache.Set(repoUrl: repoUrl, value: expected);
 
@@ -56,7 +56,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         string trackingFile = Path.Combine(path1: this.TempFolder, $"{Guid.NewGuid().ToString()}.json");
 
         return Assert.ThrowsAsync<FileNotFoundException>(() => this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: CancellationToken.None)
-            .AsTask());
+                                                                   .AsTask());
     }
 
     [Fact]

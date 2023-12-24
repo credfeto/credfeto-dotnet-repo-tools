@@ -72,7 +72,7 @@ public sealed class DiagnosticLogger : IDiagnosticLogger
         }
 
         string status = logLevel.GetName()
-            .ToUpperInvariant();
+                                .ToUpperInvariant();
 
         output($"{status}: {msg}");
     }

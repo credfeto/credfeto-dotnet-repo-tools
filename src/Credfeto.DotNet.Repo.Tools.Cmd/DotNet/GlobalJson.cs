@@ -17,6 +17,6 @@ public static class GlobalJson
 
         GlobalJsonSdk sdk = p.Sdk ?? throw new FileNotFoundException(message: "Missing SDK in template global.json", fileName: path);
 
-        return new DotNetVersionSettings(SdkVersion: sdk.Version, sdk.AllowPrerelease ?? false, sdk.RollForward ?? "latestPatch");
+        return new(SdkVersion: sdk.Version, sdk.AllowPrerelease ?? false, sdk.RollForward ?? "latestPatch");
     }
 }

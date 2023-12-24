@@ -52,6 +52,9 @@
     <RepositoryUrl>https://github.com/credfeto/credfeto-dotnet-repo-tools</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Git\Credfeto.DotNet.Repo.Git.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="FunFair.Test.Common" Version="6.1.23.276" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="NSubstitute" Version="5.1.0" />
@@ -80,8 +83,5 @@
     <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="ToStringWithoutOverrideAnalyzer" Version="0.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="xunit.analyzers" Version="1.8.0" PrivateAssets="All" ExcludeAssets="runtime" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Git\Credfeto.DotNet.Repo.Git.csproj" />
   </ItemGroup>
 </Project>

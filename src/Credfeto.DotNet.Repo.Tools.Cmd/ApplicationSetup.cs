@@ -22,16 +22,16 @@ internal static class ApplicationSetup
         DiagnosticLogger logger = new(warningsAsErrors);
 
         return new ServiceCollection().AddSingleton<ILogger>(logger)
-            .AddSingleton<IDiagnosticLogger>(logger)
-            .AddSingleton(typeof(ILogger<>), typeof(LoggerProxy<>))
-            .AddDate()
-            .AddPackageUpdater()
-            .AddTracking()
-            .AddBuildVersionDetection(new BranchSettings(null, null))
-            .AddSingleton<ISolutionCheck, SolutionCheck>()
-            .AddSingleton<IDotNetBuild, DotNetBuild>()
-            .AddSingleton<IReleaseGeneration, ReleaseGeneration>()
-            .AddSingleton<IBulkPackageUpdater, BulkPackageUpdater>()
-            .BuildServiceProvider();
+                                      .AddSingleton<IDiagnosticLogger>(logger)
+                                      .AddSingleton(typeof(ILogger<>), typeof(LoggerProxy<>))
+                                      .AddDate()
+                                      .AddPackageUpdater()
+                                      .AddTracking()
+                                      .AddBuildVersionDetection(new BranchSettings(releaseSuffix: null, package: null))
+                                      .AddSingleton<ISolutionCheck, SolutionCheck>()
+                                      .AddSingleton<IDotNetBuild, DotNetBuild>()
+                                      .AddSingleton<IReleaseGeneration, ReleaseGeneration>()
+                                      .AddSingleton<IBulkPackageUpdater, BulkPackageUpdater>()
+                                      .BuildServiceProvider();
     }
 }

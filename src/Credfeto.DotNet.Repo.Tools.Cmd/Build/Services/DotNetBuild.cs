@@ -155,15 +155,15 @@ public sealed class DotNetBuild : IDotNetBuild
         {
             this._logger.LogInformation("Publishing no framework...");
             await this.ExecRequireCleanAsync(basePath: basePath,
-                $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
-                cancellationToken: cancellationToken);
+                                             $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
+                                             cancellationToken: cancellationToken);
         }
         else
         {
             this._logger.LogInformation($"Publishing {framework}...");
             await this.ExecRequireCleanAsync(basePath: basePath,
-                $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --framework:{framework} --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
-                cancellationToken: cancellationToken);
+                                             $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --framework:{framework} --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
+                                             cancellationToken: cancellationToken);
         }
     }
 
@@ -171,7 +171,9 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         this._logger.LogInformation("Packing...");
 
-        return this.ExecRequireCleanAsync(basePath: basePath, $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(basePath: basePath,
+                                          $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}",
+                                          cancellationToken: cancellationToken);
     }
 
     private ValueTask DotNetTestAsync(string basePath, in CancellationToken cancellationToken)
@@ -179,8 +181,8 @@ public sealed class DotNetBuild : IDotNetBuild
         this._logger.LogInformation("Testing...");
 
         return this.ExecRequireCleanAsync(basePath: basePath,
-            $"test --no-build --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} --filter FullyQualifiedName\\!~Integration {NO_WARN}",
-            cancellationToken: cancellationToken);
+                                          $"test --no-build --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} --filter FullyQualifiedName\\!~Integration {NO_WARN}",
+                                          cancellationToken: cancellationToken);
     }
 
     private ValueTask DotNetBuildAsync(string basePath, in CancellationToken cancellationToken)
@@ -188,8 +190,8 @@ public sealed class DotNetBuild : IDotNetBuild
         this._logger.LogInformation("Building...");
 
         return this.ExecRequireCleanAsync(basePath: basePath,
-            $"build --no-restore -warnAsError -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}",
-            cancellationToken: cancellationToken);
+                                          $"build --no-restore -warnAsError -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}",
+                                          cancellationToken: cancellationToken);
     }
 
     private ValueTask DotNetRestoreAsync(string basePath, in CancellationToken cancellationToken)
@@ -235,15 +237,15 @@ public sealed class DotNetBuild : IDotNetBuild
     private static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(string basePath, string arguments, CancellationToken cancellationToken)
     {
         ProcessStartInfo psi = new()
-        {
-            FileName = "dotnet",
-            WorkingDirectory = basePath,
-            Arguments = arguments,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
+                               {
+                                   FileName = "dotnet",
+                                   WorkingDirectory = basePath,
+                                   Arguments = arguments,
+                                   RedirectStandardOutput = true,
+                                   RedirectStandardError = true,
+                                   UseShellExecute = false,
+                                   CreateNoWindow = true
+                               };
 
         using (Process? process = Process.Start(psi))
         {
