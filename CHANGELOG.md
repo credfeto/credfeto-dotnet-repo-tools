@@ -7,16 +7,20 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
-- Pre-loading and updating cached packages before processing repo to avoid lots of additional updates
 ### Fixed
 ### Changed
-- Dependencies - Updated Credfeto.ChangeLog to 1.10.19.111
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.0.1] - 2023-12-24
+### Added
+- Pre-loading and updating cached packages before processing repo to avoid lots of additional updates
+### Changed
+- Dependencies - Updated Credfeto.ChangeLog to 1.10.19.111
+
 ## [1.0.0] - 2023-12-24
 ### Added
 - Initial bulk package update
