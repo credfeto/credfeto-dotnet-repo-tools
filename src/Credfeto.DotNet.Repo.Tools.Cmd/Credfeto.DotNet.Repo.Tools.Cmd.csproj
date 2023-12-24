@@ -63,12 +63,12 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
-    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.18.102-main" />
+    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.19.111" />
     <PackageReference Include="Credfeto.Date" Version="1.1.9.181" />
     <PackageReference Include="Credfeto.Enumeration.Source.Generation.Attributes" Version="1.1.1.168" />
     <PackageReference Include="Credfeto.Extensions.Linq" Version="1.0.12.90" />
     <PackageReference Include="Credfeto.Package" Version="1.10.44.293" />
-    <PackageReference Include="FunFair.BuildCheck.Runner" Version="474.0.17.246"/>
+    <PackageReference Include="FunFair.BuildCheck.Runner" Version="474.0.17.246" />
     <PackageReference Include="FunFair.BuildVersion.Detection" Version="6.2.15.250" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
   </ItemGroup>
