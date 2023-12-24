@@ -41,7 +41,7 @@ public sealed class TrackingCache : ITrackingCache
         {
             foreach ((string repoUrl, string value) in items.Cache.OrderBy(keySelector: x => x.Key, comparer: StringComparer.OrdinalIgnoreCase))
             {
-                this._logger.LoadedPackageVersionFromCache(packageId: repoUrl, version: value);
+                this._logger.LoadedPackageVersionFromCache(repository: repoUrl, version: value);
                 this._cache.TryAdd(key: repoUrl, value: value);
             }
         }
@@ -61,6 +61,7 @@ public sealed class TrackingCache : ITrackingCache
         string content = JsonSerializer.Serialize(value: toWrite, jsonTypeInfo: this._typeInfo);
 
         await File.WriteAllTextAsync(path: fileName, contents: content, cancellationToken: cancellationToken);
+        this._changed = false;
     }
 
     public string? Get(string repoUrl)
