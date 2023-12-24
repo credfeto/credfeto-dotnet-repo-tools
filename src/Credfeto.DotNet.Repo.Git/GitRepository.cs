@@ -14,10 +14,10 @@ internal sealed class GitRepository : IGitRepository
 
     private Repository? _repo;
 
-    internal GitRepository(string clonePath, string path, Repository? repo)
+    internal GitRepository(string clonePath, string workingDirectory, Repository? repo)
     {
         this.ClonePath = clonePath;
-        this.WorkingDirectory = path;
+        this.WorkingDirectory = workingDirectory;
         this._repo = repo;
     }
 

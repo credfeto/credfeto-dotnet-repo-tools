@@ -11,7 +11,7 @@ public static class GitUtils
 {
     private static readonly CloneOptions GitCloneOptions = new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
 
-    public static string GetFolderForRepo(string repoUrl)
+    public static string GetWorkingDirectoryForRepository(string repoUrl)
     {
         string work = repoUrl.TrimEnd('/');
 
@@ -30,22 +30,20 @@ public static class GitUtils
 
     public static ValueTask<IGitRepository> OpenOrCloneAsync(string workDir, string repoUrl, in CancellationToken cancellationToken)
     {
-        string repoDir = Path.Combine(path1: workDir, GetFolderForRepo(repoUrl));
+        string workingDirectory = Path.Combine(path1: workDir, GetWorkingDirectoryForRepository(repoUrl));
 
-        return Directory.Exists(repoDir)
-            ? OpenRepoAsync(repoUrl: repoUrl, repoDir: repoDir, cancellationToken: cancellationToken)
-            : CloneRepositoryAsync(workDir: workDir, destinationPath: repoDir, repoUrl: repoUrl, cancellationToken: cancellationToken);
+        return Directory.Exists(workingDirectory)
+            ? OpenRepoAsync(repoUrl: repoUrl, workingDirectory: workingDirectory, cancellationToken: cancellationToken)
+            : CloneRepositoryAsync(workDir: workDir, destinationPath: workingDirectory, repoUrl: repoUrl, cancellationToken: cancellationToken);
     }
 
-    private static async ValueTask<IGitRepository> OpenRepoAsync(string repoUrl, string repoDir, CancellationToken cancellationToken)
+    private static async ValueTask<IGitRepository> OpenRepoAsync(string repoUrl, string workingDirectory, CancellationToken cancellationToken)
     {
         IGitRepository? repo = null;
 
         try
         {
-            string found = Repository.Discover(repoDir);
-
-            repo = new GitRepository(clonePath: repoUrl, path: found, new(found));
+            repo = new GitRepository(clonePath: repoUrl, workingDirectory: workingDirectory, new(Repository.Discover(workingDirectory)));
 
             await repo.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
@@ -73,7 +71,7 @@ public static class GitUtils
             throw new GitException($"Failed to clone repo {repoUrl} to {workDir}");
         }
 
-        return new GitRepository(clonePath: repoUrl, path: workDir, new(Repository.Discover(path)));
+        return new GitRepository(clonePath: repoUrl, workingDirectory: workDir, new(Repository.Discover(path)));
     }
 
     private static async ValueTask<string?> CloneSshAsync(string sourceUrl, string workdirPath, string destinationPath, CancellationToken cancellationToken)

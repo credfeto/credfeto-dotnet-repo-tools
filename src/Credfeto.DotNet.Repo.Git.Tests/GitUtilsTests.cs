@@ -23,7 +23,7 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
     [InlineData("git@github.com:credfeto/credfeto-dotnet-repo-tools.git", "credfeto-dotnet-repo-tools")]
     public void GetFolderForRepo(string gitUrl, string expected)
     {
-        string actual = GitUtils.GetFolderForRepo(gitUrl);
+        string actual = GitUtils.GetWorkingDirectoryForRepository(gitUrl);
 
         Assert.Equal(expected: expected, actual: actual);
     }
