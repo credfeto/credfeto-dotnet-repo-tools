@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml;
 using Credfeto.ChangeLog;
 using Credfeto.DotNet.Repo.Git;
 using Credfeto.DotNet.Repo.Tools.Cmd.Build;
@@ -61,8 +62,6 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         IReadOnlyList<PackageUpdate> packages = await LoadPackageUpdateConfigAsync(filename: packagesFileName, cancellationToken: cancellationToken);
 
-        // TODO: Build project with the cached packages and run update on it.
-
         using (IGitRepository templateRepo = await GitUtils.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
             UpdateContext updateContext = await BuildUpdateContextAsync(options: options,
@@ -70,6 +69,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                         workFolder: workFolder,
                                                                         trackingFileName: trackingFileName,
                                                                         cancellationToken: cancellationToken);
+
+            await this.UpdateCachedPackagesAsync(workFolder: workFolder, cancellationToken: cancellationToken, packages: packages, updateContext: updateContext);
 
             try
             {
@@ -120,6 +121,70 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             this._logger.LogInformation(exception: exception, message: "Release created - aborting run");
             this._logger.LogInformation(exception.Message);
         }
+    }
+
+    private async ValueTask UpdateCachedPackagesAsync(string workFolder, IReadOnlyList<PackageUpdate> packages, UpdateContext updateContext, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<PackageVersion> allPackages = this._packageCache.GetAll();
+
+        if (allPackages.Count == 0)
+        {
+            // no cached packages
+            return;
+        }
+
+        string packagesFolder = Path.Combine(path1: workFolder, path2: "_Packages");
+
+        if (!Directory.Exists(packagesFolder))
+        {
+            Directory.CreateDirectory(packagesFolder);
+        }
+
+        XmlDocument document = BuildReferencedPackagesXmlDocument(allPackages);
+
+        string projectFileName = Path.Combine(path1: packagesFolder, path2: "Packages.csproj");
+        document.Save(projectFileName);
+
+        int updates = 0;
+        this._logger.LogInformation("[CACHE] Pre-loading cached packages");
+
+        foreach (PackageUpdate package in packages)
+        {
+            this._logger.LogInformation($"[CACHE] Updating {package.PackageId}...");
+            PackageUpdateConfiguration config = BuildConfiguration(package);
+
+            IReadOnlyList<PackageVersion> updated = await this._packageUpdater.UpdateAsync(basePath: packagesFolder,
+                                                                                           configuration: config,
+                                                                                           packageSources: updateContext.AdditionalSources,
+                                                                                           cancellationToken: cancellationToken);
+
+            this._logger.LogInformation($"[CACHE] Update {package.PackageId} Updated {updated.Count} packages");
+            updates += updated.Count;
+        }
+
+        this._logger.LogInformation($"[CACHE] Total package updates: {updates}");
+    }
+
+    private static XmlDocument BuildReferencedPackagesXmlDocument(IReadOnlyList<PackageVersion> allPackages)
+    {
+        XmlDocument document = new();
+        XmlElement projectElement = document.CreateElement("Project");
+        projectElement.SetAttribute(name: "Sdk", value: "Microsoft.NET.Sdk");
+        document.AppendChild(projectElement);
+
+        XmlElement itemGroup = document.CreateElement("ItemGroup");
+
+        foreach (PackageVersion package in allPackages)
+        {
+            XmlElement packageReference = document.CreateElement("PackageReference");
+            packageReference.SetAttribute(name: "Include", value: package.PackageId);
+            packageReference.SetAttribute(name: "Version", package.Version.ToString());
+            itemGroup.AppendChild(packageReference);
+        }
+
+        projectElement.AppendChild(itemGroup);
+
+        return document;
     }
 
     private async Task UpdateRepositoryAsync(UpdateContext updateContext, IReadOnlyList<PackageUpdate> packages, string repo, CancellationToken cancellationToken)

@@ -7,6 +7,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
+- Pre-loading and updating cached packages before processing repo to avoid lots of additional updates
 ### Fixed
 ### Changed
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.19.111
