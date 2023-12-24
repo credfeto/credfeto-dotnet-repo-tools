@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using LibGit2Sharp;
 
 namespace Credfeto.DotNet.Repo.Git;
 
+[DebuggerDisplay("{ClonePath}: {WorkingDirectory}")]
 internal sealed class GitRepository : IGitRepository
 {
     private static readonly CheckoutOptions GitCheckoutOptions = new() { CheckoutModifiers = CheckoutModifiers.Force };
