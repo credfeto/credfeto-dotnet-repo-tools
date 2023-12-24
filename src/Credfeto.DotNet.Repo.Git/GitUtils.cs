@@ -73,9 +73,7 @@ public static class GitUtils
             throw new GitException($"Failed to clone repo {repoUrl} to {workDir}");
         }
 
-        string found = Repository.Discover(path);
-
-        return new GitRepository(clonePath: repoUrl, path: found, new(found));
+        return new GitRepository(clonePath: repoUrl, path: workDir, new(Repository.Discover(path)));
     }
 
     private static async ValueTask<string?> CloneSshAsync(string sourceUrl, string workdirPath, string destinationPath, CancellationToken cancellationToken)
