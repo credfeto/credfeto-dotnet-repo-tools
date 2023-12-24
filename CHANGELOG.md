@@ -19,6 +19,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated TeamCity.VSTest.TestAdapter to 1.0.39
 - Dependencies - Updated xunit to 2.6.4
 - Dependencies - Updated xunit.runner.visualstudio to 2.5.6
+- Dependencies - Updated Credfeto.Package to 1.10.44.293
 ### Removed
 ### Deployment Changes
 
