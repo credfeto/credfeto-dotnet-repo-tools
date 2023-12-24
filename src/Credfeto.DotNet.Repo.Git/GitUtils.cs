@@ -13,8 +13,7 @@ public static class GitUtils
 {
     private static readonly CheckoutOptions GitCheckoutOptions = new() { CheckoutModifiers = CheckoutModifiers.Force };
 
-    private static readonly CloneOptions GitCloneOptions =
-        new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
+    private static readonly CloneOptions GitCloneOptions = new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
 
     public static string GetFolderForRepo(string repoUrl)
     {
@@ -42,6 +41,9 @@ public static class GitUtils
             Repository repo = OpenRepository(repoDir);
 
             await ResetToMasterAsync(repo: repo, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+
+            // Start with a clean slate - branches will be created as needed
+            RemoveAllLocalBranches(repo: repo);
 
             return repo;
 
@@ -144,8 +146,7 @@ public static class GitUtils
 
         bool IsHeadBranch(Branch branch)
         {
-            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) &&
-                   StringComparer.Ordinal.Equals(x: branch.UpstreamBranchCanonicalName, y: "refs/heads/HEAD");
+            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) && StringComparer.Ordinal.Equals(x: branch.UpstreamBranchCanonicalName, y: "refs/heads/HEAD");
         }
     }
 
@@ -205,8 +206,8 @@ public static class GitUtils
 
     public static async ValueTask PushOriginAsync(Repository repo, string branchName, string upstream, CancellationToken cancellationToken)
     {
-        await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, $"--set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
-        Console.WriteLine($"Pushed {repo.Refs.Head.CanonicalName} to {upstream}!");
+        await GitCommandLine.ExecAsync(repoPath: repo.Info.WorkingDirectory, $"push --set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
+        Console.WriteLine($"Pushed {repo.Refs.Head.CanonicalName} to {upstream}! ({branchName})");
     }
 
     public static bool DoesBranchExist(Repository repo, string branchName)
