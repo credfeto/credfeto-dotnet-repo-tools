@@ -253,7 +253,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         NuGetVersion version = GetUpdateVersion(updatesMade);
 
-        await CommitToRepositoryAsync(repoContext: repoContext, package: package, version.ToString(), builtOk: ok, cancellationToken: cancellationToken);
+        await this.CommitToRepositoryAsync(repoContext: repoContext, package: package, version.ToString(), builtOk: ok, cancellationToken: cancellationToken);
 
         if (ok)
         {
@@ -277,13 +277,16 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                           .First();
     }
 
-    private static async ValueTask CommitToRepositoryAsync(RepoContext repoContext, PackageUpdate package, string version, bool builtOk, CancellationToken cancellationToken)
+    private async ValueTask CommitToRepositoryAsync(RepoContext repoContext, PackageUpdate package, string version, bool builtOk, CancellationToken cancellationToken)
     {
         string branchPrefix = $"depends/update-{package.PackageId}/".ToLowerInvariant();
         string branchForUpdate = branchPrefix + version;
 
         if (builtOk)
         {
+            string defaultBranch = GitUtils.GetDefaultBranch(repo: repoContext.Repository, upstream: GitConstants.Upstream);
+
+            this._logger.LogInformation($"{repoContext.ClonePath}: Committing {package.PackageId} to {defaultBranch}");
             await CommitChangeWithChangelogAsync(repoContext: repoContext, package: package, version: version, cancellationToken: cancellationToken);
             await GitUtils.PushAsync(repo: repoContext.Repository, cancellationToken: cancellationToken);
             await GitUtils.RemoveBranchesForPrefixAsync(repo: repoContext.Repository,
@@ -298,9 +301,12 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             if (GitUtils.DoesBranchExist(repo: repoContext.Repository, branchName: branchForUpdate))
             {
                 // nothing to do - may already be a PR that's being worked on
+                this._logger.LogInformation($"{repoContext.ClonePath}: Skipping commit of {package.PackageId} as branch {branchForUpdate} already exists");
+
                 return;
             }
 
+            this._logger.LogInformation($"{repoContext.ClonePath}: Committing {package.PackageId} to {branchForUpdate}");
             GitUtils.CreateBranch(repo: repoContext.Repository, branchName: branchForUpdate);
 
             await CommitChangeWithChangelogAsync(repoContext: repoContext, package: package, version: version, cancellationToken: cancellationToken);
