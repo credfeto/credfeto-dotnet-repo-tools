@@ -38,7 +38,7 @@ public interface IGitRepository : IDisposable
 
     bool DoesBranchExist(string branchName);
 
-    void CreateBranch(string branchName);
+    ValueTask CreateBranchAsync(string branchName, CancellationToken cancellationToken);
 
     ValueTask RemoveBranchesForPrefixAsync(string branchForUpdate, string branchPrefix, string upstream, CancellationToken cancellationToken);
 

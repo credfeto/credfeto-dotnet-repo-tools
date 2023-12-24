@@ -31,7 +31,7 @@ internal sealed class GitRepository : IGitRepository
 
     public void Dispose()
     {
-        this.ResetRepo();
+        this.ResetActiveRepoLink();
     }
 
     public async ValueTask ResetToMasterAsync(string upstream, CancellationToken cancellationToken)
@@ -97,7 +97,7 @@ internal sealed class GitRepository : IGitRepository
         }
         finally
         {
-            this.UpdateRepoStatus();
+            this.ResetActiveRepoLink();
         }
     }
 
@@ -140,7 +140,7 @@ internal sealed class GitRepository : IGitRepository
         }
         finally
         {
-            this.UpdateRepoStatus();
+            this.ResetActiveRepoLink();
         }
     }
 
@@ -153,7 +153,7 @@ internal sealed class GitRepository : IGitRepository
         }
         finally
         {
-            this.UpdateRepoStatus();
+            this.ResetActiveRepoLink();
         }
     }
 
@@ -166,7 +166,7 @@ internal sealed class GitRepository : IGitRepository
         }
         finally
         {
-            this.UpdateRepoStatus();
+            this.ResetActiveRepoLink();
         }
     }
 
@@ -180,19 +180,17 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
-    public void CreateBranch(string branchName)
+    public async ValueTask CreateBranchAsync(string branchName, CancellationToken cancellationToken)
     {
-        Repository repo = this.Active;
-        Branch? existingBranch = repo.Branches.FirstOrDefault(b => StringComparer.Ordinal.Equals(x: b.FriendlyName, y: branchName));
+        try
 
-        if (existingBranch is not null)
         {
-            this.Active.Checkout(tree: existingBranch.Tip.Tree, paths: null, options: GitCheckoutOptions);
-
-            return;
+            await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"checkout -b {branchName}", cancellationToken: cancellationToken);
         }
-
-        this.Active.Branches.Add(name: branchName, commit: repo.Head.Tip);
+        finally
+        {
+            this.ResetActiveRepoLink();
+        }
     }
 
     public string HeadRev => this.Active.Head.Tip.Sha;
@@ -252,7 +250,7 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
-    private void ResetRepo()
+    private void ResetActiveRepoLink()
     {
         this._repo?.Dispose();
         this._repo = null;
@@ -271,7 +269,7 @@ internal sealed class GitRepository : IGitRepository
         }
         finally
         {
-            this.UpdateRepoStatus();
+            this.ResetActiveRepoLink();
         }
     }
 
@@ -283,7 +281,7 @@ internal sealed class GitRepository : IGitRepository
         }
         finally
         {
-            this.UpdateRepoStatus();
+            this.ResetActiveRepoLink();
         }
     }
 
@@ -295,7 +293,7 @@ internal sealed class GitRepository : IGitRepository
         }
         finally
         {
-            this.UpdateRepoStatus();
+            this.ResetActiveRepoLink();
         }
     }
 
@@ -304,17 +302,12 @@ internal sealed class GitRepository : IGitRepository
         await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"commit -m \"{message}\"", cancellationToken: cancellationToken);
     }
 
-    private void UpdateRepoStatus()
-    {
-        this.ResetRepo();
-    }
-
     private async ValueTask DeleteBranchAsync(string branch, string upstream, CancellationToken cancellationToken)
     {
         try
         {
             await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"branch -D {branch}", cancellationToken: cancellationToken);
-            this.UpdateRepoStatus();
+            this.ResetActiveRepoLink();
 
             string upstreamBranch = string.Concat(str0: upstream, str1: "/", str2: branch);
 
@@ -325,7 +318,7 @@ internal sealed class GitRepository : IGitRepository
         }
         finally
         {
-            this.UpdateRepoStatus();
+            this.ResetActiveRepoLink();
         }
     }
 

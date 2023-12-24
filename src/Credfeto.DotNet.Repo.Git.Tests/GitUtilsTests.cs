@@ -51,7 +51,7 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
                 repo.RemoveAllLocalBranches();
             }
 
-            repo.CreateBranch(branchName: newBranch);
+            await repo.CreateBranchAsync(branchName: newBranch, cancellationToken: cancellationToken);
 
             Assert.True(repo.DoesBranchExist(branchName: newBranch), userMessage: "Branch should exist");
 

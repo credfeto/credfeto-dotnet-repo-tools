@@ -132,7 +132,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         this._trackingCache.Set(repoUrl: repoContext.ClonePath, value: repoContext.Repository.HeadRev);
 
         string releaseBranch = $"release/{nextVersion}";
-        repoContext.Repository.CreateBranch(branchName: releaseBranch);
+        await repoContext.Repository.CreateBranchAsync(branchName: releaseBranch, cancellationToken: cancellationToken);
         await repoContext.Repository.PushOriginAsync(branchName: releaseBranch, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
         throw new ReleaseCreatedException($"Releases {nextVersion} created for {repoContext.ClonePath}");
