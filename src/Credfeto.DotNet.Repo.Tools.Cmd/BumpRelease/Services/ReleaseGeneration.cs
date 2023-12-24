@@ -124,16 +124,16 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         await ChangeLogUpdater.CreateReleaseAsync(changeLogFileName: repoContext.ChangeLogFileName, version: nextVersion, pending: false, cancellationToken: cancellationToken);
 
-        await GitUtils.CommitAsync(repo: repoContext.Repository, $"Changelog for {nextVersion}", cancellationToken: cancellationToken);
-        await GitUtils.PushAsync(repo: repoContext.Repository, cancellationToken: cancellationToken);
+        await repoContext.Repository.CommitAsync($"Changelog for {nextVersion}", cancellationToken: cancellationToken);
+        await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
 
         this._logger.LogInformation($"{repoContext.ClonePath}: RELEASE CREATED: {nextVersion}");
 
-        this._trackingCache.Set(repoUrl: repoContext.ClonePath, GitUtils.GetHeadRev(repoContext.Repository));
+        this._trackingCache.Set(repoUrl: repoContext.ClonePath, value: repoContext.Repository.HeadRev);
 
         string releaseBranch = $"release/{nextVersion}";
-        GitUtils.CreateBranch(repo: repoContext.Repository, branchName: releaseBranch);
-        await GitUtils.PushOriginAsync(repo: repoContext.Repository, branchName: releaseBranch, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+        repoContext.Repository.CreateBranch(branchName: releaseBranch);
+        await repoContext.Repository.PushOriginAsync(branchName: releaseBranch, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
         throw new ReleaseCreatedException($"Releases {nextVersion} created for {repoContext.ClonePath}");
     }
@@ -203,14 +203,13 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
     private async ValueTask<bool> ShouldNeverReleaseTimeAndContentBasedAsync(RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
-        string releaseNotes =
-            await ChangeLogReader.ExtractReleaseNodesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
+        string releaseNotes = await ChangeLogReader.ExtractReleaseNodesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
 
         int autoUpdateCount = this.IsAllAutoUpdates(releaseNotes: releaseNotes, packages: packages);
 
         this._logger.LogInformation($"Change log update score: {autoUpdateCount}");
 
-        DateTimeOffset lastCommitDate = GitUtils.GetLastCommitDate(repoContext.Repository);
+        DateTimeOffset lastCommitDate = repoContext.Repository.GetLastCommitDate();
         DateTimeOffset now = this._timeSource.UtcNow();
         TimeSpan timeSinceLastCommit = now - lastCommitDate;
 
@@ -275,7 +274,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
     private static bool HasPendingDependencyUpdateBranches(in RepoContext repoContext)
     {
-        IReadOnlyCollection<string> branches = GitUtils.GetRemoteBranches(repo: repoContext.Repository, upstream: GitConstants.Upstream);
+        IReadOnlyCollection<string> branches = repoContext.Repository.GetRemoteBranches(upstream: GitConstants.Upstream);
 
         return branches.Any(IsDependencyBranch);
 
@@ -286,8 +285,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         static bool IsPackageUpdaterBranch(string branch)
         {
-            return branch.StartsWith(value: "depends/", comparisonType: StringComparison.Ordinal) &&
-                   !branch.StartsWith(value: "/preview/", comparisonType: StringComparison.Ordinal);
+            return branch.StartsWith(value: "depends/", comparisonType: StringComparison.Ordinal) && !branch.StartsWith(value: "/preview/", comparisonType: StringComparison.Ordinal);
         }
 
         static bool IsDependabotBranch(string branch)
@@ -355,7 +353,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
     private string GetNextVersion(in RepoContext repoContext)
     {
-        NuGetVersion version = this._versionDetector.FindVersion(repository: repoContext.Repository, buildNumber: DEFAULT_BUILD_NUMBER);
+        NuGetVersion version = this._versionDetector.FindVersion(repository: repoContext.Repository.Active, buildNumber: DEFAULT_BUILD_NUMBER);
 
         return new NuGetVersion(major: version.Major, minor: version.Minor, version.Patch + 1).ToString();
     }

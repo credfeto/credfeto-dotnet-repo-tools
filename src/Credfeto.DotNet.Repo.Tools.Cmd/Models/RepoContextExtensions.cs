@@ -53,6 +53,6 @@ public static class RepoContextExtensions
 
     private static string BuildSourceFolder(in RepoContext repoContext)
     {
-        return Path.Combine(repoContext.WorkingDirectory(), path2: "src");
+        return Path.Combine(path1: repoContext.WorkingDirectory, path2: "src");
     }
 }

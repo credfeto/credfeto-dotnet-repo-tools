@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using FunFair.Test.Common;
-using LibGit2Sharp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -40,27 +39,27 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
     {
         CancellationToken cancellationToken = CancellationToken.None;
 
-        using (Repository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: REPO_SSH, cancellationToken: cancellationToken))
+        using (IGitRepository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: REPO_SSH, cancellationToken: cancellationToken))
         {
-            this.Output.WriteLine($"Repo: {repo.Info.Path}");
+            this.Output.WriteLine($"Repo: {repo.ClonePath}");
 
             string newBranch = $"delete-me/{Guid.NewGuid()}".Replace(oldValue: "-", newValue: string.Empty, comparisonType: StringComparison.Ordinal)
                                                             .ToLowerInvariant();
 
-            if (GitUtils.DoesBranchExist(repo: repo, branchName: newBranch))
+            if (repo.DoesBranchExist(branchName: newBranch))
             {
-                GitUtils.RemoveAllLocalBranches(repo);
+                repo.RemoveAllLocalBranches();
             }
 
-            GitUtils.CreateBranch(repo: repo, branchName: newBranch);
+            repo.CreateBranch(branchName: newBranch);
 
-            Assert.True(GitUtils.DoesBranchExist(repo: repo, branchName: newBranch), userMessage: "Branch should exist");
+            Assert.True(repo.DoesBranchExist(branchName: newBranch), userMessage: "Branch should exist");
 
-            await GitUtils.ResetToMasterAsync(repo: repo, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+            await repo.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
-            GitUtils.RemoveAllLocalBranches(repo);
+            repo.RemoveAllLocalBranches();
 
-            Assert.False(GitUtils.DoesBranchExist(repo: repo, branchName: newBranch), userMessage: "Branch should not exist");
+            Assert.False(repo.DoesBranchExist(branchName: newBranch), userMessage: "Branch should not exist");
         }
     }
 
@@ -72,14 +71,14 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
 
     private async Task CloneTestCommonAsync(string uri, CancellationToken cancellationToken)
     {
-        using (Repository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken: cancellationToken))
+        using (IGitRepository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken: cancellationToken))
         {
-            this.Output.WriteLine($"Repo: {repo.Info.Path}");
+            this.Output.WriteLine($"Repo: {repo.ClonePath}");
 
-            string branch = GitUtils.GetDefaultBranch(repo: repo, upstream: GitConstants.Upstream);
+            string branch = repo.GetDefaultBranch(upstream: GitConstants.Upstream);
             this.Output.WriteLine($"Default Branch: {branch}");
 
-            IReadOnlyCollection<string> remoteBranches = GitUtils.GetRemoteBranches(repo: repo, upstream: GitConstants.Upstream);
+            IReadOnlyCollection<string> remoteBranches = repo.GetRemoteBranches(upstream: GitConstants.Upstream);
 
             foreach (string remoteBranch in remoteBranches)
             {
@@ -87,9 +86,9 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
             }
         }
 
-        using (Repository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken: cancellationToken))
+        using (IGitRepository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken: cancellationToken))
         {
-            GitUtils.RemoveAllLocalBranches(repo);
+            repo.RemoveAllLocalBranches();
         }
     }
 }

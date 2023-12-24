@@ -1,13 +1,13 @@
 using System.Diagnostics;
-using LibGit2Sharp;
+using Credfeto.DotNet.Repo.Git;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd.Models;
 
 [DebuggerDisplay("Repo: {ClonePath} File: {ChangeLogFileName}")]
-public readonly record struct RepoContext(string ClonePath, Repository Repository, string ChangeLogFileName)
+public readonly record struct RepoContext(string ClonePath, IGitRepository Repository, string WorkingDirectory, string ChangeLogFileName)
 {
-    public string WorkingDirectory()
+    public RepoContext(IGitRepository Repository, string ChangeLogFileName)
+        : this(ClonePath: Repository.ClonePath, Repository: Repository, WorkingDirectory: Repository.WorkingDirectory, ChangeLogFileName: ChangeLogFileName)
     {
-        return this.Repository.Info.WorkingDirectory;
     }
 }
