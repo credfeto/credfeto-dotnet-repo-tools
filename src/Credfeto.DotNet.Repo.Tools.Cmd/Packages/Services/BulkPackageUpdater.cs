@@ -157,7 +157,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             return;
         }
 
-        BuildSettings buildSettings = this._dotNetBuild.LoadBuildSettings(projects: projects);
+        BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
 
         int totalUpdates = 0;
 

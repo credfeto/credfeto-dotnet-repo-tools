@@ -6,9 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
+using FunFair.BuildCheck.Interfaces;
 using FunFair.BuildCheck.Runner.Services;
 using Microsoft.Extensions.Logging;
-using IProjectLoader = FunFair.BuildCheck.Interfaces.IProjectLoader;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd.Build.Services;
 
@@ -19,10 +19,13 @@ public sealed class DotNetBuild : IDotNetBuild
     private const string NO_WARN = "-p:NoWarn=NU1802";
     private const string BUILD_VERSION = "0.0.0.1-do-not-distribute";
     private readonly ILogger<DotNetBuild> _logger;
+    private readonly IProjectXmlLoader _projectLoader;
 
     public DotNetBuild(ILogger<DotNetBuild> logger)
     {
         this._logger = logger;
+
+        this._projectLoader = new ProjectXmlLoader();
     }
 
     public async ValueTask BuildAsync(string basePath, BuildSettings buildSettings, CancellationToken cancellationToken)
@@ -58,19 +61,15 @@ public sealed class DotNetBuild : IDotNetBuild
         }
     }
 
-    public BuildSettings LoadBuildSettings(IReadOnlyList<string> projects)
+    public async ValueTask<BuildSettings> LoadBuildSettingsAsync(IReadOnlyList<string> projects, CancellationToken cancellationToken)
     {
-        // note deliberately not injected as this would keep all the projects in memory permanantly..  If this changes to use weak references then this should be injected
-
-        IProjectLoader projectLoader = new ProjectLoader();
-
         bool packable = false;
         bool publishable = false;
         string? framework = null;
 
         foreach (string project in projects)
         {
-            XmlDocument doc = projectLoader.Load(project);
+            XmlDocument doc = await this._projectLoader.LoadAsync(path: project, cancellationToken: cancellationToken);
 
             XmlNode? outputTypeNode = doc.SelectSingleNode("/Project/PropertyGroup/OutputType");
 
@@ -171,9 +170,7 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         this._logger.LogInformation("Packing...");
 
-        return this.ExecRequireCleanAsync(basePath: basePath,
-                                          $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}",
-                                          cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(basePath: basePath, $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}", cancellationToken: cancellationToken);
     }
 
     private ValueTask DotNetTestAsync(string basePath, in CancellationToken cancellationToken)

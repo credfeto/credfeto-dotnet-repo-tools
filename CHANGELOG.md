@@ -20,6 +20,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated xunit to 2.6.4
 - Dependencies - Updated xunit.runner.visualstudio to 2.5.6
 - Dependencies - Updated Credfeto.Package to 1.10.44.293
+- Dependencies - Updated FunFair.BuildCheck to 474.0.16.244
 ### Removed
 ### Deployment Changes
 
