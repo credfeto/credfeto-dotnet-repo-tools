@@ -6,6 +6,7 @@ using Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Cmd.Packages;
 using FunFair.BuildCheck.Interfaces;
 using FunFair.BuildCheck.Runner;
+using FunFair.BuildCheck.Runner.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -14,6 +15,10 @@ namespace Credfeto.DotNet.Repo.Tools.Cmd.Build.Services;
 public sealed class SolutionCheck : ISolutionCheck
 {
     private static readonly IProjectClassifier ProjectClassifier = new ProjectClassifier();
+
+    private static readonly ICheckConfiguration PreReleaseCheckConfiguration = new CheckConfiguration(preReleaseBuild: false, allowPackageVersionMismatch: true);
+    private static readonly ICheckConfiguration ReleaseCheckConfiguration = new CheckConfiguration(preReleaseBuild: false, allowPackageVersionMismatch: false);
+
     private readonly ILogger<SolutionCheck> _logger;
 
     public SolutionCheck(ILogger<SolutionCheck> logger)
@@ -29,9 +34,8 @@ public sealed class SolutionCheck : ISolutionCheck
 
         foreach (string solution in solutions)
         {
-            // TODO: make sure that it allows different versions of packages.
             int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                                                      preReleaseBuild: true,
+                                                      checkConfiguration: PreReleaseCheckConfiguration,
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
@@ -59,9 +63,8 @@ public sealed class SolutionCheck : ISolutionCheck
 
         foreach (string solution in solutions)
         {
-            // TODO: make sure that it allows different versions of packages.
             int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                                                      preReleaseBuild: true,
+                                                      checkConfiguration: PreReleaseCheckConfiguration,
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
@@ -85,9 +88,8 @@ public sealed class SolutionCheck : ISolutionCheck
 
         foreach (string solution in solutions)
         {
-            // TODO: make sure that it allows different versions of packages.
             int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                                                      preReleaseBuild: false,
+                                                      checkConfiguration: ReleaseCheckConfiguration,
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
