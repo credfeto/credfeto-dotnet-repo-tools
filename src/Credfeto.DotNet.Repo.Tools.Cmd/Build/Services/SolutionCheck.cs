@@ -6,6 +6,7 @@ using Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Cmd.Packages;
 using FunFair.BuildCheck.Interfaces;
 using FunFair.BuildCheck.Runner;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd.Build.Services;
@@ -34,6 +35,7 @@ public sealed class SolutionCheck : ISolutionCheck
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
+                                                      buildServiceProvider: BuildServiceProvider,
                                                       logger: this._logger,
                                                       cancellationToken: cancellationToken);
 
@@ -63,6 +65,7 @@ public sealed class SolutionCheck : ISolutionCheck
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
+                                                      buildServiceProvider: BuildServiceProvider,
                                                       logger: this._logger,
                                                       cancellationToken: cancellationToken);
 
@@ -88,6 +91,7 @@ public sealed class SolutionCheck : ISolutionCheck
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
+                                                      buildServiceProvider: BuildServiceProvider,
                                                       logger: this._logger,
                                                       cancellationToken: cancellationToken);
 
@@ -101,5 +105,10 @@ public sealed class SolutionCheck : ISolutionCheck
         {
             throw new SolutionCheckFailedException();
         }
+    }
+
+    private static ServiceProvider BuildServiceProvider(IServiceCollection serviceCollection)
+    {
+        return serviceCollection.BuildServiceProvider();
     }
 }
