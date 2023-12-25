@@ -170,7 +170,9 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         this._logger.LogInformation("Packing...");
 
-        return this.ExecRequireCleanAsync(basePath: basePath, $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(basePath: basePath,
+                                          $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}",
+                                          cancellationToken: cancellationToken);
     }
 
     private ValueTask DotNetTestAsync(string basePath, in CancellationToken cancellationToken)
