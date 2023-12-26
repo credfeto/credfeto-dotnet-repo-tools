@@ -12,8 +12,8 @@ using Credfeto.DotNet.Repo.Tools.Build;
 using Credfeto.DotNet.Repo.Tools.Build.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Cmd.BumpRelease;
 using Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
-using Credfeto.DotNet.Repo.Tools.Cmd.Models;
 using Credfeto.DotNet.Repo.Tools.DotNet;
+using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tracking;
 using Credfeto.Package;
 using Microsoft.Extensions.Logging;
@@ -88,10 +88,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
     }
 
-    public async ValueTask UpdateRepositoriesAsync(UpdateContext updateContext,
-                                                   IReadOnlyList<string> repositories,
-                                                   IReadOnlyList<PackageUpdate> packages,
-                                                   CancellationToken cancellationToken)
+    public async ValueTask UpdateRepositoriesAsync(UpdateContext updateContext, IReadOnlyList<string> repositories, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
         try
         {
@@ -224,10 +221,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         if (!repoContext.HasDotNetFiles(out string? sourceDirectory, out IReadOnlyList<string>? solutions, out IReadOnlyList<string>? projects))
         {
             this._logger.LogInformation("No dotnet files found");
-            await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext,
-                                                          updateContext: updateContext,
-                                                          value: repoContext.Repository.HeadRev,
-                                                          cancellationToken: cancellationToken);
+            await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
 
             return;
         }
@@ -289,8 +283,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
         }
 
-        IReadOnlyList<PackageVersion> updatesMade =
-            await this.UpdatePackagesAsync(updateContext: updateContext, repoContext: repoContext, package: package, cancellationToken: cancellationToken);
+        IReadOnlyList<PackageVersion> updatesMade = await this.UpdatePackagesAsync(updateContext: updateContext, repoContext: repoContext, package: package, cancellationToken: cancellationToken);
 
         if (updatesMade.Count != 0)
         {
@@ -416,10 +409,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         try
         {
-            bool checkOk = await this._solutionCheck.PostCheckAsync(solutions: solutions,
-                                                                    dotNetSettings: dotNetSettings,
-                                                                    logger: this._logger,
-                                                                    cancellationToken: cancellationToken);
+            bool checkOk = await this._solutionCheck.PostCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, logger: this._logger, cancellationToken: cancellationToken);
 
             if (checkOk)
             {
@@ -437,10 +427,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return ok;
     }
 
-    private async ValueTask<IReadOnlyList<PackageVersion>> UpdatePackagesAsync(UpdateContext updateContext,
-                                                                               RepoContext repoContext,
-                                                                               PackageUpdate package,
-                                                                               CancellationToken cancellationToken)
+    private async ValueTask<IReadOnlyList<PackageVersion>> UpdatePackagesAsync(UpdateContext updateContext, RepoContext repoContext, PackageUpdate package, CancellationToken cancellationToken)
     {
         this._logger.LogInformation($"* Updating {package.PackageId}...");
         PackageUpdateConfiguration config = BuildConfiguration(package);
@@ -482,11 +469,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return excludedPackages;
     }
 
-    private async ValueTask<UpdateContext> BuildUpdateContextAsync(Options options,
-                                                                          IGitRepository templateRepo,
-                                                                          string workFolder,
-                                                                          string trackingFileName,
-                                                                          CancellationToken cancellationToken)
+    private async ValueTask<UpdateContext> BuildUpdateContextAsync(Options options, IGitRepository templateRepo, string workFolder, string trackingFileName, CancellationToken cancellationToken)
     {
         DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.WorkingDirectory, cancellationToken: cancellationToken);
 

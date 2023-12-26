@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build;
-using Credfeto.DotNet.Repo.Tools.Cmd.Models;
 using Credfeto.DotNet.Repo.Tools.Cmd.Packages;
 using Credfeto.DotNet.Repo.Tools.DotNet;
+using Credfeto.DotNet.Repo.Tools.Models;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd.BumpRelease;
 

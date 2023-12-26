@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Credfeto.DotNet.Repo.Git;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.Models;
+namespace Credfeto.DotNet.Repo.Tools.Models;
 
 [DebuggerDisplay("Repo: {ClonePath} File: {ChangeLogFileName}")]
 public readonly record struct RepoContext(string ClonePath, IGitRepository Repository, string WorkingDirectory, string ChangeLogFileName)

@@ -11,9 +11,9 @@ using Credfeto.DotNet.Repo.Git;
 using Credfeto.DotNet.Repo.Tools.Build;
 using Credfeto.DotNet.Repo.Tools.Build.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
-using Credfeto.DotNet.Repo.Tools.Cmd.Models;
 using Credfeto.DotNet.Repo.Tools.Cmd.Packages;
 using Credfeto.DotNet.Repo.Tools.DotNet;
+using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tracking;
 using FunFair.BuildVersion.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -25,12 +25,14 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 {
     private const int DEFAULT_BUILD_NUMBER = 101;
 
+    // TODO move to config
     private static readonly IReadOnlyList<RepoMatch> AllowedAutoUpgrade =
     [
         new(Repo: "git@github.com:funfair-tech/funfair-server-content-package.git", MatchType: MatchType.EXACT, Include: false),
         new(Repo: "code-analysis", MatchType: MatchType.CONTAINS, Include: false)
     ];
 
+    // TODO move to config
     private static readonly IReadOnlyList<RepoMatch> AlwaysMatch =
     [
         new(Repo: "template", MatchType: MatchType.CONTAINS, Include: false),
@@ -43,6 +45,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         new(Repo: "funfair-content-package-builder", MatchType: MatchType.CONTAINS, Include: true)
     ];
 
+    // TODO move to config
     private static readonly IReadOnlyList<RepoMatch> NeverRelease =
     [
         new(Repo: "template", MatchType: MatchType.CONTAINS, Include: true),
@@ -204,8 +207,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
     private async ValueTask<bool> ShouldNeverReleaseTimeAndContentBasedAsync(RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
-        string releaseNotes =
-            await ChangeLogReader.ExtractReleaseNotesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
+        string releaseNotes = await ChangeLogReader.ExtractReleaseNotesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
 
         int autoUpdateCount = this.IsAllAutoUpdates(releaseNotes: releaseNotes, packages: packages);
 
@@ -287,8 +289,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         static bool IsPackageUpdaterBranch(string branch)
         {
-            return branch.StartsWith(value: "depends/", comparisonType: StringComparison.Ordinal) &&
-                   !branch.StartsWith(value: "/preview/", comparisonType: StringComparison.Ordinal);
+            return branch.StartsWith(value: "depends/", comparisonType: StringComparison.Ordinal) && !branch.StartsWith(value: "/preview/", comparisonType: StringComparison.Ordinal);
         }
 
         static bool IsDependabotBranch(string branch)
