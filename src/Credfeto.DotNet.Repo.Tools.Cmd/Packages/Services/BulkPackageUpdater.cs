@@ -277,7 +277,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
         {
-            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, logger: this._logger, cancellationToken: cancellationToken);
+            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, cancellationToken: cancellationToken);
 
             await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
@@ -407,26 +407,23 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                        DotNetVersionSettings dotNetSettings,
                                                        CancellationToken cancellationToken)
     {
-        bool ok = false;
-
         try
         {
-            bool checkOk = await this._dotNetSolutionCheck.PostCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, logger: this._logger, cancellationToken: cancellationToken);
+            bool checkOk = await this._dotNetSolutionCheck.PostCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, cancellationToken: cancellationToken);
 
             if (checkOk)
             {
                 await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
-                ok = true;
+                return true;
             }
         }
         catch (DotNetBuildErrorException exception)
         {
             this._logger.LogError(exception: exception, message: "Build failed (after updating package)");
-            ok = false;
         }
 
-        return ok;
+        return false;
     }
 
     private async ValueTask<IReadOnlyList<PackageVersion>> UpdatePackagesAsync(UpdateContext updateContext, RepoContext repoContext, PackageUpdate package, CancellationToken cancellationToken)

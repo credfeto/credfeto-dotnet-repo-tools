@@ -27,7 +27,7 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         this._logger = logger;
     }
 
-    public async ValueTask PreCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, ILogger logger, CancellationToken cancellationToken)
+    public async ValueTask PreCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, CancellationToken cancellationToken)
     {
         IFrameworkSettings frameworkSettings = new FrameworkSettings(dotNetSettings);
 
@@ -56,7 +56,7 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         }
     }
 
-    public async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, ILogger logger, CancellationToken cancellationToken)
+    public async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, CancellationToken cancellationToken)
     {
         IFrameworkSettings frameworkSettings = new FrameworkSettings(dotNetSettings);
 
