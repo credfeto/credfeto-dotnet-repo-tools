@@ -59,19 +59,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj"/>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.DotNet.Interfaces\Credfeto.DotNet.Repo.Tools.DotNet.Interfaces.csproj"/>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git.Interfaces\Credfeto.DotNet.Repo.Tools.Git.Interfaces.csproj"/>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Models\Credfeto.DotNet.Repo.Tools.Models.csproj"/>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj"/>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.19.111"/>
-    <PackageReference Include="Credfeto.Date.Interfaces" Version="1.1.9.181"/>
-    <PackageReference Include="Credfeto.Extensions.Linq" Version="1.0.12.90"/>
-    <PackageReference Include="LibGit2Sharp" Version="0.29.0"/>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0"/>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0"/>
-    <PackageReference Include="NonBlocking" Version="2.1.2"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime"/>
