@@ -32,12 +32,18 @@
  - any: [ './**/*.md' ]
 "github-actions":
  - any: [ '.github/workflows/*.yml' ]
-"Credfeto.DotNet.Repo.Git":
- - any: [ 'src/Credfeto.DotNet.Repo.Git/**/*' ]
-"Credfeto.DotNet.Repo.Git.Tests":
- - any: [ 'src/Credfeto.DotNet.Repo.Git.Tests/**/*' ]
+"Build":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Build/**/*' ]
+"Build.Tests":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Build.Tests/**/*' ]
 "Cmd":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Cmd/**/*' ]
+"DotNet":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.DotNet/**/*' ]
+"Git":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Git/**/*' ]
+"Git.Tests":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Git.Tests/**/*' ]
 "Credfeto.DotNet.Repo.Tracking":
  - any: [ 'src/Credfeto.DotNet.Repo.Tracking/**/*' ]
 "Credfeto.DotNet.Repo.Tracking.Tests":
