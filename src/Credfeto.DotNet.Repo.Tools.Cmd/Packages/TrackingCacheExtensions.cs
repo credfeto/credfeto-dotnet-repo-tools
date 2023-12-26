@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Models;
-using Credfeto.DotNet.Repo.Tracking;
+using Credfeto.DotNet.Repo.Tracking.Interfaces;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd.Packages;
 

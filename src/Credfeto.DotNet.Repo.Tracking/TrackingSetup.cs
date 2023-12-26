@@ -1,4 +1,5 @@
-﻿using Credfeto.DotNet.Repo.Tracking.Services;
+﻿using Credfeto.DotNet.Repo.Tracking.Interfaces;
+using Credfeto.DotNet.Repo.Tracking.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Credfeto.DotNet.Repo.Tracking;

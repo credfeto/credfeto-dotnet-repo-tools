@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.DotNet.Repo.Tracking.Services;
 using FunFair.Test.Common;
 using Xunit;

@@ -1,4 +1,5 @@
-﻿using FunFair.Test.Common;
+﻿using Credfeto.DotNet.Repo.Tracking.Interfaces;
+using FunFair.Test.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;

@@ -37,6 +37,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tracking.Interfaces", "Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj", "{1BC839F2-B798-437E-AD01-D416718E4A4E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.DotNet.Interfaces", "Credfeto.DotNet.Repo.Tools.DotNet.Interfaces\Credfeto.DotNet.Repo.Tools.DotNet.Interfaces.csproj", "{72030A2C-CD05-4052-8D09-F0412FA6D9B5}"
+EndProject
 Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{2483BF4F-3827-4366-8FE0-A0D81592FCBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -91,6 +93,10 @@ Global
 		{1BC839F2-B798-437E-AD01-D416718E4A4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1BC839F2-B798-437E-AD01-D416718E4A4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1BC839F2-B798-437E-AD01-D416718E4A4E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72030A2C-CD05-4052-8D09-F0412FA6D9B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72030A2C-CD05-4052-8D09-F0412FA6D9B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72030A2C-CD05-4052-8D09-F0412FA6D9B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72030A2C-CD05-4052-8D09-F0412FA6D9B5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

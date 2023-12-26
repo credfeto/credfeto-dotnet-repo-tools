@@ -1,5 +1,5 @@
 using System;
-using Credfeto.DotNet.Repo.Tools.DotNet;
+using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using FunFair.BuildCheck.Interfaces;
 
 namespace Credfeto.DotNet.Repo.Tools.Build.Services;

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build.Exceptions;
-using Credfeto.DotNet.Repo.Tools.DotNet;
+using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using FunFair.BuildCheck.Interfaces;
 using FunFair.BuildCheck.Runner;
 using FunFair.BuildCheck.Runner.Services;

@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Credfeto.DotNet.Repo.Tracking;
+namespace Credfeto.DotNet.Repo.Tracking.Interfaces;
 
 public interface ITrackingCache
 {
