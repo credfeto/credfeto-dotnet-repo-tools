@@ -1,4 +1,5 @@
-﻿using FunFair.Test.Common;
+﻿using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
+using FunFair.Test.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,7 +22,7 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
     [Fact]
     public void SolutionCheckMustBeRegistered()
     {
-        this.RequireService<ISolutionCheck>();
+        this.RequireService<IDotNetSolutionCheck>();
     }
 
     private static IServiceCollection Configure(IServiceCollection services)

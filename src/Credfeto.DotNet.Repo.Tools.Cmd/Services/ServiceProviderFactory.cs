@@ -1,5 +1,5 @@
 using System;
-using Credfeto.DotNet.Repo.Tools.Build;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd.Services;

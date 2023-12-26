@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Microsoft.Extensions.Logging;
 
-namespace Credfeto.DotNet.Repo.Tools.Build;
+namespace Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 
-public interface ISolutionCheck
+public interface IDotNetSolutionCheck
 {
     ValueTask PreCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, ILogger logger, CancellationToken cancellationToken);
 

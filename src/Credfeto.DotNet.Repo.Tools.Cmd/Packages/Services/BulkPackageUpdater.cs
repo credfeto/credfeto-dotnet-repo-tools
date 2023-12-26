@@ -7,8 +7,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Credfeto.ChangeLog;
-using Credfeto.DotNet.Repo.Tools.Build;
-using Credfeto.DotNet.Repo.Tools.Build.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
@@ -27,19 +27,19 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 {
     private const string CHANGELOG_ENTRY_TYPE = "Changed";
     private readonly IDotNetBuild _dotNetBuild;
+    private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
     private readonly IGlobalJson _globalJson;
     private readonly ILogger<BulkPackageUpdater> _logger;
     private readonly IPackageCache _packageCache;
     private readonly IPackageUpdater _packageUpdater;
     private readonly IReleaseGeneration _releaseGeneration;
-    private readonly ISolutionCheck _solutionCheck;
     private readonly ITrackingCache _trackingCache;
 
     public BulkPackageUpdater(IPackageUpdater packageUpdater,
                               IPackageCache packageCache,
                               ITrackingCache trackingCache,
                               IGlobalJson globalJson,
-                              ISolutionCheck solutionCheck,
+                              IDotNetSolutionCheck dotNetSolutionCheck,
                               IDotNetBuild dotNetBuild,
                               IReleaseGeneration releaseGeneration,
                               ILogger<BulkPackageUpdater> logger)
@@ -48,7 +48,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         this._packageCache = packageCache;
         this._trackingCache = trackingCache;
         this._globalJson = globalJson;
-        this._solutionCheck = solutionCheck;
+        this._dotNetSolutionCheck = dotNetSolutionCheck;
         this._dotNetBuild = dotNetBuild;
         this._releaseGeneration = releaseGeneration;
         this._logger = logger;
@@ -277,7 +277,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
         {
-            await this._solutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, logger: this._logger, cancellationToken: cancellationToken);
+            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, logger: this._logger, cancellationToken: cancellationToken);
 
             await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
@@ -411,7 +411,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         try
         {
-            bool checkOk = await this._solutionCheck.PostCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, logger: this._logger, cancellationToken: cancellationToken);
+            bool checkOk = await this._dotNetSolutionCheck.PostCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, logger: this._logger, cancellationToken: cancellationToken);
 
             if (checkOk)
             {

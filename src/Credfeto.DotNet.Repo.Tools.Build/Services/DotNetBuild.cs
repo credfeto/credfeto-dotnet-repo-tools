@@ -5,7 +5,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Credfeto.DotNet.Repo.Tools.Build.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using FunFair.BuildCheck.Interfaces;
 using FunFair.BuildCheck.Runner.Services;
 using Microsoft.Extensions.Logging;
@@ -170,9 +171,7 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         this._logger.LogInformation("Packing...");
 
-        return this.ExecRequireCleanAsync(basePath: basePath,
-                                          $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}",
-                                          cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(basePath: basePath, $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}", cancellationToken: cancellationToken);
     }
 
     private ValueTask DotNetTestAsync(string basePath, in CancellationToken cancellationToken)

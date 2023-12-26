@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Credfeto.DotNet.Repo.Tools.Build.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using FunFair.BuildCheck.Interfaces;
 using FunFair.BuildCheck.Runner;
@@ -10,17 +11,17 @@ using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Build.Services;
 
-public sealed class SolutionCheck : ISolutionCheck
+public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
 {
     private static readonly IProjectClassifier ProjectClassifier = new ProjectClassifier();
 
     private static readonly ICheckConfiguration PreReleaseCheckConfiguration = new CheckConfiguration(preReleaseBuild: true, allowPackageVersionMismatch: true);
     private static readonly ICheckConfiguration ReleaseCheckConfiguration = new CheckConfiguration(preReleaseBuild: false, allowPackageVersionMismatch: false);
-    private readonly ILogger<SolutionCheck> _logger;
+    private readonly ILogger<DotNetSolutionCheck> _logger;
 
     private readonly IServiceProviderFactory _serviceProviderFactory;
 
-    public SolutionCheck(IServiceProviderFactory serviceProviderFactory, ILogger<SolutionCheck> logger)
+    public DotNetSolutionCheck(IServiceProviderFactory serviceProviderFactory, ILogger<DotNetSolutionCheck> logger)
     {
         this._serviceProviderFactory = serviceProviderFactory;
         this._logger = logger;

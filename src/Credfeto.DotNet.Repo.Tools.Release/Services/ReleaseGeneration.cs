@@ -7,10 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.ChangeLog;
 using Credfeto.Date.Interfaces;
-using Credfeto.DotNet.Repo.Tools.Build;
-using Credfeto.DotNet.Repo.Tools.Build.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
-using Credfeto.DotNet.Repo.Tools.Git;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
@@ -54,9 +53,9 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     ];
 
     private readonly IDotNetBuild _dotNetBuild;
+    private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
 
     private readonly ILogger<ReleaseGeneration> _logger;
-    private readonly ISolutionCheck _solutionCheck;
     private readonly ICurrentTimeSource _timeSource;
     private readonly ITrackingCache _trackingCache;
     private readonly IVersionDetector _versionDetector;
@@ -64,14 +63,14 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     public ReleaseGeneration(ICurrentTimeSource timeSource,
                              IVersionDetector versionDetector,
                              ITrackingCache trackingCache,
-                             ISolutionCheck solutionCheck,
+                             IDotNetSolutionCheck dotNetSolutionCheck,
                              IDotNetBuild dotNetBuild,
                              ILogger<ReleaseGeneration> logger)
     {
         this._timeSource = timeSource;
         this._versionDetector = versionDetector;
         this._trackingCache = trackingCache;
-        this._solutionCheck = solutionCheck;
+        this._dotNetSolutionCheck = dotNetSolutionCheck;
         this._dotNetBuild = dotNetBuild;
         this._logger = logger;
     }
@@ -183,7 +182,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     {
         try
         {
-            await this._solutionCheck.ReleaseCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, cancellationToken: cancellationToken);
+            await this._dotNetSolutionCheck.ReleaseCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, cancellationToken: cancellationToken);
         }
         catch (SolutionCheckFailedException)
         {

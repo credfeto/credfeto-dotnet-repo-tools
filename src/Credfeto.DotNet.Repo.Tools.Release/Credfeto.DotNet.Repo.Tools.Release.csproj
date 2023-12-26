@@ -58,12 +58,12 @@
     <RepositoryUrl>https://github.com/credfeto/credfeto-dotnet-repo-tools</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build\Credfeto.DotNet.Repo.Tools.Build.csproj"/>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.DotNet\Credfeto.DotNet.Repo.Tools.DotNet.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.DotNet.Interfaces\Credfeto.DotNet.Repo.Tools.DotNet.Interfaces.csproj"/>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git.Interfaces\Credfeto.DotNet.Repo.Tools.Git.Interfaces.csproj"/>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Models\Credfeto.DotNet.Repo.Tools.Models.csproj"/>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Release.Interfaces\Credfeto.DotNet.Repo.Tools.Release.Interfaces.csproj"/>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking\Credfeto.DotNet.Repo.Tracking.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Credfeto.ChangeLog" Version="1.10.19.111"/>

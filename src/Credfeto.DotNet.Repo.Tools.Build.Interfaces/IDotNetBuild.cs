@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Credfeto.DotNet.Repo.Tools.Build;
+namespace Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 
 public interface IDotNetBuild
 {

@@ -1,6 +1,6 @@
 using System;
 
-namespace Credfeto.DotNet.Repo.Tools.Build.Exceptions;
+namespace Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 
 public sealed class DotNetBuildErrorException : Exception
 {
