@@ -67,6 +67,7 @@
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Credfeto.Date" Version="1.1.9.181" />
+    <PackageReference Include="Credfeto.Package" Version="1.10.44.293"/>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
