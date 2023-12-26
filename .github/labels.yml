@@ -118,6 +118,10 @@
    color: "96f7d2"
    description: "Changes in Credfeto.DotNet.Repo.Tools.Build project"
 
+ - name: "Build.Interfaces"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Build.Interfaces project"
+
  - name: "Build.Tests"
    color: "0e8a16"
    description: "Changes in Credfeto.DotNet.Repo.Tools.Build.Tests project"
@@ -130,9 +134,17 @@
    color: "96f7d2"
    description: "Changes in Credfeto.DotNet.Repo.Tools.DotNet project"
 
+ - name: "DotNet.Interfaces"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.DotNet.Interfaces project"
+
  - name: "Git"
    color: "96f7d2"
    description: "Changes in Credfeto.DotNet.Repo.Tools.Git project"
+
+ - name: "Git.Interfaces"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Git.Interfaces project"
 
  - name: "Git.Tests"
    color: "0e8a16"
@@ -142,9 +154,21 @@
    color: "96f7d2"
    description: "Changes in Credfeto.DotNet.Repo.Tools.Models project"
 
+ - name: "Release"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Release project"
+
+ - name: "Release.Interfaces"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Release.Interfaces project"
+
  - name: "Credfeto.DotNet.Repo.Tracking"
    color: "96f7d2"
    description: "Changes in Credfeto.DotNet.Repo.Tracking project"
+
+ - name: "Credfeto.DotNet.Repo.Tracking.Interfaces"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tracking.Interfaces project"
 
  - name: "Credfeto.DotNet.Repo.Tracking.Tests"
    color: "0e8a16"
