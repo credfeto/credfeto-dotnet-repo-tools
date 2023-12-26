@@ -2,6 +2,8 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 using LibGit2Sharp;
 
 namespace Credfeto.DotNet.Repo.Tools.Git;
