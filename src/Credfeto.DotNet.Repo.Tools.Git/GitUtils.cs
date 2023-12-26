@@ -2,15 +2,14 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Credfeto.DotNet.Repo.Git.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Git.Exceptions;
 using LibGit2Sharp;
 
-namespace Credfeto.DotNet.Repo.Git;
+namespace Credfeto.DotNet.Repo.Tools.Git;
 
 public static class GitUtils
 {
-    private static readonly CloneOptions GitCloneOptions =
-        new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
+    private static readonly CloneOptions GitCloneOptions = new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
 
     public static string GetWorkingDirectoryForRepository(string repoUrl)
     {

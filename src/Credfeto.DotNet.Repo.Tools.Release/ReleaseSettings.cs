@@ -1,7 +1,7 @@
-﻿using Credfeto.DotNet.Repo.Git.Services;
+﻿using Credfeto.DotNet.Repo.Tools.Release.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Credfeto.DotNet.Repo.Git;
+namespace Credfeto.DotNet.Repo.Tools.Release;
 
 public static class ReleaseSettings
 {

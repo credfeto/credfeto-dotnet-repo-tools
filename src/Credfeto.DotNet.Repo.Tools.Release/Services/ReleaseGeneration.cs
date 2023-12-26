@@ -7,19 +7,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.ChangeLog;
 using Credfeto.Date.Interfaces;
-using Credfeto.DotNet.Repo.Git.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Build;
 using Credfeto.DotNet.Repo.Tools.Build.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet;
+using Credfeto.DotNet.Repo.Tools.Git;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
-using Credfeto.DotNet.Repo.Tools.Release;
+using Credfeto.DotNet.Repo.Tools.Release.Exceptions;
 using Credfeto.DotNet.Repo.Tracking;
 using FunFair.BuildVersion.Interfaces;
 using Microsoft.Extensions.Logging;
 using NuGet.Versioning;
 
-namespace Credfeto.DotNet.Repo.Git.Services;
+namespace Credfeto.DotNet.Repo.Tools.Release.Services;
 
 public sealed class ReleaseGeneration : IReleaseGeneration
 {

@@ -1,6 +1,6 @@
 using System;
 
-namespace Credfeto.DotNet.Repo.Git.Exceptions;
+namespace Credfeto.DotNet.Repo.Tools.Release.Exceptions;
 
 public sealed class ReleaseCreatedException : Exception
 {

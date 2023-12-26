@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Credfeto.DotNet.Repo.Git;
+namespace Credfeto.DotNet.Repo.Tools.Git;
 
 public static class GitRepoList
 {

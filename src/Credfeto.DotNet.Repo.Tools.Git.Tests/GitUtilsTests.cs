@@ -6,7 +6,7 @@ using FunFair.Test.Common;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Credfeto.DotNet.Repo.Git.Tests;
+namespace Credfeto.DotNet.Repo.Tools.Git.Tests;
 
 public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
 {

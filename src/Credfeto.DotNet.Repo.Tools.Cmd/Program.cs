@@ -5,9 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
-using Credfeto.DotNet.Repo.Git;
 using Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Cmd.Packages;
+using Credfeto.DotNet.Repo.Tools.Git;
 using Credfeto.Package.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -97,12 +97,7 @@ internal static class Program
     {
         CancellationToken cancellationToken = CancellationToken.None;
 
-        if (IsBulkPackageUpdate(options: options,
-                                out string? workFolder,
-                                out string? repositoriesFileName,
-                                out string? packagesFileName,
-                                out string? trackingFileName,
-                                out string? templateRepository))
+        if (IsBulkPackageUpdate(options: options, out string? workFolder, out string? repositoriesFileName, out string? packagesFileName, out string? trackingFileName, out string? templateRepository))
         {
             await PerformBulkPackageUpdatesAsync(options: options,
                                                  repositoriesFileName: repositoriesFileName,

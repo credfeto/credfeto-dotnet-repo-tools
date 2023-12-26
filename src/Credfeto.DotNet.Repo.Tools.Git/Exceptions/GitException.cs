@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Credfeto.DotNet.Repo.Git.Exceptions;
+namespace Credfeto.DotNet.Repo.Tools.Git.Exceptions;
 
 public sealed class GitException : Exception
 {

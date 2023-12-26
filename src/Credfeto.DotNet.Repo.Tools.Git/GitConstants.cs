@@ -1,4 +1,4 @@
-namespace Credfeto.DotNet.Repo.Git;
+namespace Credfeto.DotNet.Repo.Tools.Git;
 
 public static class GitConstants
 {
