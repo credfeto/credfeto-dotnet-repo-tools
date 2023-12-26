@@ -61,19 +61,12 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git\Credfeto.DotNet.Repo.Tools.Git.csproj"/>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build\Credfeto.DotNet.Repo.Tools.Build.csproj"/>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.DotNet\Credfeto.DotNet.Repo.Tools.DotNet.csproj"/>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Models\Credfeto.DotNet.Repo.Tools.Models.csproj"/>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Release\Credfeto.DotNet.Repo.Tools.Release.csproj"/>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking\Credfeto.DotNet.Repo.Tracking.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
-    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.19.111" />
     <PackageReference Include="Credfeto.Date" Version="1.1.9.181" />
-    <PackageReference Include="Credfeto.Enumeration.Source.Generation.Attributes" Version="1.1.1.168" />
-    <PackageReference Include="Credfeto.Extensions.Linq" Version="1.0.12.90" />
-    <PackageReference Include="Credfeto.Package" Version="1.10.44.293" />
-    <PackageReference Include="FunFair.BuildCheck.Runner" Version="474.0.17.246" />
-    <PackageReference Include="FunFair.BuildVersion.Detection" Version="6.2.15.250" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
@@ -94,8 +87,5 @@
     <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="ThisAssembly.AssemblyInfo" Version="1.4.1" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="ToStringWithoutOverrideAnalyzer" Version="0.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="BumpRelease\"/>
   </ItemGroup>
 </Project>
