@@ -44,6 +44,8 @@
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Git/**/*' ]
 "Git.Tests":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Git.Tests/**/*' ]
+"Models":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Models/**/*' ]
 "Credfeto.DotNet.Repo.Tracking":
  - any: [ 'src/Credfeto.DotNet.Repo.Tracking/**/*' ]
 "Credfeto.DotNet.Repo.Tracking.Tests":
