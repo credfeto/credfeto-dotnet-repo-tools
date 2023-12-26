@@ -27,6 +27,7 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 
     private static IServiceCollection Configure(IServiceCollection services)
     {
-        return services.AddBuild();
+        return services.AddMockedService<IServiceProviderFactory>()
+                       .AddBuild();
     }
 }
