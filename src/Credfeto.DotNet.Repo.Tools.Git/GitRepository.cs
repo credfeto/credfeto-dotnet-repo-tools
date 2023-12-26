@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Credfeto.DotNet.Repo.Tools.Git.Exceptions;
 using LibGit2Sharp;
 
 namespace Credfeto.DotNet.Repo.Tools.Git;
@@ -28,6 +27,10 @@ internal sealed class GitRepository : IGitRepository
     public string ClonePath { get; }
 
     public string WorkingDirectory { get; }
+
+    public string HeadRev => this.Active.Head.Tip.Sha;
+
+    public bool HasSubmodules => this.Active.Submodules.Any();
 
     public void Dispose()
     {
@@ -192,10 +195,6 @@ internal sealed class GitRepository : IGitRepository
             this.ResetActiveRepoLink();
         }
     }
-
-    public string HeadRev => this.Active.Head.Tip.Sha;
-
-    public bool HasSubmodules => this.Active.Submodules.Any();
 
     public async ValueTask RemoveBranchesForPrefixAsync(string branchForUpdate, string branchPrefix, string upstream, CancellationToken cancellationToken)
     {

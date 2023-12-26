@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using LibGit2Sharp;
 
-namespace Credfeto.DotNet.Repo.Tools.Git;
+namespace Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 
 public interface IGitRepository : IDisposable
 {

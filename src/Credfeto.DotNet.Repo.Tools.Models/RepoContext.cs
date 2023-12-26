@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Credfeto.DotNet.Repo.Tools.Git;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 
 namespace Credfeto.DotNet.Repo.Tools.Models;
 

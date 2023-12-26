@@ -11,6 +11,7 @@ using Credfeto.DotNet.Repo.Tools.Build;
 using Credfeto.DotNet.Repo.Tools.Build.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet;
 using Credfeto.DotNet.Repo.Tools.Git;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
 using Credfeto.DotNet.Repo.Tools.Release;

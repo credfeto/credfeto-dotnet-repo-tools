@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using FunFair.Test.Common;
 using Xunit;
 using Xunit.Abstractions;
