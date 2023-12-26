@@ -1,8 +1,7 @@
-﻿using Credfeto.DotNet.Repo.Tools.Cmd.BumpRelease;
-using Credfeto.DotNet.Repo.Tools.Cmd.BumpRelease.Services;
+﻿using Credfeto.DotNet.Repo.Git.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Credfeto.DotNet.Repo.Tools.Release;
+namespace Credfeto.DotNet.Repo.Git;
 
 public static class ReleaseSettings
 {

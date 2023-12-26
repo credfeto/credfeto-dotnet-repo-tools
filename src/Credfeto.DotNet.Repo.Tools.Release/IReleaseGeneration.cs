@@ -2,11 +2,11 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build;
-using Credfeto.DotNet.Repo.Tools.Cmd.Packages;
 using Credfeto.DotNet.Repo.Tools.DotNet;
 using Credfeto.DotNet.Repo.Tools.Models;
+using Credfeto.DotNet.Repo.Tools.Models.Packages;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.BumpRelease;
+namespace Credfeto.DotNet.Repo.Git;
 
 public interface IReleaseGeneration
 {

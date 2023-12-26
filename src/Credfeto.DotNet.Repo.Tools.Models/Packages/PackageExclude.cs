@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.Packages;
+namespace Credfeto.DotNet.Repo.Tools.Models.Packages;
 
 [DebuggerDisplay("{PackageId}: {ExactMatch}")]
 public sealed class PackageExclude

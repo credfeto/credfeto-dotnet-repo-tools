@@ -34,7 +34,6 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <NuGetAudit>true</NuGetAudit>
-    <RootNamespace>Credfeto.DotNet.Repo.Git</RootNamespace>
   </PropertyGroup>
   <PropertyGroup>
     <AnalysisLevel>latest</AnalysisLevel>

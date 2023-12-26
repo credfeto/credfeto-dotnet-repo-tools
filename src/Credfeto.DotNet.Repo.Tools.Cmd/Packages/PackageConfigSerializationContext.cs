@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using Credfeto.DotNet.Repo.Tools.Models.Packages;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd.Packages;
 

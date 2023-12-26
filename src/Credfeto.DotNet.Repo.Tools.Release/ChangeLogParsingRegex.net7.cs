@@ -1,7 +1,7 @@
 #if NET7_0_OR_GREATER
 using System.Text.RegularExpressions;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.BumpRelease;
+namespace Credfeto.DotNet.Repo.Tools.Release;
 
 internal static partial class ChangeLogParsingRegex
 {

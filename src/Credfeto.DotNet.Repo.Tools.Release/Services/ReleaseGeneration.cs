@@ -7,19 +7,19 @@ using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.ChangeLog;
 using Credfeto.Date.Interfaces;
-using Credfeto.DotNet.Repo.Git;
+using Credfeto.DotNet.Repo.Git.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Build;
 using Credfeto.DotNet.Repo.Tools.Build.Exceptions;
-using Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
-using Credfeto.DotNet.Repo.Tools.Cmd.Packages;
 using Credfeto.DotNet.Repo.Tools.DotNet;
 using Credfeto.DotNet.Repo.Tools.Models;
+using Credfeto.DotNet.Repo.Tools.Models.Packages;
+using Credfeto.DotNet.Repo.Tools.Release;
 using Credfeto.DotNet.Repo.Tracking;
 using FunFair.BuildVersion.Interfaces;
 using Microsoft.Extensions.Logging;
 using NuGet.Versioning;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.BumpRelease.Services;
+namespace Credfeto.DotNet.Repo.Git.Services;
 
 public sealed class ReleaseGeneration : IReleaseGeneration
 {
@@ -351,7 +351,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         bool IsMatch(PackageUpdate package)
         {
-            return StringComparer.InvariantCultureIgnoreCase.Equals(x: candidate, y: package.PackageId);
+            return StringComparer.InvariantCultureIgnoreCase.Equals(x: candidate, (string?)package.PackageId);
         }
     }
 
