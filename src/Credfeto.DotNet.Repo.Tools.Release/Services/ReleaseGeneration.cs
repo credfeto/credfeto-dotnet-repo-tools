@@ -10,6 +10,7 @@ using Credfeto.Date.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
