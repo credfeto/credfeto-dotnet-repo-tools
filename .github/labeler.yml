@@ -34,19 +34,31 @@
  - any: [ '.github/workflows/*.yml' ]
 "Build":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Build/**/*' ]
+"Build.Interfaces":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Build.Interfaces/**/*' ]
 "Build.Tests":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Build.Tests/**/*' ]
 "Cmd":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Cmd/**/*' ]
 "DotNet":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.DotNet/**/*' ]
+"DotNet.Interfaces":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.DotNet.Interfaces/**/*' ]
 "Git":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Git/**/*' ]
+"Git.Interfaces":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Git.Interfaces/**/*' ]
 "Git.Tests":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Git.Tests/**/*' ]
 "Models":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Models/**/*' ]
+"Release":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Release/**/*' ]
+"Release.Interfaces":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Release.Interfaces/**/*' ]
 "Credfeto.DotNet.Repo.Tracking":
  - any: [ 'src/Credfeto.DotNet.Repo.Tracking/**/*' ]
+"Credfeto.DotNet.Repo.Tracking.Interfaces":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tracking.Interfaces/**/*' ]
 "Credfeto.DotNet.Repo.Tracking.Tests":
  - any: [ 'src/Credfeto.DotNet.Repo.Tracking.Tests/**/*' ]
