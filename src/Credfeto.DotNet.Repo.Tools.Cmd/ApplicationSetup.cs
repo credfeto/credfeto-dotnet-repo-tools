@@ -1,12 +1,11 @@
 using System;
 using Credfeto.Date;
 using Credfeto.DotNet.Repo.Tools.Build;
-using Credfeto.DotNet.Repo.Tools.Cmd.BumpRelease;
-using Credfeto.DotNet.Repo.Tools.Cmd.BumpRelease.Services;
 using Credfeto.DotNet.Repo.Tools.Cmd.Packages;
 using Credfeto.DotNet.Repo.Tools.Cmd.Packages.Services;
 using Credfeto.DotNet.Repo.Tools.Cmd.Services;
 using Credfeto.DotNet.Repo.Tools.DotNet;
+using Credfeto.DotNet.Repo.Tools.Release;
 using Credfeto.DotNet.Repo.Tracking;
 using Credfeto.Package;
 using FunFair.BuildVersion.Detection;
@@ -30,7 +29,7 @@ internal static class ApplicationSetup
                                       .AddDotNet()
                                       .AddBuild()
                                       .AddBuildVersionDetection(new BranchSettings(releaseSuffix: null, package: null))
-                                      .AddSingleton<IReleaseGeneration, ReleaseGeneration>()
+                                      .AddReleaseGeneration()
                                       .AddSingleton<IBulkPackageUpdater, BulkPackageUpdater>()
                                       .AddSingleton<IServiceProviderFactory, ServiceProviderFactory>()
                                       .BuildServiceProvider();
