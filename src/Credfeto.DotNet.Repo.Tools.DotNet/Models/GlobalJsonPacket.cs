@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.DotNet.Models;
+namespace Credfeto.DotNet.Repo.Tools.DotNet.Models;
 
 internal sealed class GlobalJsonPacket
 {

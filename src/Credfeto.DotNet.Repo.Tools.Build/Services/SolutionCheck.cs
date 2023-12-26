@@ -1,16 +1,14 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Credfeto.DotNet.Repo.Tools.Cmd.DotNet;
-using Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
-using Credfeto.DotNet.Repo.Tools.Cmd.Packages;
+using Credfeto.DotNet.Repo.Tools.Build.Exceptions;
+using Credfeto.DotNet.Repo.Tools.DotNet;
 using FunFair.BuildCheck.Interfaces;
 using FunFair.BuildCheck.Runner;
 using FunFair.BuildCheck.Runner.Services;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.Build.Services;
+namespace Credfeto.DotNet.Repo.Tools.Build.Services;
 
 public sealed class SolutionCheck : ISolutionCheck
 {
@@ -18,11 +16,13 @@ public sealed class SolutionCheck : ISolutionCheck
 
     private static readonly ICheckConfiguration PreReleaseCheckConfiguration = new CheckConfiguration(preReleaseBuild: true, allowPackageVersionMismatch: true);
     private static readonly ICheckConfiguration ReleaseCheckConfiguration = new CheckConfiguration(preReleaseBuild: false, allowPackageVersionMismatch: false);
-
     private readonly ILogger<SolutionCheck> _logger;
 
-    public SolutionCheck(ILogger<SolutionCheck> logger)
+    private readonly IServiceProviderFactory _serviceProviderFactory;
+
+    public SolutionCheck(IServiceProviderFactory serviceProviderFactory, ILogger<SolutionCheck> logger)
     {
+        this._serviceProviderFactory = serviceProviderFactory;
         this._logger = logger;
     }
 
@@ -39,7 +39,7 @@ public sealed class SolutionCheck : ISolutionCheck
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
-                                                      buildServiceProvider: BuildServiceProvider,
+                                                      buildServiceProvider: this._serviceProviderFactory.Build,
                                                       logger: this._logger,
                                                       cancellationToken: cancellationToken);
 
@@ -68,7 +68,7 @@ public sealed class SolutionCheck : ISolutionCheck
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
-                                                      buildServiceProvider: BuildServiceProvider,
+                                                      buildServiceProvider: this._serviceProviderFactory.Build,
                                                       logger: this._logger,
                                                       cancellationToken: cancellationToken);
 
@@ -93,7 +93,7 @@ public sealed class SolutionCheck : ISolutionCheck
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
-                                                      buildServiceProvider: BuildServiceProvider,
+                                                      buildServiceProvider: this._serviceProviderFactory.Build,
                                                       logger: this._logger,
                                                       cancellationToken: cancellationToken);
 
@@ -107,10 +107,5 @@ public sealed class SolutionCheck : ISolutionCheck
         {
             throw new SolutionCheckFailedException();
         }
-    }
-
-    private static ServiceProvider BuildServiceProvider(IServiceCollection serviceCollection)
-    {
-        return serviceCollection.BuildServiceProvider();
     }
 }

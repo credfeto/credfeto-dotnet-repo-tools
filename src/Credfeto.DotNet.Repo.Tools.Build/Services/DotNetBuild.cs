@@ -5,12 +5,12 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Build.Exceptions;
 using FunFair.BuildCheck.Interfaces;
 using FunFair.BuildCheck.Runner.Services;
 using Microsoft.Extensions.Logging;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.Build.Services;
+namespace Credfeto.DotNet.Repo.Tools.Build.Services;
 
 public sealed class DotNetBuild : IDotNetBuild
 {

@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
-using Credfeto.DotNet.Repo.Tools.Cmd.DotNet;
+using Credfeto.DotNet.Repo.Tools.DotNet;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd.Packages;
 

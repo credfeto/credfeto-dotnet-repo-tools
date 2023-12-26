@@ -1,8 +1,8 @@
 using System;
-using Credfeto.DotNet.Repo.Tools.Cmd.DotNet;
+using Credfeto.DotNet.Repo.Tools.DotNet;
 using FunFair.BuildCheck.Interfaces;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.Packages;
+namespace Credfeto.DotNet.Repo.Tools.Build.Services;
 
 internal sealed class FrameworkSettings : IFrameworkSettings
 {

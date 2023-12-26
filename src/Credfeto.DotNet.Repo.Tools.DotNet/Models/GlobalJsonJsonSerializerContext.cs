@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.DotNet.Models;
+namespace Credfeto.DotNet.Repo.Tools.DotNet.Models;
 
 [JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Serialization | JsonSourceGenerationMode.Metadata,
                              DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,

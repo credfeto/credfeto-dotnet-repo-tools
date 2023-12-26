@@ -8,11 +8,12 @@ using System.Threading.Tasks;
 using System.Xml;
 using Credfeto.ChangeLog;
 using Credfeto.DotNet.Repo.Git;
-using Credfeto.DotNet.Repo.Tools.Cmd.Build;
+using Credfeto.DotNet.Repo.Tools.Build;
+using Credfeto.DotNet.Repo.Tools.Build.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Cmd.BumpRelease;
-using Credfeto.DotNet.Repo.Tools.Cmd.DotNet;
 using Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Cmd.Models;
+using Credfeto.DotNet.Repo.Tools.DotNet;
 using Credfeto.DotNet.Repo.Tracking;
 using Credfeto.Package;
 using Microsoft.Extensions.Logging;
@@ -24,6 +25,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 {
     private const string CHANGELOG_ENTRY_TYPE = "Changed";
     private readonly IDotNetBuild _dotNetBuild;
+    private readonly IGlobalJson _globalJson;
     private readonly ILogger<BulkPackageUpdater> _logger;
     private readonly IPackageCache _packageCache;
     private readonly IPackageUpdater _packageUpdater;
@@ -34,6 +36,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     public BulkPackageUpdater(IPackageUpdater packageUpdater,
                               IPackageCache packageCache,
                               ITrackingCache trackingCache,
+                              IGlobalJson globalJson,
                               ISolutionCheck solutionCheck,
                               IDotNetBuild dotNetBuild,
                               IReleaseGeneration releaseGeneration,
@@ -42,6 +45,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         this._packageUpdater = packageUpdater;
         this._packageCache = packageCache;
         this._trackingCache = trackingCache;
+        this._globalJson = globalJson;
         this._solutionCheck = solutionCheck;
         this._dotNetBuild = dotNetBuild;
         this._releaseGeneration = releaseGeneration;
@@ -64,11 +68,11 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         using (IGitRepository templateRepo = await GitUtils.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
-            UpdateContext updateContext = await BuildUpdateContextAsync(options: options,
-                                                                        templateRepo: templateRepo,
-                                                                        workFolder: workFolder,
-                                                                        trackingFileName: trackingFileName,
-                                                                        cancellationToken: cancellationToken);
+            UpdateContext updateContext = await this.BuildUpdateContextAsync(options: options,
+                                                                             templateRepo: templateRepo,
+                                                                             workFolder: workFolder,
+                                                                             trackingFileName: trackingFileName,
+                                                                             cancellationToken: cancellationToken);
 
             await this.UpdateCachedPackagesAsync(workFolder: workFolder, cancellationToken: cancellationToken, packages: packages, updateContext: updateContext);
 
@@ -478,13 +482,13 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return excludedPackages;
     }
 
-    private static async ValueTask<UpdateContext> BuildUpdateContextAsync(Options options,
+    private async ValueTask<UpdateContext> BuildUpdateContextAsync(Options options,
                                                                           IGitRepository templateRepo,
                                                                           string workFolder,
                                                                           string trackingFileName,
                                                                           CancellationToken cancellationToken)
     {
-        DotNetVersionSettings dotNetSettings = await GlobalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.WorkingDirectory, cancellationToken: cancellationToken);
+        DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.WorkingDirectory, cancellationToken: cancellationToken);
 
         // TODO: check to see what SDKs are installed throw if the one in the sdk isn't installed.
 

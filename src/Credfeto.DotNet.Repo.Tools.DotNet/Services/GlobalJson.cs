@@ -2,13 +2,13 @@ using System.IO;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Credfeto.DotNet.Repo.Tools.Cmd.DotNet.Models;
+using Credfeto.DotNet.Repo.Tools.DotNet.Models;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.DotNet;
+namespace Credfeto.DotNet.Repo.Tools.DotNet.Services;
 
-public static class GlobalJson
+public sealed class GlobalJson : IGlobalJson
 {
-    public static async ValueTask<DotNetVersionSettings> LoadGlobalJsonAsync(string baseFolder, CancellationToken cancellationToken)
+    public async ValueTask<DotNetVersionSettings> LoadGlobalJsonAsync(string baseFolder, CancellationToken cancellationToken)
     {
         string path = Path.Combine(path1: baseFolder, path2: "src", path3: "global.json");
         string content = await File.ReadAllTextAsync(path: path, cancellationToken: cancellationToken);

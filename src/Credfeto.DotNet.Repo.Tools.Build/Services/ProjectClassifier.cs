@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FunFair.BuildCheck.Interfaces;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.Packages;
+namespace Credfeto.DotNet.Repo.Tools.Build.Services;
 
 internal sealed class ProjectClassifier : IProjectClassifier
 {

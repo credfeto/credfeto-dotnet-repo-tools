@@ -1,6 +1,6 @@
 using System;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
+namespace Credfeto.DotNet.Repo.Tools.Build.Exceptions;
 
 public sealed class SolutionCheckFailedException : Exception
 {
