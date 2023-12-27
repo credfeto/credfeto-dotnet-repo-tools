@@ -59,9 +59,14 @@
   </PropertyGroup>
   <ItemGroup>
     <!--    <PackageReference Include="Credfeto.Package" Version="1.10.44.293"/>-->
-    <PackageReference Include="FunFair.BuildCheck.Runner" Version="474.0.17.246"/>
     <!--    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0"/>-->
     <!--    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0"/>-->
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="FunFair.BuildCheck.Runner" Version="474.0.17.246" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
@@ -80,8 +85,5 @@
     <PackageReference Include="SonarAnalyzer.CSharp" Version="9.16.0.82469" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="ToStringWithoutOverrideAnalyzer" Version="0.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj"/>
   </ItemGroup>
 </Project>

@@ -97,7 +97,12 @@ internal static class Program
     {
         CancellationToken cancellationToken = CancellationToken.None;
 
-        if (IsBulkPackageUpdate(options: options, out string? workFolder, out string? repositoriesFileName, out string? packagesFileName, out string? trackingFileName, out string? templateRepository))
+        if (IsBulkPackageUpdate(options: options,
+                                out string? workFolder,
+                                out string? repositoriesFileName,
+                                out string? packagesFileName,
+                                out string? trackingFileName,
+                                out string? templateRepository))
         {
             await PerformBulkPackageUpdatesAsync(options: options,
                                                  repositoriesFileName: repositoriesFileName,

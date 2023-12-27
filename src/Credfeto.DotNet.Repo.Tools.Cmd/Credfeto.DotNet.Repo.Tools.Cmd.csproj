@@ -58,16 +58,16 @@
     <RepositoryUrl>https://github.com/credfeto/credfeto-dotnet-repo-tools</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git\Credfeto.DotNet.Repo.Tools.Git.csproj"/>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build\Credfeto.DotNet.Repo.Tools.Build.csproj"/>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.DotNet\Credfeto.DotNet.Repo.Tools.DotNet.csproj"/>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Release\Credfeto.DotNet.Repo.Tools.Release.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build\Credfeto.DotNet.Repo.Tools.Build.csproj" />
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.DotNet\Credfeto.DotNet.Repo.Tools.DotNet.csproj" />
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git\Credfeto.DotNet.Repo.Tools.Git.csproj" />
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Release\Credfeto.DotNet.Repo.Tools.Release.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking\Credfeto.DotNet.Repo.Tracking.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Credfeto.Date" Version="1.1.9.181" />
-    <PackageReference Include="Credfeto.Package" Version="1.10.44.293"/>
+    <PackageReference Include="Credfeto.Package" Version="1.10.44.293" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>

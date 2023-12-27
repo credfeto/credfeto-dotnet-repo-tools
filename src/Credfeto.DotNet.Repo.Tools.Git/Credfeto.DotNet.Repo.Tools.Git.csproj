@@ -58,6 +58,9 @@
     <RepositoryUrl>https://github.com/credfeto/credfeto-dotnet-repo-tools</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git.Interfaces\Credfeto.DotNet.Repo.Tools.Git.Interfaces.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="codecracker.CSharp" Version="1.1.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Credfeto.Enumeration.Source.Generation" Version="1.1.1.168" PrivateAssets="All" ExcludeAssets="runtime" />
@@ -74,8 +77,5 @@
     <PackageReference Include="SonarAnalyzer.CSharp" Version="9.16.0.82469" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="ToStringWithoutOverrideAnalyzer" Version="0.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git.Interfaces\Credfeto.DotNet.Repo.Tools.Git.Interfaces.csproj"/>
   </ItemGroup>
 </Project>
