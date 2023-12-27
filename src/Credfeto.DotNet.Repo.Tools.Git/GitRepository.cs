@@ -308,14 +308,38 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
+            Console.WriteLine($"Deleting branch {branch} from local repo..");
             await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"branch -D {branch}", cancellationToken: cancellationToken);
             this.ResetActiveRepoLink();
 
+            await this.FetchRemoteAsync(this.GetRemote(upstream), cancellationToken: cancellationToken);
+
             string upstreamBranch = string.Concat(str0: upstream, str1: "/", str2: branch);
 
-            if (this.Active.Branches.Any(b => b.FriendlyName == upstreamBranch))
+            if (this.Active.Branches.Any(IsRemoteBranch))
             {
+                Console.WriteLine($"Deleting branch {branch} from {upstream}..");
                 await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push ${upstream} :{branch}", cancellationToken: cancellationToken);
+            }
+            else
+            {
+                Console.WriteLine($"Branch {branch} is not {upstream} skipping..");
+            }
+
+            bool IsRemoteBranch(Branch candidateBranch)
+            {
+                if (candidateBranch.IsRemote && StringComparer.Ordinal.Equals(x: candidateBranch.RemoteName, y: upstream) && StringComparer.Ordinal.Equals(x: candidateBranch.FriendlyName, y: branch))
+
+                {
+                    return true;
+                }
+
+                if (StringComparer.Ordinal.Equals(x: candidateBranch.FriendlyName, y: upstreamBranch))
+                {
+                    return true;
+                }
+
+                return false;
             }
         }
         finally
