@@ -1,38 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using FunFair.Test.Common;
+using NSubstitute;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Credfeto.DotNet.Repo.Tools.Git.Tests;
 
-public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
+public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
 {
-    private const string REPO_HTTPS = "https://github.com/credfeto/scratch.git";
-    private const string REPO_SSH = "git@github.com:credfeto/scratch.git";
+    private readonly IGitRepositoryFactory _gitRepositoryFactory;
 
-    public GitUtilsTests(ITestOutputHelper output)
+    public GitRepositoryFactoryTests(ITestOutputHelper output)
         : base(output)
     {
-    }
+        IGitRepositoryLocator gitRepositoryLocator = GetSubstitute<IGitRepositoryLocator>();
+        gitRepositoryLocator.GetWorkingDirectory(Arg.Any<string>(), Arg.Any<string>())
+                            .Returns(Path.Combine(path1: this.TempFolder, path2: "scratch"));
 
-    [Theory]
-    [InlineData("https://github.com/credfeto/credfeto-dotnet-repo-tools", "credfeto-dotnet-repo-tools")]
-    [InlineData("git@github.com:credfeto/credfeto-dotnet-repo-tools.git", "credfeto-dotnet-repo-tools")]
-    public void GetFolderForRepo(string gitUrl, string expected)
-    {
-        string actual = GitUtils.GetWorkingDirectoryForRepository(gitUrl);
-
-        Assert.Equal(expected: expected, actual: actual);
+        this._gitRepositoryFactory = new GitRepositoryFactory(gitRepositoryLocator);
     }
 
     [Fact(Skip = "Requires SSH to be setup")]
     public Task CanCloneSshAsync()
     {
-        return this.CloneTestCommonAsync(uri: REPO_SSH, cancellationToken: CancellationToken.None);
+        return this.CloneTestCommonAsync(uri: Repositories.GitHubSsh, cancellationToken: CancellationToken.None);
     }
 
     [Fact(Skip = "Requires SSH to be setup")]
@@ -40,7 +36,7 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
     {
         CancellationToken cancellationToken = CancellationToken.None;
 
-        using (IGitRepository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: REPO_SSH, cancellationToken: cancellationToken))
+        using (IGitRepository repo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: Repositories.GitHubSsh, cancellationToken: cancellationToken))
         {
             this.Output.WriteLine($"Repo: {repo.ClonePath}");
 
@@ -67,12 +63,12 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
     [Fact]
     public Task CanCloneHttpsAsync()
     {
-        return this.CloneTestCommonAsync(uri: REPO_HTTPS, cancellationToken: CancellationToken.None);
+        return this.CloneTestCommonAsync(uri: Repositories.GitHubHttps, cancellationToken: CancellationToken.None);
     }
 
     private async Task CloneTestCommonAsync(string uri, CancellationToken cancellationToken)
     {
-        using (IGitRepository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken: cancellationToken))
+        using (IGitRepository repo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken: cancellationToken))
         {
             this.Output.WriteLine($"Repo: {repo.ClonePath}");
 
@@ -87,7 +83,7 @@ public sealed class GitUtilsTests : LoggingFolderCleanupTestBase
             }
         }
 
-        using (IGitRepository repo = await GitUtils.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken: cancellationToken))
+        using (IGitRepository repo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken: cancellationToken))
         {
             repo.RemoveAllLocalBranches();
         }

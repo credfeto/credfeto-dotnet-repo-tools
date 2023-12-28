@@ -1,5 +1,6 @@
 ﻿using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
@@ -28,6 +29,7 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
     {
         return services.AddMockedService<IDotNetBuild>()
                        .AddMockedService<IDotNetSolutionCheck>()
+                       .AddMockedService<IGitRepositoryFactory>()
                        .AddMockedService<IGlobalJson>()
                        .AddMockedService<IPackageUpdater>()
                        .AddMockedService<IPackageCache>()

@@ -4,6 +4,7 @@ using Credfeto.DotNet.Repo.Tools.Build;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Cmd.Services;
 using Credfeto.DotNet.Repo.Tools.DotNet;
+using Credfeto.DotNet.Repo.Tools.Git;
 using Credfeto.DotNet.Repo.Tools.Packages;
 using Credfeto.DotNet.Repo.Tools.Release;
 using Credfeto.DotNet.Repo.Tracking;
@@ -24,6 +25,7 @@ internal static class ApplicationSetup
                                       .AddSingleton<IDiagnosticLogger>(logger)
                                       .AddSingleton(typeof(ILogger<>), typeof(LoggerProxy<>))
                                       .AddDate()
+                                      .AddGit()
                                       .AddPackageUpdater()
                                       .AddTracking()
                                       .AddDotNet()

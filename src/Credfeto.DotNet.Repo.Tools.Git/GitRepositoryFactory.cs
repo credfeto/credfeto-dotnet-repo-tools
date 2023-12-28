@@ -8,31 +8,20 @@ using LibGit2Sharp;
 
 namespace Credfeto.DotNet.Repo.Tools.Git;
 
-public static class GitUtils
+public sealed class GitRepositoryFactory : IGitRepositoryFactory
 {
-    private static readonly CloneOptions GitCloneOptions =
-        new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
+    private static readonly CloneOptions GitCloneOptions = new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
 
-    public static string GetWorkingDirectoryForRepository(string repoUrl)
+    private readonly IGitRepositoryLocator _locator;
+
+    public GitRepositoryFactory(IGitRepositoryLocator locator)
     {
-        string work = repoUrl.TrimEnd('/');
-
-        // Extract the folder from the repo name
-        string folder = work.Substring(work.LastIndexOf('/') + 1);
-
-        int lastDot = folder.LastIndexOf('.');
-
-        if (lastDot > 0)
-        {
-            return folder.Substring(startIndex: 0, length: lastDot);
-        }
-
-        return folder;
+        this._locator = locator;
     }
 
-    public static ValueTask<IGitRepository> OpenOrCloneAsync(string workDir, string repoUrl, in CancellationToken cancellationToken)
+    public ValueTask<IGitRepository> OpenOrCloneAsync(string workDir, string repoUrl, in CancellationToken cancellationToken)
     {
-        string workingDirectory = Path.Combine(path1: workDir, GetWorkingDirectoryForRepository(repoUrl));
+        string workingDirectory = this._locator.GetWorkingDirectory(workDir: workDir, repoUrl: repoUrl);
 
         return Directory.Exists(workingDirectory)
             ? OpenRepoAsync(repoUrl: repoUrl, workingDirectory: workingDirectory, cancellationToken: cancellationToken)
@@ -83,7 +72,7 @@ public static class GitUtils
         return destinationPath;
     }
 
-    internal static bool IsHttps(string repoUrl)
+    private static bool IsHttps(string repoUrl)
     {
         return repoUrl.StartsWith(value: "https://", comparisonType: StringComparison.OrdinalIgnoreCase);
     }

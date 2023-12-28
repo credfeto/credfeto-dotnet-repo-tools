@@ -10,7 +10,6 @@ using Credfeto.ChangeLog;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
-using Credfeto.DotNet.Repo.Tools.Git;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
@@ -29,6 +28,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     private const string CHANGELOG_ENTRY_TYPE = "Changed";
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
+    private readonly IGitRepositoryFactory _gitRepositoryFactory;
     private readonly IGlobalJson _globalJson;
     private readonly ILogger<BulkPackageUpdater> _logger;
     private readonly IPackageCache _packageCache;
@@ -43,6 +43,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                               IDotNetSolutionCheck dotNetSolutionCheck,
                               IDotNetBuild dotNetBuild,
                               IReleaseGeneration releaseGeneration,
+                              IGitRepositoryFactory gitRepositoryFactory,
                               ILogger<BulkPackageUpdater> logger)
     {
         this._packageUpdater = packageUpdater;
@@ -52,6 +53,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         this._dotNetSolutionCheck = dotNetSolutionCheck;
         this._dotNetBuild = dotNetBuild;
         this._releaseGeneration = releaseGeneration;
+        this._gitRepositoryFactory = gitRepositoryFactory;
         this._logger = logger;
     }
 
@@ -69,7 +71,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         IReadOnlyList<PackageUpdate> packages = await LoadPackageUpdateConfigAsync(filename: packagesFileName, cancellationToken: cancellationToken);
 
-        using (IGitRepository templateRepo = await GitUtils.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
+        using (IGitRepository templateRepo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
             UpdateContext updateContext = await this.BuildUpdateContextAsync(cacheFileName: cacheFileName,
                                                                              templateRepo: templateRepo,
@@ -199,7 +201,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     {
         this._logger.LogInformation($"Processing {repo}");
 
-        using (IGitRepository repository = await GitUtils.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
+        using (IGitRepository repository = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
             if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
             {
