@@ -16,6 +16,7 @@ public interface IReleaseGeneration
                                       DotNetVersionSettings dotNetSettings,
                                       IReadOnlyList<string> solutions,
                                       IReadOnlyList<PackageUpdate> packages,
+                                      ReleaseConfig releaseConfig,
                                       CancellationToken cancellationToken);
 
     ValueTask CreateAsync(RepoContext repoContext, CancellationToken cancellationToken);

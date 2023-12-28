@@ -4,10 +4,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Credfeto.DotNet.Repo.Tools.Release;
 
-public static class ReleaseSettings
+public static class ReleaseSetup
 {
     public static IServiceCollection AddReleaseGeneration(this IServiceCollection services)
     {
-        return services.AddSingleton<IReleaseGeneration, ReleaseGeneration>();
+        return services.AddSingleton<IReleaseConfigLoader, ReleaseConfigLoader>()
+                       .AddSingleton<IReleaseGeneration, ReleaseGeneration>();
     }
 }

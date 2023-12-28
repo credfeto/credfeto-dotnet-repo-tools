@@ -29,16 +29,9 @@ public sealed class Options
     [Option(shortName: 'm', longName: "template", Required = true, HelpText = "template repository to use")]
     public string? Template { get; init; }
 
-    // [Option(shortName: 'p', longName: "package-id", Required = true, HelpText = "Package Id to check for updates")]
-    // public string? PackageId { get; init; }
-    //
-    // [Option(shortName: 'f', longName: "folder", Required = true, HelpText = "Folder containing projects")]
-    // public string? Folder { get; init; }
-    //
-    // [Option(shortName: 'c', longName: "cache", Required = false, HelpText = "cache file")]
-    // public string? Cache { get; init; }
-    //
-    //
-    // [Option(shortName: 'x', longName: "exclude", Required = false, HelpText = "Package Ids to exclude from the update")]
-    // public IEnumerable<string>? Exclude { get; init; }
+    [Option(shortName: 'l', longName: "release", Required = true, HelpText = "release.config file to load")]
+    public string? ReleaseConfig { get; init; }
+
+    [Option(shortName: 'u', longName: "update", Required = true, HelpText = "update type: PACKAGES|TEMPLATE|CLEANUP")]
+    public string? UpdateType { get; init; }
 }

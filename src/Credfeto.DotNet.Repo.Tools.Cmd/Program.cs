@@ -98,7 +98,13 @@ internal static class Program
     {
         CancellationToken cancellationToken = CancellationToken.None;
 
-        if (IsBulkPackageUpdate(options: options, out string? workFolder, out string? repositoriesFileName, out string? packagesFileName, out string? trackingFileName, out string? templateRepository))
+        if (IsBulkPackageUpdate(options: options,
+                                out string? workFolder,
+                                out string? repositoriesFileName,
+                                out string? packagesFileName,
+                                out string? trackingFileName,
+                                out string? templateRepository,
+                                out string? releaseConfigFileName))
         {
             await PerformBulkPackageUpdatesAsync(options: options,
                                                  repositoriesFileName: repositoriesFileName,
@@ -107,6 +113,7 @@ internal static class Program
                                                  trackingFileName: trackingFileName,
                                                  packagesFileName: packagesFileName,
                                                  workFolder: workFolder,
+                                                 releaseConfigFileName: releaseConfigFileName,
                                                  cancellationToken: cancellationToken);
 
             return;
@@ -120,15 +127,18 @@ internal static class Program
                                             [NotNullWhen(true)] out string? repositoriesFileName,
                                             [NotNullWhen(true)] out string? packagesFileName,
                                             [NotNullWhen(true)] out string? trackingFileName,
-                                            [NotNullWhen(true)] out string? templateRepository)
+                                            [NotNullWhen(true)] out string? templateRepository,
+                                            [NotNullWhen(true)] out string? releaseConfigFileName)
     {
+        bool hasUpdateType = options.Require(accessor: o => o.UpdateType, out string? updateType);
         bool hasWork = options.Require(accessor: o => o.Work, value: out workFolder);
         bool hasRepositories = options.Require(accessor: o => o.Repositories, value: out repositoriesFileName);
         bool hasPackages = options.Require(accessor: o => o.Packages, value: out packagesFileName);
         bool hasTracking = options.Require(accessor: o => o.Tracking, value: out trackingFileName);
         bool hasTemplate = options.Require(accessor: o => o.Template, value: out templateRepository);
+        bool hasReleaseConfig = options.Require(accessor: o => o.ReleaseConfig, value: out releaseConfigFileName);
 
-        return hasWork && hasRepositories && hasPackages && hasTracking && hasTemplate;
+        return hasUpdateType && hasWork && hasRepositories && hasPackages && hasTracking && hasTemplate && hasReleaseConfig && StringComparer.OrdinalIgnoreCase.Equals(x: updateType, y: "PACKAGES");
     }
 
     private static async ValueTask PerformBulkPackageUpdatesAsync(Options options,
@@ -138,6 +148,7 @@ internal static class Program
                                                                   string trackingFileName,
                                                                   string packagesFileName,
                                                                   string workFolder,
+                                                                  string releaseConfigFileName,
                                                                   CancellationToken cancellationToken)
     {
         IServiceProvider services = ApplicationSetup.Setup(false);
@@ -160,6 +171,7 @@ internal static class Program
                                                  trackingFileName: trackingFileName,
                                                  packagesFileName: packagesFileName,
                                                  workFolder: workFolder,
+                                                 releaseConfigFileName: releaseConfigFileName,
                                                  repositories: repositories,
                                                  cancellationToken: cancellationToken);
     }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -13,6 +12,7 @@ using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
+using Credfeto.DotNet.Repo.Tools.Release.Extensions;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
@@ -25,33 +25,6 @@ namespace Credfeto.DotNet.Repo.Tools.Release.Services;
 public sealed class ReleaseGeneration : IReleaseGeneration
 {
     private const int DEFAULT_BUILD_NUMBER = 101;
-
-    // TODO move to config
-    private static readonly IReadOnlyList<RepoMatch> AllowedAutoUpgrade =
-    [
-        new(Repo: "git@github.com:funfair-tech/funfair-server-content-package.git", MatchType: MatchType.EXACT, Include: false),
-        new(Repo: "code-analysis", MatchType: MatchType.CONTAINS, Include: false)
-    ];
-
-    // TODO move to config
-    private static readonly IReadOnlyList<RepoMatch> AlwaysMatch =
-    [
-        new(Repo: "template", MatchType: MatchType.CONTAINS, Include: false),
-        new(Repo: "credfeto", MatchType: MatchType.CONTAINS, Include: true),
-        new(Repo: "BuildBot", MatchType: MatchType.CONTAINS, Include: true),
-        new(Repo: "CoinBot", MatchType: MatchType.CONTAINS, Include: true),
-        new(Repo: "funfair-server-balance-bot", MatchType: MatchType.CONTAINS, Include: true),
-        new(Repo: "funfair-build-check", MatchType: MatchType.CONTAINS, Include: true),
-        new(Repo: "funfair-build-version", MatchType: MatchType.CONTAINS, Include: true),
-        new(Repo: "funfair-content-package-builder", MatchType: MatchType.CONTAINS, Include: true)
-    ];
-
-    // TODO move to config
-    private static readonly IReadOnlyList<RepoMatch> NeverRelease =
-    [
-        new(Repo: "template", MatchType: MatchType.CONTAINS, Include: true),
-        new(Repo: "git@github.com:funfair-tech/funfair-server-content-package.git", MatchType: MatchType.EXACT, Include: true)
-    ];
 
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
@@ -82,19 +55,20 @@ public sealed class ReleaseGeneration : IReleaseGeneration
                                                    DotNetVersionSettings dotNetSettings,
                                                    IReadOnlyList<string> solutions,
                                                    IReadOnlyList<PackageUpdate> packages,
+                                                   ReleaseConfig releaseConfig,
                                                    CancellationToken cancellationToken)
     {
         // *********************************************************
         // * 1 TEMPLATE REPOS
 
-        if (ShouldNeverAutoReleaseRepo(repoContext))
+        if (releaseConfig.ShouldNeverAutoReleaseRepo(repoContext))
         {
             return;
         }
 
         // *********************************************************
         // * 2 RELEASE NOTES AND DURATION
-        if (await this.ShouldNeverReleaseTimeAndContentBasedAsync(repoContext: repoContext, packages: packages, cancellationToken: cancellationToken))
+        if (await this.ShouldNeverReleaseTimeAndContentBasedAsync(repoContext: repoContext, packages: packages, releaseConfig: releaseConfig, cancellationToken: cancellationToken))
         {
             return;
         }
@@ -115,7 +89,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         // *********************************************************
         // * 4 Dispatch
 
-        if (this.ShouldNeverReleaseFuzzyRules(repoContext: repoContext, buildSettings: buildSettings))
+        if (this.ShouldNeverReleaseFuzzyRules(repoContext: repoContext, buildSettings: buildSettings, releaseConfig: releaseConfig))
         {
             return;
         }
@@ -143,7 +117,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         throw new ReleaseCreatedException($"Releases {nextVersion} created for {repoContext.ClonePath}");
     }
 
-    private bool ShouldNeverReleaseFuzzyRules(in RepoContext repoContext, in BuildSettings buildSettings)
+    private bool ShouldNeverReleaseFuzzyRules(in RepoContext repoContext, in BuildSettings buildSettings, in ReleaseConfig releaseConfig)
     {
         if (HasPendingDependencyUpdateBranches(repoContext))
         {
@@ -152,12 +126,12 @@ public sealed class ReleaseGeneration : IReleaseGeneration
             return true;
         }
 
-        if (ShouldAlwaysCreatePatchRelease(repoContext))
+        if (releaseConfig.ShouldAlwaysCreatePatchRelease(repoContext))
         {
             return false;
         }
 
-        if (CheckRepoForAllowedAutoUpgrade(repoContext))
+        if (releaseConfig.CheckRepoForAllowedAutoUpgrade(repoContext))
         {
             if (!buildSettings.Publishable)
             {
@@ -206,10 +180,12 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         return false;
     }
 
-    private async ValueTask<bool> ShouldNeverReleaseTimeAndContentBasedAsync(RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
+    private async ValueTask<bool> ShouldNeverReleaseTimeAndContentBasedAsync(RepoContext repoContext,
+                                                                             ReleaseConfig releaseConfig,
+                                                                             IReadOnlyList<PackageUpdate> packages,
+                                                                             CancellationToken cancellationToken)
     {
-        string releaseNotes =
-            await ChangeLogReader.ExtractReleaseNotesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
+        string releaseNotes = await ChangeLogReader.ExtractReleaseNotesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
 
         int autoUpdateCount = this.IsAllAutoUpdates(releaseNotes: releaseNotes, packages: packages);
 
@@ -222,9 +198,9 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         string skippingReason = "INSUFFICIENT UPDATES";
         bool shouldCreateRelease = false;
 
-        if (autoUpdateCount > ReleaseSettings.AutoReleasePendingPackages)
+        if (autoUpdateCount > releaseConfig.AutoReleasePendingPackages)
         {
-            if (timeSinceLastCommit.TotalHours > ReleaseSettings.MinimumHoursBeforeAutoRelease)
+            if (timeSinceLastCommit.TotalHours > releaseConfig.MinimumHoursBeforeAutoRelease)
             {
                 shouldCreateRelease = true;
                 skippingReason = "RELEASING NORMAL";
@@ -239,7 +215,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         {
             if (autoUpdateCount >= 1)
             {
-                if (timeSinceLastCommit.TotalHours > ReleaseSettings.InactivityHoursBeforeAutoRelease)
+                if (timeSinceLastCommit.TotalHours > releaseConfig.InactivityHoursBeforeAutoRelease)
                 {
                     shouldCreateRelease = true;
                     skippingReason = $"RELEASING AFTER INACTIVITY : {autoUpdateCount}";
@@ -257,27 +233,6 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         return false;
     }
 
-    private static bool ShouldNeverAutoReleaseRepo(RepoContext repoContext)
-    {
-        return NeverRelease.Where(match => match.IsMatch(repoContext.ClonePath))
-                           .Select(match => match.Include)
-                           .FirstOrDefault();
-    }
-
-    private static bool CheckRepoForAllowedAutoUpgrade(RepoContext repoContext)
-    {
-        return AllowedAutoUpgrade.Where(match => match.IsMatch(repoContext.ClonePath))
-                                 .Select(match => match.Include)
-                                 .FirstOrDefault(true);
-    }
-
-    private static bool ShouldAlwaysCreatePatchRelease(RepoContext repoContext)
-    {
-        return AlwaysMatch.Where(match => match.IsMatch(repoContext.ClonePath))
-                          .Select(match => match.Include)
-                          .FirstOrDefault();
-    }
-
     private static bool HasPendingDependencyUpdateBranches(in RepoContext repoContext)
     {
         IReadOnlyCollection<string> branches = repoContext.Repository.GetRemoteBranches(upstream: GitConstants.Upstream);
@@ -291,8 +246,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         static bool IsPackageUpdaterBranch(string branch)
         {
-            return branch.StartsWith(value: "depends/", comparisonType: StringComparison.Ordinal) &&
-                   !branch.StartsWith(value: "/preview/", comparisonType: StringComparison.Ordinal);
+            return branch.StartsWith(value: "depends/", comparisonType: StringComparison.Ordinal) && !branch.StartsWith(value: "/preview/", comparisonType: StringComparison.Ordinal);
         }
 
         static bool IsDependabotBranch(string branch)
@@ -371,29 +325,5 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         public const int IgnoredPackage = 0;
         public const int GeoIp = 1;
         public const int DotNet = 1000;
-    }
-
-    private enum MatchType
-    {
-        EXACT,
-        CONTAINS
-    }
-
-    [DebuggerDisplay("{Repo}: {MatchType} Include : {Include}")]
-    private readonly record struct RepoMatch(string Repo, MatchType MatchType, bool Include)
-    {
-        public bool IsMatch(string repo)
-        {
-            return this.MatchType == MatchType.EXACT
-                ? StringComparer.OrdinalIgnoreCase.Equals(x: repo, y: this.Repo)
-                : repo.Contains(value: this.Repo, comparisonType: StringComparison.OrdinalIgnoreCase);
-        }
-    }
-
-    private static class ReleaseSettings
-    {
-        public const int AutoReleasePendingPackages = 2;
-        public const double MinimumHoursBeforeAutoRelease = 4;
-        public const double InactivityHoursBeforeAutoRelease = 2 * MinimumHoursBeforeAutoRelease;
     }
 }

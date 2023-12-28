@@ -33,6 +33,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     private readonly ILogger<BulkPackageUpdater> _logger;
     private readonly IPackageCache _packageCache;
     private readonly IPackageUpdater _packageUpdater;
+    private readonly IReleaseConfigLoader _releaseConfigLoader;
     private readonly IReleaseGeneration _releaseGeneration;
     private readonly ITrackingCache _trackingCache;
 
@@ -42,6 +43,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                               IGlobalJson globalJson,
                               IDotNetSolutionCheck dotNetSolutionCheck,
                               IDotNetBuild dotNetBuild,
+                              IReleaseConfigLoader releaseConfigLoader,
                               IReleaseGeneration releaseGeneration,
                               IGitRepositoryFactory gitRepositoryFactory,
                               IBulkPackageConfigLoader bulkPackageConfigLoader,
@@ -53,6 +55,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         this._globalJson = globalJson;
         this._dotNetSolutionCheck = dotNetSolutionCheck;
         this._dotNetBuild = dotNetBuild;
+        this._releaseConfigLoader = releaseConfigLoader;
         this._releaseGeneration = releaseGeneration;
         this._gitRepositoryFactory = gitRepositoryFactory;
         this._bulkPackageConfigLoader = bulkPackageConfigLoader;
@@ -64,6 +67,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                            string trackingFileName,
                                            string packagesFileName,
                                            string workFolder,
+                                           string releaseConfigFileName,
                                            IReadOnlyList<string> additionalNugetSources,
                                            IReadOnlyList<string> repositories,
                                            CancellationToken cancellationToken)
@@ -80,6 +84,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                              workFolder: workFolder,
                                                                              trackingFileName: trackingFileName,
                                                                              additionalNugetSources: additionalNugetSources,
+                                                                             releaseConfigFileName: releaseConfigFileName,
                                                                              cancellationToken: cancellationToken);
 
             await this.UpdateCachedPackagesAsync(workFolder: workFolder, cancellationToken: cancellationToken, packages: packages, updateContext: updateContext);
@@ -265,6 +270,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                   dotNetSettings: updateContext.DotNetSettings,
                                                                   solutions: solutions,
                                                                   packages: packages,
+                                                                  releaseConfig: updateContext.ReleaseConfig,
                                                                   cancellationToken: cancellationToken);
         }
     }
@@ -505,14 +511,22 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                    IGitRepository templateRepo,
                                                                    string workFolder,
                                                                    string trackingFileName,
+                                                                   string releaseConfigFileName,
                                                                    IReadOnlyList<string> additionalNugetSources,
                                                                    CancellationToken cancellationToken)
     {
         DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.WorkingDirectory, cancellationToken: cancellationToken);
 
+        ReleaseConfig releaseConfig = await this._releaseConfigLoader.LoadAsync(path: releaseConfigFileName, cancellationToken: cancellationToken);
+
         // TODO: check to see what SDKs are installed throw if the one in the sdk isn't installed.
 
-        return new(WorkFolder: workFolder, CacheFileName: cacheFileName, TrackingFileName: trackingFileName, DotNetSettings: dotNetSettings, AdditionalSources: additionalNugetSources);
+        return new(WorkFolder: workFolder,
+                   CacheFileName: cacheFileName,
+                   TrackingFileName: trackingFileName,
+                   DotNetSettings: dotNetSettings,
+                   AdditionalSources: additionalNugetSources,
+                   ReleaseConfig: releaseConfig);
     }
 
     private ValueTask SaveTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)
