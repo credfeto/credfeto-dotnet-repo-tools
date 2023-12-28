@@ -7,18 +7,22 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
-- Ability to load repositories list from a URL
-- Ability to load package config list from a URL
 ### Fixed
 ### Changed
-- Dependencies - Updated Nullable.Extended.Analyzer to 1.15.6169
-- Dependencies - Updated FunFair.Test.Common to 6.1.27.296
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.0.2] - 2023-12-28
+### Added
+- Ability to load repositories list from a URL
+- Ability to load package config list from a URL
+### Changed
+- Dependencies - Updated Nullable.Extended.Analyzer to 1.15.6169
+- Dependencies - Updated FunFair.Test.Common to 6.1.27.296
+
 ## [1.0.1] - 2023-12-24
 ### Added
 - Pre-loading and updating cached packages before processing repo to avoid lots of additional updates
