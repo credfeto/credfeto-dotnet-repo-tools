@@ -154,6 +154,18 @@
    color: "96f7d2"
    description: "Changes in Credfeto.DotNet.Repo.Tools.Models project"
 
+ - name: "Packages"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Packages project"
+
+ - name: "Packages.Interfaces"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Packages.Interfaces project"
+
+ - name: "Packages.Tests"
+   color: "0e8a16"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Packages.Tests project"
+
  - name: "Release"
    color: "96f7d2"
    description: "Changes in Credfeto.DotNet.Repo.Tools.Release project"
