@@ -52,6 +52,12 @@
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Git.Tests/**/*' ]
 "Models":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Models/**/*' ]
+"Packages":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Packages/**/*' ]
+"Packages.Interfaces":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Packages.Interfaces/**/*' ]
+"Packages.Tests":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Packages.Tests/**/*' ]
 "Release":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Release/**/*' ]
 "Release.Interfaces":
