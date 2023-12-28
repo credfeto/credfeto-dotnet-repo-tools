@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
 using Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
-using Credfeto.DotNet.Repo.Tools.Git;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Packages.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 using Credfeto.Package.Exceptions;
@@ -142,7 +142,9 @@ internal static class Program
     {
         IServiceProvider services = ApplicationSetup.Setup(false);
 
-        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await GitRepoList.LoadRepoListAsync(path: repositoriesFileName, cancellationToken: cancellationToken),
+        IGitRepositoryListLoader gitRepositoryListLoader = services.GetRequiredService<IGitRepositoryListLoader>();
+
+        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: cancellationToken),
                                                                  templateRepository: templateRepository);
 
         if (repositories.Count == 0)
