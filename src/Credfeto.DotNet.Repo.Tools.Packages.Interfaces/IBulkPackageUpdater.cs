@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 namespace Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 
 public interface IBulkPackageUpdater
-
 {
     ValueTask BulkUpdateAsync(string templateRepository,
                               string? cacheFileName,

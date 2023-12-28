@@ -1,5 +1,6 @@
 using System.IO;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Git.Services;
 using FunFair.Test.Common;
 using Xunit;
 using Xunit.Abstractions;

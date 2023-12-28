@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 
-namespace Credfeto.DotNet.Repo.Tools.Git;
+namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 
 public sealed class GitRepositoryLocator : IGitRepositoryLocator
 {

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -26,6 +25,7 @@ namespace Credfeto.DotNet.Repo.Tools.Packages.Services;
 public sealed class BulkPackageUpdater : IBulkPackageUpdater
 {
     private const string CHANGELOG_ENTRY_TYPE = "Changed";
+    private readonly IBulkPackageConfigLoader _bulkPackageConfigLoader;
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
     private readonly IGitRepositoryFactory _gitRepositoryFactory;
@@ -44,6 +44,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                               IDotNetBuild dotNetBuild,
                               IReleaseGeneration releaseGeneration,
                               IGitRepositoryFactory gitRepositoryFactory,
+                              IBulkPackageConfigLoader bulkPackageConfigLoader,
                               ILogger<BulkPackageUpdater> logger)
     {
         this._packageUpdater = packageUpdater;
@@ -54,6 +55,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         this._dotNetBuild = dotNetBuild;
         this._releaseGeneration = releaseGeneration;
         this._gitRepositoryFactory = gitRepositoryFactory;
+        this._bulkPackageConfigLoader = bulkPackageConfigLoader;
         this._logger = logger;
     }
 
@@ -69,7 +71,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         await this.LoadPackageCacheAsync(packageCacheFile: cacheFileName, cancellationToken: cancellationToken);
         await this.LoadTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
 
-        IReadOnlyList<PackageUpdate> packages = await LoadPackageUpdateConfigAsync(filename: packagesFileName, cancellationToken: cancellationToken);
+        IReadOnlyList<PackageUpdate> packages = await this._bulkPackageConfigLoader.LoadAsync(path: packagesFileName, cancellationToken: cancellationToken);
 
         using (IGitRepository templateRepo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
@@ -558,22 +560,5 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
 
         await this._packageCache.LoadAsync(fileName: packageCacheFile, cancellationToken: cancellationToken);
-    }
-
-    private static async ValueTask<IReadOnlyList<PackageUpdate>> LoadPackageUpdateConfigAsync(string filename, CancellationToken cancellationToken)
-    {
-        // TODO if path is a URL then download the file rather than reading it
-
-        byte[] content = await File.ReadAllBytesAsync(path: filename, cancellationToken: cancellationToken);
-
-        IReadOnlyList<PackageUpdate> packages = JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: PackageConfigSerializationContext.Default.IReadOnlyListPackageUpdate) ??
-                                                Array.Empty<PackageUpdate>();
-
-        if (packages.Count == 0)
-        {
-            throw new InvalidOperationException("No packages found");
-        }
-
-        return packages;
     }
 }

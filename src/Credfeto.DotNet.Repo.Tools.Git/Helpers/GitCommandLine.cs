@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Credfeto.DotNet.Repo.Tools.Git;
+namespace Credfeto.DotNet.Repo.Tools.Git.Helpers;
 
 internal static class GitCommandLine
 {

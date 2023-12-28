@@ -2,6 +2,7 @@ using System;
 using System.Net;
 using System.Net.Http;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Git.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Polly;
 
@@ -26,16 +27,11 @@ public static class GitSetup
     private static IServiceCollection AddRepositoryListLoaderHttpClient(this IServiceCollection services)
     {
         return services.AddHttpClient(nameof(GitRepositoryListLoader), configureClient: ConfigureClient)
-                       .ConfigureCommon();
-    }
-
-    private static IServiceCollection ConfigureCommon(this IHttpClientBuilder builder)
-    {
-        return builder.SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                      .ConfigurePrimaryHttpMessageHandler(configureHandler: CreateHandler)
-                      .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(ClientPolicyTimeout))
-                      .AddTransientHttpErrorPolicy(x => x.WaitAndRetryAsync(retryCount: RETRY_COUNT, sleepDurationProvider: _ => SleepDuration))
-                      .Services;
+                       .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+                       .ConfigurePrimaryHttpMessageHandler(configureHandler: CreateHandler)
+                       .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(ClientPolicyTimeout))
+                       .AddTransientHttpErrorPolicy(x => x.WaitAndRetryAsync(retryCount: RETRY_COUNT, sleepDurationProvider: _ => SleepDuration))
+                       .Services;
     }
 
     private static HttpClientHandler CreateHandler(IServiceProvider serviceProvider)

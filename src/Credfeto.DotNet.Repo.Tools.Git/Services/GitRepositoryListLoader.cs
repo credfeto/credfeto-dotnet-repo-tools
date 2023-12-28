@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 
-namespace Credfeto.DotNet.Repo.Tools.Git;
+namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 
 public sealed class GitRepositoryListLoader : IGitRepositoryListLoader
 {
@@ -20,15 +20,12 @@ public sealed class GitRepositoryListLoader : IGitRepositoryListLoader
 
     public ValueTask<IReadOnlyList<string>> LoadAsync(string path, CancellationToken cancellationToken)
     {
-        if (Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && IsHttp(uri))
-        {
-            return this.LoadReposFromHttpAsync(uri: uri, cancellationToken: cancellationToken);
-        }
-
-        return LoadReposFromFileAsync(path: path, cancellationToken: cancellationToken);
+        return Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && IsHttp(uri)
+            ? this.LoadFromHttpAsync(uri: uri, cancellationToken: cancellationToken)
+            : LoadFromFileAsync(path: path, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask<IReadOnlyList<string>> LoadReposFromHttpAsync(Uri uri, CancellationToken cancellationToken)
+    private async ValueTask<IReadOnlyList<string>> LoadFromHttpAsync(Uri uri, CancellationToken cancellationToken)
     {
         HttpClient httpClient = this._httpClientFactory.CreateClient(name: nameof(GitRepositoryListLoader));
 
@@ -36,10 +33,15 @@ public sealed class GitRepositoryListLoader : IGitRepositoryListLoader
 
         string result = await httpClient.GetStringAsync(requestUri: uri, cancellationToken: cancellationToken);
 
-        return GetRepos(result.Split(separator: "\r\n", options: StringSplitOptions.RemoveEmptyEntries)
-                              .SelectMany(r => r.Split(separator: "\n\r", options: StringSplitOptions.RemoveEmptyEntries))
-                              .SelectMany(r => r.Split(separator: "\n", options: StringSplitOptions.RemoveEmptyEntries))
-                              .SelectMany(r => r.Split(separator: "\r", options: StringSplitOptions.RemoveEmptyEntries)));
+        return GetRepos(SplitText(result));
+    }
+
+    private static IEnumerable<string> SplitText(string result)
+    {
+        return result.Split(separator: "\r\n", options: StringSplitOptions.RemoveEmptyEntries)
+                     .SelectMany(r => r.Split(separator: "\n\r", options: StringSplitOptions.RemoveEmptyEntries))
+                     .SelectMany(r => r.Split(separator: "\n", options: StringSplitOptions.RemoveEmptyEntries))
+                     .SelectMany(r => r.Split(separator: "\r", options: StringSplitOptions.RemoveEmptyEntries));
     }
 
     private static bool IsHttp(Uri uri)
@@ -47,7 +49,7 @@ public sealed class GitRepositoryListLoader : IGitRepositoryListLoader
         return StringComparer.Ordinal.Equals(x: uri.Scheme, y: "https") || StringComparer.Ordinal.Equals(x: uri.Scheme, y: "http");
     }
 
-    private static async ValueTask<IReadOnlyList<string>> LoadReposFromFileAsync(string path, CancellationToken cancellationToken)
+    private static async ValueTask<IReadOnlyList<string>> LoadFromFileAsync(string path, CancellationToken cancellationToken)
     {
         IReadOnlyList<string> lines = await File.ReadAllLinesAsync(path: path, cancellationToken: cancellationToken);
 

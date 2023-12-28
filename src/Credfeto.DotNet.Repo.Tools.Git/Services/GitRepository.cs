@@ -4,11 +4,12 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.DotNet.Repo.Tools.Git.Helpers;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 using LibGit2Sharp;
 
-namespace Credfeto.DotNet.Repo.Tools.Git;
+namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 
 [DebuggerDisplay("{ClonePath}: {WorkingDirectory}")]
 internal sealed class GitRepository : IGitRepository
@@ -188,7 +189,6 @@ internal sealed class GitRepository : IGitRepository
     public async ValueTask CreateBranchAsync(string branchName, CancellationToken cancellationToken)
     {
         try
-
         {
             await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"checkout -b {branchName}", cancellationToken: cancellationToken);
         }
