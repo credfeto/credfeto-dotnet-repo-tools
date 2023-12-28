@@ -195,7 +195,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return document;
     }
 
-    private async Task UpdateRepositoryAsync(UpdateContext updateContext, IReadOnlyList<PackageUpdate> packages, string repo, CancellationToken cancellationToken)
+    private async ValueTask UpdateRepositoryAsync(UpdateContext updateContext, IReadOnlyList<PackageUpdate> packages, string repo, CancellationToken cancellationToken)
     {
         this._logger.LogInformation($"Processing {repo}");
 
@@ -218,7 +218,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
     }
 
-    private async Task ProcessRepoUpdatesAsync(UpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
+    private async ValueTask ProcessRepoUpdatesAsync(UpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
         string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
 
@@ -305,7 +305,27 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             return (updated, goodBuildCommit ?? lastKnownGoodBuild);
         }
 
+        await RemoveExistingBranchesForPackageAsync(repoContext: repoContext, package: package, cancellationToken: cancellationToken);
+
         return (updated, lastKnownGoodBuild);
+    }
+
+    private static ValueTask RemoveExistingBranchesForPackageAsync(in RepoContext repoContext, PackageUpdate package, in CancellationToken cancellationToken)
+    {
+        string branchPrefix = GetBranchPrefixForPackage(package);
+        string invalidUpdateBranch = BuildInvalidUpdateBranch(branchPrefix);
+
+        return repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: invalidUpdateBranch,
+                                                                   branchPrefix: branchPrefix,
+                                                                   upstream: GitConstants.Upstream,
+                                                                   cancellationToken: cancellationToken);
+    }
+
+    private static string BuildInvalidUpdateBranch(string branchPrefix)
+    {
+        return BuildBranchForVersion(branchPrefix: branchPrefix,
+                                     Guid.NewGuid()
+                                         .ToString());
     }
 
     private async ValueTask<string?> OnPackageUpdateAsync(UpdateContext updateContext,
@@ -351,24 +371,25 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
     private async ValueTask CommitToRepositoryAsync(RepoContext repoContext, PackageUpdate package, string version, bool builtOk, CancellationToken cancellationToken)
     {
-        string branchPrefix = $"depends/update-{package.PackageId}/".ToLowerInvariant();
-        string branchForUpdate = branchPrefix + version;
+        string branchPrefix = GetBranchPrefixForPackage(package);
 
         if (builtOk)
         {
+            string invalidUpdateBranch = BuildInvalidUpdateBranch(branchPrefix);
             string defaultBranch = repoContext.Repository.GetDefaultBranch(upstream: GitConstants.Upstream);
 
             this._logger.LogInformation($"{repoContext.ClonePath}: Committing {package.PackageId} to {defaultBranch}");
             await CommitChangeWithChangelogAsync(repoContext: repoContext, package: package, version: version, cancellationToken: cancellationToken);
             await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
-            await repoContext.Repository.RemoveBranchesForPrefixAsync(Guid.NewGuid()
-                                                                          .ToString(),
+            await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: invalidUpdateBranch,
                                                                       branchPrefix: branchPrefix,
                                                                       upstream: GitConstants.Upstream,
                                                                       cancellationToken: cancellationToken);
         }
         else
         {
+            string branchForUpdate = BuildBranchForVersion(branchPrefix: branchPrefix, version: version);
+
             if (repoContext.Repository.DoesBranchExist(branchName: branchForUpdate))
             {
                 // nothing to do - may already be a PR that's being worked on
@@ -387,6 +408,16 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                       upstream: GitConstants.Upstream,
                                                                       cancellationToken: cancellationToken);
         }
+    }
+
+    private static string BuildBranchForVersion(string branchPrefix, string version)
+    {
+        return branchPrefix + version;
+    }
+
+    private static string GetBranchPrefixForPackage(PackageUpdate package)
+    {
+        return $"depends/update-{package.PackageId}/".ToLowerInvariant();
     }
 
     private static async ValueTask CommitChangeWithChangelogAsync(RepoContext repoContext, PackageUpdate package, string version, CancellationToken cancellationToken)

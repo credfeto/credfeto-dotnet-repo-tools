@@ -171,9 +171,7 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         this._logger.LogInformation("Packing...");
 
-        return this.ExecRequireCleanAsync(basePath: basePath,
-                                          $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}",
-                                          cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(basePath: basePath, $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}", cancellationToken: cancellationToken);
     }
 
     private ValueTask DotNetTestAsync(string basePath, in CancellationToken cancellationToken)
@@ -208,10 +206,11 @@ public sealed class DotNetBuild : IDotNetBuild
         return this.ExecRequireCleanAsync(basePath: basePath, $"clean --configuration:Release -nodeReuse:False {NO_WARN}", cancellationToken: cancellationToken);
     }
 
-    private async Task StopBuildServerAsync(string basePath, CancellationToken cancellationToken)
+    private async ValueTask StopBuildServerAsync(string basePath, CancellationToken cancellationToken)
     {
         this._logger.LogInformation("Stopping build server...");
         await ExecAsync(basePath: basePath, arguments: "build-server shutdown", cancellationToken: cancellationToken);
+        this._logger.LogInformation("Stopped build server");
     }
 
     private async ValueTask ExecRequireCleanAsync(string basePath, string arguments, CancellationToken cancellationToken)

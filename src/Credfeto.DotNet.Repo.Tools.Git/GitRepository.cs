@@ -122,8 +122,7 @@ internal sealed class GitRepository : IGitRepository
 
         bool IsHeadBranch(Branch branch)
         {
-            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) &&
-                   StringComparer.Ordinal.Equals(x: branch.UpstreamBranchCanonicalName, y: "refs/heads/HEAD");
+            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) && StringComparer.Ordinal.Equals(x: branch.UpstreamBranchCanonicalName, y: "refs/heads/HEAD");
         }
     }
 
@@ -275,7 +274,7 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
-    private async Task CleanRepoAsync(CancellationToken cancellationToken)
+    private async ValueTask CleanRepoAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -299,9 +298,14 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
-    private async Task CommitWithMessageAsync(string message, CancellationToken cancellationToken)
+    private async ValueTask CommitWithMessageAsync(string message, CancellationToken cancellationToken)
     {
-        await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"commit -m \"{message}\"", cancellationToken: cancellationToken);
+        (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"commit -m \"{message}\"", cancellationToken: cancellationToken);
+
+        if (exitCode != 0)
+        {
+            Console.WriteLine($"Commit exit code: {exitCode}: {string.Join(separator: Environment.NewLine, value: result)}");
+        }
     }
 
     private async ValueTask DeleteBranchAsync(string branch, string upstream, CancellationToken cancellationToken)
