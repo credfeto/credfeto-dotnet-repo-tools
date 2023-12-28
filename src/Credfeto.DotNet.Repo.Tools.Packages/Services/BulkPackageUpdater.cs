@@ -275,8 +275,6 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                                                          string? lastKnownGoodBuild,
                                                                                                          CancellationToken cancellationToken)
     {
-        bool updated = false;
-
         if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
         {
             await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, cancellationToken: cancellationToken);
@@ -289,25 +287,23 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         IReadOnlyList<PackageVersion> updatesMade = await this.UpdatePackagesAsync(updateContext: updateContext, repoContext: repoContext, package: package, cancellationToken: cancellationToken);
 
-        if (updatesMade.Count != 0)
+        if (updatesMade.Count == 0)
         {
-            updated = true;
+            await RemoveExistingBranchesForPackageAsync(repoContext: repoContext, package: package, cancellationToken: cancellationToken);
 
-            string? goodBuildCommit = await this.OnPackageUpdateAsync(updateContext: updateContext,
-                                                                      repoContext: repoContext,
-                                                                      solutions: solutions,
-                                                                      sourceDirectory: sourceDirectory,
-                                                                      buildSettings: buildSettings,
-                                                                      updatesMade: updatesMade,
-                                                                      package: package,
-                                                                      cancellationToken: cancellationToken);
-
-            return (updated, goodBuildCommit ?? lastKnownGoodBuild);
+            return (false, lastKnownGoodBuild);
         }
 
-        await RemoveExistingBranchesForPackageAsync(repoContext: repoContext, package: package, cancellationToken: cancellationToken);
+        string? goodBuildCommit = await this.OnPackageUpdateAsync(updateContext: updateContext,
+                                                                  repoContext: repoContext,
+                                                                  solutions: solutions,
+                                                                  sourceDirectory: sourceDirectory,
+                                                                  buildSettings: buildSettings,
+                                                                  updatesMade: updatesMade,
+                                                                  package: package,
+                                                                  cancellationToken: cancellationToken);
 
-        return (updated, lastKnownGoodBuild);
+        return (true, goodBuildCommit ?? lastKnownGoodBuild);
     }
 
     private static ValueTask RemoveExistingBranchesForPackageAsync(in RepoContext repoContext, PackageUpdate package, in CancellationToken cancellationToken)
