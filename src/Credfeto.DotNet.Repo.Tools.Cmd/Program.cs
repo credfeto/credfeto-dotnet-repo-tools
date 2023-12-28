@@ -6,8 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using CommandLine;
 using Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
-using Credfeto.DotNet.Repo.Tools.Cmd.Packages;
 using Credfeto.DotNet.Repo.Tools.Git;
+using Credfeto.DotNet.Repo.Tools.Packages.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 using Credfeto.Package.Exceptions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -97,12 +98,7 @@ internal static class Program
     {
         CancellationToken cancellationToken = CancellationToken.None;
 
-        if (IsBulkPackageUpdate(options: options,
-                                out string? workFolder,
-                                out string? repositoriesFileName,
-                                out string? packagesFileName,
-                                out string? trackingFileName,
-                                out string? templateRepository))
+        if (IsBulkPackageUpdate(options: options, out string? workFolder, out string? repositoriesFileName, out string? packagesFileName, out string? trackingFileName, out string? templateRepository))
         {
             await PerformBulkPackageUpdatesAsync(options: options,
                                                  repositoriesFileName: repositoriesFileName,
@@ -156,7 +152,7 @@ internal static class Program
 
         IBulkPackageUpdater bulkPackageUpdater = services.GetRequiredService<IBulkPackageUpdater>();
 
-        await bulkPackageUpdater.BulkUpdateAsync(options: options,
+        await bulkPackageUpdater.BulkUpdateAsync(additionalNugetSources: options.Source?.ToArray() ?? Array.Empty<string>(),
                                                  templateRepository: templateRepository,
                                                  cacheFileName: cacheFileName,
                                                  trackingFileName: trackingFileName,

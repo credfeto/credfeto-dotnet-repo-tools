@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.Exceptions;
+namespace Credfeto.DotNet.Repo.Tools.Packages.Exceptions;
 
 public sealed class PackageUpdateException : Exception
 {

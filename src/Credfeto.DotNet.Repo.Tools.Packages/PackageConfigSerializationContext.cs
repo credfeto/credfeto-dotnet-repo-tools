@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd.Packages;
+namespace Credfeto.DotNet.Repo.Tools.Packages;
 
 [SuppressMessage(category: "ReSharper", checkId: "PartialTypeWithSinglePart", Justification = "Required for JsonSerializerContext")]
 [JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Serialization | JsonSourceGenerationMode.Metadata,

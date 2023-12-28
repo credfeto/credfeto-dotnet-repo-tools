@@ -41,6 +41,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.Build.Interfaces", "Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj", "{DD1D61FE-9BDE-4D51-BCFB-26D6581B5948}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.Packages", "Credfeto.DotNet.Repo.Tools.Packages\Credfeto.DotNet.Repo.Tools.Packages.csproj", "{F1186688-6449-4368-BB7A-DE94CBB19637}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.Packages.Tests", "Credfeto.DotNet.Repo.Tools.Packages.Tests\Credfeto.DotNet.Repo.Tools.Packages.Tests.csproj", "{D2C8C2AA-4854-455A-A28C-019DCEDD52B0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.Packages.Interfaces", "Credfeto.DotNet.Repo.Tools.Packages.Interfaces\Credfeto.DotNet.Repo.Tools.Packages.Interfaces.csproj", "{2BF7D0CE-B072-4EB5-8FA1-34FA47229714}"
+EndProject
 Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{2483BF4F-3827-4366-8FE0-A0D81592FCBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -103,6 +109,18 @@ Global
 		{DD1D61FE-9BDE-4D51-BCFB-26D6581B5948}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DD1D61FE-9BDE-4D51-BCFB-26D6581B5948}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DD1D61FE-9BDE-4D51-BCFB-26D6581B5948}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F1186688-6449-4368-BB7A-DE94CBB19637}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1186688-6449-4368-BB7A-DE94CBB19637}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1186688-6449-4368-BB7A-DE94CBB19637}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1186688-6449-4368-BB7A-DE94CBB19637}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2C8C2AA-4854-455A-A28C-019DCEDD52B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2C8C2AA-4854-455A-A28C-019DCEDD52B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2C8C2AA-4854-455A-A28C-019DCEDD52B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2C8C2AA-4854-455A-A28C-019DCEDD52B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2BF7D0CE-B072-4EB5-8FA1-34FA47229714}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2BF7D0CE-B072-4EB5-8FA1-34FA47229714}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2BF7D0CE-B072-4EB5-8FA1-34FA47229714}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2BF7D0CE-B072-4EB5-8FA1-34FA47229714}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
