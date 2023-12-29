@@ -1,4 +1,3 @@
-using System;
 using Credfeto.Date;
 using Credfeto.DotNet.Repo.Tools.Build;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
@@ -11,29 +10,22 @@ using Credfeto.DotNet.Repo.Tracking;
 using Credfeto.Package;
 using FunFair.BuildVersion.Detection;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd;
 
 internal static class ApplicationSetup
 {
-    public static IServiceProvider Setup(bool warningsAsErrors)
+    public static IServiceCollection AddServices(this IServiceCollection services)
     {
-        DiagnosticLogger logger = new(warningsAsErrors);
-
-        return new ServiceCollection().AddSingleton<ILogger>(logger)
-                                      .AddSingleton<IDiagnosticLogger>(logger)
-                                      .AddSingleton(typeof(ILogger<>), typeof(LoggerProxy<>))
-                                      .AddDate()
-                                      .AddGit()
-                                      .AddPackageUpdater()
-                                      .AddTracking()
-                                      .AddDotNet()
-                                      .AddBuild()
-                                      .AddBuildVersionDetection(new BranchSettings(releaseSuffix: null, package: null))
-                                      .AddReleaseGeneration()
-                                      .AddBulkPackageUpdater()
-                                      .AddSingleton<IServiceProviderFactory, ServiceProviderFactory>()
-                                      .BuildServiceProvider();
+        return services.AddDate()
+                       .AddGit()
+                       .AddPackageUpdater()
+                       .AddTracking()
+                       .AddDotNet()
+                       .AddBuild()
+                       .AddBuildVersionDetection(new BranchSettings(releaseSuffix: null, package: null))
+                       .AddReleaseGeneration()
+                       .AddBulkPackageUpdater()
+                       .AddSingleton<IServiceProviderFactory, ServiceProviderFactory>();
     }
 }
