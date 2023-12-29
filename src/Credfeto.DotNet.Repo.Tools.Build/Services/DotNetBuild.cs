@@ -72,40 +72,44 @@ public sealed class DotNetBuild : IDotNetBuild
         {
             XmlDocument doc = await this._projectLoader.LoadAsync(path: project, cancellationToken: cancellationToken);
 
-            XmlNode? outputTypeNode = doc.SelectSingleNode("/Project/PropertyGroup/OutputType");
-
-            if (outputTypeNode is not null)
-            {
-                if (!packable)
-                {
-                    packable |= IsPackable(doc: doc, outputType: outputTypeNode.InnerText);
-                }
-
-                string? candidateFramework = GetTargetFrameworks(doc: doc, outputType: outputTypeNode.InnerText)
-                    .MaxBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase);
-
-                if (candidateFramework is not null)
-                {
-                    publishable = true;
-
-                    if (framework is null)
-                    {
-                        framework = candidateFramework;
-                        this._logger.LogInformation($"Found framework {framework}");
-                    }
-                    else
-                    {
-                        if (StringComparer.OrdinalIgnoreCase.Compare(x: candidateFramework, y: framework) > 0)
-                        {
-                            framework = candidateFramework;
-                            this._logger.LogInformation($"Found framework {framework}");
-                        }
-                    }
-                }
-            }
+            this.CheckProjectSettings(doc: doc, packable: ref packable, publishable: ref publishable, framework: ref framework);
         }
 
         return new(Publishable: publishable, Packable: packable, Framework: framework);
+    }
+
+    private void CheckProjectSettings(XmlDocument doc, ref bool packable, ref bool publishable, ref string? framework)
+    {
+        XmlNode? outputTypeNode = doc.SelectSingleNode("/Project/PropertyGroup/OutputType");
+
+        if (outputTypeNode is null)
+        {
+            return;
+        }
+
+        packable |= IsPackable(doc: doc, outputType: outputTypeNode.InnerText);
+
+        string? candidateFramework = GetTargetFrameworks(doc: doc, outputType: outputTypeNode.InnerText)
+            .MaxBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase);
+
+        if (candidateFramework is not null)
+        {
+            publishable = true;
+
+            if (framework is null)
+            {
+                framework = candidateFramework;
+                this._logger.LogInformation($"Found framework {framework}");
+            }
+            else
+            {
+                if (StringComparer.OrdinalIgnoreCase.Compare(x: candidateFramework, y: framework) > 0)
+                {
+                    framework = candidateFramework;
+                    this._logger.LogInformation($"Found framework {framework}");
+                }
+            }
+        }
     }
 
     private static IReadOnlyList<string> GetTargetFrameworks(XmlDocument doc, string outputType)
