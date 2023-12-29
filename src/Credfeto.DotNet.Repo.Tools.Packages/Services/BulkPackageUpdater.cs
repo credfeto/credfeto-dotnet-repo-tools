@@ -13,6 +13,7 @@ using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Packages.Services.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
@@ -117,11 +118,11 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 }
                 catch (SolutionCheckFailedException exception)
                 {
-                    this._logger.LogError(exception: exception, message: "Solution check failed");
+                    this._logger.LogSolutionCheckFailed(exception: exception);
                 }
                 catch (DotNetBuildErrorException exception)
                 {
-                    this._logger.LogError(exception: exception, message: "Build failed (On repo check)");
+                    this._logger.LogBuildFailedOnRepoCheck(exception: exception);
                 }
                 finally
                 {
@@ -139,7 +140,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
         catch (ReleaseCreatedException exception)
         {
-            this._logger.LogInformation(exception: exception, message: "Release created - aborting run");
+            this._logger.LogReleaseCreatedAbortingRun(exception: exception);
             this._logger.LogInformation(exception.Message);
         }
     }
@@ -167,11 +168,11 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         document.Save(projectFileName);
 
         int updates = 0;
-        this._logger.LogInformation("[CACHE] Pre-loading cached packages");
+        this._logger.LogPreLoadingCachedPackages();
 
         foreach (PackageUpdate package in packages)
         {
-            this._logger.LogInformation($"[CACHE] Updating {package.PackageId}...");
+            this._logger.LogUpdatingCachedPackage(package.PackageId);
             PackageUpdateConfiguration config = this.BuildConfiguration(package);
 
             IReadOnlyList<PackageVersion> updated = await this._packageUpdater.UpdateAsync(basePath: packagesFolder,
@@ -179,11 +180,11 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                                            packageSources: updateContext.AdditionalSources,
                                                                                            cancellationToken: cancellationToken);
 
-            this._logger.LogInformation($"[CACHE] Update {package.PackageId} Updated {updated.Count} packages");
+            this._logger.LogUpdatedCachedPackages(packageId: package.PackageId, count: updated.Count);
             updates += updated.Count;
         }
 
-        this._logger.LogInformation($"[CACHE] Total package updates: {updates}");
+        this._logger.LogUpdatedCachedPackagesTotal(updates);
     }
 
     private static XmlDocument BuildReferencedPackagesXmlDocument(IReadOnlyList<PackageVersion> allPackages)
