@@ -211,14 +211,14 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
     private async ValueTask UpdateRepositoryAsync(UpdateContext updateContext, IReadOnlyList<PackageUpdate> packages, string repo, CancellationToken cancellationToken)
     {
-        this._logger.LogInformation($"Processing {repo}");
+        this._logger.LogProcessingRepo(repo);
 
         using (IGitRepository repository =
                await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
             if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
             {
-                this._logger.LogInformation("No changelog found");
+                this._logger.LogNoChangelogFound();
                 await this._trackingCache.UpdateTrackingAsync(new(Repository: repository, ChangeLogFileName: "?"),
                                                               updateContext: updateContext,
                                                               value: repository.HeadRev,
@@ -242,7 +242,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         if (!repoContext.HasDotNetFiles(out string? sourceDirectory, out IReadOnlyList<string>? solutions, out IReadOnlyList<string>? projects))
         {
-            this._logger.LogInformation("No dotnet files found");
+            this._logger.LogNoDotNetFilesFound();
             await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext,
                                                           updateContext: updateContext,
                                                           value: repoContext.Repository.HeadRev,
@@ -375,7 +375,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             return headRev;
         }
 
-        this._logger.LogInformation($"Resetting {repoContext.ClonePath} to master");
+        this._logger.LogResettingToDefault(repoContext);
         await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
         return null;
@@ -395,9 +395,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         if (builtOk)
         {
             string invalidUpdateBranch = BuildInvalidUpdateBranch(branchPrefix);
-            string defaultBranch = repoContext.Repository.GetDefaultBranch(upstream: GitConstants.Upstream);
 
-            this._logger.LogInformation($"{repoContext.ClonePath}: Committing {package.PackageId} to {defaultBranch}");
+            this._logger.LogCommittingToDefault(repoContext: repoContext, packageId: package.PackageId, version: version);
             await CommitChangeWithChangelogAsync(repoContext: repoContext, package: package, version: version, cancellationToken: cancellationToken);
             await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
             await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: invalidUpdateBranch,
@@ -412,12 +411,12 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             if (repoContext.Repository.DoesBranchExist(branchName: branchForUpdate))
             {
                 // nothing to do - may already be a PR that's being worked on
-                this._logger.LogInformation($"{repoContext.ClonePath}: Skipping commit of {package.PackageId} as branch {branchForUpdate} already exists");
+                this._logger.LogSkippingPackageCommit(repoContext: repoContext, branch: branchForUpdate, packageId: package.PackageId, version: version);
 
                 return;
             }
 
-            this._logger.LogInformation($"{repoContext.ClonePath}: Committing {package.PackageId} to {branchForUpdate}");
+            this._logger.LogCommittingToNamedBranch(repoContext: repoContext, branch: branchForUpdate, packageId: package.PackageId, version: version);
             await repoContext.Repository.CreateBranchAsync(branchName: branchForUpdate, cancellationToken: cancellationToken);
 
             await CommitChangeWithChangelogAsync(repoContext: repoContext, package: package, version: version, cancellationToken: cancellationToken);

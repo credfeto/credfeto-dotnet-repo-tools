@@ -1,4 +1,5 @@
 using System;
+using Credfeto.DotNet.Repo.Tools.Models;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Packages.Services.LoggingExtensions;
@@ -25,4 +26,42 @@ internal static partial class BulkPackageUpdaterLoggingExtensions
 
     [LoggerMessage(EventId = 7, Level = LogLevel.Information, Message = "[CACHE] Total package updates: {count}")]
     public static partial void LogUpdatedCachedPackagesTotal(this ILogger<BulkPackageUpdater> logger, int count);
+
+    [LoggerMessage(EventId = 8, Level = LogLevel.Information, Message = "Processing {repo}")]
+    public static partial void LogProcessingRepo(this ILogger<BulkPackageUpdater> logger, string repo);
+
+    [LoggerMessage(EventId = 9, Level = LogLevel.Warning, Message = "No CHANGELOG.md found")]
+    public static partial void LogNoChangelogFound(this ILogger<BulkPackageUpdater> logger);
+
+    [LoggerMessage(EventId = 10, Level = LogLevel.Warning, Message = "No DotNet files found")]
+    public static partial void LogNoDotNetFilesFound(this ILogger<BulkPackageUpdater> logger);
+
+    [LoggerMessage(EventId = 11, Level = LogLevel.Information, Message = "Resetting {clonePath} to {branch}")]
+    private static partial void LogResettingToDefault(this ILogger<BulkPackageUpdater> logger, string clonePath, string branch);
+
+    public static void LogResettingToDefault(this ILogger<BulkPackageUpdater> logger, in RepoContext repoContext)
+    {
+        logger.LogResettingToDefault(clonePath: repoContext.ClonePath, branch: repoContext.DefaultBranch);
+    }
+
+    [LoggerMessage(EventId = 12, Level = LogLevel.Information, Message = "{clonePath}: Committing {packageId} ({version}) to {branch}")]
+    private static partial void LogCommittingPackageToBranch(this ILogger<BulkPackageUpdater> logger, string clonePath, string packageId, string version, string branch);
+
+    public static void LogCommittingToDefault(this ILogger<BulkPackageUpdater> logger, in RepoContext repoContext, string packageId, string version)
+    {
+        logger.LogCommittingPackageToBranch(clonePath: repoContext.ClonePath, packageId: packageId, version: version, branch: repoContext.DefaultBranch);
+    }
+
+    public static void LogCommittingToNamedBranch(this ILogger<BulkPackageUpdater> logger, in RepoContext repoContext, string branch, string packageId, string version)
+    {
+        logger.LogCommittingPackageToBranch(clonePath: repoContext.ClonePath, packageId: packageId, version: version, branch: branch);
+    }
+
+    [LoggerMessage(EventId = 13, Level = LogLevel.Information, Message = "{clonePath}: Skipping commit of {packageId} {version} as branch {branch} already exists")]
+    private static partial void LogSkippingPackageCommit(this ILogger<BulkPackageUpdater> logger, string clonePath, string packageId, string version, string branch);
+
+    public static void LogSkippingPackageCommit(this ILogger<BulkPackageUpdater> logger, in RepoContext repoContext, string branch, string packageId, string version)
+    {
+        logger.LogSkippingPackageCommit(clonePath: repoContext.ClonePath, packageId: packageId, version: version, branch: branch);
+    }
 }

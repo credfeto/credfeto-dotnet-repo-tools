@@ -4,10 +4,14 @@ using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 namespace Credfeto.DotNet.Repo.Tools.Models;
 
 [DebuggerDisplay("Repo: {ClonePath} File: {ChangeLogFileName}")]
-public readonly record struct RepoContext(string ClonePath, IGitRepository Repository, string WorkingDirectory, string ChangeLogFileName)
+public readonly record struct RepoContext(string ClonePath, IGitRepository Repository, string WorkingDirectory, string DefaultBranch, string ChangeLogFileName)
 {
     public RepoContext(IGitRepository Repository, string ChangeLogFileName)
-        : this(ClonePath: Repository.ClonePath, Repository: Repository, WorkingDirectory: Repository.WorkingDirectory, ChangeLogFileName: ChangeLogFileName)
+        : this(ClonePath: Repository.ClonePath,
+               Repository: Repository,
+               WorkingDirectory: Repository.WorkingDirectory,
+               Repository.GetDefaultBranch(GitConstants.Upstream),
+               ChangeLogFileName: ChangeLogFileName)
     {
     }
 }
