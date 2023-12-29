@@ -61,12 +61,6 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Models\Credfeto.DotNet.Repo.Tools.Models.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.19.111" />
-    <PackageReference Include="Credfeto.Date.Interfaces" Version="1.1.9.181" />
-    <PackageReference Include="Credfeto.Package" Version="1.10.44.293" />
-    <PackageReference Include="FunFair.BuildVersion.Detection" Version="6.2.15.250" />
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="codecracker.CSharp" Version="1.1.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Credfeto.Enumeration.Source.Generation" Version="1.1.1.168" PrivateAssets="All" ExcludeAssets="runtime" />
