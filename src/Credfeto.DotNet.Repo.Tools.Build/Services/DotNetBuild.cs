@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Xml;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Build.Services.LoggingExtensions;
 using FunFair.BuildCheck.Interfaces;
 using FunFair.BuildCheck.Runner.Services;
 using Microsoft.Extensions.Logging;
@@ -31,7 +32,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
     public async ValueTask BuildAsync(string basePath, BuildSettings buildSettings, CancellationToken cancellationToken)
     {
-        this._logger.LogInformation($"Building {basePath}...");
+        this._logger.LogStartingBuild(basePath);
 
         await this.StopBuildServerAsync(basePath: basePath, cancellationToken: cancellationToken);
 
@@ -99,14 +100,14 @@ public sealed class DotNetBuild : IDotNetBuild
             if (framework is null)
             {
                 framework = candidateFramework;
-                this._logger.LogInformation($"Found framework {framework}");
+                this._logger.LogFoundFramework(framework);
             }
             else
             {
                 if (StringComparer.OrdinalIgnoreCase.Compare(x: candidateFramework, y: framework) > 0)
                 {
                     framework = candidateFramework;
-                    this._logger.LogInformation($"Found framework {framework}");
+                    this._logger.LogFoundFramework(framework);
                 }
             }
         }
@@ -157,14 +158,14 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         if (string.IsNullOrWhiteSpace(framework))
         {
-            this._logger.LogInformation("Publishing no framework...");
+            this._logger.LogPublishingNoFramework();
             await this.ExecRequireCleanAsync(basePath: basePath,
                                              $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
                                              cancellationToken: cancellationToken);
         }
         else
         {
-            this._logger.LogInformation($"Publishing {framework}...");
+            this._logger.LogPublishingWithFramework(framework);
             await this.ExecRequireCleanAsync(basePath: basePath,
                                              $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --framework:{framework} --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
                                              cancellationToken: cancellationToken);
@@ -173,7 +174,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private ValueTask DotNetPackAsync(string basePath, in CancellationToken cancellationToken)
     {
-        this._logger.LogInformation("Packing...");
+        this._logger.LogPacking();
 
         return this.ExecRequireCleanAsync(basePath: basePath,
                                           $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}",
@@ -182,7 +183,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private ValueTask DotNetTestAsync(string basePath, in CancellationToken cancellationToken)
     {
-        this._logger.LogInformation("Testing...");
+        this._logger.LogTesting();
 
         return this.ExecRequireCleanAsync(basePath: basePath,
                                           $"test --no-build --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} --filter FullyQualifiedName\\!~Integration {NO_WARN}",
@@ -191,7 +192,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private ValueTask DotNetBuildAsync(string basePath, in CancellationToken cancellationToken)
     {
-        this._logger.LogInformation("Building...");
+        this._logger.LogBuilding();
 
         return this.ExecRequireCleanAsync(basePath: basePath,
                                           $"build --no-restore -warnAsError -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}",
@@ -200,23 +201,23 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private ValueTask DotNetRestoreAsync(string basePath, in CancellationToken cancellationToken)
     {
-        this._logger.LogInformation("Restoring...");
+        this._logger.LogRestoring();
 
         return this.ExecRequireCleanAsync(basePath: basePath, $"restore -nodeReuse:False -r:linux-x64 {NO_WARN}", cancellationToken: cancellationToken);
     }
 
     private ValueTask DotNetCleanAsync(string basePath, in CancellationToken cancellationToken)
     {
-        this._logger.LogInformation("Cleaning...");
+        this._logger.LogCleaning();
 
         return this.ExecRequireCleanAsync(basePath: basePath, $"clean --configuration:Release -nodeReuse:False {NO_WARN}", cancellationToken: cancellationToken);
     }
 
     private async ValueTask StopBuildServerAsync(string basePath, CancellationToken cancellationToken)
     {
-        this._logger.LogInformation("Stopping build server...");
+        this._logger.LogStoppingBuildServer();
         await ExecAsync(basePath: basePath, arguments: "build-server shutdown", cancellationToken: cancellationToken);
-        this._logger.LogInformation("Stopped build server");
+        this._logger.LogStoppedBuildServer();
     }
 
     private async ValueTask ExecRequireCleanAsync(string basePath, string arguments, CancellationToken cancellationToken)
@@ -233,6 +234,11 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private void DumpErrors(string[] results)
     {
+        if (!this._logger.IsEnabled(LogLevel.Error))
+        {
+            return;
+        }
+
         foreach (string line in results)
         {
             this._logger.LogError(line);
