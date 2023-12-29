@@ -59,7 +59,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj" />
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git\Credfeto.DotNet.Repo.Tools.Git.csproj" />
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git.Interfaces\Credfeto.DotNet.Repo.Tools.Git.Interfaces.csproj"/>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Packages.Interfaces\Credfeto.DotNet.Repo.Tools.Packages.Interfaces.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Release.Interfaces\Credfeto.DotNet.Repo.Tools.Release.Interfaces.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj" />
@@ -69,6 +69,7 @@
     <PackageReference Include="Credfeto.Date.Interfaces" Version="1.1.9.181" />
     <PackageReference Include="Credfeto.Package" Version="1.10.44.293" />
     <PackageReference Include="FunFair.BuildVersion.Detection" Version="6.2.15.250" />
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.0"/>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
