@@ -172,7 +172,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         foreach (PackageUpdate package in packages)
         {
             this._logger.LogInformation($"[CACHE] Updating {package.PackageId}...");
-            PackageUpdateConfiguration config = BuildConfiguration(package);
+            PackageUpdateConfiguration config = this.BuildConfiguration(package);
 
             IReadOnlyList<PackageVersion> updated = await this._packageUpdater.UpdateAsync(basePath: packagesFolder,
                                                                                            configuration: config,
@@ -483,7 +483,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                                CancellationToken cancellationToken)
     {
         this._logger.LogInformation($"* Updating {package.PackageId}...");
-        PackageUpdateConfiguration config = BuildConfiguration(package);
+        PackageUpdateConfiguration config = this.BuildConfiguration(package);
 
         return await this._packageUpdater.UpdateAsync(basePath: repoContext.WorkingDirectory,
                                                       configuration: config,
@@ -491,17 +491,17 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                       cancellationToken: cancellationToken);
     }
 
-    private static PackageUpdateConfiguration BuildConfiguration(PackageUpdate package)
+    private PackageUpdateConfiguration BuildConfiguration(PackageUpdate package)
     {
         PackageMatch packageMatch = new(PackageId: package.PackageId, Prefix: !package.ExactMatch);
-        Console.WriteLine($"Including {packageMatch.PackageId} (Using Prefix match: {packageMatch.Prefix})");
+        this._logger.LogInformation($"Including {packageMatch.PackageId} (Using Prefix match: {packageMatch.Prefix})");
 
-        IReadOnlyList<PackageMatch> excludedPackages = GetExcludedPackages(package.Exclude ?? Array.Empty<PackageExclude>());
+        IReadOnlyList<PackageMatch> excludedPackages = this.GetExcludedPackages(package.Exclude ?? Array.Empty<PackageExclude>());
 
         return new(PackageMatch: packageMatch, ExcludedPackages: excludedPackages);
     }
 
-    private static IReadOnlyList<PackageMatch> GetExcludedPackages(IReadOnlyList<PackageExclude> excludes)
+    private IReadOnlyList<PackageMatch> GetExcludedPackages(IReadOnlyList<PackageExclude> excludes)
     {
         if (excludes.Count == 0)
         {
@@ -516,7 +516,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
             excludedPackages.Add(packageMatch);
 
-            Console.WriteLine($"Excluding {packageMatch.PackageId} (Using Prefix match: {packageMatch.Prefix})");
+            this._logger.LogInformation($"Excluding {packageMatch.PackageId} (Using Prefix match: {packageMatch.Prefix})");
         }
 
         return excludedPackages;

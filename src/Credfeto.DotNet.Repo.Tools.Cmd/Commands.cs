@@ -11,11 +11,12 @@ using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 namespace Credfeto.DotNet.Repo.Tools.Cmd;
 
 [SuppressMessage(category: "Microsoft.Performance", checkId: "CA1812:AvoidUninstantiatedInternalClasses", Justification = "Instantiated by Cocona")]
+[SuppressMessage(category: "ReSharper", checkId: "ClassNeverInstantiated.Global", Justification = "Instantiated by Cocona")]
 internal sealed class Commands
 {
     private readonly IBulkPackageUpdater _bulkPackageUpdater;
+    private readonly CancellationToken _cancellationToken = CancellationToken.None;
     private readonly IGitRepositoryListLoader _gitRepositoryListLoader;
-    private readonly CancellationToken cancellationToken = CancellationToken.None;
 
     public Commands(IGitRepositoryListLoader gitRepositoryListLoader, IBulkPackageUpdater bulkPackageUpdater)
     {
@@ -34,7 +35,7 @@ internal sealed class Commands
                                           [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName,
                                           [Option(name: "source", ['s'], Description = "Urls to additional NuGet feeds to load")] IEnumerable<string>? source)
     {
-        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: this.cancellationToken),
+        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: this._cancellationToken),
                                                                  templateRepository: templateRepository);
 
         if (repositories.Count == 0)
@@ -50,7 +51,7 @@ internal sealed class Commands
                                                        workFolder: workFolder,
                                                        releaseConfigFileName: releaseConfigFileName,
                                                        repositories: repositories,
-                                                       cancellationToken: this.cancellationToken);
+                                                       cancellationToken: this._cancellationToken);
     }
 
     [Command("update-template", Description = "Update repos from template in all repositories")]
@@ -62,7 +63,7 @@ internal sealed class Commands
                                               [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder,
                                               [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName)
     {
-        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: this.cancellationToken),
+        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: this._cancellationToken),
                                                                  templateRepository: templateRepository);
 
         if (repositories.Count == 0)
@@ -80,7 +81,7 @@ internal sealed class Commands
                                        [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder,
                                        [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName)
     {
-        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: this.cancellationToken),
+        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: this._cancellationToken),
                                                                  templateRepository: templateRepository);
 
         if (repositories.Count == 0)

@@ -4,8 +4,11 @@ using System.Threading.Tasks;
 using Cocona;
 using Cocona.Builder;
 using Credfeto.DotNet.Repo.Tools.Cmd.Constants;
+using Credfeto.DotNet.Repo.Tools.Cmd.Setup;
 using Credfeto.DotNet.Repo.Tools.Packages.Exceptions;
 using Credfeto.Package.Exceptions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd;
 
@@ -13,20 +16,22 @@ internal static class Program
 {
     private static async Task<int> Main(string[] args)
     {
-        Console.WriteLine($"{typeof(Program).Namespace} {ExecutableVersionInformation.ProgramVersion()}");
+        Console.WriteLine($"{ExecutableVersionInformation.ProgramName()} {ExecutableVersionInformation.ProgramVersion()}");
         Console.WriteLine();
 
         try
         {
-            CoconaAppBuilder builder = CoconaApp.CreateBuilder(args);
-            builder.Services.AddServices();
+            using (CoconaApp host = CreateApp(args))
+            {
+                ILoggerFactory loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
+                Logging.InitializeLogging(loggerFactory: loggerFactory);
 
-            CoconaApp app = builder.Build();
-            app.AddCommands<Commands>();
+                host.AddCommands<Commands>();
 
-            await app.RunAsync(CancellationToken.None);
+                await host.RunAsync(CancellationToken.None);
 
-            return ExitCodes.Success;
+                return ExitCodes.Success;
+            }
         }
         catch (NoPackagesUpdatedException)
         {
@@ -48,12 +53,18 @@ internal static class Program
         {
             Console.WriteLine($"ERROR: {exception.Message}");
 
-            if (exception.StackTrace is not null)
-            {
-                Console.WriteLine(exception.StackTrace);
-            }
-
             return ExitCodes.Error;
         }
+    }
+
+    private static CoconaApp CreateApp(string[] args)
+    {
+        CoconaAppBuilder builder = CoconaApp.CreateBuilder(args);
+        builder.Services.AddServices();
+        builder.Logging.AddFilter(category: "Microsoft", level: LogLevel.Warning)
+               .AddFilter(category: "System.Net.Http.HttpClient", level: LogLevel.Warning)
+               .ClearProviders();
+
+        return builder.Build();
     }
 }

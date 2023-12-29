@@ -11,7 +11,7 @@ using Credfeto.Package;
 using FunFair.BuildVersion.Detection;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Credfeto.DotNet.Repo.Tools.Cmd;
+namespace Credfeto.DotNet.Repo.Tools.Cmd.Setup;
 
 internal static class ApplicationSetup
 {
