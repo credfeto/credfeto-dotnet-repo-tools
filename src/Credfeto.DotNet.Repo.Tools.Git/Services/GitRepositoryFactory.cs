@@ -6,6 +6,7 @@ using Credfeto.DotNet.Repo.Tools.Git.Helpers;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 using LibGit2Sharp;
+using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 
@@ -15,10 +16,12 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
         new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
 
     private readonly IGitRepositoryLocator _locator;
+    private readonly ILogger<GitRepositoryFactory> _logger;
 
-    public GitRepositoryFactory(IGitRepositoryLocator locator)
+    public GitRepositoryFactory(IGitRepositoryLocator locator, ILogger<GitRepositoryFactory> logger)
     {
         this._locator = locator;
+        this._logger = logger;
     }
 
     public ValueTask<IGitRepository> OpenOrCloneAsync(string workDir, string repoUrl, in CancellationToken cancellationToken)
@@ -26,17 +29,17 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
         string workingDirectory = this._locator.GetWorkingDirectory(workDir: workDir, repoUrl: repoUrl);
 
         return Directory.Exists(workingDirectory)
-            ? OpenRepoAsync(repoUrl: repoUrl, workingDirectory: workingDirectory, cancellationToken: cancellationToken)
-            : CloneRepositoryAsync(workDir: workDir, destinationPath: workingDirectory, repoUrl: repoUrl, cancellationToken: cancellationToken);
+            ? this.OpenRepoAsync(repoUrl: repoUrl, workingDirectory: workingDirectory, cancellationToken: cancellationToken)
+            : this.CloneRepositoryAsync(workDir: workDir, destinationPath: workingDirectory, repoUrl: repoUrl, cancellationToken: cancellationToken);
     }
 
-    private static async ValueTask<IGitRepository> OpenRepoAsync(string repoUrl, string workingDirectory, CancellationToken cancellationToken)
+    private async ValueTask<IGitRepository> OpenRepoAsync(string repoUrl, string workingDirectory, CancellationToken cancellationToken)
     {
         IGitRepository? repo = null;
 
         try
         {
-            repo = new GitRepository(clonePath: repoUrl, workingDirectory: workingDirectory, new(Repository.Discover(workingDirectory)));
+            repo = new GitRepository(clonePath: repoUrl, workingDirectory: workingDirectory, new(Repository.Discover(workingDirectory)), logger: this._logger);
 
             await repo.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
@@ -53,7 +56,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
         }
     }
 
-    private static async ValueTask<IGitRepository> CloneRepositoryAsync(string workDir, string destinationPath, string repoUrl, CancellationToken cancellationToken)
+    private async ValueTask<IGitRepository> CloneRepositoryAsync(string workDir, string destinationPath, string repoUrl, CancellationToken cancellationToken)
     {
         string? path = IsHttps(repoUrl)
             ? Repository.Clone(sourceUrl: repoUrl, workdirPath: destinationPath, options: GitCloneOptions)
@@ -64,7 +67,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
             throw new GitException($"Failed to clone repo {repoUrl} to {workDir}");
         }
 
-        return new GitRepository(clonePath: repoUrl, workingDirectory: destinationPath, new(Repository.Discover(path)));
+        return new GitRepository(clonePath: repoUrl, workingDirectory: destinationPath, new(Repository.Discover(path)), logger: this._logger);
     }
 
     private static async ValueTask<string?> CloneSshAsync(string sourceUrl, string workdirPath, string destinationPath, CancellationToken cancellationToken)
