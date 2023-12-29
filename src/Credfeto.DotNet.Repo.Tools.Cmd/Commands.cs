@@ -15,6 +15,7 @@ internal sealed class Commands
 {
     private readonly IBulkPackageUpdater _bulkPackageUpdater;
     private readonly IGitRepositoryListLoader _gitRepositoryListLoader;
+    private readonly CancellationToken cancellationToken = CancellationToken.None;
 
     public Commands(IGitRepositoryListLoader gitRepositoryListLoader, IBulkPackageUpdater bulkPackageUpdater)
     {
@@ -33,8 +34,7 @@ internal sealed class Commands
                                           [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName,
                                           [Option(name: "source", ['s'], Description = "Urls to additional NuGet feeds to load")] IEnumerable<string>? source)
     {
-        CancellationToken cancellationToken = CancellationToken.None;
-        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: cancellationToken),
+        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: this.cancellationToken),
                                                                  templateRepository: templateRepository);
 
         if (repositories.Count == 0)
@@ -50,7 +50,43 @@ internal sealed class Commands
                                                        workFolder: workFolder,
                                                        releaseConfigFileName: releaseConfigFileName,
                                                        repositories: repositories,
-                                                       cancellationToken: cancellationToken);
+                                                       cancellationToken: this.cancellationToken);
+    }
+
+    [Command("update-template", Description = "Update repos from template in all repositories")]
+    [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
+    public async Task UpdateFromTemplateAsync([Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")] string repositoriesFileName,
+                                              [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
+                                              [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")] string trackingFileName,
+                                              [Option(name: "packages", ['p'], Description = "Packages.json file to load")] string packagesFileName,
+                                              [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder,
+                                              [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName)
+    {
+        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: this.cancellationToken),
+                                                                 templateRepository: templateRepository);
+
+        if (repositories.Count == 0)
+        {
+            throw new InvalidOperationException("No Repositories found");
+        }
+    }
+
+    [Command("code-cleanup", Description = "Perform code cleanup in all repositories")]
+    [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
+    public async Task CodeCleanupAsync([Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")] string repositoriesFileName,
+                                       [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
+                                       [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")] string trackingFileName,
+                                       [Option(name: "packages", ['p'], Description = "Packages.json file to load")] string packagesFileName,
+                                       [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder,
+                                       [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName)
+    {
+        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: this.cancellationToken),
+                                                                 templateRepository: templateRepository);
+
+        if (repositories.Count == 0)
+        {
+            throw new InvalidOperationException("No Repositories found");
+        }
     }
 
     private static IReadOnlyList<string> ExcludeTemplateRepo(IReadOnlyList<string> repositories, string templateRepository)
