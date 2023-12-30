@@ -15,6 +15,7 @@ using Credfeto.DotNet.Repo.Tools.Models.Packages;
 using Credfeto.DotNet.Repo.Tools.Release.Extensions;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Release.Services.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using FunFair.BuildVersion.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -106,7 +107,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         await repoContext.Repository.CommitAsync($"Changelog for {nextVersion}", cancellationToken: cancellationToken);
         await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
 
-        this._logger.LogInformation($"{repoContext.ClonePath}: RELEASE CREATED: {nextVersion}");
+        this._logger.LogReleaseCreated(repoContext: repoContext, version: nextVersion);
 
         this._trackingCache.Set(repoUrl: repoContext.ClonePath, value: repoContext.Repository.HeadRev);
 
@@ -121,7 +122,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     {
         if (HasPendingDependencyUpdateBranches(repoContext))
         {
-            this.Skip(repoContext: repoContext, skippingReason: "FOUND PENDING UPDATE BRANCHES");
+            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: "FOUND PENDING UPDATE BRANCHES");
 
             return true;
         }
@@ -138,12 +139,12 @@ public sealed class ReleaseGeneration : IReleaseGeneration
                 return false;
             }
 
-            this.Skip(repoContext: repoContext, skippingReason: "CONTAINS PUBLISHABLE EXECUTABLES");
+            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: "CONTAINS PUBLISHABLE EXECUTABLES");
 
             return true;
         }
 
-        this.Skip(repoContext: repoContext, skippingReason: "EXPLICITLY PROHIBITED");
+        this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: "EXPLICITLY PROHIBITED");
 
         return true;
     }
@@ -161,7 +162,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         }
         catch (SolutionCheckFailedException)
         {
-            this.Skip(repoContext: repoContext, skippingReason: "FAILED RELEASE CHECK");
+            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: "FAILED RELEASE CHECK");
 
             return true;
         }
@@ -172,7 +173,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         }
         catch (DotNetBuildErrorException)
         {
-            this.Skip(repoContext: repoContext, skippingReason: "DOES NOT BUILD");
+            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: "DOES NOT BUILD");
 
             return true;
         }
@@ -188,9 +189,9 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         string releaseNotes =
             await ChangeLogReader.ExtractReleaseNotesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
 
-        int autoUpdateCount = this.IsAllAutoUpdates(releaseNotes: releaseNotes, packages: packages);
+        int autoUpdateCount = this.IsAllAutoUpdates(repoContext: repoContext, releaseNotes: releaseNotes, packages: packages);
 
-        this._logger.LogInformation($"Change log update score: {autoUpdateCount}");
+        this._logger.LogChangeLogUpdateScore(autoUpdateCount);
 
         DateTimeOffset lastCommitDate = repoContext.Repository.GetLastCommitDate();
         DateTimeOffset now = this._timeSource.UtcNow();
@@ -226,7 +227,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         if (!shouldCreateRelease)
         {
-            this.Skip(repoContext: repoContext, skippingReason: skippingReason);
+            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: skippingReason);
 
             return true;
         }
@@ -257,18 +258,13 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         }
     }
 
-    private void Skip(in RepoContext repoContext, string skippingReason)
-    {
-        this._logger.LogInformation($"{repoContext.ClonePath}: RELEASE SKIPPED: {skippingReason}");
-    }
-
     private static int ScoreCount(string releaseNotes, Regex regex, int scoreMultiplier)
     {
         return regex.Matches(releaseNotes)
                     .Count * scoreMultiplier;
     }
 
-    private int IsAllAutoUpdates(string releaseNotes, IReadOnlyList<PackageUpdate> packages)
+    private int IsAllAutoUpdates(in RepoContext repoContext, string releaseNotes, IReadOnlyList<PackageUpdate> packages)
     {
         if (string.IsNullOrWhiteSpace(releaseNotes))
         {
@@ -287,12 +283,12 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         {
             if (IsPackageConsideredForVersionUpdate(packageUpdates: packages, packageId: packageId))
             {
-                this._logger.LogInformation($"Found Matching Update: {packageId}");
+                this._logger.LogMatchedPackage(repoContext: repoContext, packageId: packageId, score: ScoreMultipliers.MatchedPackage);
                 updateCount += ScoreMultipliers.MatchedPackage;
             }
             else
             {
-                this._logger.LogInformation($"Skipping Ignored Update: {packageId}");
+                this._logger.LogIgnoredPackage(repoContext: repoContext, packageId: packageId, score: ScoreMultipliers.IgnoredPackage);
                 updateCount += ScoreMultipliers.IgnoredPackage;
             }
         }
