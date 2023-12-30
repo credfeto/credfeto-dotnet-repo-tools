@@ -12,11 +12,8 @@ internal static class Logging
     [SuppressMessage(category: "SmartAnalyzers.CSharpExtensions.Annotations", checkId: "CSE007:DisposeObjectsBeforeLosingScope", Justification = "Lives for program lifetime")]
     public static void InitializeLogging(ILoggerFactory loggerFactory)
     {
-        // set up Serilog logger
-        Logger logger = CreateLogger();
-
         // set up the logger factory
-        loggerFactory.AddSerilog(logger);
+        loggerFactory.AddSerilog(CreateLogger(), dispose: true);
     }
 
     private static Logger CreateLogger()
