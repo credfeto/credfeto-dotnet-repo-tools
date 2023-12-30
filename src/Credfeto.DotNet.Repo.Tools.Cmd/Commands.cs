@@ -43,13 +43,14 @@ internal sealed class Commands
             throw new InvalidOperationException("No Repositories found");
         }
 
-        await this._bulkPackageUpdater.BulkUpdateAsync(additionalNugetSources: source?.ToArray() ?? Array.Empty<string>(),
-                                                       templateRepository: templateRepository,
+        string[] nugetSources = source?.ToArray() ?? Array.Empty<string>();
+        await this._bulkPackageUpdater.BulkUpdateAsync(templateRepository: templateRepository,
                                                        cacheFileName: cacheFileName,
                                                        trackingFileName: trackingFileName,
                                                        packagesFileName: packagesFileName,
                                                        workFolder: workFolder,
                                                        releaseConfigFileName: releaseConfigFileName,
+                                                       additionalNugetSources: nugetSources,
                                                        repositories: repositories,
                                                        cancellationToken: this._cancellationToken);
     }
