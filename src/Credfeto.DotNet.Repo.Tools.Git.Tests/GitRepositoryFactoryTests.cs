@@ -37,7 +37,8 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
     {
         CancellationToken cancellationToken = CancellationToken.None;
 
-        using (IGitRepository repo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: Repositories.GitHubSsh, cancellationToken: cancellationToken))
+        using (IGitRepository repo =
+               await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: Repositories.GitHubSsh, cancellationToken: cancellationToken))
         {
             this.Output.WriteLine($"Repo: {repo.ClonePath}");
 

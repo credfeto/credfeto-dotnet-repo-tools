@@ -58,6 +58,9 @@
     <RepositoryUrl>https://github.com/credfeto/credfeto-dotnet-repo-tools</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
+    <!--    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />-->
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build\Credfeto.DotNet.Repo.Tools.Build.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.DotNet\Credfeto.DotNet.Repo.Tools.DotNet.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git\Credfeto.DotNet.Repo.Tools.Git.csproj" />
@@ -68,7 +71,6 @@
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Credfeto.Date" Version="1.1.9.181" />
-    <!--    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />-->
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime" />

@@ -123,7 +123,8 @@ internal sealed class GitRepository : IGitRepository
 
         bool IsHeadBranch(Branch branch)
         {
-            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) && StringComparer.Ordinal.Equals(x: branch.UpstreamBranchCanonicalName, y: "refs/heads/HEAD");
+            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) &&
+                   StringComparer.Ordinal.Equals(x: branch.UpstreamBranchCanonicalName, y: "refs/heads/HEAD");
         }
     }
 
@@ -332,7 +333,8 @@ internal sealed class GitRepository : IGitRepository
 
             bool IsRemoteBranch(Branch candidateBranch)
             {
-                if (candidateBranch.IsRemote && StringComparer.Ordinal.Equals(x: candidateBranch.RemoteName, y: upstream) && StringComparer.Ordinal.Equals(x: candidateBranch.FriendlyName, y: branch))
+                if (candidateBranch.IsRemote && StringComparer.Ordinal.Equals(x: candidateBranch.RemoteName, y: upstream) &&
+                    StringComparer.Ordinal.Equals(x: candidateBranch.FriendlyName, y: branch))
 
                 {
                     return true;

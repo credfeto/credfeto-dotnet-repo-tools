@@ -11,7 +11,8 @@ namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 
 public sealed class GitRepositoryFactory : IGitRepositoryFactory
 {
-    private static readonly CloneOptions GitCloneOptions = new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
+    private static readonly CloneOptions GitCloneOptions =
+        new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
 
     private readonly IGitRepositoryLocator _locator;
 

@@ -36,8 +36,9 @@ public sealed class BulkPackageConfigLoader : IBulkPackageConfigLoader
         await using (Stream result = await httpClient.GetStreamAsync(requestUri: uri, cancellationToken: cancellationToken))
         {
             IReadOnlyList<PackageUpdate> packages =
-                await JsonSerializer.DeserializeAsync(utf8Json: result, jsonTypeInfo: PackageConfigSerializationContext.Default.IReadOnlyListPackageUpdate, cancellationToken: cancellationToken) ??
-                Array.Empty<PackageUpdate>();
+                await JsonSerializer.DeserializeAsync(utf8Json: result,
+                                                      jsonTypeInfo: PackageConfigSerializationContext.Default.IReadOnlyListPackageUpdate,
+                                                      cancellationToken: cancellationToken) ?? Array.Empty<PackageUpdate>();
 
             if (packages.Count == 0)
             {

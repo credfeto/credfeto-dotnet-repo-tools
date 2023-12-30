@@ -138,7 +138,8 @@ internal static class Program
         bool hasTemplate = options.Require(accessor: o => o.Template, value: out templateRepository);
         bool hasReleaseConfig = options.Require(accessor: o => o.ReleaseConfig, value: out releaseConfigFileName);
 
-        return hasUpdateType && hasWork && hasRepositories && hasPackages && hasTracking && hasTemplate && hasReleaseConfig && StringComparer.OrdinalIgnoreCase.Equals(x: updateType, y: "PACKAGES");
+        return hasUpdateType && hasWork && hasRepositories && hasPackages && hasTracking && hasTemplate && hasReleaseConfig &&
+               StringComparer.OrdinalIgnoreCase.Equals(x: updateType, y: "PACKAGES");
     }
 
     private static async ValueTask PerformBulkPackageUpdatesAsync(Options options,

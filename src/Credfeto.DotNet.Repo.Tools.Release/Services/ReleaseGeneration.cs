@@ -185,7 +185,8 @@ public sealed class ReleaseGeneration : IReleaseGeneration
                                                                              IReadOnlyList<PackageUpdate> packages,
                                                                              CancellationToken cancellationToken)
     {
-        string releaseNotes = await ChangeLogReader.ExtractReleaseNotesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
+        string releaseNotes =
+            await ChangeLogReader.ExtractReleaseNotesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
 
         int autoUpdateCount = this.IsAllAutoUpdates(releaseNotes: releaseNotes, packages: packages);
 
@@ -246,7 +247,8 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         static bool IsPackageUpdaterBranch(string branch)
         {
-            return branch.StartsWith(value: "depends/", comparisonType: StringComparison.Ordinal) && !branch.StartsWith(value: "/preview/", comparisonType: StringComparison.Ordinal);
+            return branch.StartsWith(value: "depends/", comparisonType: StringComparison.Ordinal) &&
+                   !branch.StartsWith(value: "/preview/", comparisonType: StringComparison.Ordinal);
         }
 
         static bool IsDependabotBranch(string branch)
