@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Cocona;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd;
 
@@ -17,11 +18,14 @@ internal sealed class Commands
     private readonly IBulkPackageUpdater _bulkPackageUpdater;
     private readonly CancellationToken _cancellationToken = CancellationToken.None;
     private readonly IGitRepositoryListLoader _gitRepositoryListLoader;
+    private readonly ILogger<Commands> _logger;
 
-    public Commands(IGitRepositoryListLoader gitRepositoryListLoader, IBulkPackageUpdater bulkPackageUpdater)
+    [SuppressMessage(category: "FunFair.CodeAnalysis", checkId: "FFS0023: Use ILogger rather than ILogger<T>", Justification = "Needed in this case")]
+    public Commands(IGitRepositoryListLoader gitRepositoryListLoader, IBulkPackageUpdater bulkPackageUpdater, ILogger<Commands> logger)
     {
         this._gitRepositoryListLoader = gitRepositoryListLoader;
         this._bulkPackageUpdater = bulkPackageUpdater;
+        this._logger = logger;
     }
 
     [Command("update-packages", Description = "Update all packages in all repositories")]
@@ -35,13 +39,8 @@ internal sealed class Commands
                                           [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName,
                                           [Option(name: "source", ['s'], Description = "Urls to additional NuGet feeds to load")] IEnumerable<string>? source)
     {
-        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: this._cancellationToken),
-                                                                 templateRepository: templateRepository);
-
-        if (repositories.Count == 0)
-        {
-            throw new InvalidOperationException("No Repositories found");
-        }
+        IReadOnlyList<string> repositories =
+            await this.LoadRepositoriesAsync(repositoriesFileName: repositoriesFileName, templateRepository: templateRepository, cancellationToken: this._cancellationToken);
 
         string[] nugetSources = source?.ToArray() ?? Array.Empty<string>();
         await this._bulkPackageUpdater.BulkUpdateAsync(templateRepository: templateRepository,
@@ -64,13 +63,24 @@ internal sealed class Commands
                                               [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder,
                                               [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName)
     {
-        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: this._cancellationToken),
-                                                                 templateRepository: templateRepository);
+        IReadOnlyList<string> repositories =
+            await this.LoadRepositoriesAsync(repositoriesFileName: repositoriesFileName, templateRepository: templateRepository, cancellationToken: this._cancellationToken);
+
+        this.Dump(repositories);
+    }
+
+    private async ValueTask<IReadOnlyList<string>> LoadRepositoriesAsync(string repositoriesFileName, string templateRepository, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<string> source = await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: cancellationToken);
+
+        IReadOnlyList<string> repositories = ExcludeTemplateRepo(repositories: source, templateRepository: templateRepository);
 
         if (repositories.Count == 0)
         {
             throw new InvalidOperationException("No Repositories found");
         }
+
+        return repositories;
     }
 
     [Command("code-cleanup", Description = "Perform code cleanup in all repositories")]
@@ -82,12 +92,17 @@ internal sealed class Commands
                                        [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder,
                                        [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName)
     {
-        IReadOnlyList<string> repositories = ExcludeTemplateRepo(await this._gitRepositoryListLoader.LoadAsync(path: repositoriesFileName, cancellationToken: this._cancellationToken),
-                                                                 templateRepository: templateRepository);
+        IReadOnlyList<string> repositories =
+            await this.LoadRepositoriesAsync(repositoriesFileName: repositoriesFileName, templateRepository: templateRepository, cancellationToken: this._cancellationToken);
 
-        if (repositories.Count == 0)
+        this.Dump(repositories);
+    }
+
+    private void Dump(IReadOnlyList<string> repositories)
+    {
+        foreach (string repo in repositories)
         {
-            throw new InvalidOperationException("No Repositories found");
+            this._logger.LogDebug(repo);
         }
     }
 
