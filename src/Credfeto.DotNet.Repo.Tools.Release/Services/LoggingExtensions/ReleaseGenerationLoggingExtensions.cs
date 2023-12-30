@@ -8,7 +8,7 @@ internal static partial class ReleaseGenerationLoggingExtensions
     [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{clonePath}: RELEASE CREATED: {version}")]
     private static partial void LogReleaseCreated(this ILogger<ReleaseGeneration> logger, string clonePath, string version);
 
-    public static partial void LogReleaseCreated(this ILogger<ReleaseGeneration> logger, in RepoContext repoContext, string version)
+    public static void LogReleaseCreated(this ILogger<ReleaseGeneration> logger, in RepoContext repoContext, string version)
     {
         logger.LogReleaseCreated(clonePath: repoContext.ClonePath, version: version);
     }
@@ -19,9 +19,9 @@ internal static partial class ReleaseGenerationLoggingExtensions
     [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "{clonePath}: RELEASE SKIPPED: {skippingReason}")]
     private static partial void LogReleaseSkipped(this ILogger<ReleaseGeneration> logger, string clonePath, string skippingReason);
 
-    public static void LogReleaseSkipped(this ILogger<ReleaseGeneration> logger, in RepoContext repoContext, string skippingReason)
+    public static void LogReleaseSkipped(this ILogger<ReleaseGeneration> logger, in RepoContext repoContext, ReleaseSkippingReason skippingReason)
     {
-        logger.LogInformation($"{repoContext.ClonePath}: RELEASE SKIPPED: {skippingReason}");
+        logger.LogReleaseSkipped(clonePath: repoContext.ClonePath, skippingReason.GetDescription());
     }
 
     [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "{clonePath}: Found Matching Update: {packageId} for score {score}")]

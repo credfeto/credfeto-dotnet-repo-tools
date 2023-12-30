@@ -122,7 +122,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     {
         if (HasPendingDependencyUpdateBranches(repoContext))
         {
-            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: "FOUND PENDING UPDATE BRANCHES");
+            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.FOUND_PENDING_UPDATE_BRANCHES);
 
             return true;
         }
@@ -139,12 +139,12 @@ public sealed class ReleaseGeneration : IReleaseGeneration
                 return false;
             }
 
-            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: "CONTAINS PUBLISHABLE EXECUTABLES");
+            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.CONTAINS_PUBLISHABLE_EXECUTABLES);
 
             return true;
         }
 
-        this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: "EXPLICITLY PROHIBITED");
+        this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.EXPLICITLY_PROHIBITED);
 
         return true;
     }
@@ -162,7 +162,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         }
         catch (SolutionCheckFailedException)
         {
-            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: "FAILED RELEASE CHECK");
+            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.FAILED_RELEASE_CHECK);
 
             return true;
         }
@@ -173,7 +173,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         }
         catch (DotNetBuildErrorException)
         {
-            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: "DOES NOT BUILD");
+            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.DOES_NOT_BUILD);
 
             return true;
         }
@@ -197,7 +197,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         DateTimeOffset now = this._timeSource.UtcNow();
         TimeSpan timeSinceLastCommit = now - lastCommitDate;
 
-        string skippingReason = "INSUFFICIENT UPDATES";
+        ReleaseSkippingReason skippingReason = ReleaseSkippingReason.INSUFFICIENT_UPDATES;
         bool shouldCreateRelease = false;
 
         if (autoUpdateCount > releaseConfig.AutoReleasePendingPackages)
@@ -205,11 +205,11 @@ public sealed class ReleaseGeneration : IReleaseGeneration
             if (timeSinceLastCommit.TotalHours > releaseConfig.MinimumHoursBeforeAutoRelease)
             {
                 shouldCreateRelease = true;
-                skippingReason = "RELEASING NORMAL";
+                skippingReason = ReleaseSkippingReason.RELEASING_NORMAL;
             }
             else
             {
-                skippingReason = "INSUFFICIENT DURATION SINCE LAST UPDATE";
+                skippingReason = ReleaseSkippingReason.INSUFFICIENT_DURATION_SINCE_LAST_UPDATE;
             }
         }
 
@@ -220,7 +220,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
                 if (timeSinceLastCommit.TotalHours > releaseConfig.InactivityHoursBeforeAutoRelease)
                 {
                     shouldCreateRelease = true;
-                    skippingReason = $"RELEASING AFTER INACTIVITY : {autoUpdateCount}";
+                    skippingReason = ReleaseSkippingReason.RELEASING_AFTER_INACTIVITY;
                 }
             }
         }
