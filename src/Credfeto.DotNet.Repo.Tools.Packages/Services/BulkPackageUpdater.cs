@@ -471,7 +471,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
         catch (DotNetBuildErrorException exception)
         {
-            this._logger.LogError(exception: exception, message: "Build failed (after updating package)");
+            this._logger.LogBuildFailedAfterPackageUpdate(exception: exception);
         }
 
         return false;
@@ -482,7 +482,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                                PackageUpdate package,
                                                                                CancellationToken cancellationToken)
     {
-        this._logger.LogInformation($"* Updating {package.PackageId}...");
+        this._logger.LogUpdatingPackageId(package.PackageId);
         PackageUpdateConfiguration config = this.BuildConfiguration(package);
 
         return await this._packageUpdater.UpdateAsync(basePath: repoContext.WorkingDirectory,
@@ -494,7 +494,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     private PackageUpdateConfiguration BuildConfiguration(PackageUpdate package)
     {
         PackageMatch packageMatch = new(PackageId: package.PackageId, Prefix: !package.ExactMatch);
-        this._logger.LogInformation($"Including {packageMatch.PackageId} (Using Prefix match: {packageMatch.Prefix})");
+        this._logger.LogIncludingPackage(packageMatch);
 
         IReadOnlyList<PackageMatch> excludedPackages = this.GetExcludedPackages(package.Exclude ?? Array.Empty<PackageExclude>());
 
@@ -516,7 +516,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
             excludedPackages.Add(packageMatch);
 
-            this._logger.LogInformation($"Excluding {packageMatch.PackageId} (Using Prefix match: {packageMatch.Prefix})");
+            this._logger.LogExcludingPackage(packageMatch);
         }
 
         return excludedPackages;

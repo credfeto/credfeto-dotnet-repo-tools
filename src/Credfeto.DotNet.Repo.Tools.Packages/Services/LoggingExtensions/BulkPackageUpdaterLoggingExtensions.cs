@@ -1,5 +1,6 @@
 using System;
 using Credfeto.DotNet.Repo.Tools.Models;
+using Credfeto.Package;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Packages.Services.LoggingExtensions;
@@ -63,5 +64,27 @@ internal static partial class BulkPackageUpdaterLoggingExtensions
     public static void LogSkippingPackageCommit(this ILogger<BulkPackageUpdater> logger, in RepoContext repoContext, string branch, string packageId, string version)
     {
         logger.LogSkippingPackageCommit(clonePath: repoContext.ClonePath, packageId: packageId, version: version, branch: branch);
+    }
+
+    [LoggerMessage(EventId = 14, Level = LogLevel.Error, Message = "Build failed (after updating package)")]
+    public static partial void LogBuildFailedAfterPackageUpdate(this ILogger<BulkPackageUpdater> logger, Exception exception);
+
+    [LoggerMessage(EventId = 15, Level = LogLevel.Information, Message = "* Updating {packageId}...")]
+    public static partial void LogUpdatingPackageId(this ILogger<BulkPackageUpdater> logger, string packageId);
+
+    [LoggerMessage(EventId = 16, Level = LogLevel.Information, Message = "Including {packageId} (Using Prefix match: {prefix})")]
+    private static partial void LogIncludingPackage(this ILogger<BulkPackageUpdater> logger, string packageId, bool prefix);
+
+    public static void LogIncludingPackage(this ILogger<BulkPackageUpdater> logger, PackageMatch package)
+    {
+        logger.LogIncludingPackage(packageId: package.PackageId, prefix: package.Prefix);
+    }
+
+    [LoggerMessage(EventId = 17, Level = LogLevel.Information, Message = "Excluding {packageId} (Using Prefix match: {prefix})")]
+    private static partial void LogExcludingPackage(this ILogger<BulkPackageUpdater> logger, string packageId, bool prefix);
+
+    public static void LogExcludingPackage(this ILogger<BulkPackageUpdater> logger, PackageMatch package)
+    {
+        logger.LogExcludingPackage(packageId: package.PackageId, prefix: package.Prefix);
     }
 }
