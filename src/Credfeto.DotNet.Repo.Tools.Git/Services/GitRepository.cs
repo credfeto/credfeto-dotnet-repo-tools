@@ -7,7 +7,9 @@ using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Git.Helpers;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Git.Services.LoggingExtensions;
 using LibGit2Sharp;
+using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 
@@ -15,14 +17,16 @@ namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 internal sealed class GitRepository : IGitRepository
 {
     private static readonly CheckoutOptions GitCheckoutOptions = new() { CheckoutModifiers = CheckoutModifiers.Force };
+    private readonly ILogger _logger;
 
     private Repository? _repo;
 
-    internal GitRepository(string clonePath, string workingDirectory, Repository? repo)
+    internal GitRepository(string clonePath, string workingDirectory, Repository? repo, ILogger logger)
     {
         this.ClonePath = clonePath;
         this.WorkingDirectory = workingDirectory;
         this._repo = repo;
+        this._logger = logger;
     }
 
     public Repository Active => this._repo ?? OpenRepository(workDir: this.WorkingDirectory);
@@ -156,7 +160,7 @@ internal sealed class GitRepository : IGitRepository
         try
         {
             await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "push", cancellationToken: cancellationToken);
-            Console.WriteLine($"Pushed {this.Active.Refs.Head.CanonicalName}!");
+            this._logger.LogPushedBranch(this.Active.Refs.Head.CanonicalName);
         }
         finally
         {
@@ -169,7 +173,7 @@ internal sealed class GitRepository : IGitRepository
         try
         {
             await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push --set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
-            Console.WriteLine($"Pushed {this.Active.Refs.Head.CanonicalName} to {upstream}! ({branchName})");
+            this._logger.LogPushedBranchUpstream(canonicalName: this.Active.Refs.Head.CanonicalName, upstream: upstream, branchName: branchName);
         }
         finally
         {
@@ -305,7 +309,12 @@ internal sealed class GitRepository : IGitRepository
 
         if (exitCode != 0)
         {
-            Console.WriteLine($"Commit exit code: {exitCode}: {string.Join(separator: Environment.NewLine, value: result)}");
+            this._logger.LogWarning($"Commit exit code: {exitCode}");
+
+            foreach (string line in result)
+            {
+                this._logger.LogWarning(line);
+            }
         }
     }
 
@@ -313,7 +322,7 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            Console.WriteLine($"Deleting branch {branch} from local repo..");
+            this._logger.LogDeletingLocalBranch(branch);
             await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"branch -D {branch}", cancellationToken: cancellationToken);
             this.ResetActiveRepoLink();
 
@@ -323,12 +332,12 @@ internal sealed class GitRepository : IGitRepository
 
             if (this.Active.Branches.Any(IsRemoteBranch))
             {
-                Console.WriteLine($"Deleting branch {branch} from {upstream}..");
+                this._logger.LogDeletingUpstreamBranch(branch: branch, upstream: upstream);
                 await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push ${upstream} :{branch}", cancellationToken: cancellationToken);
             }
             else
             {
-                Console.WriteLine($"Branch {branch} is not {upstream} skipping..");
+                this._logger.LogSkippingDeleteOfUpstreamBranch(branch: branch, upstream: upstream);
             }
 
             bool IsRemoteBranch(Branch candidateBranch)

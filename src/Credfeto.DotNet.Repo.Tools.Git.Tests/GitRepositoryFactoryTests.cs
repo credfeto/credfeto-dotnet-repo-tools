@@ -23,7 +23,7 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
         gitRepositoryLocator.GetWorkingDirectory(Arg.Any<string>(), Arg.Any<string>())
                             .Returns(Path.Combine(path1: this.TempFolder, path2: "scratch"));
 
-        this._gitRepositoryFactory = new GitRepositoryFactory(gitRepositoryLocator);
+        this._gitRepositoryFactory = new GitRepositoryFactory(locator: gitRepositoryLocator, this.GetTypedLogger<GitRepositoryFactory>());
     }
 
     [Fact(Skip = "Requires SSH to be setup")]

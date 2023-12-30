@@ -58,11 +58,6 @@
     <RepositoryUrl>https://github.com/credfeto/credfeto-dotnet-repo-tools</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
-    <!--    <PackageReference Include="Credfeto.Package" Version="1.10.44.293"/>-->
-    <!--    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0"/>-->
-    <!--    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0"/>-->
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>

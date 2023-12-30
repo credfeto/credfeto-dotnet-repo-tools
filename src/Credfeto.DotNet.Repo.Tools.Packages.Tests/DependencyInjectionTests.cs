@@ -33,6 +33,7 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
                        .AddMockedService<IGlobalJson>()
                        .AddMockedService<IPackageUpdater>()
                        .AddMockedService<IPackageCache>()
+                       .AddMockedService<IReleaseConfigLoader>()
                        .AddMockedService<IReleaseGeneration>()
                        .AddMockedService<ITrackingCache>()
                        .AddBulkPackageUpdater();

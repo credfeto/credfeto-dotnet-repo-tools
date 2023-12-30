@@ -13,6 +13,7 @@ using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Packages.Services.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
@@ -117,11 +118,11 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 }
                 catch (SolutionCheckFailedException exception)
                 {
-                    this._logger.LogError(exception: exception, message: "Solution check failed");
+                    this._logger.LogSolutionCheckFailed(exception: exception);
                 }
                 catch (DotNetBuildErrorException exception)
                 {
-                    this._logger.LogError(exception: exception, message: "Build failed (On repo check)");
+                    this._logger.LogBuildFailedOnRepoCheck(exception: exception);
                 }
                 finally
                 {
@@ -139,7 +140,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
         catch (ReleaseCreatedException exception)
         {
-            this._logger.LogInformation(exception: exception, message: "Release created - aborting run");
+            this._logger.LogReleaseCreatedAbortingRun(exception: exception);
             this._logger.LogInformation(exception.Message);
         }
     }
@@ -167,23 +168,23 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         document.Save(projectFileName);
 
         int updates = 0;
-        this._logger.LogInformation("[CACHE] Pre-loading cached packages");
+        this._logger.LogPreLoadingCachedPackages();
 
         foreach (PackageUpdate package in packages)
         {
-            this._logger.LogInformation($"[CACHE] Updating {package.PackageId}...");
-            PackageUpdateConfiguration config = BuildConfiguration(package);
+            this._logger.LogUpdatingCachedPackage(package.PackageId);
+            PackageUpdateConfiguration config = this.BuildConfiguration(package);
 
             IReadOnlyList<PackageVersion> updated = await this._packageUpdater.UpdateAsync(basePath: packagesFolder,
                                                                                            configuration: config,
                                                                                            packageSources: updateContext.AdditionalSources,
                                                                                            cancellationToken: cancellationToken);
 
-            this._logger.LogInformation($"[CACHE] Update {package.PackageId} Updated {updated.Count} packages");
+            this._logger.LogUpdatedCachedPackages(packageId: package.PackageId, count: updated.Count);
             updates += updated.Count;
         }
 
-        this._logger.LogInformation($"[CACHE] Total package updates: {updates}");
+        this._logger.LogUpdatedCachedPackagesTotal(updates);
     }
 
     private static XmlDocument BuildReferencedPackagesXmlDocument(IReadOnlyList<PackageVersion> allPackages)
@@ -210,14 +211,14 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
     private async ValueTask UpdateRepositoryAsync(UpdateContext updateContext, IReadOnlyList<PackageUpdate> packages, string repo, CancellationToken cancellationToken)
     {
-        this._logger.LogInformation($"Processing {repo}");
+        this._logger.LogProcessingRepo(repo);
 
         using (IGitRepository repository =
                await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
             if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
             {
-                this._logger.LogInformation("No changelog found");
+                this._logger.LogNoChangelogFound();
                 await this._trackingCache.UpdateTrackingAsync(new(Repository: repository, ChangeLogFileName: "?"),
                                                               updateContext: updateContext,
                                                               value: repository.HeadRev,
@@ -241,7 +242,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         if (!repoContext.HasDotNetFiles(out string? sourceDirectory, out IReadOnlyList<string>? solutions, out IReadOnlyList<string>? projects))
         {
-            this._logger.LogInformation("No dotnet files found");
+            this._logger.LogNoDotNetFilesFound();
             await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext,
                                                           updateContext: updateContext,
                                                           value: repoContext.Repository.HeadRev,
@@ -374,7 +375,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             return headRev;
         }
 
-        this._logger.LogInformation($"Resetting {repoContext.ClonePath} to master");
+        this._logger.LogResettingToDefault(repoContext);
         await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
         return null;
@@ -394,9 +395,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         if (builtOk)
         {
             string invalidUpdateBranch = BuildInvalidUpdateBranch(branchPrefix);
-            string defaultBranch = repoContext.Repository.GetDefaultBranch(upstream: GitConstants.Upstream);
 
-            this._logger.LogInformation($"{repoContext.ClonePath}: Committing {package.PackageId} to {defaultBranch}");
+            this._logger.LogCommittingToDefault(repoContext: repoContext, packageId: package.PackageId, version: version);
             await CommitChangeWithChangelogAsync(repoContext: repoContext, package: package, version: version, cancellationToken: cancellationToken);
             await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
             await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: invalidUpdateBranch,
@@ -411,12 +411,12 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             if (repoContext.Repository.DoesBranchExist(branchName: branchForUpdate))
             {
                 // nothing to do - may already be a PR that's being worked on
-                this._logger.LogInformation($"{repoContext.ClonePath}: Skipping commit of {package.PackageId} as branch {branchForUpdate} already exists");
+                this._logger.LogSkippingPackageCommit(repoContext: repoContext, branch: branchForUpdate, packageId: package.PackageId, version: version);
 
                 return;
             }
 
-            this._logger.LogInformation($"{repoContext.ClonePath}: Committing {package.PackageId} to {branchForUpdate}");
+            this._logger.LogCommittingToNamedBranch(repoContext: repoContext, branch: branchForUpdate, packageId: package.PackageId, version: version);
             await repoContext.Repository.CreateBranchAsync(branchName: branchForUpdate, cancellationToken: cancellationToken);
 
             await CommitChangeWithChangelogAsync(repoContext: repoContext, package: package, version: version, cancellationToken: cancellationToken);
@@ -471,7 +471,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
         catch (DotNetBuildErrorException exception)
         {
-            this._logger.LogError(exception: exception, message: "Build failed (after updating package)");
+            this._logger.LogBuildFailedAfterPackageUpdate(exception: exception);
         }
 
         return false;
@@ -482,8 +482,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                                PackageUpdate package,
                                                                                CancellationToken cancellationToken)
     {
-        this._logger.LogInformation($"* Updating {package.PackageId}...");
-        PackageUpdateConfiguration config = BuildConfiguration(package);
+        this._logger.LogUpdatingPackageId(package.PackageId);
+        PackageUpdateConfiguration config = this.BuildConfiguration(package);
 
         return await this._packageUpdater.UpdateAsync(basePath: repoContext.WorkingDirectory,
                                                       configuration: config,
@@ -491,17 +491,17 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                       cancellationToken: cancellationToken);
     }
 
-    private static PackageUpdateConfiguration BuildConfiguration(PackageUpdate package)
+    private PackageUpdateConfiguration BuildConfiguration(PackageUpdate package)
     {
         PackageMatch packageMatch = new(PackageId: package.PackageId, Prefix: !package.ExactMatch);
-        Console.WriteLine($"Including {packageMatch.PackageId} (Using Prefix match: {packageMatch.Prefix})");
+        this._logger.LogIncludingPackage(packageMatch);
 
-        IReadOnlyList<PackageMatch> excludedPackages = GetExcludedPackages(package.Exclude ?? Array.Empty<PackageExclude>());
+        IReadOnlyList<PackageMatch> excludedPackages = this.GetExcludedPackages(package.Exclude ?? Array.Empty<PackageExclude>());
 
         return new(PackageMatch: packageMatch, ExcludedPackages: excludedPackages);
     }
 
-    private static IReadOnlyList<PackageMatch> GetExcludedPackages(IReadOnlyList<PackageExclude> excludes)
+    private IReadOnlyList<PackageMatch> GetExcludedPackages(IReadOnlyList<PackageExclude> excludes)
     {
         if (excludes.Count == 0)
         {
@@ -516,7 +516,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
             excludedPackages.Add(packageMatch);
 
-            Console.WriteLine($"Excluding {packageMatch.PackageId} (Using Prefix match: {packageMatch.Prefix})");
+            this._logger.LogExcludingPackage(packageMatch);
         }
 
         return excludedPackages;
