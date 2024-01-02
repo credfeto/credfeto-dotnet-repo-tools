@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
+- Unhandled exception when resetting to main branch
 ### Changed
 - Dependencies - Updated Meziantou.Analyzer to 2.0.132
 ### Removed
