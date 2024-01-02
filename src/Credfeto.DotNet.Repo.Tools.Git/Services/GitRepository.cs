@@ -260,7 +260,7 @@ internal sealed class GitRepository : IGitRepository
         Repository repo = this.Active;
         string headCanonicalName = repo.Head.CanonicalName;
         string upstreamBranchForUpdate = BuildUpstreamBranch(upstream: upstream, branch: branchForUpdate);
-        string upstreamBranchPrefix = BuildUpstreamBranch(upstream: upstream, branch: branchForUpdate);
+        string upstreamBranchPrefix = BuildUpstreamBranch(upstream: upstream, branch: branchPrefix);
 
         IReadOnlyList<Branch> branchesToRemove = [..repo.Branches.Where(IsMatchingBranch)];
 
@@ -307,22 +307,38 @@ internal sealed class GitRepository : IGitRepository
 
         bool IsCurrentBranchByName(Branch branch)
         {
-            if (StringComparer.OrdinalIgnoreCase.Equals(x: branch.FriendlyName, y: branchForUpdate))
+            if (IsExactMatchBranchName(branch: branch, branchName: branchForUpdate))
             {
                 return true;
             }
 
-            return StringComparer.OrdinalIgnoreCase.Equals(x: branch.FriendlyName, y: upstreamBranchForUpdate) && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream);
+            return IsRemote(branch: branch, upstream: upstream) && IsExactMatchBranchName(branch: branch, branchName: upstreamBranchForUpdate) &&
+                   StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream);
         }
 
         bool IsAlternateMatchBranchByName(Branch branch)
         {
-            if (branch.FriendlyName.StartsWith(value: branchPrefix, comparisonType: StringComparison.OrdinalIgnoreCase))
+            if (IsAlternateMatchBranchByPrefix(branch: branch, branchPrefix: branchPrefix))
             {
                 return true;
             }
 
-            return branch.FriendlyName.StartsWith(value: upstreamBranchPrefix, comparisonType: StringComparison.OrdinalIgnoreCase) && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream);
+            return IsRemote(branch: branch, upstream: upstream) && IsAlternateMatchBranchByPrefix(branch: branch, branchPrefix: upstreamBranchPrefix);
+        }
+
+        static bool IsExactMatchBranchName(Branch branch, string branchName)
+        {
+            return StringComparer.OrdinalIgnoreCase.Equals(x: branch.FriendlyName, y: branchName);
+        }
+
+        static bool IsAlternateMatchBranchByPrefix(Branch branch, string branchPrefix)
+        {
+            return branch.FriendlyName.StartsWith(value: branchPrefix, comparisonType: StringComparison.OrdinalIgnoreCase);
+        }
+
+        static bool IsRemote(Branch branch, string upstream)
+        {
+            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream);
         }
     }
 
