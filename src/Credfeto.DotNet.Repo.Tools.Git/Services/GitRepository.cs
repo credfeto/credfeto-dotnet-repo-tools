@@ -273,15 +273,30 @@ internal sealed class GitRepository : IGitRepository
         {
             if (IsCurrentBranch(branch))
             {
+                this._logger.LogWarning($"* [RemoveBranchesForPrefix] Matched Current Branch exact {branch.FriendlyName} (branchPrefix: {branchPrefix}, branchForUpdate: {branchForUpdate})");
+
                 return false;
             }
 
             if (StringComparer.OrdinalIgnoreCase.Equals(x: branch.FriendlyName, y: branchForUpdate))
             {
+                this._logger.LogWarning(
+                    $"* [RemoveBranchesForPrefix] Matched Current Branch for update exact {branch.FriendlyName} (branchPrefix: {branchPrefix}, branchForUpdate: {branchForUpdate})");
+
                 return false;
             }
 
-            return branch.FriendlyName.StartsWith(value: branchPrefix, comparisonType: StringComparison.OrdinalIgnoreCase);
+            if (branch.FriendlyName.StartsWith(value: branchPrefix, comparisonType: StringComparison.OrdinalIgnoreCase))
+            {
+                this._logger.LogWarning(
+                    $"* [RemoveBranchesForPreix] Matched Current Branch for update prefix {branch.FriendlyName} (branchPrefix: {branchPrefix}, branchForUpdate: {branchForUpdate})");
+
+                return true;
+            }
+
+            this._logger.LogWarning($"* [RemoveBranchesForPrefix] No Match {branch.FriendlyName} (branchPrefix: {branchPrefix}, branchForUpdate: {branchForUpdate})");
+
+            return false;
         }
     }
 
