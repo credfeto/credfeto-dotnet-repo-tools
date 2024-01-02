@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -253,10 +254,14 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
+    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Debug logging")]
     public async ValueTask RemoveBranchesForPrefixAsync(string branchForUpdate, string branchPrefix, string upstream, CancellationToken cancellationToken)
     {
         Repository repo = this.Active;
         string headCanonicalName = repo.Head.CanonicalName;
+        string upstreamBranchForUpdate = BuildUpstreamBranch(upstream: upstream, branch: branchForUpdate);
+        string upstreamBranchPrefix = BuildUpstreamBranch(upstream: upstream, branch: branchForUpdate);
+
         IReadOnlyList<Branch> branchesToRemove = [..repo.Branches.Where(IsMatchingBranch)];
 
         foreach (Branch branch in branchesToRemove)
@@ -273,30 +278,51 @@ internal sealed class GitRepository : IGitRepository
         {
             if (IsCurrentBranch(branch))
             {
-                this._logger.LogWarning($"* [RemoveBranchesForPrefix] Matched Current Branch exact {branch.FriendlyName} (branchPrefix: {branchPrefix}, branchForUpdate: {branchForUpdate})");
+                this._logger.LogWarning(
+                    $"* [RemoveBranchesForPrefix] Matched (skip) Current Branch exact {branch.FriendlyName} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})");
 
                 return false;
             }
 
-            if (StringComparer.OrdinalIgnoreCase.Equals(x: branch.FriendlyName, y: branchForUpdate))
+            if (IsCurrentBranchByName(branch))
             {
                 this._logger.LogWarning(
-                    $"* [RemoveBranchesForPrefix] Matched Current Branch for update exact {branch.FriendlyName} (branchPrefix: {branchPrefix}, branchForUpdate: {branchForUpdate})");
+                    $"* [RemoveBranchesForPrefix] Matched (Skip) Current Branch for update exact {branch.FriendlyName} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})");
 
                 return false;
             }
 
-            if (branch.FriendlyName.StartsWith(value: branchPrefix, comparisonType: StringComparison.OrdinalIgnoreCase))
+            if (IsAlternateMatchBranchByName(branch))
             {
                 this._logger.LogWarning(
-                    $"* [RemoveBranchesForPreix] Matched Current Branch for update prefix {branch.FriendlyName} (branchPrefix: {branchPrefix}, branchForUpdate: {branchForUpdate})");
+                    $"* [RemoveBranchesForPrefix] Matched for update prefix {branch.FriendlyName} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})");
 
                 return true;
             }
 
-            this._logger.LogWarning($"* [RemoveBranchesForPrefix] No Match {branch.FriendlyName} (branchPrefix: {branchPrefix}, branchForUpdate: {branchForUpdate})");
+            this._logger.LogWarning($"* [RemoveBranchesForPrefix] No Match {branch.FriendlyName} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})");
 
             return false;
+        }
+
+        bool IsCurrentBranchByName(Branch branch)
+        {
+            if (StringComparer.OrdinalIgnoreCase.Equals(x: branch.FriendlyName, y: branchForUpdate))
+            {
+                return true;
+            }
+
+            return StringComparer.OrdinalIgnoreCase.Equals(x: branch.FriendlyName, y: upstreamBranchForUpdate) && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream);
+        }
+
+        bool IsAlternateMatchBranchByName(Branch branch)
+        {
+            if (branch.FriendlyName.StartsWith(value: branchPrefix, comparisonType: StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return branch.FriendlyName.StartsWith(value: upstreamBranchPrefix, comparisonType: StringComparison.OrdinalIgnoreCase) && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream);
         }
     }
 
@@ -319,6 +345,11 @@ internal sealed class GitRepository : IGitRepository
             return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) &&
                    branch.UpstreamBranchCanonicalName.StartsWith(value: prefix, comparisonType: StringComparison.Ordinal);
         }
+    }
+
+    private static string BuildUpstreamBranch(string upstream, string branch)
+    {
+        return string.Concat(str0: upstream, str1: "/", str2: branch);
     }
 
     public async ValueTask CheckoutAsync(string branchName, CancellationToken cancellationToken)
@@ -451,7 +482,7 @@ internal sealed class GitRepository : IGitRepository
 
             await this.FetchRemoteAsync(this.GetRemote(upstream), cancellationToken: cancellationToken);
 
-            string upstreamBranch = string.Concat(str0: upstream, str1: "/", str2: branch);
+            string upstreamBranch = BuildUpstreamBranch(upstream: upstream, branch: branch);
 
             if (this.Active.Branches.Any(IsRemoteBranch))
             {
