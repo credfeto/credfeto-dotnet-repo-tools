@@ -52,6 +52,13 @@ internal sealed class Commands
                                                        additionalNugetSources: nugetSources,
                                                        repositories: repositories,
                                                        cancellationToken: this._cancellationToken);
+
+        this.Done();
+    }
+
+    private void Done()
+    {
+        this._logger.LogInformation("Done");
     }
 
     [Command("update-template", Description = "Update repos from template in all repositories")]
@@ -67,6 +74,8 @@ internal sealed class Commands
             await this.LoadRepositoriesAsync(repositoriesFileName: repositoriesFileName, templateRepository: templateRepository, cancellationToken: this._cancellationToken);
 
         this.Dump(repositories);
+
+        this.Done();
     }
 
     private async ValueTask<IReadOnlyList<string>> LoadRepositoriesAsync(string repositoriesFileName, string templateRepository, CancellationToken cancellationToken)
@@ -96,6 +105,8 @@ internal sealed class Commands
             await this.LoadRepositoriesAsync(repositoriesFileName: repositoriesFileName, templateRepository: templateRepository, cancellationToken: this._cancellationToken);
 
         this.Dump(repositories);
+
+        this.Done();
     }
 
     private void Dump(IReadOnlyList<string> repositories)
