@@ -266,7 +266,9 @@ internal sealed class GitRepository : IGitRepository
 
         foreach (Branch branch in branchesToRemove)
         {
-            await this.DeleteBranchAsync(branch: branch.FriendlyName, upstream: upstream, cancellationToken: cancellationToken);
+            string branchName = NormaliseBranchName(branch);
+
+            await this.DeleteBranchAsync(branch: branchName, upstream: upstream, cancellationToken: cancellationToken);
         }
 
         bool IsCurrentBranch(Branch branch)
@@ -339,6 +341,22 @@ internal sealed class GitRepository : IGitRepository
         static bool IsRemote(Branch branch, string upstream)
         {
             return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream);
+        }
+
+        string NormaliseBranchName(Branch branch)
+        {
+            string branchName;
+
+            if (branch.IsRemote && branch.FriendlyName.StartsWith(upstream + "/", comparisonType: StringComparison.Ordinal))
+            {
+                branchName = branch.FriendlyName.Substring(upstream.Length + 1);
+            }
+            else
+            {
+                branchName = branch.FriendlyName;
+            }
+
+            return branchName;
         }
     }
 
