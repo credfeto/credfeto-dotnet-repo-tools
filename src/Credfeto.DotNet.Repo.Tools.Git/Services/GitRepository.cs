@@ -16,7 +16,6 @@ namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 [DebuggerDisplay("{ClonePath}: {WorkingDirectory}")]
 internal sealed class GitRepository : IGitRepository
 {
-    private static readonly CheckoutOptions GitCheckoutOptions = new() { CheckoutModifiers = CheckoutModifiers.Force };
     private readonly ILogger _logger;
 
     private Repository? _repo;
@@ -46,16 +45,15 @@ internal sealed class GitRepository : IGitRepository
 
     public async ValueTask ResetToMasterAsync(string upstream, CancellationToken cancellationToken)
     {
-        Remote remote = this.GetRemote(upstream);
-
         string defaultBranch = this.GetDefaultBranch(upstream: upstream);
-        await this.FetchRemoteAsync(remote: remote, cancellationToken: cancellationToken);
+
+        await this.FetchRemoteAsync(upstream: upstream, cancellationToken: cancellationToken);
 
         this.Active.Reset(resetMode: ResetMode.Hard, commit: this.Active.Head.Tip);
 
         await this.CleanRepoAsync(cancellationToken: cancellationToken);
 
-        this.Active.Checkout(tree: this.Active.Branches[defaultBranch].Tip.Tree, paths: null, options: GitCheckoutOptions);
+        await this.CheckoutAsync(branchName: defaultBranch, cancellationToken: cancellationToken);
 
         this.Active.Reset(resetMode: ResetMode.Hard, commit: this.Active.Head.Tip);
 
@@ -65,7 +63,7 @@ internal sealed class GitRepository : IGitRepository
         // & git -C $repoPath reset --hard $upstreamBranch 2>&1 | Out-Null
         this.Active.Reset(resetMode: ResetMode.Hard, commit: this.Active.Branches[upstream + "/" + defaultBranch].Tip);
 
-        await this.FetchRemoteAsync(remote: remote, cancellationToken: cancellationToken);
+        await this.FetchRemoteAsync(upstream: upstream, cancellationToken: cancellationToken);
 
         // & git -C $repoPath prune 2>&1 | Out-Null
         await this.PruneAsync(cancellationToken: cancellationToken);
@@ -102,7 +100,18 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "add -A", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "add -A", cancellationToken: cancellationToken);
+
+            if (exitCode != 0)
+            {
+                this._logger.LogWarning($"Add (all) exit code: {exitCode}");
+
+                foreach (string line in result)
+                {
+                    this._logger.LogWarning(line);
+                }
+            }
+
             await this.CommitWithMessageAsync(message: message, cancellationToken: cancellationToken);
         }
         finally
@@ -127,8 +136,7 @@ internal sealed class GitRepository : IGitRepository
 
         bool IsHeadBranch(Branch branch)
         {
-            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) &&
-                   StringComparer.Ordinal.Equals(x: branch.UpstreamBranchCanonicalName, y: "refs/heads/HEAD");
+            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) && StringComparer.Ordinal.Equals(x: branch.UpstreamBranchCanonicalName, y: "refs/heads/HEAD");
         }
     }
 
@@ -144,7 +152,17 @@ internal sealed class GitRepository : IGitRepository
         {
             foreach (string file in files)
             {
-                await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"add {file}", cancellationToken: cancellationToken);
+                (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"add {file}", cancellationToken: cancellationToken);
+
+                if (exitCode != 0)
+                {
+                    this._logger.LogWarning($"Add {file} exit code: {exitCode}");
+
+                    foreach (string line in result)
+                    {
+                        this._logger.LogWarning(line);
+                    }
+                }
             }
 
             await this.CommitWithMessageAsync(message: message, cancellationToken: cancellationToken);
@@ -159,7 +177,18 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "push", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "push", cancellationToken: cancellationToken);
+
+            if (exitCode != 0)
+            {
+                this._logger.LogWarning($"Push exit code: {exitCode}");
+
+                foreach (string line in result)
+                {
+                    this._logger.LogWarning(line);
+                }
+            }
+
             this._logger.LogPushedBranch(this.Active.Refs.Head.CanonicalName);
         }
         finally
@@ -172,7 +201,18 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push --set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push --set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
+
+            if (exitCode != 0)
+            {
+                this._logger.LogWarning($"Push upstream exit code: {exitCode}");
+
+                foreach (string line in result)
+                {
+                    this._logger.LogWarning(line);
+                }
+            }
+
             this._logger.LogPushedBranchUpstream(canonicalName: this.Active.Refs.Head.CanonicalName, upstream: upstream, branchName: branchName);
         }
         finally
@@ -195,7 +235,17 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"checkout -b {branchName}", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"checkout -b {branchName}", cancellationToken: cancellationToken);
+
+            if (exitCode != 0)
+            {
+                this._logger.LogWarning($"Create Branch exit code: {exitCode}");
+
+                foreach (string line in result)
+                {
+                    this._logger.LogWarning(line);
+                }
+            }
         }
         finally
         {
@@ -256,6 +306,35 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
+    public async ValueTask CheckoutAsync(string branchName, CancellationToken cancellationToken)
+    {
+        try
+        {
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"checkout {branchName}", cancellationToken: cancellationToken);
+
+            if (exitCode != 0)
+            {
+                this._logger.LogWarning($"Checkout branch exit code: {exitCode}");
+
+                foreach (string line in result)
+                {
+                    this._logger.LogWarning(line);
+                }
+            }
+        }
+        finally
+        {
+            this.ResetActiveRepoLink();
+        }
+    }
+
+    private ValueTask FetchRemoteAsync(string upstream, in CancellationToken cancellationToken)
+    {
+        Remote remote = this.GetRemote(upstream);
+
+        return this.FetchRemoteAsync(remote: remote, cancellationToken: cancellationToken);
+    }
+
     private void ResetActiveRepoLink()
     {
         this._repo?.Dispose();
@@ -271,7 +350,17 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "prune", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "prune", cancellationToken: cancellationToken);
+
+            if (exitCode != 0)
+            {
+                this._logger.LogWarning($"Prune exit code: {exitCode}");
+
+                foreach (string line in result)
+                {
+                    this._logger.LogWarning(line);
+                }
+            }
         }
         finally
         {
@@ -283,7 +372,17 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "clean -f -x -d", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "clean -f -x -d", cancellationToken: cancellationToken);
+
+            if (exitCode != 0)
+            {
+                this._logger.LogWarning($"Clean exit code: {exitCode}");
+
+                foreach (string line in result)
+                {
+                    this._logger.LogWarning(line);
+                }
+            }
         }
         finally
         {
@@ -291,11 +390,22 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
-    private ValueTask<(string[] Output, int ExitCode)> FetchRemoteAsync(Remote remote, in CancellationToken cancellationToken)
+    private async ValueTask FetchRemoteAsync(Remote remote, CancellationToken cancellationToken)
     {
         try
         {
-            return GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"fetch --prune --recurse-submodules {remote.Name}", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) =
+                await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"fetch --prune --recurse-submodules {remote.Name}", cancellationToken: cancellationToken);
+
+            if (exitCode != 0)
+            {
+                this._logger.LogWarning($"Fetch exit code: {exitCode}");
+
+                foreach (string line in result)
+                {
+                    this._logger.LogWarning(line);
+                }
+            }
         }
         finally
         {
@@ -322,9 +432,7 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            this._logger.LogDeletingLocalBranch(branch);
-            await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"branch -D {branch}", cancellationToken: cancellationToken);
-            this.ResetActiveRepoLink();
+            await this.DeleteLocalBranchAsync(branch: branch, cancellationToken: cancellationToken);
 
             await this.FetchRemoteAsync(this.GetRemote(upstream), cancellationToken: cancellationToken);
 
@@ -332,8 +440,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (this.Active.Branches.Any(IsRemoteBranch))
             {
-                this._logger.LogDeletingUpstreamBranch(branch: branch, upstream: upstream);
-                await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push ${upstream} :{branch}", cancellationToken: cancellationToken);
+                await this.DeleteRemoteBranchAsync(branch: branch, upstream: upstream, cancellationToken: cancellationToken);
             }
             else
             {
@@ -342,8 +449,7 @@ internal sealed class GitRepository : IGitRepository
 
             bool IsRemoteBranch(Branch candidateBranch)
             {
-                if (candidateBranch.IsRemote && StringComparer.Ordinal.Equals(x: candidateBranch.RemoteName, y: upstream) &&
-                    StringComparer.Ordinal.Equals(x: candidateBranch.FriendlyName, y: branch))
+                if (candidateBranch.IsRemote && StringComparer.Ordinal.Equals(x: candidateBranch.RemoteName, y: upstream) && StringComparer.Ordinal.Equals(x: candidateBranch.FriendlyName, y: branch))
 
                 {
                     return true;
@@ -355,6 +461,52 @@ internal sealed class GitRepository : IGitRepository
                 }
 
                 return false;
+            }
+        }
+        finally
+        {
+            this.ResetActiveRepoLink();
+        }
+    }
+
+    private async Task DeleteRemoteBranchAsync(string branch, string upstream, CancellationToken cancellationToken)
+    {
+        try
+        {
+            this._logger.LogDeletingUpstreamBranch(branch: branch, upstream: upstream);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push ${upstream} :{branch}", cancellationToken: cancellationToken);
+
+            if (exitCode != 0)
+            {
+                this._logger.LogWarning($"Delete remote branch exit code: {exitCode}");
+
+                foreach (string line in result)
+                {
+                    this._logger.LogWarning(line);
+                }
+            }
+        }
+        finally
+        {
+            this.ResetActiveRepoLink();
+        }
+    }
+
+    private async Task DeleteLocalBranchAsync(string branch, CancellationToken cancellationToken)
+    {
+        try
+        {
+            this._logger.LogDeletingLocalBranch(branch);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"branch -D {branch}", cancellationToken: cancellationToken);
+
+            if (exitCode != 0)
+            {
+                this._logger.LogWarning($"Delete local branch exit code: {exitCode}");
+
+                foreach (string line in result)
+                {
+                    this._logger.LogWarning(line);
+                }
             }
         }
         finally
