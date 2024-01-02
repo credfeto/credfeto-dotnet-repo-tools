@@ -536,7 +536,7 @@ internal sealed class GitRepository : IGitRepository
         try
         {
             this._logger.LogDeletingUpstreamBranch(branch: branch, upstream: upstream);
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push ${upstream} :{branch}", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push ${upstream} \":{branch}\"", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
