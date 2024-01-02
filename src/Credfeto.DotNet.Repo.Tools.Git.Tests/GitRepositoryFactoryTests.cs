@@ -32,7 +32,7 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
         return this.CloneTestCommonAsync(uri: Repositories.GitHubSsh, cancellationToken: CancellationToken.None);
     }
 
-    [Fact]
+    [Fact(Skip = "Requires SSH to be setup")]
     public async Task CreateBranchSshAsync()
     {
         CancellationToken cancellationToken = CancellationToken.None;
