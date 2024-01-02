@@ -278,29 +278,29 @@ internal sealed class GitRepository : IGitRepository
         {
             if (IsCurrentBranch(branch))
             {
-                this._logger.LogWarning(
-                    $"* [RemoveBranchesForPrefix] Matched (skip) Current Branch exact {branch.FriendlyName} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})");
+                // this._logger.LogWarning(
+                //     $"* [RemoveBranchesForPrefix] Matched (skip) Current Branch exact {branch.FriendlyName} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})");
 
                 return false;
             }
 
             if (IsCurrentBranchByName(branch))
             {
-                this._logger.LogWarning(
-                    $"* [RemoveBranchesForPrefix] Matched (Skip) Current Branch for update exact {branch.FriendlyName} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})");
+                // this._logger.LogWarning(
+                //     $"* [RemoveBranchesForPrefix] Matched (Skip) Current Branch for update exact {branch.FriendlyName} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})");
 
                 return false;
             }
 
             if (IsAlternateMatchBranchByName(branch))
             {
-                this._logger.LogWarning(
-                    $"* [RemoveBranchesForPrefix] Matched for update prefix {branch.FriendlyName} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})");
+                // this._logger.LogWarning(
+                //     $"* [RemoveBranchesForPrefix] Matched for update prefix {branch.FriendlyName} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})");
 
                 return true;
             }
 
-            this._logger.LogWarning($"* [RemoveBranchesForPrefix] No Match {branch.FriendlyName} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})");
+            // this._logger.LogWarning($"* [RemoveBranchesForPrefix] No Match {branch.FriendlyName} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})");
 
             return false;
         }
