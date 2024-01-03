@@ -266,7 +266,7 @@ internal sealed class GitRepository : IGitRepository
 
         foreach (Branch branch in branchesToRemove)
         {
-            string branchName = NormaliseBranchName(branch);
+            string branchName = NormaliseBranchName(branch: branch, upstream: upstream);
 
             await this.DeleteBranchAsync(branch: branchName, upstream: upstream, cancellationToken: cancellationToken);
         }
