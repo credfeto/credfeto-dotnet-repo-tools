@@ -41,8 +41,7 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
         {
             this.Output.WriteLine($"Repo: {repo.ClonePath}");
 
-            string newBranch = $"delete-me/{Guid.NewGuid()}".Replace(oldValue: "-", newValue: string.Empty, comparisonType: StringComparison.Ordinal)
-                                                            .ToLowerInvariant();
+            string newBranch = GenerateDeleteMeBranchName();
 
             if (repo.DoesBranchExist(branchName: newBranch))
             {
@@ -61,6 +60,19 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
 
             Assert.False(repo.DoesBranchExist(branchName: newBranch), userMessage: "Branch should not exist");
         }
+    }
+
+    private static string GenerateDeleteMeBranchName()
+    {
+        return $"delete-me/{GenerateUniqueBranchId()}";
+    }
+
+    private static string GenerateUniqueBranchId()
+    {
+        return Guid.NewGuid()
+                   .ToString()
+                   .Replace(oldValue: "-", newValue: string.Empty, comparisonType: StringComparison.Ordinal)
+                   .ToLowerInvariant();
     }
 
     [Fact]

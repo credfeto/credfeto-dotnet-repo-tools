@@ -137,7 +137,7 @@ internal sealed class GitRepository : IGitRepository
 
         bool IsHeadBranch(Branch branch)
         {
-            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) && StringComparer.Ordinal.Equals(x: branch.UpstreamBranchCanonicalName, y: "refs/heads/HEAD");
+            return IsRemote(branch: branch, upstream: upstream) && StringComparer.Ordinal.Equals(x: branch.UpstreamBranchCanonicalName, y: "refs/heads/HEAD");
         }
     }
 
@@ -327,37 +327,6 @@ internal sealed class GitRepository : IGitRepository
 
             return IsRemote(branch: branch, upstream: upstream) && IsAlternateMatchBranchByPrefix(branch: branch, branchPrefix: upstreamBranchPrefix);
         }
-
-        static bool IsExactMatchBranchName(Branch branch, string branchName)
-        {
-            return StringComparer.OrdinalIgnoreCase.Equals(x: branch.FriendlyName, y: branchName);
-        }
-
-        static bool IsAlternateMatchBranchByPrefix(Branch branch, string branchPrefix)
-        {
-            return branch.FriendlyName.StartsWith(value: branchPrefix, comparisonType: StringComparison.OrdinalIgnoreCase);
-        }
-
-        static bool IsRemote(Branch branch, string upstream)
-        {
-            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream);
-        }
-
-        string NormaliseBranchName(Branch branch)
-        {
-            string branchName;
-
-            if (branch.IsRemote && branch.FriendlyName.StartsWith(upstream + "/", comparisonType: StringComparison.Ordinal))
-            {
-                branchName = branch.FriendlyName.Substring(upstream.Length + 1);
-            }
-            else
-            {
-                branchName = branch.FriendlyName;
-            }
-
-            return branchName;
-        }
     }
 
     public DateTimeOffset GetLastCommitDate()
@@ -376,9 +345,30 @@ internal sealed class GitRepository : IGitRepository
 
         bool IsRemoteBranch(Branch branch)
         {
-            return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream) &&
-                   branch.UpstreamBranchCanonicalName.StartsWith(value: prefix, comparisonType: StringComparison.Ordinal);
+            return IsRemote(branch: branch, upstream: upstream) && branch.UpstreamBranchCanonicalName.StartsWith(value: prefix, comparisonType: StringComparison.Ordinal);
         }
+    }
+
+    private static bool IsExactMatchBranchName(Branch branch, string branchName)
+    {
+        return StringComparer.OrdinalIgnoreCase.Equals(x: branch.FriendlyName, y: branchName);
+    }
+
+    private static bool IsAlternateMatchBranchByPrefix(Branch branch, string branchPrefix)
+    {
+        return branch.FriendlyName.StartsWith(value: branchPrefix, comparisonType: StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsRemote(Branch branch, string upstream)
+    {
+        return branch.IsRemote && StringComparer.Ordinal.Equals(x: branch.RemoteName, y: upstream);
+    }
+
+    private static string NormaliseBranchName(Branch branch, string upstream)
+    {
+        return IsRemote(branch: branch, upstream: upstream) && branch.FriendlyName.StartsWith(upstream + "/", comparisonType: StringComparison.Ordinal)
+            ? branch.FriendlyName.Substring(upstream.Length + 1)
+            : branch.FriendlyName;
     }
 
     private static string BuildUpstreamBranch(string upstream, string branch)
@@ -512,7 +502,10 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            await this.DeleteLocalBranchAsync(branch: branch, cancellationToken: cancellationToken);
+            if (this.DoesBranchExist(branch))
+            {
+                await this.DeleteLocalBranchAsync(branch: branch, cancellationToken: cancellationToken);
+            }
 
             await this.FetchRemoteAsync(this.GetRemote(upstream), cancellationToken: cancellationToken);
 
@@ -529,8 +522,7 @@ internal sealed class GitRepository : IGitRepository
 
             bool IsRemoteBranch(Branch candidateBranch)
             {
-                if (candidateBranch.IsRemote && StringComparer.Ordinal.Equals(x: candidateBranch.RemoteName, y: upstream) && StringComparer.Ordinal.Equals(x: candidateBranch.FriendlyName, y: branch))
-
+                if (IsRemote(branch: candidateBranch, upstream: upstream) && StringComparer.Ordinal.Equals(x: candidateBranch.FriendlyName, y: branch))
                 {
                     return true;
                 }
@@ -554,7 +546,7 @@ internal sealed class GitRepository : IGitRepository
         try
         {
             this._logger.LogDeletingUpstreamBranch(branch: branch, upstream: upstream);
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push ${upstream} \":{branch}\"", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push {upstream} \":{branch}\"", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -564,6 +556,9 @@ internal sealed class GitRepository : IGitRepository
                 {
                     this._logger.LogWarning(line);
                 }
+
+                // TODO: specific exception for branch deletion
+                throw new GitException($"Could not delete remote branch {branch}");
             }
         }
         finally
@@ -587,6 +582,9 @@ internal sealed class GitRepository : IGitRepository
                 {
                     this._logger.LogWarning(line);
                 }
+
+                // TODO: specific exception for branch deletion
+                throw new GitException($"Could not delete local branch {branch}");
             }
         }
         finally
