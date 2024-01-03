@@ -37,7 +37,8 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
     {
         CancellationToken cancellationToken = CancellationToken.None;
 
-        using (IGitRepository repo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: Repositories.GitHubSsh, cancellationToken: cancellationToken))
+        using (IGitRepository repo =
+               await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: Repositories.GitHubSsh, cancellationToken: cancellationToken))
         {
             this.Output.WriteLine($"Repo: {repo.ClonePath}");
 
@@ -54,7 +55,10 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
 
             await repo.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
-            await repo.RemoveBranchesForPrefixAsync(branchForUpdate: "depends/delete-me", branchPrefix: "depends/", upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+            await repo.RemoveBranchesForPrefixAsync(branchForUpdate: "depends/delete-me",
+                                                    branchPrefix: "depends/",
+                                                    upstream: GitConstants.Upstream,
+                                                    cancellationToken: cancellationToken);
 
             repo.RemoveAllLocalBranches();
 
