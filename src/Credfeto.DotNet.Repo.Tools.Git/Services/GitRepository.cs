@@ -50,19 +50,19 @@ internal sealed class GitRepository : IGitRepository
 
         await this.FetchRemoteAsync(upstream: upstream, cancellationToken: cancellationToken);
 
-        this.Active.Reset(resetMode: ResetMode.Hard, commit: this.Active.Head.Tip);
+        await this.ResetHeadHardAsync(cancellationToken);
 
         await this.CleanRepoAsync(cancellationToken: cancellationToken);
 
         await this.CheckoutAsync(branchName: defaultBranch, cancellationToken: cancellationToken);
 
-        this.Active.Reset(resetMode: ResetMode.Hard, commit: this.Active.Head.Tip);
+        await this.ResetHeadHardAsync(cancellationToken);
 
         await this.CleanRepoAsync(cancellationToken: cancellationToken);
 
         // # NOTE Loses all local commits on master
         // & git -C $repoPath reset --hard $upstreamBranch 2>&1 | Out-Null
-        this.Active.Reset(resetMode: ResetMode.Hard, commit: this.Active.Branches[upstream + "/" + defaultBranch].Tip);
+        await this.ResetUpstreamHardAsync(upstream: upstream, cancellationToken: cancellationToken, branch: defaultBranch);
 
         await this.FetchRemoteAsync(upstream: upstream, cancellationToken: cancellationToken);
 
@@ -105,12 +105,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this._logger.LogWarning($"Add (all) exit code: {exitCode}");
-
-                foreach (string line in result)
-                {
-                    this._logger.LogWarning(line);
-                }
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Add (all)");
             }
 
             await this.CommitWithMessageAsync(message: message, cancellationToken: cancellationToken);
@@ -157,12 +152,7 @@ internal sealed class GitRepository : IGitRepository
 
                 if (exitCode != 0)
                 {
-                    this._logger.LogWarning($"Add {file} exit code: {exitCode}");
-
-                    foreach (string line in result)
-                    {
-                        this._logger.LogWarning(line);
-                    }
+                    this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Add {file}");
                 }
             }
 
@@ -182,12 +172,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this._logger.LogWarning($"Push exit code: {exitCode}");
-
-                foreach (string line in result)
-                {
-                    this._logger.LogWarning(line);
-                }
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Push");
             }
 
             this._logger.LogPushedBranch(this.Active.Refs.Head.CanonicalName);
@@ -202,17 +187,11 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            (string[] result, int exitCode) =
-                await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push --set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push --set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
-                this._logger.LogWarning($"Push upstream exit code: {exitCode}");
-
-                foreach (string line in result)
-                {
-                    this._logger.LogWarning(line);
-                }
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Push");
             }
 
             this._logger.LogPushedBranchUpstream(canonicalName: this.Active.Refs.Head.CanonicalName, upstream: upstream, branchName: branchName);
@@ -241,12 +220,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this._logger.LogWarning($"Create Branch exit code: {exitCode}");
-
-                foreach (string line in result)
-                {
-                    this._logger.LogWarning(line);
-                }
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Create Branch {branchName}");
             }
         }
         finally
@@ -350,6 +324,42 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
+    private async Task ResetUpstreamHardAsync(string upstream, string branch, CancellationToken cancellationToken)
+    {
+        string branchName = BuildUpstreamBranch(upstream: upstream, branch: branch);
+
+        try
+        {
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"reset {branchName} --hard", cancellationToken: cancellationToken);
+
+            if (exitCode != 0)
+            {
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Reset {branchName} --hard");
+            }
+        }
+        finally
+        {
+            this.ResetActiveRepoLink();
+        }
+    }
+
+    private async Task ResetHeadHardAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "reset HEAD --hard", cancellationToken: cancellationToken);
+
+            if (exitCode != 0)
+            {
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Reset HEAD --hard");
+            }
+        }
+        finally
+        {
+            this.ResetActiveRepoLink();
+        }
+    }
+
     private static bool IsExactMatchBranchName(Branch branch, string branchName)
     {
         return StringComparer.OrdinalIgnoreCase.Equals(x: branch.FriendlyName, y: branchName);
@@ -385,12 +395,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this._logger.LogWarning($"Checkout branch exit code: {exitCode}");
-
-                foreach (string line in result)
-                {
-                    this._logger.LogWarning(line);
-                }
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Checkout {branchName}");
             }
         }
         finally
@@ -425,12 +430,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this._logger.LogWarning($"Prune exit code: {exitCode}");
-
-                foreach (string line in result)
-                {
-                    this._logger.LogWarning(line);
-                }
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Prune");
             }
         }
         finally
@@ -447,12 +447,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this._logger.LogWarning($"Clean exit code: {exitCode}");
-
-                foreach (string line in result)
-                {
-                    this._logger.LogWarning(line);
-                }
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Clean");
             }
         }
         finally
@@ -470,12 +465,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this._logger.LogWarning($"Fetch exit code: {exitCode}");
-
-                foreach (string line in result)
-                {
-                    this._logger.LogWarning(line);
-                }
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Fetch {remote.Name}");
             }
         }
         finally
@@ -490,12 +480,7 @@ internal sealed class GitRepository : IGitRepository
 
         if (exitCode != 0)
         {
-            this._logger.LogWarning($"Commit exit code: {exitCode}");
-
-            foreach (string line in result)
-            {
-                this._logger.LogWarning(line);
-            }
+            this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Commit");
         }
     }
 
@@ -547,17 +532,11 @@ internal sealed class GitRepository : IGitRepository
         try
         {
             this._logger.LogDeletingUpstreamBranch(branch: branch, upstream: upstream);
-            (string[] result, int exitCode) =
-                await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push {upstream} \":{branch}\"", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push {upstream} \":{branch}\"", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
-                this._logger.LogWarning($"Delete remote branch exit code: {exitCode}");
-
-                foreach (string line in result)
-                {
-                    this._logger.LogWarning(line);
-                }
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Delete remote branch");
 
                 // TODO: specific exception for branch deletion
                 throw new GitException($"Could not delete remote branch {branch}");
@@ -566,6 +545,16 @@ internal sealed class GitRepository : IGitRepository
         finally
         {
             this.ResetActiveRepoLink();
+        }
+    }
+
+    private void DumpExitCodeResult(IReadOnlyList<string> result, int exitCode, string prefix)
+    {
+        this._logger.LogWarning($"{prefix} exit code: {exitCode}");
+
+        foreach (string line in result)
+        {
+            this._logger.LogWarning(line);
         }
     }
 
@@ -578,12 +567,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this._logger.LogWarning($"Delete local branch exit code: {exitCode}");
-
-                foreach (string line in result)
-                {
-                    this._logger.LogWarning(line);
-                }
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Delete local branch {branch}");
 
                 // TODO: specific exception for branch deletion
                 throw new GitException($"Could not delete local branch {branch}");
