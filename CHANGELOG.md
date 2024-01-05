@@ -8,8 +8,8 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
+- Rebuild cached packages list before processing to ensure the latest of all packages is available
 ### Changed
-
 - Dependencies - Updated Credfeto.Package to 1.10.45.303
 ### Removed
 ### Deployment Changes

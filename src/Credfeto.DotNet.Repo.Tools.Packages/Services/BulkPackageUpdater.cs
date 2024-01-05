@@ -155,6 +155,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             return;
         }
 
+
         string packagesFolder = Path.Combine(path1: workFolder, path2: "_Packages");
 
         if (!Directory.Exists(packagesFolder))
@@ -166,6 +167,10 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         string projectFileName = Path.Combine(path1: packagesFolder, path2: "Packages.csproj");
         document.Save(projectFileName);
+
+        // Clear the cached packages as about to use the previously cached list to build a new set of versions
+        // This is to ensure that the latest versions are used when running against the real list of repos.
+        this._packageCache.Reset();
 
         int updates = 0;
         this._logger.LogPreLoadingCachedPackages();
@@ -477,7 +482,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return false;
     }
 
-    private async ValueTask<IReadOnlyList<PackageVersion>> UpdatePackagesAsync(UpdateContext updateContext,
+    private ValueTask<IReadOnlyList<PackageVersion>> UpdatePackagesAsync(UpdateContext updateContext,
                                                                                RepoContext repoContext,
                                                                                PackageUpdate package,
                                                                                CancellationToken cancellationToken)
@@ -485,7 +490,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         this._logger.LogUpdatingPackageId(package.PackageId);
         PackageUpdateConfiguration config = this.BuildConfiguration(package);
 
-        return await this._packageUpdater.UpdateAsync(basePath: repoContext.WorkingDirectory,
+        return this._packageUpdater.UpdateAsync(basePath: repoContext.WorkingDirectory,
                                                       configuration: config,
                                                       packageSources: updateContext.AdditionalSources,
                                                       cancellationToken: cancellationToken);
