@@ -313,10 +313,12 @@ internal sealed class GitRepository : IGitRepository
     {
         const string prefix = "refs/heads/";
 
-        return this.Active.Branches.Where(IsRemoteBranch)
-                   .Select(b => b.UpstreamBranchCanonicalName.Substring(prefix.Length))
-                   .Where(b => !StringComparer.Ordinal.Equals(x: b, y: "HEAD"))
-                   .ToArray();
+        return
+        [
+            ..this.Active.Branches.Where(IsRemoteBranch)
+                  .Select(b => b.UpstreamBranchCanonicalName.Substring(prefix.Length))
+                  .Where(b => !StringComparer.Ordinal.Equals(x: b, y: "HEAD"))
+        ];
 
         bool IsRemoteBranch(Branch branch)
         {

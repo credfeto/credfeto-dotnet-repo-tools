@@ -58,8 +58,10 @@ public sealed class GitRepositoryListLoader : IGitRepositoryListLoader
 
     private static IReadOnlyList<string> GetRepos(IEnumerable<string> lines)
     {
-        return lines.Where(l => !string.IsNullOrWhiteSpace(l))
-                    .Select(l => l.Trim())
-                    .ToArray();
+        return
+        [
+            ..lines.Where(l => !string.IsNullOrWhiteSpace(l))
+                   .Select(l => l.Trim())
+        ];
     }
 }

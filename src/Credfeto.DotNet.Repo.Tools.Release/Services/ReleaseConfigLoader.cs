@@ -38,9 +38,8 @@ public sealed class ReleaseConfigLoader : IReleaseConfigLoader
         await using (Stream result = await httpClient.GetStreamAsync(requestUri: uri, cancellationToken: cancellationToken))
         {
             ReleaseConfiguration releaseConfiguration =
-                await JsonSerializer.DeserializeAsync(utf8Json: result,
-                                                      jsonTypeInfo: ReleaseConfigSerializationContext.Default.ReleaseConfiguration,
-                                                      cancellationToken: cancellationToken) ?? InvalidSettings();
+                await JsonSerializer.DeserializeAsync(utf8Json: result, jsonTypeInfo: ReleaseConfigSerializationContext.Default.ReleaseConfiguration, cancellationToken: cancellationToken) ??
+                InvalidSettings();
 
             return ToConfig(releaseConfiguration);
         }
@@ -55,8 +54,7 @@ public sealed class ReleaseConfigLoader : IReleaseConfigLoader
     {
         byte[] content = await File.ReadAllBytesAsync(path: filename, cancellationToken: cancellationToken);
 
-        ReleaseConfiguration releaseConfiguration = JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: ReleaseConfigSerializationContext.Default.ReleaseConfiguration) ??
-                                                    InvalidSettings();
+        ReleaseConfiguration releaseConfiguration = JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: ReleaseConfigSerializationContext.Default.ReleaseConfiguration) ?? InvalidSettings();
 
         return ToConfig(releaseConfiguration);
     }
@@ -79,8 +77,10 @@ public sealed class ReleaseConfigLoader : IReleaseConfigLoader
 
     private static IReadOnlyList<RepoMatch> ToConfig(IReadOnlyList<RepoConfigMatch> source)
     {
-        return source.Select(ToConfig)
-                     .ToArray();
+        return
+        [
+            ..source.Select(ToConfig)
+        ];
     }
 
     private static RepoMatch ToConfig(RepoConfigMatch source)
