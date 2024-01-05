@@ -8,15 +8,19 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
-- Rebuild cached packages list before processing to ensure the latest of all packages is available
 ### Changed
-- Dependencies - Updated Credfeto.Package to 1.10.45.303
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.0.6] - 2024-01-05
+### Fixed
+- Rebuild cached packages list before processing to ensure the latest of all packages is available
+### Changed
+- Dependencies - Updated Credfeto.Package to 1.10.45.303
+
 ## [1.0.5] - 2024-01-04
 ### Changed
 - Better logging
