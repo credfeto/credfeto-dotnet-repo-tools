@@ -7,9 +7,18 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
+### Fixed
+### Changed
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.0.7] - 2024-01-10
+### Added
 - �Detection of installed dotnet sdk versions
 - Explicit check for Dotnet SDK being installed by the template
-### Fixed
 ### Changed
 - Dependencies - Updated Roslynator.Analyzers to 4.8.0
 - Dependencies - Updated xunit.analyzers to 1.9.0
@@ -18,12 +27,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.Test.Common to 6.1.33.320
 - Dependencies - Updated Meziantou.Analyzer to 2.0.135
 - Dependencies - Updated Microsoft.Extensions to 8.0.1
-### Removed
-### Deployment Changes
 
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 ## [1.0.6] - 2024-01-05
 ### Fixed
 - Rebuild cached packages list before processing to ensure the latest of all packages is available
