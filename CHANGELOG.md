@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 - �Detection of installed dotnet sdk versions
+- Explicit check for Dotnet SDK being installed by the template
 ### Fixed
 ### Changed
 - Dependencies - Updated Roslynator.Analyzers to 4.8.0
