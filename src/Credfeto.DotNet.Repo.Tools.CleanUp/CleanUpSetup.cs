@@ -8,6 +8,6 @@ public static class CleanUpSetup
 {
     public static IServiceCollection AddCleanUp(this IServiceCollection services)
     {
-        return services.AddSingleton<ICleanUp, CleanUpService>();
+        return services.AddSingleton<IBulkCodeCleanUp, BulkCodeCleanUp>();
     }
 }

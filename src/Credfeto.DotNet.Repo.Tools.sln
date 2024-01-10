@@ -65,13 +65,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tracking", "Tracking", "{D0
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CodeCleanup", "CodeCleanup", "{CE82E8FC-2199-4C4E-B24F-F9B5BEC1C753}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "RepoUpdate", "RepoUpdate", "{CC43FBAC-2B8E-44C2-8B2E-EAAD5FE40403}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TemplateUpdate", "TemplateUpdate", "{CC43FBAC-2B8E-44C2-8B2E-EAAD5FE40403}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.CleanUp", "Credfeto.DotNet.Repo.Tools.CleanUp\Credfeto.DotNet.Repo.Tools.CleanUp.csproj", "{E3E6832E-F311-40EC-AA5B-C139E4808BDD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces", "Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces\Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces.csproj", "{4DB02914-42DE-425B-9765-CF7CB74C49A6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.CleanUp.Tests", "Credfeto.DotNet.Repo.Tools.CleanUp.Tests\Credfeto.DotNet.Repo.Tools.CleanUp.Tests.csproj", "{5900A6B8-C8F5-444C-B32B-35ECE2F72337}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.TemplateUpdate", "Credfeto.DotNet.Repo.Tools.TemplateUpdate\Credfeto.DotNet.Repo.Tools.TemplateUpdate.csproj", "{8F1C7932-B08A-4424-BA44-C4B4367B37EB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces", "Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces\Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces.csproj", "{5B389EC2-9860-462C-94C5-F884B62546A9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests", "Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests\Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests.csproj", "{4F7EA82D-5C2F-4DD5-9002-F1D76F2EAFF3}"
 EndProject
 Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
@@ -167,6 +173,18 @@ Global
 		{5900A6B8-C8F5-444C-B32B-35ECE2F72337}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5900A6B8-C8F5-444C-B32B-35ECE2F72337}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5900A6B8-C8F5-444C-B32B-35ECE2F72337}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F1C7932-B08A-4424-BA44-C4B4367B37EB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F1C7932-B08A-4424-BA44-C4B4367B37EB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F1C7932-B08A-4424-BA44-C4B4367B37EB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F1C7932-B08A-4424-BA44-C4B4367B37EB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5B389EC2-9860-462C-94C5-F884B62546A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5B389EC2-9860-462C-94C5-F884B62546A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5B389EC2-9860-462C-94C5-F884B62546A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5B389EC2-9860-462C-94C5-F884B62546A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F7EA82D-5C2F-4DD5-9002-F1D76F2EAFF3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F7EA82D-5C2F-4DD5-9002-F1D76F2EAFF3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F7EA82D-5C2F-4DD5-9002-F1D76F2EAFF3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F7EA82D-5C2F-4DD5-9002-F1D76F2EAFF3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -194,5 +212,8 @@ Global
 		{E3E6832E-F311-40EC-AA5B-C139E4808BDD} = {CE82E8FC-2199-4C4E-B24F-F9B5BEC1C753}
 		{4DB02914-42DE-425B-9765-CF7CB74C49A6} = {CE82E8FC-2199-4C4E-B24F-F9B5BEC1C753}
 		{5900A6B8-C8F5-444C-B32B-35ECE2F72337} = {CE82E8FC-2199-4C4E-B24F-F9B5BEC1C753}
+		{8F1C7932-B08A-4424-BA44-C4B4367B37EB} = {CC43FBAC-2B8E-44C2-8B2E-EAAD5FE40403}
+		{5B389EC2-9860-462C-94C5-F884B62546A9} = {CC43FBAC-2B8E-44C2-8B2E-EAAD5FE40403}
+		{4F7EA82D-5C2F-4DD5-9002-F1D76F2EAFF3} = {CC43FBAC-2B8E-44C2-8B2E-EAAD5FE40403}
 	EndGlobalSection
 EndGlobal

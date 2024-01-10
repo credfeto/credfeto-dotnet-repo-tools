@@ -1,10 +1,10 @@
-﻿using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
+﻿using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces;
 using FunFair.Test.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests;
+namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests;
 
 public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 {
@@ -16,11 +16,11 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
     [Fact]
     public void CleanUpBuildMustBeRegistered()
     {
-        this.RequireService<IBulkCodeCleanUp>();
+        this.RequireService<IBulkTemplateUpdater>();
     }
 
     private static IServiceCollection Configure(IServiceCollection services)
     {
-        return services.AddCleanUp();
+        return services.AddTemplateUpdate();
     }
 }
