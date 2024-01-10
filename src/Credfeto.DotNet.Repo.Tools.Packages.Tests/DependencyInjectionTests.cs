@@ -31,6 +31,7 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
                        .AddMockedService<IDotNetSolutionCheck>()
                        .AddMockedService<IGitRepositoryFactory>()
                        .AddMockedService<IGlobalJson>()
+                       .AddMockedService<IDotNetVersion>()
                        .AddMockedService<IPackageUpdater>()
                        .AddMockedService<IPackageCache>()
                        .AddMockedService<IReleaseConfigLoader>()
