@@ -178,6 +178,10 @@
    color: "96f7d2"
    description: "Changes in Credfeto.DotNet.Repo.Tools.Release.Interfaces project"
 
+ - name: "Release.Tests"
+   color: "0e8a16"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Release.Tests project"
+
  - name: "Credfeto.DotNet.Repo.Tracking"
    color: "96f7d2"
    description: "Changes in Credfeto.DotNet.Repo.Tracking project"
