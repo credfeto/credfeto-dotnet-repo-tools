@@ -64,6 +64,8 @@
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Release/**/*' ]
 "Release.Interfaces":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Release.Interfaces/**/*' ]
+"Release.Tests":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Release.Tests/**/*' ]
 "Credfeto.DotNet.Repo.Tracking":
  - any: [ 'src/Credfeto.DotNet.Repo.Tracking/**/*' ]
 "Credfeto.DotNet.Repo.Tracking.Interfaces":
