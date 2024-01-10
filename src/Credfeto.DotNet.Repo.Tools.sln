@@ -67,6 +67,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "CodeCleanup", "CodeCleanup"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "RepoUpdate", "RepoUpdate", "{CC43FBAC-2B8E-44C2-8B2E-EAAD5FE40403}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.CleanUp", "Credfeto.DotNet.Repo.Tools.CleanUp\Credfeto.DotNet.Repo.Tools.CleanUp.csproj", "{E3E6832E-F311-40EC-AA5B-C139E4808BDD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces", "Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces\Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces.csproj", "{4DB02914-42DE-425B-9765-CF7CB74C49A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.CleanUp.Tests", "Credfeto.DotNet.Repo.Tools.CleanUp.Tests\Credfeto.DotNet.Repo.Tools.CleanUp.Tests.csproj", "{5900A6B8-C8F5-444C-B32B-35ECE2F72337}"
+EndProject
 Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{2483BF4F-3827-4366-8FE0-A0D81592FCBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -149,6 +155,18 @@ Global
 		{2A66D330-7E72-41A0-88C8-6A27227120F5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2A66D330-7E72-41A0-88C8-6A27227120F5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2A66D330-7E72-41A0-88C8-6A27227120F5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3E6832E-F311-40EC-AA5B-C139E4808BDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3E6832E-F311-40EC-AA5B-C139E4808BDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3E6832E-F311-40EC-AA5B-C139E4808BDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3E6832E-F311-40EC-AA5B-C139E4808BDD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4DB02914-42DE-425B-9765-CF7CB74C49A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DB02914-42DE-425B-9765-CF7CB74C49A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DB02914-42DE-425B-9765-CF7CB74C49A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4DB02914-42DE-425B-9765-CF7CB74C49A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5900A6B8-C8F5-444C-B32B-35ECE2F72337}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5900A6B8-C8F5-444C-B32B-35ECE2F72337}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5900A6B8-C8F5-444C-B32B-35ECE2F72337}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5900A6B8-C8F5-444C-B32B-35ECE2F72337}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -173,5 +191,8 @@ Global
 		{169FED5D-923D-4CD6-875F-FD0FA1931CB3} = {D0B6B42E-F5FC-40FF-BAE1-13D5BF350F92}
 		{1BC839F2-B798-437E-AD01-D416718E4A4E} = {D0B6B42E-F5FC-40FF-BAE1-13D5BF350F92}
 		{C133BC14-C036-45BA-A2BD-82D949161915} = {D0B6B42E-F5FC-40FF-BAE1-13D5BF350F92}
+		{E3E6832E-F311-40EC-AA5B-C139E4808BDD} = {CE82E8FC-2199-4C4E-B24F-F9B5BEC1C753}
+		{4DB02914-42DE-425B-9765-CF7CB74C49A6} = {CE82E8FC-2199-4C4E-B24F-F9B5BEC1C753}
+		{5900A6B8-C8F5-444C-B32B-35ECE2F72337} = {CE82E8FC-2199-4C4E-B24F-F9B5BEC1C753}
 	EndGlobalSection
 EndGlobal
