@@ -126,6 +126,18 @@
    color: "0e8a16"
    description: "Changes in Credfeto.DotNet.Repo.Tools.Build.Tests project"
 
+ - name: "CleanUp"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.CleanUp project"
+
+ - name: "CleanUp.Interfaces"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces project"
+
+ - name: "CleanUp.Tests"
+   color: "0e8a16"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.CleanUp.Tests project"
+
  - name: "Cmd"
    color: "96f7d2"
    description: "Changes in Credfeto.DotNet.Repo.Tools.Cmd project"
@@ -181,6 +193,18 @@
  - name: "Release.Tests"
    color: "0e8a16"
    description: "Changes in Credfeto.DotNet.Repo.Tools.Release.Tests project"
+
+ - name: "TemplateUpdate"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.TemplateUpdate project"
+
+ - name: "TemplateUpdate.Interfaces"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces project"
+
+ - name: "TemplateUpdate.Tests"
+   color: "0e8a16"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests project"
 
  - name: "Credfeto.DotNet.Repo.Tracking"
    color: "96f7d2"
