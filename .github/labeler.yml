@@ -44,6 +44,8 @@
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.DotNet/**/*' ]
 "DotNet.Interfaces":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.DotNet.Interfaces/**/*' ]
+"DotNet.Tests":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.DotNet.Tests/**/*' ]
 "Git":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Git/**/*' ]
 "Git.Interfaces":
