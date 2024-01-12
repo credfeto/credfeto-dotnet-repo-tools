@@ -23,7 +23,7 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 
 public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 {
-    // private const string CHANGELOG_ENTRY_TYPE = "Changed";
+    private const string CHANGELOG_ENTRY_TYPE = "Changed";
     private readonly IBulkPackageConfigLoader _bulkPackageConfigLoader;
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
@@ -150,17 +150,52 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
 
-        if (!repoContext.HasDotNetFiles(out string? sourceDirectory, out IReadOnlyList<string>? solutions, out IReadOnlyList<string>? projects))
+        int totalUpdates = await this.UpdateStandardFilesAsync(updateContext: updateContext, repoContext: repoContext, cancellationToken: cancellationToken);
+
+        // TODO: Update non C# files
+
+        if (repoContext.HasDotNetFiles(out string? sourceDirectory, out IReadOnlyList<string>? solutions, out IReadOnlyList<string>? projects))
+        {
+            await this.UpdateDotNetAsync(updateContext: updateContext,
+                                         repoContext: repoContext,
+                                         packages: packages,
+                                         projects: projects,
+                                         lastKnownGoodBuild: lastKnownGoodBuild,
+                                         solutions: solutions,
+                                         sourceDirectory: sourceDirectory,
+                                         totalUpdates: totalUpdates,
+                                         cancellationToken: cancellationToken);
+        }
+        else
         {
             this._logger.LogNoDotNetFilesFound();
             await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
-
-            return;
         }
+    }
 
+    private async ValueTask<int> UpdateStandardFilesAsync(TemplateUpdateContext updateContext, RepoContext repoContext, CancellationToken cancellationToken)
+    {
+        this._logger.LogInformation($"{updateContext.TemplateFolder} is up to date");
+        this._logger.LogInformation($"{repoContext.WorkingDirectory} is up to date");
+
+        await Task.Delay(millisecondsDelay: 0, cancellationToken: cancellationToken);
+
+        // TODO: Implement
+
+        return 0;
+    }
+
+    private async ValueTask UpdateDotNetAsync(TemplateUpdateContext updateContext,
+                                              RepoContext repoContext,
+                                              IReadOnlyList<PackageUpdate> packages,
+                                              IReadOnlyList<string> projects,
+                                              string? lastKnownGoodBuild,
+                                              IReadOnlyList<string> solutions,
+                                              string sourceDirectory,
+                                              int totalUpdates,
+                                              CancellationToken cancellationToken)
+    {
         BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
-
-        int totalUpdates = 0;
 
         if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
         {
@@ -170,29 +205,14 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
             lastKnownGoodBuild = repoContext.Repository.HeadRev;
             await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
-
-            // TODO: Remove this line
-            ++totalUpdates;
         }
 
-        // TODO: Make changes
-        // foreach (PackageUpdate package in packages)
-        // {
-        //     (bool updated, lastKnownGoodBuild) = await this.ProcessRepoOnePackageUpdateAsync(updateContext: updateContext,
-        //                                                                                      repoContext: repoContext,
-        //                                                                                      solutions: solutions,
-        //                                                                                      sourceDirectory: sourceDirectory,
-        //                                                                                      buildSettings: buildSettings,
-        //                                                                                      dotNetSettings: updateContext.DotNetSettings,
-        //                                                                                      package: package,
-        //                                                                                      lastKnownGoodBuild: lastKnownGoodBuild,
-        //                                                                                      cancellationToken: cancellationToken);
-        //
-        //     if (updated)
-        //     {
-        //         ++totalUpdates;
-        //     }
-        // }
+        bool changed = await this.UpdateGlobalJsonAsync(repoContext: repoContext, updateContext: updateContext, sourceDirectory: sourceDirectory, cancellationToken: cancellationToken);
+
+        if (changed)
+        {
+            ++totalUpdates;
+        }
 
         if (totalUpdates == 0)
         {
@@ -205,6 +225,55 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                                                   packages: packages,
                                                                   releaseConfig: updateContext.ReleaseConfig,
                                                                   cancellationToken: cancellationToken);
+        }
+    }
+
+    private ValueTask<bool> UpdateGlobalJsonAsync(RepoContext repoContext, TemplateUpdateContext updateContext, string sourceDirectory, in CancellationToken cancellationToken)
+    {
+        string templateGlobalJsonFileName = Path.Combine(path1: updateContext.TemplateFolder, path2: "src", path3: "global.json");
+        string targetGlobalJsonFileName = Path.Combine(path1: sourceDirectory, path2: "global.json");
+
+        const string messagePrefix = "SDK - Updated DotNet SDK to ";
+        string message = messagePrefix + updateContext.DotNetSettings.SdkVersion;
+
+        return this.UpdateFileAsync(repoContext: repoContext,
+                                    templateGlobalJsonFileName: templateGlobalJsonFileName,
+                                    targetGlobalJsonFileName: targetGlobalJsonFileName,
+                                    commitMessage: message,
+                                    changelogUpdate: ChangelogUpdate,
+                                    cancellationToken: cancellationToken);
+
+        async ValueTask ChangelogUpdate(CancellationToken token)
+        {
+            await ChangeLogUpdater.RemoveEntryAsync(changeLogFileName: repoContext.ChangeLogFileName, type: CHANGELOG_ENTRY_TYPE, message: messagePrefix, cancellationToken: token);
+            await ChangeLogUpdater.AddEntryAsync(changeLogFileName: repoContext.ChangeLogFileName, type: CHANGELOG_ENTRY_TYPE, message: message, cancellationToken: token);
+        }
+    }
+
+    private async ValueTask<bool> UpdateFileAsync(RepoContext repoContext,
+                                                  string templateGlobalJsonFileName,
+                                                  string targetGlobalJsonFileName,
+                                                  string commitMessage,
+                                                  Func<CancellationToken, ValueTask> changelogUpdate,
+                                                  CancellationToken cancellationToken)
+    {
+        Difference diff = await IsSameContentAsync(sourceFileName: templateGlobalJsonFileName, targetFileName: targetGlobalJsonFileName, cancellationToken: cancellationToken);
+
+        switch (diff)
+        {
+            case Difference.TARGET_MISSING:
+            case Difference.DIFFERENT:
+                File.Copy(sourceFileName: templateGlobalJsonFileName, destFileName: targetGlobalJsonFileName, overwrite: true);
+
+                await changelogUpdate(cancellationToken);
+                await repoContext.Repository.CommitAsync(message: commitMessage, cancellationToken: cancellationToken);
+
+                return true;
+
+            default:
+                this._logger.LogDebug($"{targetGlobalJsonFileName} is up to date");
+
+                return false;
         }
     }
 
@@ -253,5 +322,36 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         return string.IsNullOrWhiteSpace(trackingFile)
             ? ValueTask.CompletedTask
             : this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
+    }
+
+    private static async ValueTask<Difference> IsSameContentAsync(string sourceFileName, string targetFileName, CancellationToken cancellationToken)
+    {
+        if (!File.Exists(sourceFileName))
+        {
+            return Difference.SOURCE_MISSING;
+        }
+
+        if (!File.Exists(targetFileName))
+        {
+            return Difference.SOURCE_MISSING;
+        }
+
+        byte[] sourceBytes = await File.ReadAllBytesAsync(path: sourceFileName, cancellationToken: cancellationToken);
+        byte[] targetBytes = await File.ReadAllBytesAsync(path: targetFileName, cancellationToken: cancellationToken);
+
+        if (sourceBytes.SequenceEqual(targetBytes))
+        {
+            return Difference.SAME;
+        }
+
+        return Difference.DIFFERENT;
+    }
+
+    private enum Difference
+    {
+        SAME,
+        SOURCE_MISSING,
+        TARGET_MISSING,
+        DIFFERENT
     }
 }

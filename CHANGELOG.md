@@ -22,7 +22,8 @@ Releases that have at least been deployed to staging, BUT NOT necessarily releas
 -->
 ## [1.0.7] - 2024-01-10
 ### Added
-- �Detection of installed dotnet sdk versions
+
+- Detection of installed dotnet sdk versions
 - Explicit check for Dotnet SDK being installed by the template
 ### Changed
 - Dependencies - Updated Roslynator.Analyzers to 4.8.0
