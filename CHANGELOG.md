@@ -11,7 +11,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - Dependencies - Updated Roslynator.Analyzers to 4.9.0
 - Dependencies - Updated Meziantou.Analyzer to 2.0.136
-- Dependencies - Updated FunFair.Test.Common to 6.1.35.326
+- Dependencies - Updated FunFair.Test.Common to 6.1.37.329
 ### Removed
 ### Deployment Changes
 
