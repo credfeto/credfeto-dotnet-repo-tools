@@ -201,12 +201,18 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
         {
-            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: updateContext.DotNetSettings, cancellationToken: cancellationToken);
+            string repoGlobalJson = Path.Combine(path1: sourceDirectory, path2: "global.json");
 
-            await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
+            if (File.Exists(repoGlobalJson))
+            {
+                DotNetVersionSettings repoDotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
+                await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: repoDotNetSettings, cancellationToken: cancellationToken);
 
-            lastKnownGoodBuild = repoContext.Repository.HeadRev;
-            await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
+                await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
+
+                lastKnownGoodBuild = repoContext.Repository.HeadRev;
+                await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
+            }
         }
 
         bool changed = await this.UpdateGlobalJsonAsync(repoContext: repoContext,
