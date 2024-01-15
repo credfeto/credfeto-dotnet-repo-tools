@@ -7,20 +7,24 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
-- Basic template update support for .net repos (SDK version)
 ### Fixed
 ### Changed
-- Dependencies - Updated Roslynator.Analyzers to 4.9.0
-- Dependencies - Updated Meziantou.Analyzer to 2.0.136
-- Dependencies - Updated xunit.analyzers to 1.10.0
-- Dependencies - Updated xunit to 2.6.6
-- Dependencies - Updated FunFair.Test.Common to 6.1.39.333
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.0.8] - 2024-01-15
+### Added
+- Basic template update support for .net repos (SDK version)
+### Changed
+- Dependencies - Updated Roslynator.Analyzers to 4.9.0
+- Dependencies - Updated Meziantou.Analyzer to 2.0.136
+- Dependencies - Updated xunit.analyzers to 1.10.0
+- Dependencies - Updated xunit to 2.6.6
+- Dependencies - Updated FunFair.Test.Common to 6.1.39.333
+
 ## [1.0.7] - 2024-01-10
 ### Added
 
