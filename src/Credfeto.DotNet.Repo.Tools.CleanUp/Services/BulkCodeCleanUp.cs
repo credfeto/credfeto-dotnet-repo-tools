@@ -1,3 +1,7 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
@@ -56,4 +60,14 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
      *
      *  Return true
      */
+    public ValueTask BulkUpdateAsync(string templateRepository,
+                                     string trackingFileName,
+                                     string packagesFileName,
+                                     string workFolder,
+                                     string releaseConfigFileName,
+                                     IReadOnlyList<string> repositories,
+                                     CancellationToken cancellationToken)
+    {
+        throw new NotSupportedException("Not yet available");
+    }
 }

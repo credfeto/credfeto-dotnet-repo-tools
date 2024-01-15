@@ -5,8 +5,10 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cocona;
+using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
+using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd;
@@ -15,16 +17,24 @@ namespace Credfeto.DotNet.Repo.Tools.Cmd;
 [SuppressMessage(category: "ReSharper", checkId: "ClassNeverInstantiated.Global", Justification = "Instantiated by Cocona")]
 internal sealed class Commands
 {
+    private readonly IBulkCodeCleanUp _bulkCodeCleanUp;
     private readonly IBulkPackageUpdater _bulkPackageUpdater;
+    private readonly IBulkTemplateUpdater _bulkTemplateUpdater;
     private readonly CancellationToken _cancellationToken = CancellationToken.None;
     private readonly IGitRepositoryListLoader _gitRepositoryListLoader;
     private readonly ILogger<Commands> _logger;
 
     [SuppressMessage(category: "FunFair.CodeAnalysis", checkId: "FFS0023: Use ILogger rather than ILogger<T>", Justification = "Needed in this case")]
-    public Commands(IGitRepositoryListLoader gitRepositoryListLoader, IBulkPackageUpdater bulkPackageUpdater, ILogger<Commands> logger)
+    public Commands(IGitRepositoryListLoader gitRepositoryListLoader,
+                    IBulkCodeCleanUp bulkCodeCleanUp,
+                    IBulkPackageUpdater bulkPackageUpdater,
+                    IBulkTemplateUpdater bulkTemplateUpdater,
+                    ILogger<Commands> logger)
     {
         this._gitRepositoryListLoader = gitRepositoryListLoader;
+        this._bulkCodeCleanUp = bulkCodeCleanUp;
         this._bulkPackageUpdater = bulkPackageUpdater;
+        this._bulkTemplateUpdater = bulkTemplateUpdater;
         this._logger = logger;
     }
 
@@ -41,6 +51,8 @@ internal sealed class Commands
     {
         IReadOnlyList<string> repositories =
             await this.LoadRepositoriesAsync(repositoriesFileName: repositoriesFileName, templateRepository: templateRepository, cancellationToken: this._cancellationToken);
+
+        this.Dump(repositories);
 
         string[] nugetSources = source?.ToArray() ?? Array.Empty<string>();
         await this._bulkPackageUpdater.BulkUpdateAsync(templateRepository: templateRepository,
@@ -75,6 +87,14 @@ internal sealed class Commands
 
         this.Dump(repositories);
 
+        await this._bulkTemplateUpdater.BulkUpdateAsync(templateRepository: templateRepository,
+                                                        trackingFileName: trackingFileName,
+                                                        packagesFileName: packagesFileName,
+                                                        workFolder: workFolder,
+                                                        releaseConfigFileName: releaseConfigFileName,
+                                                        repositories: repositories,
+                                                        cancellationToken: this._cancellationToken);
+
         this.Done();
     }
 
@@ -105,6 +125,14 @@ internal sealed class Commands
             await this.LoadRepositoriesAsync(repositoriesFileName: repositoriesFileName, templateRepository: templateRepository, cancellationToken: this._cancellationToken);
 
         this.Dump(repositories);
+
+        await this._bulkCodeCleanUp.BulkUpdateAsync(templateRepository: templateRepository,
+                                                    trackingFileName: trackingFileName,
+                                                    packagesFileName: packagesFileName,
+                                                    workFolder: workFolder,
+                                                    releaseConfigFileName: releaseConfigFileName,
+                                                    repositories: repositories,
+                                                    cancellationToken: this._cancellationToken);
 
         this.Done();
     }

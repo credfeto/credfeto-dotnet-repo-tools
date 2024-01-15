@@ -84,13 +84,13 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         using (IGitRepository templateRepo =
                await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
-            UpdateContext updateContext = await this.BuildUpdateContextAsync(cacheFileName: cacheFileName,
-                                                                             templateRepo: templateRepo,
-                                                                             workFolder: workFolder,
-                                                                             trackingFileName: trackingFileName,
-                                                                             additionalNugetSources: additionalNugetSources,
-                                                                             releaseConfigFileName: releaseConfigFileName,
-                                                                             cancellationToken: cancellationToken);
+            PackageUpdateContext updateContext = await this.BuildUpdateContextAsync(cacheFileName: cacheFileName,
+                                                                                    templateRepo: templateRepo,
+                                                                                    workFolder: workFolder,
+                                                                                    trackingFileName: trackingFileName,
+                                                                                    additionalNugetSources: additionalNugetSources,
+                                                                                    releaseConfigFileName: releaseConfigFileName,
+                                                                                    cancellationToken: cancellationToken);
 
             await this.UpdateCachedPackagesAsync(workFolder: workFolder, cancellationToken: cancellationToken, packages: packages, updateContext: updateContext);
 
@@ -106,7 +106,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
     }
 
-    public async ValueTask UpdateRepositoriesAsync(UpdateContext updateContext,
+    public async ValueTask UpdateRepositoriesAsync(PackageUpdateContext updateContext,
                                                    IReadOnlyList<string> repositories,
                                                    IReadOnlyList<PackageUpdate> packages,
                                                    CancellationToken cancellationToken)
@@ -148,7 +148,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
     }
 
-    private async ValueTask UpdateCachedPackagesAsync(string workFolder, IReadOnlyList<PackageUpdate> packages, UpdateContext updateContext, CancellationToken cancellationToken)
+    private async ValueTask UpdateCachedPackagesAsync(string workFolder, IReadOnlyList<PackageUpdate> packages, PackageUpdateContext updateContext, CancellationToken cancellationToken)
     {
         IReadOnlyList<PackageVersion> allPackages = this._packageCache.GetAll();
 
@@ -216,7 +216,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return document;
     }
 
-    private async ValueTask UpdateRepositoryAsync(UpdateContext updateContext, IReadOnlyList<PackageUpdate> packages, string repo, CancellationToken cancellationToken)
+    private async ValueTask UpdateRepositoryAsync(PackageUpdateContext updateContext, IReadOnlyList<PackageUpdate> packages, string repo, CancellationToken cancellationToken)
     {
         this._logger.LogProcessingRepo(repo);
 
@@ -240,7 +240,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
     }
 
-    private async ValueTask ProcessRepoUpdatesAsync(UpdateContext updateContext,
+    private async ValueTask ProcessRepoUpdatesAsync(PackageUpdateContext updateContext,
                                                     RepoContext repoContext,
                                                     IReadOnlyList<PackageUpdate> packages,
                                                     CancellationToken cancellationToken)
@@ -294,7 +294,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
     }
 
-    private async ValueTask<(bool updated, string? lastKnownGoodBuild)> ProcessRepoOnePackageUpdateAsync(UpdateContext updateContext,
+    private async ValueTask<(bool updated, string? lastKnownGoodBuild)> ProcessRepoOnePackageUpdateAsync(PackageUpdateContext updateContext,
                                                                                                          RepoContext repoContext,
                                                                                                          IReadOnlyList<string> solutions,
                                                                                                          string sourceDirectory,
@@ -354,7 +354,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                          .ToString());
     }
 
-    private async ValueTask<string?> OnPackageUpdateAsync(UpdateContext updateContext,
+    private async ValueTask<string?> OnPackageUpdateAsync(PackageUpdateContext updateContext,
                                                           RepoContext repoContext,
                                                           IReadOnlyList<string> solutions,
                                                           string sourceDirectory,
@@ -484,7 +484,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return false;
     }
 
-    private ValueTask<IReadOnlyList<PackageVersion>> UpdatePackagesAsync(UpdateContext updateContext,
+    private ValueTask<IReadOnlyList<PackageVersion>> UpdatePackagesAsync(PackageUpdateContext updateContext,
                                                                          in RepoContext repoContext,
                                                                          PackageUpdate package,
                                                                          in CancellationToken cancellationToken)
@@ -529,13 +529,13 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return excludedPackages;
     }
 
-    private async ValueTask<UpdateContext> BuildUpdateContextAsync(string? cacheFileName,
-                                                                   IGitRepository templateRepo,
-                                                                   string workFolder,
-                                                                   string trackingFileName,
-                                                                   string releaseConfigFileName,
-                                                                   IReadOnlyList<string> additionalNugetSources,
-                                                                   CancellationToken cancellationToken)
+    private async ValueTask<PackageUpdateContext> BuildUpdateContextAsync(string? cacheFileName,
+                                                                          IGitRepository templateRepo,
+                                                                          string workFolder,
+                                                                          string trackingFileName,
+                                                                          string releaseConfigFileName,
+                                                                          IReadOnlyList<string> additionalNugetSources,
+                                                                          CancellationToken cancellationToken)
     {
         DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.WorkingDirectory, cancellationToken: cancellationToken);
 
@@ -546,14 +546,11 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             if (!installedDotNetSdks.Contains(sdkVersion))
             {
                 this._logger.LogError($"SDK {sdkVersion} was requested, but not installed.  Currently installed SDKS: {string.Join(separator: ", ", values: installedDotNetSdks)}");
-
                 throw new DotNetBuildErrorException("SDK version specified in global.json is not installed");
             }
         }
 
         ReleaseConfig releaseConfig = await this._releaseConfigLoader.LoadAsync(path: releaseConfigFileName, cancellationToken: cancellationToken);
-
-        // TODO: check to see what SDKs are installed throw if the one in the sdk isn't installed.
 
         return new(WorkFolder: workFolder,
                    CacheFileName: cacheFileName,
