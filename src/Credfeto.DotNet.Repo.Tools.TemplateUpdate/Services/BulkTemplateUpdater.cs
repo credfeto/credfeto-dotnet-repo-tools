@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -14,6 +15,7 @@ using Credfeto.DotNet.Repo.Tools.Models.Packages;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces.Exceptions;
+using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Exceptions;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
@@ -207,7 +209,12 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
         }
 
-        bool changed = await this.UpdateGlobalJsonAsync(repoContext: repoContext, updateContext: updateContext, sourceDirectory: sourceDirectory, cancellationToken: cancellationToken);
+        bool changed = await this.UpdateGlobalJsonAsync(repoContext: repoContext,
+                                                        updateContext: updateContext,
+                                                        sourceDirectory: sourceDirectory,
+                                                        solutions: solutions,
+                                                        buildSettings: buildSettings,
+                                                        cancellationToken: cancellationToken);
 
         if (changed)
         {
@@ -228,7 +235,13 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         }
     }
 
-    private ValueTask<bool> UpdateGlobalJsonAsync(RepoContext repoContext, TemplateUpdateContext updateContext, string sourceDirectory, in CancellationToken cancellationToken)
+    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "To be refactored")]
+    private async ValueTask<bool> UpdateGlobalJsonAsync(RepoContext repoContext,
+                                                        TemplateUpdateContext updateContext,
+                                                        string sourceDirectory,
+                                                        IReadOnlyList<string> solutions,
+                                                        BuildSettings buildSettings,
+                                                        CancellationToken cancellationToken)
     {
         string templateGlobalJsonFileName = Path.Combine(path1: updateContext.TemplateFolder, path2: "src", path3: "global.json");
         string targetGlobalJsonFileName = Path.Combine(path1: sourceDirectory, path2: "global.json");
@@ -236,17 +249,100 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         const string messagePrefix = "SDK - Updated DotNet SDK to ";
         string message = messagePrefix + updateContext.DotNetSettings.SdkVersion;
 
-        return this.UpdateFileAsync(repoContext: repoContext,
-                                    templateGlobalJsonFileName: templateGlobalJsonFileName,
-                                    targetGlobalJsonFileName: targetGlobalJsonFileName,
-                                    commitMessage: message,
-                                    changelogUpdate: ChangelogUpdate,
-                                    cancellationToken: cancellationToken);
+        const string branchPrefix = "depends/dotnet/sdk/";
+        string branchName = branchPrefix + updateContext.DotNetSettings.SdkVersion;
+
+        bool branchCreated = false;
+
+        try
+        {
+            bool changed = await this.UpdateFileAsync(repoContext: repoContext,
+                                                      templateGlobalJsonFileName: templateGlobalJsonFileName,
+                                                      targetGlobalJsonFileName: targetGlobalJsonFileName,
+                                                      commitMessage: message,
+                                                      changelogUpdate: ChangelogUpdate,
+                                                      cancellationToken: cancellationToken);
+
+            if (changed)
+            {
+                if (branchCreated)
+                {
+                    await repoContext.Repository.PushOriginAsync(branchName: branchName, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+                }
+
+                string lastKnownGoodBuild = repoContext.Repository.HeadRev;
+                await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
+
+                await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: branchName,
+                                                                          branchPrefix: branchPrefix,
+                                                                          upstream: GitConstants.Upstream,
+                                                                          cancellationToken: cancellationToken);
+            }
+
+            return changed;
+        }
+        catch (BranchAlreadyExistsException)
+        {
+            return false;
+        }
+        finally
+        {
+            await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+        }
 
         async ValueTask ChangelogUpdate(CancellationToken token)
         {
             await ChangeLogUpdater.RemoveEntryAsync(changeLogFileName: repoContext.ChangeLogFileName, type: CHANGELOG_ENTRY_TYPE, message: messagePrefix, cancellationToken: token);
             await ChangeLogUpdater.AddEntryAsync(changeLogFileName: repoContext.ChangeLogFileName, type: CHANGELOG_ENTRY_TYPE, message: message, cancellationToken: token);
+
+            bool ok = await this.CheckBuildAsync(updateContext: updateContext,
+                                                 sourceDirectory: sourceDirectory,
+                                                 solutions: solutions,
+                                                 buildSettings: buildSettings,
+                                                 cancellationToken: cancellationToken);
+
+            if (!ok)
+            {
+                if (repoContext.Repository.DoesBranchExist(branchName))
+                {
+                    throw new BranchAlreadyExistsException(branchName);
+                }
+
+                await repoContext.Repository.CreateBranchAsync(branchName: branchName, cancellationToken: cancellationToken);
+
+                branchCreated = true;
+            }
+            else
+            {
+                await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: branchName,
+                                                                          branchPrefix: branchPrefix,
+                                                                          upstream: GitConstants.Upstream,
+                                                                          cancellationToken: cancellationToken);
+            }
+        }
+    }
+
+    private async Task<bool> CheckBuildAsync(TemplateUpdateContext updateContext,
+                                             string sourceDirectory,
+                                             IReadOnlyList<string> solutions,
+                                             BuildSettings buildSettings,
+                                             CancellationToken cancellationToken)
+    {
+        try
+        {
+            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: updateContext.DotNetSettings, cancellationToken: cancellationToken);
+
+            await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
+
+            return true;
+        }
+        catch (SolutionCheckFailedException)
+        {
+            return false;
+        }
+        catch (DotNetBuildErrorException)
+        {
+            return false;
         }
     }
 
@@ -259,22 +355,38 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         Difference diff = await IsSameContentAsync(sourceFileName: templateGlobalJsonFileName, targetFileName: targetGlobalJsonFileName, cancellationToken: cancellationToken);
 
-        switch (diff)
+        return diff switch
         {
-            case Difference.TARGET_MISSING:
-            case Difference.DIFFERENT:
-                File.Copy(sourceFileName: templateGlobalJsonFileName, destFileName: targetGlobalJsonFileName, overwrite: true);
+            Difference.TARGET_MISSING or Difference.DIFFERENT => await ReplaceFileAsync(repoContext: repoContext,
+                                                                                        templateGlobalJsonFileName: templateGlobalJsonFileName,
+                                                                                        targetGlobalJsonFileName: targetGlobalJsonFileName,
+                                                                                        commitMessage: commitMessage,
+                                                                                        changelogUpdate: changelogUpdate,
+                                                                                        cancellationToken: cancellationToken),
+            _ => AlreadyUpToDate()
+        };
 
-                await changelogUpdate(cancellationToken);
-                await repoContext.Repository.CommitAsync(message: commitMessage, cancellationToken: cancellationToken);
+        bool AlreadyUpToDate()
+        {
+            this._logger.LogDebug($"{targetGlobalJsonFileName} is up to date");
 
-                return true;
-
-            default:
-                this._logger.LogDebug($"{targetGlobalJsonFileName} is up to date");
-
-                return false;
+            return false;
         }
+    }
+
+    private static async ValueTask<bool> ReplaceFileAsync(RepoContext repoContext,
+                                                          string templateGlobalJsonFileName,
+                                                          string targetGlobalJsonFileName,
+                                                          string commitMessage,
+                                                          Func<CancellationToken, ValueTask> changelogUpdate,
+                                                          CancellationToken cancellationToken)
+    {
+        File.Copy(sourceFileName: templateGlobalJsonFileName, destFileName: targetGlobalJsonFileName, overwrite: true);
+
+        await changelogUpdate(cancellationToken);
+        await repoContext.Repository.CommitAsync(message: commitMessage, cancellationToken: cancellationToken);
+
+        return true;
     }
 
     private async ValueTask<TemplateUpdateContext> BuildUpdateContextAsync(IGitRepository templateRepo,
