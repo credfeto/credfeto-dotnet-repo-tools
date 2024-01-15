@@ -7,6 +7,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
+- Basic template update support for .net repos (SDK version)
 ### Fixed
 ### Changed
 - Dependencies - Updated Roslynator.Analyzers to 4.9.0
