@@ -1,4 +1,10 @@
-﻿using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces;
+﻿using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
+using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
+using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces;
+using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using FunFair.Test.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -21,6 +27,15 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 
     private static IServiceCollection Configure(IServiceCollection services)
     {
-        return services.AddTemplateUpdate();
+        return services.AddMockedService<IBulkPackageConfigLoader>()
+                       .AddMockedService<IDotNetBuild>()
+                       .AddMockedService<IDotNetSolutionCheck>()
+                       .AddMockedService<IDotNetVersion>()
+                       .AddMockedService<IGitRepositoryFactory>()
+                       .AddMockedService<IGlobalJson>()
+                       .AddMockedService<IReleaseConfigLoader>()
+                       .AddMockedService<IReleaseGeneration>()
+                       .AddMockedService<ITrackingCache>()
+                       .AddTemplateUpdate();
     }
 }
