@@ -58,10 +58,16 @@
     <RepositoryUrl>https://github.com/credfeto/credfeto-dotnet-repo-tools</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Packages.Interfaces\Credfeto.DotNet.Repo.Tools.Packages.Interfaces.csproj" />
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Release.Interfaces\Credfeto.DotNet.Repo.Tools.Release.Interfaces.csproj" />
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces\Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces.csproj" />
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Credfeto.ChangeLog" Version="1.10.19.111" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
@@ -80,11 +86,5 @@
     <PackageReference Include="SonarAnalyzer.CSharp" Version="9.16.0.82469" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="ToStringWithoutOverrideAnalyzer" Version="0.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Packages.Interfaces\Credfeto.DotNet.Repo.Tools.Packages.Interfaces.csproj" />
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Release.Interfaces\Credfeto.DotNet.Repo.Tools.Release.Interfaces.csproj" />
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj" />
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces\Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces.csproj" />
   </ItemGroup>
 </Project>

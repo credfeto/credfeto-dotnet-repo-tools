@@ -148,7 +148,10 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
     }
 
-    private async ValueTask UpdateCachedPackagesAsync(string workFolder, IReadOnlyList<PackageUpdate> packages, PackageUpdateContext updateContext, CancellationToken cancellationToken)
+    private async ValueTask UpdateCachedPackagesAsync(string workFolder,
+                                                      IReadOnlyList<PackageUpdate> packages,
+                                                      PackageUpdateContext updateContext,
+                                                      CancellationToken cancellationToken)
     {
         IReadOnlyList<PackageVersion> allPackages = this._packageCache.GetAll();
 
@@ -546,6 +549,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             if (!installedDotNetSdks.Contains(sdkVersion))
             {
                 this._logger.LogError($"SDK {sdkVersion} was requested, but not installed.  Currently installed SDKS: {string.Join(separator: ", ", values: installedDotNetSdks)}");
+
                 throw new DotNetBuildErrorException("SDK version specified in global.json is not installed");
             }
         }
