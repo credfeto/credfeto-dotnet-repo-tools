@@ -187,10 +187,10 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         foreach (CopyInstruction copyInstruction in filesToUpdate)
         {
             bool changed = await this.UpdateFileAsync(repoContext: repoContext,
-                                                      templateGlobalJsonFileName: copyInstruction.SourceFileName,
-                                                      targetGlobalJsonFileName: copyInstruction.TargetFileName,
+                                                      templateSourceFileName: copyInstruction.SourceFileName,
+                                                      targetFileName: copyInstruction.TargetFileName,
                                                       commitMessage: copyInstruction.Message,
-                                                      changelogUpdate: ChangelogUpdate,
+                                                      changelogUpdate: NoChangeLogUpdateAsync,
                                                       cancellationToken: cancellationToken);
 
             if (changed)
@@ -207,12 +207,12 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
  */
         return changes;
+    }
 
-        static ValueTask ChangelogUpdate(CancellationToken cancellationToken)
-        {
-            // nothing to do here
-            return ValueTask.CompletedTask;
-        }
+    private static ValueTask NoChangeLogUpdateAsync(CancellationToken cancellationToken)
+    {
+        // nothing to do here
+        return ValueTask.CompletedTask;
     }
 
     private static IEnumerable<CopyInstruction> GetStandardFilesToUpdate(in FileContext fileContext)
@@ -302,9 +302,10 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
             ++totalUpdates;
         }
 
+        totalUpdates += await this.UpdateResharperSettingsAsync(repoContext: repoContext, updateContext: updateContext, solutions: solutions, cancellationToken: cancellationToken);
+
         // TODO
 /*
-   updateResharperSettings -sourceRepo $sourceRepo -targetRepo $targetRepo
    updateLabel -baseFolder $targetRepo
    updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName "src\Directory.Build.props"
         if($repo.Contains("funfair")) {
@@ -330,6 +331,43 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
         }
     }
 
+    private async Task<int> UpdateResharperSettingsAsync(RepoContext repoContext, TemplateUpdateContext updateContext, IReadOnlyList<string> solutions, CancellationToken cancellationToken)
+    {
+        const string dotSettingsExtension = ".DotSettings";
+
+        string templateSourceDirectory = Path.Combine(path1: updateContext.TemplateFolder, path2: "src");
+        string? dotSettingsSourceFile = Directory.GetFiles(path: templateSourceDirectory, "*.sln" + dotSettingsExtension)
+                                                 .FirstOrDefault();
+
+        if (string.IsNullOrEmpty(dotSettingsSourceFile))
+        {
+            return 0;
+        }
+
+        int changes = 0;
+
+        foreach (string targetSolutionFileName in solutions)
+        {
+            string repoRelativeSolutionFileName = targetSolutionFileName.Substring(repoContext.WorkingDirectory.Length + 1);
+            string targetFileName = targetSolutionFileName + dotSettingsExtension;
+
+            string commitMessage = $"Updated Resharper settings for {repoRelativeSolutionFileName}";
+            bool changed = await this.UpdateFileAsync(repoContext: repoContext,
+                                                      templateSourceFileName: dotSettingsSourceFile,
+                                                      targetFileName: targetFileName,
+                                                      commitMessage: commitMessage,
+                                                      changelogUpdate: NoChangeLogUpdateAsync,
+                                                      cancellationToken: cancellationToken);
+
+            if (changed)
+            {
+                ++changes;
+            }
+        }
+
+        return changes;
+    }
+
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "To be refactored")]
     private async ValueTask<bool> UpdateGlobalJsonAsync(RepoContext repoContext,
                                                         TemplateUpdateContext updateContext,
@@ -352,8 +390,8 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
         try
         {
             bool changed = await this.UpdateFileAsync(repoContext: repoContext,
-                                                      templateGlobalJsonFileName: templateGlobalJsonFileName,
-                                                      targetGlobalJsonFileName: targetGlobalJsonFileName,
+                                                      templateSourceFileName: templateGlobalJsonFileName,
+                                                      targetFileName: targetGlobalJsonFileName,
                                                       commitMessage: message,
                                                       changelogUpdate: ChangelogUpdate,
                                                       cancellationToken: cancellationToken);
@@ -442,19 +480,19 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
     }
 
     private async ValueTask<bool> UpdateFileAsync(RepoContext repoContext,
-                                                  string templateGlobalJsonFileName,
-                                                  string targetGlobalJsonFileName,
+                                                  string templateSourceFileName,
+                                                  string targetFileName,
                                                   string commitMessage,
                                                   Func<CancellationToken, ValueTask> changelogUpdate,
                                                   CancellationToken cancellationToken)
     {
-        Difference diff = await IsSameContentAsync(sourceFileName: templateGlobalJsonFileName, targetFileName: targetGlobalJsonFileName, cancellationToken: cancellationToken);
+        Difference diff = await this.IsSameContentAsync(sourceFileName: templateSourceFileName, targetFileName: targetFileName, cancellationToken: cancellationToken);
 
         return diff switch
         {
             Difference.TARGET_MISSING or Difference.DIFFERENT => await ReplaceFileAsync(repoContext: repoContext,
-                                                                                        templateGlobalJsonFileName: templateGlobalJsonFileName,
-                                                                                        targetGlobalJsonFileName: targetGlobalJsonFileName,
+                                                                                        templateGlobalJsonFileName: templateSourceFileName,
+                                                                                        targetGlobalJsonFileName: targetFileName,
                                                                                         commitMessage: commitMessage,
                                                                                         changelogUpdate: changelogUpdate,
                                                                                         cancellationToken: cancellationToken),
@@ -463,7 +501,7 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
 
         bool AlreadyUpToDate()
         {
-            this._logger.LogDebug($"{targetGlobalJsonFileName} is up to date");
+            this._logger.LogDebug($"{targetFileName} is up to date");
 
             return false;
         }
@@ -531,16 +569,20 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
             : this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
     }
 
-    private static async ValueTask<Difference> IsSameContentAsync(string sourceFileName, string targetFileName, CancellationToken cancellationToken)
+    private async ValueTask<Difference> IsSameContentAsync(string sourceFileName, string targetFileName, CancellationToken cancellationToken)
     {
         if (!File.Exists(sourceFileName))
         {
+            this._logger.LogDebug($"{sourceFileName} is missing");
+
             return Difference.SOURCE_MISSING;
         }
 
         if (!File.Exists(targetFileName))
         {
-            return Difference.SOURCE_MISSING;
+            this._logger.LogDebug($"{targetFileName} is missing");
+
+            return Difference.TARGET_MISSING;
         }
 
         byte[] sourceBytes = await File.ReadAllBytesAsync(path: sourceFileName, cancellationToken: cancellationToken);
@@ -548,13 +590,17 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
 
         if (sourceBytes.SequenceEqual(targetBytes))
         {
+            this._logger.LogDebug($"{targetFileName} is unchanged");
+
             return Difference.SAME;
         }
+
+        this._logger.LogDebug($"{targetFileName} is different");
 
         return Difference.DIFFERENT;
     }
 
-    [DebuggerDisplay($"Template: {UpdateContext.TemplateFolder}, Repo: {RepoContext.WorkingDirectory}")]
+    [DebuggerDisplay("Template: {UpdateContext.TemplateFolder}, Repo: {RepoContext.WorkingDirectory}")]
     [StructLayout(LayoutKind.Auto)]
     private readonly record struct FileContext(TemplateUpdateContext UpdateContext, RepoContext RepoContext)
     {
