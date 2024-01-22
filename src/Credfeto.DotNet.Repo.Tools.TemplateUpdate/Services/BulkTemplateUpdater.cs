@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.ChangeLog;
@@ -26,6 +28,8 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 {
     private const string CHANGELOG_ENTRY_TYPE = "Changed";
+
+    private const string DOT_GITHUB_DIR = ".github";
     private readonly IBulkPackageConfigLoader _bulkPackageConfigLoader;
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
@@ -175,15 +179,17 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
     private async ValueTask<int> UpdateStandardFilesAsync(TemplateUpdateContext updateContext, RepoContext repoContext, CancellationToken cancellationToken)
     {
-        int changes = 0;
-        IEnumerable<(string sourceFileName, string targetFileName, string message)> filesToUpdate = GetStandardFilesToUpdate(updateContext: updateContext, repoContext: repoContext);
+        FileContext fileContext = new(UpdateContext: updateContext, RepoContext: repoContext);
 
-        foreach ((string sourceFileName, string targetFileName, string message) in filesToUpdate)
+        int changes = 0;
+        IEnumerable<CopyInstruction> filesToUpdate = GetStandardFilesToUpdate(fileContext);
+
+        foreach (CopyInstruction copyInstruction in filesToUpdate)
         {
             bool changed = await this.UpdateFileAsync(repoContext: repoContext,
-                                                      templateGlobalJsonFileName: sourceFileName,
-                                                      targetGlobalJsonFileName: targetFileName,
-                                                      commitMessage: message,
+                                                      templateGlobalJsonFileName: copyInstruction.SourceFileName,
+                                                      targetGlobalJsonFileName: copyInstruction.TargetFileName,
+                                                      commitMessage: copyInstruction.Message,
                                                       changelogUpdate: ChangelogUpdate,
                                                       cancellationToken: cancellationToken);
 
@@ -209,68 +215,51 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
         }
     }
 
-    private static IEnumerable<(string sourceFileName, string targetFileName, string message)> GetStandardFilesToUpdate(in TemplateUpdateContext updateContext, in RepoContext repoContext)
+    private static IEnumerable<CopyInstruction> GetStandardFilesToUpdate(in FileContext fileContext)
     {
-        return GetStandardFilesBaseToUpdate(updateContext: updateContext, repoContext: repoContext)
-               .Concat(IncludeFilesInSource(updateContext: updateContext,
-                                            repoContext: repoContext,
-                                            Path.Combine(path1: updateContext.TemplateFolder, path2: ".github", path3: "ISSUE_TEMPLATE"),
-                                            prefix: "Config"))
-               .Concat(IncludeFilesInSource(updateContext: updateContext,
-                                            repoContext: repoContext,
-                                            Path.Combine(path1: updateContext.TemplateFolder, path2: ".github", path3: "actions"),
-                                            prefix: "Actions"))
-               .Concat(IncludeFilesInSource(updateContext: updateContext,
-                                            repoContext: repoContext,
-                                            Path.Combine(path1: updateContext.TemplateFolder, path2: ".github", path3: "workflows"),
-                                            prefix: "Actions"))
-               .Concat(IncludeFilesInSource(updateContext: updateContext,
-                                            repoContext: repoContext,
-                                            Path.Combine(path1: updateContext.TemplateFolder, path2: ".github", path3: "linters"),
-                                            prefix: "Linters"));
+        string issueTemplates = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: DOT_GITHUB_DIR, path3: "ISSUE_TEMPLATE");
+        string actions = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: DOT_GITHUB_DIR, path3: "actions");
+        string workflows = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: DOT_GITHUB_DIR, path3: "workflows");
+        string linters = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: DOT_GITHUB_DIR, path3: "linters");
+
+        return GetStandardFilesBaseToUpdate(fileContext)
+               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: issueTemplates, prefix: "Config"))
+               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: actions, prefix: "Actions"))
+               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: workflows, prefix: "Actions"))
+               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: linters, prefix: "Linters"));
     }
 
-    private static IEnumerable<(string sourceFileName, string targetFileName, string message)> GetStandardFilesBaseToUpdate(in TemplateUpdateContext updateContext, in RepoContext repoContext)
+    private static IEnumerable<CopyInstruction> GetStandardFilesBaseToUpdate(in FileContext fileContext)
     {
         return
         [
-            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: ".editorconfig", prefix: "Config"),
-            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: ".gitleaks.toml", prefix: "Config"),
-            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: ".gitignore", prefix: "Config"),
-            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: ".gitattributes", prefix: "Config"),
-            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: ".tsqllintrc", prefix: "Linters"),
-            MakeFile(updateContext: updateContext, repoContext: repoContext, string.Join(separator: Path.DirectorySeparatorChar, ".github", "pr-lint.yml"), prefix: "Linters"),
-            MakeFile(updateContext: updateContext, repoContext: repoContext, string.Join(separator: Path.DirectorySeparatorChar, ".github", "CODEOWNERS"), prefix: "Config"),
-            MakeFile(updateContext: updateContext, repoContext: repoContext, string.Join(separator: Path.DirectorySeparatorChar, ".github", "PULL_REQUEST_TEMPLATE.md"), prefix: "Config"),
-            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: "CONTRIBUTING.md", prefix: "Documentation"),
-            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: "SECURITY.md", prefix: "Documentation")
+            fileContext.MakeFile(fileName: ".editorconfig", prefix: "Config"),
+            fileContext.MakeFile(fileName: ".gitleaks.toml", prefix: "Config"),
+            fileContext.MakeFile(fileName: ".gitignore", prefix: "Config"),
+            fileContext.MakeFile(fileName: ".gitattributes", prefix: "Config"),
+            fileContext.MakeFile(fileName: ".tsqllintrc", prefix: "Linters"),
+            fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "pr-lint.yml"), prefix: "Linters"),
+            fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "CODEOWNERS"), prefix: "Config"),
+            fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "PULL_REQUEST_TEMPLATE.md"), prefix: "Config"),
+            fileContext.MakeFile(fileName: "CONTRIBUTING.md", prefix: "Documentation"),
+            fileContext.MakeFile(fileName: "SECURITY.md", prefix: "Documentation")
         ];
     }
 
-    private static IEnumerable<(string sourceFileName, string targetFileName, string message)> IncludeFilesInSource(TemplateUpdateContext updateContext,
-                                                                                                                    RepoContext repoContext,
-                                                                                                                    string sourceFolder,
-                                                                                                                    string prefix)
+    private static IEnumerable<CopyInstruction> IncludeFilesInSource(FileContext fileContext, string sourceFolder, string prefix)
     {
-        string sourceFolderName = Path.Combine(path1: updateContext.TemplateFolder, path2: sourceFolder);
+        string sourceFolderName = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: sourceFolder);
 
         if (Directory.Exists(sourceFolderName))
         {
-            foreach (string issueSourceFile in Directory.EnumerateFiles(sourceFolderName))
-            {
-                string fileName = issueSourceFile.Substring(sourceFolderName.Length + 1);
+            int sourceFolderNamePrefixLength = sourceFolderName.Length + 1;
 
-                yield return MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: fileName, prefix: prefix);
-            }
+            return Directory.EnumerateFiles(sourceFolderName)
+                            .Select(issueSourceFile => issueSourceFile.Substring(sourceFolderNamePrefixLength))
+                            .Select(fileName => fileContext.MakeFile(fileName: fileName, prefix: prefix));
         }
-    }
 
-    private static (string sourceFileName, string targetFileName, string message) MakeFile(in TemplateUpdateContext updateContext, in RepoContext repoContext, string fileName, string prefix)
-    {
-        string sourceFileName = Path.Combine(path1: updateContext.TemplateFolder, path2: fileName);
-        string targetFileName = Path.Combine(path1: repoContext.WorkingDirectory, path2: fileName);
-
-        return (sourceFileName, targetFileName, $"[{prefix}] Updated {fileName}");
+        return [];
     }
 
     private async ValueTask UpdateDotNetAsync(TemplateUpdateContext updateContext,
@@ -564,6 +553,22 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
 
         return Difference.DIFFERENT;
     }
+
+    [DebuggerDisplay($"Template: {UpdateContext.TemplateFolder}, Repo: {RepoContext.WorkingDirectory}")]
+    [StructLayout(LayoutKind.Auto)]
+    private readonly record struct FileContext(TemplateUpdateContext UpdateContext, RepoContext RepoContext)
+    {
+        public CopyInstruction MakeFile(string fileName, string prefix)
+        {
+            string sourceFileName = Path.Combine(path1: this.UpdateContext.TemplateFolder, path2: fileName);
+            string targetFileName = Path.Combine(path1: this.RepoContext.WorkingDirectory, path2: fileName);
+
+            return new(SourceFileName: sourceFileName, TargetFileName: targetFileName, $"[{prefix}] Updated {fileName}");
+        }
+    }
+
+    [DebuggerDisplay("Copy {SourceFileName} to {TargetFileName} => {Message}")]
+    private readonly record struct CopyInstruction(string SourceFileName, string TargetFileName, string Message);
 
     private enum Difference
     {
