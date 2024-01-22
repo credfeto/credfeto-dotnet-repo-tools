@@ -11,13 +11,41 @@ Updates all the packages specified in the ``packages.json`` file in the reposito
  
 ```bash
 dotnet updaterepo \
-    --repositories /home/markr/work/personal/auto-update-config/personal/repos.lst \
-    --work /home/markr/temp \
-    --tracking /home/markr/temp/tracking.json \
-    --cache /home/markr/temp/cache.json \
-    --packages /home/markr/work/personal/auto-update-config/packages.json \
+    update-packages \
+    --repositories ~/work/personal/auto-update-config/personal/repos.lst \
+    --work ~/temp \
+    --tracking ~/temp/tracking.json \
+    --cache ~/temp/cache.json \
+    --packages ~/work/personal/auto-update-config/packages.json \
     --template git@github.com:credfeto/cs-template.git \
-    --release /home/markr/work/personal/auto-update-config/release.json
+    --release ~/work/personal/auto-update-config/release.json
+```
+
+## Running (Template Update)
+
+Updates common files in a repository to match the files defined template repository specified by ``--template``.
+
+```bash
+dotnet updaterepo \
+    update-template \
+    --repositories ~/work/personal/auto-update-config/personal/repos.lst \
+    --work ~/temp \
+    --tracking ~/temp/tracking.json \
+    --packages ~/work/personal/auto-update-config/packages.json \
+    --template git@github.com:credfeto/cs-template.git \
+    --release ~/work/personal/auto-update-config/release.json
+```
+
+## Running (Code Cleanup)
+
+TODO - this is not yet implemented
+
+```bash
+dotnet updaterepo \
+    code-cleanup \
+    --repositories ~/work/personal/auto-update-config/personal/repos.lst \
+    --work ~/temp \
+    --tracking ~/temp/tracking.json
 ```
 
 ## File formats

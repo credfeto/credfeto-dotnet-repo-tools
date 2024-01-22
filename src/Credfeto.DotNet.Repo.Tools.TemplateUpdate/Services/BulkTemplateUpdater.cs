@@ -72,8 +72,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         IReadOnlyList<PackageUpdate> packages = await this._bulkPackageConfigLoader.LoadAsync(path: packagesFileName, cancellationToken: cancellationToken);
 
-        using (IGitRepository templateRepo =
-               await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
+        using (IGitRepository templateRepo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
             TemplateUpdateContext updateContext = await this.BuildUpdateContextAsync(templateRepo: templateRepo,
                                                                                      workFolder: workFolder,
@@ -92,10 +91,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         }
     }
 
-    private async ValueTask UpdateRepositoriesAsync(TemplateUpdateContext updateContext,
-                                                    IReadOnlyList<string> repositories,
-                                                    IReadOnlyList<PackageUpdate> packages,
-                                                    CancellationToken cancellationToken)
+    private async ValueTask UpdateRepositoriesAsync(TemplateUpdateContext updateContext, IReadOnlyList<string> repositories, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
         try
         {
@@ -133,8 +129,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         this._logger.LogProcessingRepo(repo);
 
-        using (IGitRepository repository =
-               await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
+        using (IGitRepository repository = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
             if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
             {
@@ -153,16 +148,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         }
     }
 
-    private async ValueTask ProcessRepoUpdatesAsync(TemplateUpdateContext updateContext,
-                                                    RepoContext repoContext,
-                                                    IReadOnlyList<PackageUpdate> packages,
-                                                    CancellationToken cancellationToken)
+    private async ValueTask ProcessRepoUpdatesAsync(TemplateUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
         string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
 
         int totalUpdates = await this.UpdateStandardFilesAsync(updateContext: updateContext, repoContext: repoContext, cancellationToken: cancellationToken);
-
-        // TODO: Update non C# files
 
         if (repoContext.HasDotNetFiles(out string? sourceDirectory, out IReadOnlyList<string>? solutions, out IReadOnlyList<string>? projects))
         {
@@ -179,42 +169,108 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         else
         {
             this._logger.LogNoDotNetFilesFound();
-            await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext,
-                                                          updateContext: updateContext,
-                                                          value: repoContext.Repository.HeadRev,
-                                                          cancellationToken: cancellationToken);
+            await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
         }
     }
 
     private async ValueTask<int> UpdateStandardFilesAsync(TemplateUpdateContext updateContext, RepoContext repoContext, CancellationToken cancellationToken)
     {
-        this._logger.LogInformation($"{updateContext.TemplateFolder} is up to date");
-        this._logger.LogInformation($"{repoContext.WorkingDirectory} is up to date");
+        int changes = 0;
+        IEnumerable<(string sourceFileName, string targetFileName, string message)> filesToUpdate = GetStandardFilesToUpdate(updateContext: updateContext, repoContext: repoContext);
 
-        await Task.Delay(millisecondsDelay: 0, cancellationToken: cancellationToken);
+        foreach ((string sourceFileName, string targetFileName, string message) in filesToUpdate)
+        {
+            bool changed = await this.UpdateFileAsync(repoContext: repoContext,
+                                                      templateGlobalJsonFileName: sourceFileName,
+                                                      targetGlobalJsonFileName: targetFileName,
+                                                      commitMessage: message,
+                                                      changelogUpdate: ChangelogUpdate,
+                                                      cancellationToken: cancellationToken);
+
+            if (changed)
+            {
+                ++changes;
+            }
+        }
 
         // TODO: Implement
 /*
-updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName ".editorconfig"
-updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName ".gitleaks.toml"
-updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName ".gitignore"
-updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName ".gitattributes"
-updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName ".tsqllintrc"
-updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName ".github\pr-lint.yml"
-updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName ".github\CODEOWNERS"
-updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName ".github\PULL_REQUEST_TEMPLATE.md"
-updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName "CONTRIBUTING.md"
-updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName "SECURITY.md"
-foreach($file in ".github\ISSUE_TEMPLATE") updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName $file
-foreach($file in ".github\actions") updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName $file
-foreach($file in ".github\workflows") updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName $file
-foreach($file in ".github\linters") updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName $file
 -- Remove Obsolete Workflows(from config)
 -- Remove Obsolete Actions(from config)
 
 updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
  */
-        return 0;
+        return changes;
+
+        static ValueTask ChangelogUpdate(CancellationToken cancellationToken)
+        {
+            // nothing to do here
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private static IEnumerable<(string sourceFileName, string targetFileName, string message)> GetStandardFilesToUpdate(in TemplateUpdateContext updateContext, in RepoContext repoContext)
+    {
+        return GetStandardFilesBaseToUpdate(updateContext: updateContext, repoContext: repoContext)
+               .Concat(IncludeFilesInSource(updateContext: updateContext,
+                                            repoContext: repoContext,
+                                            Path.Combine(path1: updateContext.TemplateFolder, path2: ".github", path3: "ISSUE_TEMPLATE"),
+                                            prefix: "Config"))
+               .Concat(IncludeFilesInSource(updateContext: updateContext,
+                                            repoContext: repoContext,
+                                            Path.Combine(path1: updateContext.TemplateFolder, path2: ".github", path3: "actions"),
+                                            prefix: "Actions"))
+               .Concat(IncludeFilesInSource(updateContext: updateContext,
+                                            repoContext: repoContext,
+                                            Path.Combine(path1: updateContext.TemplateFolder, path2: ".github", path3: "workflows"),
+                                            prefix: "Actions"))
+               .Concat(IncludeFilesInSource(updateContext: updateContext,
+                                            repoContext: repoContext,
+                                            Path.Combine(path1: updateContext.TemplateFolder, path2: ".github", path3: "linters"),
+                                            prefix: "Linters"));
+    }
+
+    private static IEnumerable<(string sourceFileName, string targetFileName, string message)> GetStandardFilesBaseToUpdate(in TemplateUpdateContext updateContext, in RepoContext repoContext)
+    {
+        return
+        [
+            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: ".editorconfig", prefix: "Config"),
+            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: ".gitleaks.toml", prefix: "Config"),
+            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: ".gitignore", prefix: "Config"),
+            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: ".gitattributes", prefix: "Config"),
+            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: ".tsqllintrc", prefix: "Linters"),
+            MakeFile(updateContext: updateContext, repoContext: repoContext, string.Join(separator: Path.DirectorySeparatorChar, ".github", "pr-lint.yml"), prefix: "Linters"),
+            MakeFile(updateContext: updateContext, repoContext: repoContext, string.Join(separator: Path.DirectorySeparatorChar, ".github", "CODEOWNERS"), prefix: "Config"),
+            MakeFile(updateContext: updateContext, repoContext: repoContext, string.Join(separator: Path.DirectorySeparatorChar, ".github", "PULL_REQUEST_TEMPLATE.md"), prefix: "Config"),
+            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: "CONTRIBUTING.md", prefix: "Documentation"),
+            MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: "SECURITY.md", prefix: "Documentation")
+        ];
+    }
+
+    private static IEnumerable<(string sourceFileName, string targetFileName, string message)> IncludeFilesInSource(TemplateUpdateContext updateContext,
+                                                                                                                    RepoContext repoContext,
+                                                                                                                    string sourceFolder,
+                                                                                                                    string prefix)
+    {
+        string sourceFolderName = Path.Combine(path1: updateContext.TemplateFolder, path2: sourceFolder);
+
+        if (Directory.Exists(sourceFolderName))
+        {
+            foreach (string issueSourceFile in Directory.EnumerateFiles(sourceFolderName))
+            {
+                string fileName = issueSourceFile.Substring(sourceFolderName.Length + 1);
+
+                yield return MakeFile(updateContext: updateContext, repoContext: repoContext, fileName: fileName, prefix: prefix);
+            }
+        }
+    }
+
+    private static (string sourceFileName, string targetFileName, string message) MakeFile(in TemplateUpdateContext updateContext, in RepoContext repoContext, string fileName, string prefix)
+    {
+        string sourceFileName = Path.Combine(path1: updateContext.TemplateFolder, path2: fileName);
+        string targetFileName = Path.Combine(path1: repoContext.WorkingDirectory, path2: fileName);
+
+        return (sourceFileName, targetFileName, $"[{prefix}] Updated {fileName}");
     }
 
     private async ValueTask UpdateDotNetAsync(TemplateUpdateContext updateContext,
@@ -235,17 +291,13 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
 
             if (File.Exists(repoGlobalJson))
             {
-                DotNetVersionSettings repoDotNetSettings =
-                    await this._globalJson.LoadGlobalJsonAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
+                DotNetVersionSettings repoDotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
                 await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: repoDotNetSettings, cancellationToken: cancellationToken);
 
                 await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
                 lastKnownGoodBuild = repoContext.Repository.HeadRev;
-                await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext,
-                                                              updateContext: updateContext,
-                                                              value: lastKnownGoodBuild,
-                                                              cancellationToken: cancellationToken);
+                await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
             }
         }
 
@@ -325,10 +377,7 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
                 }
 
                 string lastKnownGoodBuild = repoContext.Repository.HeadRev;
-                await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext,
-                                                              updateContext: updateContext,
-                                                              value: lastKnownGoodBuild,
-                                                              cancellationToken: cancellationToken);
+                await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
 
                 await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: branchName,
                                                                           branchPrefix: branchPrefix,
@@ -468,11 +517,7 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
 
         ReleaseConfig releaseConfig = await this._releaseConfigLoader.LoadAsync(path: releaseConfigFileName, cancellationToken: cancellationToken);
 
-        return new(WorkFolder: workFolder,
-                   TemplateFolder: templateRepo.WorkingDirectory,
-                   TrackingFileName: trackingFileName,
-                   DotNetSettings: dotNetSettings,
-                   ReleaseConfig: releaseConfig);
+        return new(WorkFolder: workFolder, TemplateFolder: templateRepo.WorkingDirectory, TrackingFileName: trackingFileName, DotNetSettings: dotNetSettings, ReleaseConfig: releaseConfig);
     }
 
     private ValueTask LoadTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)
