@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.ChangeLog;
@@ -200,6 +201,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             bool changed = await this.UpdateFileAsync(repoContext: repoContext,
                                                       templateSourceFileName: copyInstruction.SourceFileName,
                                                       targetFileName: copyInstruction.TargetFileName,
+                                                      applyChanges: copyInstruction.Apply,
                                                       commitMessage: copyInstruction.Message,
                                                       changelogUpdate: NoChangeLogUpdateAsync,
                                                       cancellationToken: cancellationToken);
@@ -233,11 +235,36 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
         string workflows = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: DOT_GITHUB_DIR, path3: "workflows");
         string linters = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: DOT_GITHUB_DIR, path3: "linters");
 
+        Func<byte[], (byte[] bytes, bool changed)> rewriteRunsOn = ShouldUseGitHubHostedRunners(fileContext);
+
         return GetStandardFilesBaseToUpdate(fileContext)
                .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: issueTemplates, prefix: "Config"))
                .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: actions, prefix: "Actions"))
-               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: workflows, prefix: "Actions"))
+               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: workflows, prefix: "Actions", apply: rewriteRunsOn))
                .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: linters, prefix: "Linters"));
+    }
+
+    private static Func<byte[], (byte[] bytes, bool changed)> ShouldUseGitHubHostedRunners(in FileContext fileContext)
+    {
+        return fileContext.RepoContext.ClonePath.Contains(value: "credfeto", comparisonType: StringComparison.Ordinal)
+            ? ConvertFromSelfHostedRunnerToGitHubHostedRunner
+            : NoChange;
+    }
+
+    private static (byte[] bytes, bool changed) ConvertFromSelfHostedRunnerToGitHubHostedRunner(byte[] source)
+    {
+        StringBuilder stringBuilder = new(Encoding.UTF8.GetString(source));
+
+        stringBuilder = stringBuilder.Replace(oldValue: "runs-on: [self-hosted, linux]", newValue: "runs-on: ubuntu-latest");
+
+        byte[] target = Encoding.UTF8.GetBytes(stringBuilder.ToString());
+
+        if (source.SequenceEqual(target))
+        {
+            return (source, false);
+        }
+
+        return (target, true);
     }
 
     private static IEnumerable<CopyInstruction> GetStandardFilesBaseToUpdate(in FileContext fileContext)
@@ -257,17 +284,22 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
         ];
     }
 
-    private static IEnumerable<CopyInstruction> IncludeFilesInSource(FileContext fileContext, string sourceFolder, string prefix)
+    private static IEnumerable<CopyInstruction> IncludeFilesInSource(in FileContext fileContext, string sourceFolder, string prefix)
+    {
+        return IncludeFilesInSource(fileContext: fileContext, sourceFolder: sourceFolder, prefix: prefix, apply: NoChange);
+    }
+
+    private static IEnumerable<CopyInstruction> IncludeFilesInSource(FileContext fileContext, string sourceFolder, string prefix, Func<byte[], (byte[] bytes, bool changed)> apply)
     {
         string sourceFolderName = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: sourceFolder);
 
+        int sourceFolderNamePrefixLength = sourceFolderName.Length + 1;
+
         if (Directory.Exists(sourceFolderName))
         {
-            int sourceFolderNamePrefixLength = sourceFolderName.Length + 1;
-
             return Directory.EnumerateFiles(sourceFolderName)
                             .Select(issueSourceFile => issueSourceFile.Substring(sourceFolderNamePrefixLength))
-                            .Select(fileName => fileContext.MakeFile(fileName: fileName, prefix: prefix));
+                            .Select(fileName => fileContext.MakeFile(fileName: fileName, prefix: prefix, apply: apply));
         }
 
         return [];
@@ -373,6 +405,7 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
             bool changed = await this.UpdateFileAsync(repoContext: repoContext,
                                                       templateSourceFileName: dotSettingsSourceFile,
                                                       targetFileName: targetFileName,
+                                                      applyChanges: NoChange,
                                                       commitMessage: commitMessage,
                                                       changelogUpdate: NoChangeLogUpdateAsync,
                                                       cancellationToken: cancellationToken);
@@ -410,6 +443,7 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
             bool changed = await this.UpdateFileAsync(repoContext: repoContext,
                                                       templateSourceFileName: templateGlobalJsonFileName,
                                                       targetFileName: targetGlobalJsonFileName,
+                                                      applyChanges: NoChange,
                                                       commitMessage: message,
                                                       changelogUpdate: ChangelogUpdate,
                                                       cancellationToken: cancellationToken);
@@ -476,6 +510,11 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
         }
     }
 
+    private static (byte[] source, bool changed) NoChange(byte[] source)
+    {
+        return (source, false);
+    }
+
     private async Task<bool> CheckBuildAsync(TemplateUpdateContext updateContext,
                                              string sourceDirectory,
                                              IReadOnlyList<string> solutions,
@@ -503,11 +542,12 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
     private async ValueTask<bool> UpdateFileAsync(RepoContext repoContext,
                                                   string templateSourceFileName,
                                                   string targetFileName,
+                                                  Func<byte[], (byte[] bytes, bool changed)> applyChanges,
                                                   string commitMessage,
                                                   Func<CancellationToken, ValueTask> changelogUpdate,
                                                   CancellationToken cancellationToken)
     {
-        Difference diff = await this.IsSameContentAsync(sourceFileName: templateSourceFileName, targetFileName: targetFileName, cancellationToken: cancellationToken);
+        Difference diff = await this.IsSameContentAsync(sourceFileName: templateSourceFileName, targetFileName: targetFileName, applyChanges: applyChanges, cancellationToken: cancellationToken);
 
         return diff switch
         {
@@ -594,7 +634,7 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
             : this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask<Difference> IsSameContentAsync(string sourceFileName, string targetFileName, CancellationToken cancellationToken)
+    private async ValueTask<Difference> IsSameContentAsync(string sourceFileName, string targetFileName, Func<byte[], (byte[] bytes, bool changed)> applyChanges, CancellationToken cancellationToken)
     {
         if (!File.Exists(sourceFileName))
         {
@@ -603,14 +643,18 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
             return Difference.SOURCE_MISSING;
         }
 
+        byte[] sourceBytes = await File.ReadAllBytesAsync(path: sourceFileName, cancellationToken: cancellationToken);
+        (sourceBytes, bool changed) = applyChanges(sourceBytes);
+
         if (!File.Exists(targetFileName))
         {
             this._logger.LogDebug($"{targetFileName} is missing");
 
+            await File.WriteAllBytesAsync(path: targetFileName, bytes: sourceBytes, cancellationToken: cancellationToken);
+
             return Difference.TARGET_MISSING;
         }
 
-        byte[] sourceBytes = await File.ReadAllBytesAsync(path: sourceFileName, cancellationToken: cancellationToken);
         byte[] targetBytes = await File.ReadAllBytesAsync(path: targetFileName, cancellationToken: cancellationToken);
 
         if (sourceBytes.SequenceEqual(targetBytes))
@@ -622,6 +666,11 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
 
         this._logger.LogDebug($"{targetFileName} is different");
 
+        if (changed)
+        {
+            await File.WriteAllBytesAsync(path: targetFileName, bytes: targetBytes, cancellationToken: cancellationToken);
+        }
+
         return Difference.DIFFERENT;
     }
 
@@ -631,15 +680,20 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
     {
         public CopyInstruction MakeFile(string fileName, string prefix)
         {
+            return this.MakeFile(fileName: fileName, prefix: prefix, apply: NoChange);
+        }
+
+        public CopyInstruction MakeFile(string fileName, string prefix, Func<byte[], (byte[] bytes, bool changed)> apply)
+        {
             string sourceFileName = Path.Combine(path1: this.UpdateContext.TemplateFolder, path2: fileName);
             string targetFileName = Path.Combine(path1: this.RepoContext.WorkingDirectory, path2: fileName);
 
-            return new(SourceFileName: sourceFileName, TargetFileName: targetFileName, $"[{prefix}] Updated {fileName}");
+            return new(SourceFileName: sourceFileName, TargetFileName: targetFileName, Apply: apply, $"[{prefix}] Updated {fileName}");
         }
     }
 
     [DebuggerDisplay("Copy {SourceFileName} to {TargetFileName} => {Message}")]
-    private readonly record struct CopyInstruction(string SourceFileName, string TargetFileName, string Message);
+    private readonly record struct CopyInstruction(string SourceFileName, string TargetFileName, Func<byte[], (byte[] bytes, bool changed)> Apply, string Message);
 
     private enum Difference
     {
