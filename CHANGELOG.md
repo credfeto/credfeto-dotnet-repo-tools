@@ -9,15 +9,18 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated SonarAnalyzer.CSharp to 9.17.0.82934
-- Dependencies - Updated Meziantou.Analyzer to 2.0.138
-- Conditionally change self hosted runners to github hosted runners when updating workflows
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.0.10] - 2024-01-24
+### Changed
+- Dependencies - Updated SonarAnalyzer.CSharp to 9.17.0.82934
+- Dependencies - Updated Meziantou.Analyzer to 2.0.138
+- Conditionally change self hosted runners to github hosted runners when updating workflows
+
 ## [1.0.9] - 2024-01-22
 ### Added
 - Copying simple items from template if missing or unchanged
