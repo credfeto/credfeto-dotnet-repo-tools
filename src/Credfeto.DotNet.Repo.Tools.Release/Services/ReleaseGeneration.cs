@@ -186,8 +186,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
                                                                              IReadOnlyList<PackageUpdate> packages,
                                                                              CancellationToken cancellationToken)
     {
-        string releaseNotes =
-            await ChangeLogReader.ExtractReleaseNotesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
+        string releaseNotes = await ChangeLogReader.ExtractReleaseNotesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
 
         int autoUpdateCount = this.IsAllAutoUpdates(repoContext: repoContext, releaseNotes: releaseNotes, packages: packages);
 
@@ -248,8 +247,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         static bool IsPackageUpdaterBranch(string branch)
         {
-            return branch.StartsWith(value: "depends/", comparisonType: StringComparison.Ordinal) &&
-                   !branch.StartsWith(value: "/preview/", comparisonType: StringComparison.Ordinal);
+            return branch.StartsWith(value: "depends/", comparisonType: StringComparison.Ordinal) && !branch.StartsWith(value: "/preview/", comparisonType: StringComparison.Ordinal);
         }
 
         static bool IsDependabotBranch(string branch)
@@ -314,7 +312,11 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     {
         NuGetVersion version = this._versionDetector.FindVersion(repository: repoContext.Repository.Active, buildNumber: DEFAULT_BUILD_NUMBER);
 
-        return new NuGetVersion(major: version.Major, minor: version.Minor, version.Patch + 1).ToString();
+        this._logger.LogInformation($"Last Release was: {version}");
+        NuGetVersion nextVersion = new(major: version.Major, minor: version.Minor, version.Patch + 1);
+        this._logger.LogInformation($"Next release is: {version}");
+
+        return nextVersion.ToString();
     }
 
     private static class ScoreMultipliers
