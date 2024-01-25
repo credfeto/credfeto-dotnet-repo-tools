@@ -531,12 +531,12 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
 
         return diff switch
         {
-            Difference.TARGET_MISSING or Difference.DIFFERENT => await ReplaceFileAsync(repoContext: repoContext,
-                                                                                        templateGlobalJsonFileName: templateSourceFileName,
-                                                                                        targetGlobalJsonFileName: targetFileName,
-                                                                                        commitMessage: commitMessage,
-                                                                                        changelogUpdate: changelogUpdate,
-                                                                                        cancellationToken: cancellationToken),
+            Difference.TARGET_MISSING or Difference.DIFFERENT => await this.ReplaceFileAsync(repoContext: repoContext,
+                                                                                             templateGlobalJsonFileName: templateSourceFileName,
+                                                                                             targetGlobalJsonFileName: targetFileName,
+                                                                                             commitMessage: commitMessage,
+                                                                                             changelogUpdate: changelogUpdate,
+                                                                                             cancellationToken: cancellationToken),
             _ => AlreadyUpToDate()
         };
 
@@ -548,14 +548,14 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
         }
     }
 
-    private static async ValueTask<bool> ReplaceFileAsync(RepoContext repoContext,
-                                                          string templateGlobalJsonFileName,
-                                                          string targetGlobalJsonFileName,
-                                                          string commitMessage,
-                                                          Func<CancellationToken, ValueTask> changelogUpdate,
-                                                          CancellationToken cancellationToken)
+    private async ValueTask<bool> ReplaceFileAsync(RepoContext repoContext,
+                                                   string templateGlobalJsonFileName,
+                                                   string targetGlobalJsonFileName,
+                                                   string commitMessage,
+                                                   Func<CancellationToken, ValueTask> changelogUpdate,
+                                                   CancellationToken cancellationToken)
     {
-        File.Copy(sourceFileName: templateGlobalJsonFileName, destFileName: targetGlobalJsonFileName, overwrite: true);
+        this._logger.LogInformation($"Updating {targetGlobalJsonFileName} from {templateGlobalJsonFileName} -> {commitMessage}");
 
         await changelogUpdate(cancellationToken);
         await repoContext.Repository.CommitAsync(message: commitMessage, cancellationToken: cancellationToken);
