@@ -313,10 +313,13 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         NuGetVersion version = this._versionDetector.FindVersion(repository: repoContext.Repository.Active, buildNumber: DEFAULT_BUILD_NUMBER);
 
         this._logger.LogInformation($"Last Release was: {version}");
-        NuGetVersion nextVersion = new(major: version.Major, minor: version.Minor, version.Patch + 1);
-        this._logger.LogInformation($"Next release is: {version}");
 
-        return nextVersion.ToString();
+        // NuGetVersion nextVersion = new(major: version.Major, minor: version.Minor, version.Patch + 1);
+        // this._logger.LogInformation($"Next release is: {version}");
+        //
+        // return nextVersion.ToString();
+
+        return version.ToString();
     }
 
     private static class ScoreMultipliers
