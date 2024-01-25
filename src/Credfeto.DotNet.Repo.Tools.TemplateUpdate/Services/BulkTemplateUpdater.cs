@@ -282,7 +282,7 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
     {
         string sourceFolderName = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: sourceFolder);
 
-        int sourceFolderNamePrefixLength = sourceFolderName.Length + 1;
+        int sourceFolderNamePrefixLength = TemplateFolderLength(fileContext);
 
         if (Directory.Exists(sourceFolderName))
         {
@@ -292,6 +292,11 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
         }
 
         return [];
+    }
+
+    private static int TemplateFolderLength(in FileContext fileContext)
+    {
+        return fileContext.UpdateContext.TemplateFolder.Length + 1;
     }
 
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Debug logging")]
