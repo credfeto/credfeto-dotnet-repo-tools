@@ -10,6 +10,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated Roslynator.Analyzers to 4.10.0
+- Updated logging
 ### Removed
 ### Deployment Changes
 
