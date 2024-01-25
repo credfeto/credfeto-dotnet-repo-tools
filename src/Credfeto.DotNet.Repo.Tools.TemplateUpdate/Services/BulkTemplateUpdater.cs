@@ -527,6 +527,8 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
                                                   Func<CancellationToken, ValueTask> changelogUpdate,
                                                   CancellationToken cancellationToken)
     {
+        this._logger.LogInformation($"Checking: {targetFileName} <-> {templateSourceFileName}");
+
         Difference diff = await this.IsSameContentAsync(sourceFileName: templateSourceFileName, targetFileName: targetFileName, applyChanges: applyChanges, cancellationToken: cancellationToken);
 
         return diff switch
