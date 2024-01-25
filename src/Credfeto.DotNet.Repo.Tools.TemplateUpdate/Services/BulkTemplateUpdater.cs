@@ -542,7 +542,7 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
 
         bool AlreadyUpToDate()
         {
-            this._logger.LogDebug($"{targetFileName} is up to date");
+            this._logger.LogInformation($"{targetFileName} is up to date with {templateSourceFileName}");
 
             return false;
         }
