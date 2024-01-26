@@ -8,7 +8,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
-- File updates with modification
 ### Changed
 ### Removed
 ### Deployment Changes
@@ -16,6 +15,10 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.0.12] - 2024-01-26
+### Fixed
+- File updates with modification
+
 ## [1.0.11] - 2024-01-25
 ### Changed
 - Dependencies - Updated Roslynator.Analyzers to 4.10.0
