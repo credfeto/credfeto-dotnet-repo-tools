@@ -649,7 +649,7 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
 
         if (sourceBytes.SequenceEqual(targetBytes))
         {
-            this._logger.LogDebug($"{targetFileName} is unchanged");
+            this._logger.LogInformation($"{targetFileName} is unchanged");
 
             return Difference.SAME;
         }
