@@ -651,7 +651,7 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
 
         if (changed)
         {
-            await File.WriteAllBytesAsync(path: targetFileName, bytes: targetBytes, cancellationToken: cancellationToken);
+            await File.WriteAllBytesAsync(path: targetFileName, bytes: sourceBytes, cancellationToken: cancellationToken);
         }
 
         return Difference.DIFFERENT;
