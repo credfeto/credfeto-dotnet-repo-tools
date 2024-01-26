@@ -631,6 +631,11 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
         byte[] sourceBytes = await File.ReadAllBytesAsync(path: sourceFileName, cancellationToken: cancellationToken);
         (sourceBytes, bool changed) = applyChanges(sourceBytes);
 
+        if (changed)
+        {
+            this._logger.LogInformation($"Transform on {sourceFileName} resulted in changes");
+        }
+
         if (!File.Exists(targetFileName))
         {
             this._logger.LogDebug($"{targetFileName} is missing");
@@ -649,12 +654,9 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
             return Difference.SAME;
         }
 
-        this._logger.LogDebug($"{targetFileName} is different");
+        this._logger.LogInformation($"{targetFileName} is different");
 
-        if (changed)
-        {
-            await File.WriteAllBytesAsync(path: targetFileName, bytes: sourceBytes, cancellationToken: cancellationToken);
-        }
+        await File.WriteAllBytesAsync(path: targetFileName, bytes: sourceBytes, cancellationToken: cancellationToken);
 
         return Difference.DIFFERENT;
     }
