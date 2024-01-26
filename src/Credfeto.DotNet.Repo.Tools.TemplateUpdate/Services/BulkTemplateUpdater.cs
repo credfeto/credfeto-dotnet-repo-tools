@@ -198,6 +198,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             if (changed)
             {
                 ++changes;
+                await repoContext.Repository.PushAsync(cancellationToken);
             }
         }
 
@@ -401,6 +402,7 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
             if (changed)
             {
                 ++changes;
+                await repoContext.Repository.PushAsync(cancellationToken);
             }
         }
 
