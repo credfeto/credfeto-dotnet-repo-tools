@@ -18,101 +18,114 @@ public sealed class FileUpdater : IFileUpdater
         this._logger = logger;
     }
 
-    public ValueTask<bool> UpdateFileAsync(RepoContext repoContext, CopyInstruction copyInstruction, Func<CancellationToken, ValueTask> changelogUpdate, CancellationToken cancellationToken)
+    public async ValueTask<bool> UpdateFileAsync(RepoContext repoContext, CopyInstruction copyInstruction, Func<CancellationToken, ValueTask> changelogUpdate, CancellationToken cancellationToken)
     {
-        return this.UpdateFileAsync(repoContext: repoContext,
-                                    templateSourceFileName: copyInstruction.SourceFileName,
-                                    targetFileName: copyInstruction.TargetFileName,
-                                    applyChanges: copyInstruction.Apply,
-                                    commitMessage: copyInstruction.Message,
-                                    changelogUpdate: changelogUpdate,
-                                    cancellationToken: cancellationToken);
-    }
+        this._logger.LogInformation($"Checking: {copyInstruction.TargetFileName} <-> {copyInstruction.SourceFileName}");
 
-    public async ValueTask<bool> UpdateFileAsync(RepoContext repoContext,
-                                                 string templateSourceFileName,
-                                                 string targetFileName,
-                                                 Func<byte[], (byte[] bytes, bool changed)> applyChanges,
-                                                 string commitMessage,
-                                                 Func<CancellationToken, ValueTask> changelogUpdate,
-                                                 CancellationToken cancellationToken)
-    {
-        this._logger.LogInformation($"Checking: {targetFileName} <-> {templateSourceFileName}");
-
-        Difference diff = await this.IsSameContentAsync(sourceFileName: templateSourceFileName, targetFileName: targetFileName, applyChanges: applyChanges, cancellationToken: cancellationToken);
+        Difference diff = await this.AttemptToUpdateAsync(copyInstruction: copyInstruction, cancellationToken: cancellationToken);
 
         return diff switch
         {
-            Difference.TARGET_MISSING or Difference.DIFFERENT => await this.ReplaceFileAsync(repoContext: repoContext,
-                                                                                             templateGlobalJsonFileName: templateSourceFileName,
-                                                                                             targetGlobalJsonFileName: targetFileName,
-                                                                                             commitMessage: commitMessage,
-                                                                                             changelogUpdate: changelogUpdate,
-                                                                                             cancellationToken: cancellationToken),
-            _ => AlreadyUpToDate()
+            Difference.TARGET_MISSING or Difference.DIFFERENT => await this.CommitFileAsync(repoContext: repoContext,
+                                                                                            copyInstruction: copyInstruction,
+                                                                                            changelogUpdate: changelogUpdate,
+                                                                                            cancellationToken: cancellationToken),
+            _ => this.AlreadyUpToDate(copyInstruction)
         };
-
-        bool AlreadyUpToDate()
-        {
-            this._logger.LogInformation($"{targetFileName} is up to date with {templateSourceFileName}");
-
-            return false;
-        }
     }
 
-    private async ValueTask<Difference> IsSameContentAsync(string sourceFileName, string targetFileName, Func<byte[], (byte[] bytes, bool changed)> applyChanges, CancellationToken cancellationToken)
+    private bool AlreadyUpToDate(in CopyInstruction copyInstruction)
     {
-        if (!File.Exists(sourceFileName))
-        {
-            this._logger.LogDebug($"{sourceFileName} is missing");
+        this._logger.LogInformation($"{copyInstruction.TargetFileName} is up to date with {copyInstruction.SourceFileName}");
 
-            return Difference.SOURCE_MISSING;
+        return false;
+    }
+
+    private async ValueTask<Difference> AttemptToUpdateAsync(CopyInstruction copyInstruction, CancellationToken cancellationToken)
+    {
+        if (!File.Exists(copyInstruction.SourceFileName))
+        {
+            return this.OnSourceMissing(copyInstruction);
         }
 
-        byte[] sourceBytes = await File.ReadAllBytesAsync(path: sourceFileName, cancellationToken: cancellationToken);
-        (sourceBytes, bool changed) = applyChanges(sourceBytes);
+        byte[] sourceBytes = await this.ReadSourceFileAsync(copyInstruction: copyInstruction, cancellationToken: cancellationToken);
 
-        if (changed)
+        if (!File.Exists(copyInstruction.TargetFileName))
         {
-            this._logger.LogInformation($"Transform on {sourceFileName} resulted in changes");
+            return await this.OnTargetMissingAsync(copyInstruction: copyInstruction, sourceBytes: sourceBytes, cancellationToken: cancellationToken);
         }
 
-        if (!File.Exists(targetFileName))
-        {
-            this._logger.LogDebug($"{targetFileName} is missing");
-
-            await File.WriteAllBytesAsync(path: targetFileName, bytes: sourceBytes, cancellationToken: cancellationToken);
-
-            return Difference.TARGET_MISSING;
-        }
-
-        byte[] targetBytes = await File.ReadAllBytesAsync(path: targetFileName, cancellationToken: cancellationToken);
+        byte[] targetBytes = await ReadTargetFileAsync(copyInstruction: copyInstruction, cancellationToken: cancellationToken);
 
         if (sourceBytes.SequenceEqual(targetBytes))
         {
-            this._logger.LogInformation($"{targetFileName} is unchanged");
-
-            return Difference.SAME;
+            return this.OnContentUnchanged(copyInstruction);
         }
 
-        this._logger.LogInformation($"{targetFileName} is different");
+        return await this.OnContentDifferentAsync(copyInstruction: copyInstruction, sourceBytes: sourceBytes, cancellationToken: cancellationToken);
+    }
 
-        await File.WriteAllBytesAsync(path: targetFileName, bytes: sourceBytes, cancellationToken: cancellationToken);
+    private static async ValueTask<byte[]> ReadTargetFileAsync(CopyInstruction copyInstruction, CancellationToken cancellationToken)
+    {
+        return await File.ReadAllBytesAsync(path: copyInstruction.TargetFileName, cancellationToken: cancellationToken);
+    }
+
+    private async ValueTask<byte[]> ReadSourceFileAsync(CopyInstruction copyInstruction, CancellationToken cancellationToken)
+    {
+        byte[] sourceBytes = await File.ReadAllBytesAsync(path: copyInstruction.SourceFileName, cancellationToken: cancellationToken);
+        (sourceBytes, bool changed) = copyInstruction.Apply(sourceBytes);
+
+        if (changed)
+        {
+            this._logger.LogInformation($"Transform on {copyInstruction.SourceFileName} resulted in changes");
+        }
+
+        return sourceBytes;
+    }
+
+    private async ValueTask<Difference> OnContentDifferentAsync(CopyInstruction copyInstruction, byte[] sourceBytes, CancellationToken cancellationToken)
+    {
+        this._logger.LogInformation($"{copyInstruction.TargetFileName} is different");
+
+        await WriteTargetFileAsync(copyInstruction: copyInstruction, sourceBytes: sourceBytes, cancellationToken: cancellationToken);
 
         return Difference.DIFFERENT;
     }
 
-    private async ValueTask<bool> ReplaceFileAsync(RepoContext repoContext,
-                                                   string templateGlobalJsonFileName,
-                                                   string targetGlobalJsonFileName,
-                                                   string commitMessage,
-                                                   Func<CancellationToken, ValueTask> changelogUpdate,
-                                                   CancellationToken cancellationToken)
+    private static Task WriteTargetFileAsync(in CopyInstruction copyInstruction, byte[] sourceBytes, in CancellationToken cancellationToken)
     {
-        this._logger.LogInformation($"Updating {targetGlobalJsonFileName} from {templateGlobalJsonFileName} -> {commitMessage}");
+        return File.WriteAllBytesAsync(path: copyInstruction.TargetFileName, bytes: sourceBytes, cancellationToken: cancellationToken);
+    }
+
+    private Difference OnContentUnchanged(in CopyInstruction copyInstruction)
+    {
+        this._logger.LogInformation($"{copyInstruction.TargetFileName} is unchanged");
+
+        return Difference.SAME;
+    }
+
+    private async ValueTask<Difference> OnTargetMissingAsync(CopyInstruction copyInstruction, byte[] sourceBytes, CancellationToken cancellationToken)
+    {
+        this._logger.LogDebug($"{copyInstruction.TargetFileName} is missing");
+
+        await WriteTargetFileAsync(copyInstruction: copyInstruction, sourceBytes: sourceBytes, cancellationToken: cancellationToken);
+
+        return Difference.TARGET_MISSING;
+    }
+
+    private Difference OnSourceMissing(in CopyInstruction copyInstruction)
+    {
+        this._logger.LogDebug($"{copyInstruction.SourceFileName} is missing");
+
+        return Difference.SOURCE_MISSING;
+    }
+
+    private async ValueTask<bool> CommitFileAsync(RepoContext repoContext, CopyInstruction copyInstruction, Func<CancellationToken, ValueTask> changelogUpdate, CancellationToken cancellationToken)
+    {
+        this._logger.LogInformation($"Updating {copyInstruction.TargetFileName} from {copyInstruction.SourceFileName} -> {copyInstruction.Message}");
 
         await changelogUpdate(cancellationToken);
-        await repoContext.Repository.CommitAsync(message: commitMessage, cancellationToken: cancellationToken);
+        await repoContext.Repository.CommitAsync(message: copyInstruction.Message, cancellationToken: cancellationToken);
 
         return true;
     }
