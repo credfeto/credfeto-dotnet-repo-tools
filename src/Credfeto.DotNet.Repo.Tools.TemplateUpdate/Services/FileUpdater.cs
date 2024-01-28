@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
+using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services.LoggingExtensions;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
@@ -20,7 +21,7 @@ public sealed class FileUpdater : IFileUpdater
 
     public async ValueTask<bool> UpdateFileAsync(RepoContext repoContext, CopyInstruction copyInstruction, Func<CancellationToken, ValueTask> changelogUpdate, CancellationToken cancellationToken)
     {
-        this._logger.LogInformation($"Checking: {copyInstruction.TargetFileName} <-> {copyInstruction.SourceFileName}");
+        this._logger.LogCheckingFile(copyInstruction);
 
         Difference diff = await this.AttemptToUpdateAsync(copyInstruction: copyInstruction, cancellationToken: cancellationToken);
 
