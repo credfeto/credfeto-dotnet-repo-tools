@@ -37,7 +37,7 @@ public sealed class FileUpdater : IFileUpdater
 
     private bool AlreadyUpToDate(in CopyInstruction copyInstruction)
     {
-        this._logger.LogInformation($"{copyInstruction.TargetFileName} is up to date with {copyInstruction.SourceFileName}");
+        this._logger.LogAlreadyUpToDate(copyInstruction);
 
         return false;
     }
@@ -78,7 +78,7 @@ public sealed class FileUpdater : IFileUpdater
 
         if (changed)
         {
-            this._logger.LogInformation($"Transform on {copyInstruction.SourceFileName} resulted in changes");
+            this._logger.LogSourceTransformed(copyInstruction);
         }
 
         return sourceBytes;
@@ -86,7 +86,7 @@ public sealed class FileUpdater : IFileUpdater
 
     private async ValueTask<Difference> OnContentDifferentAsync(CopyInstruction copyInstruction, byte[] sourceBytes, CancellationToken cancellationToken)
     {
-        this._logger.LogInformation($"{copyInstruction.TargetFileName} is different");
+        this._logger.LogTargetDifferent(copyInstruction);
 
         await WriteTargetFileAsync(copyInstruction: copyInstruction, sourceBytes: sourceBytes, cancellationToken: cancellationToken);
 
@@ -100,14 +100,14 @@ public sealed class FileUpdater : IFileUpdater
 
     private Difference OnContentUnchanged(in CopyInstruction copyInstruction)
     {
-        this._logger.LogInformation($"{copyInstruction.TargetFileName} is unchanged");
+        this._logger.LogTargetIdenticalToSource(copyInstruction);
 
         return Difference.SAME;
     }
 
     private async ValueTask<Difference> OnTargetMissingAsync(CopyInstruction copyInstruction, byte[] sourceBytes, CancellationToken cancellationToken)
     {
-        this._logger.LogDebug($"{copyInstruction.TargetFileName} is missing");
+        this._logger.LogTargetMissing(copyInstruction);
 
         await WriteTargetFileAsync(copyInstruction: copyInstruction, sourceBytes: sourceBytes, cancellationToken: cancellationToken);
 
@@ -116,14 +116,14 @@ public sealed class FileUpdater : IFileUpdater
 
     private Difference OnSourceMissing(in CopyInstruction copyInstruction)
     {
-        this._logger.LogDebug($"{copyInstruction.SourceFileName} is missing");
+        this._logger.LogSourceMissing(copyInstruction);
 
         return Difference.SOURCE_MISSING;
     }
 
     private async ValueTask<bool> CommitFileAsync(RepoContext repoContext, CopyInstruction copyInstruction, Func<CancellationToken, ValueTask> changelogUpdate, CancellationToken cancellationToken)
     {
-        this._logger.LogInformation($"Updating {copyInstruction.TargetFileName} from {copyInstruction.SourceFileName} -> {copyInstruction.Message}");
+        this._logger.LogCommitting(copyInstruction);
 
         await changelogUpdate(cancellationToken);
         await repoContext.Repository.CommitAsync(message: copyInstruction.Message, cancellationToken: cancellationToken);
