@@ -20,6 +20,7 @@ using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Exceptions;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces;
+using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -35,6 +36,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
     private readonly IDotNetVersion _dotNetVersion;
+    private readonly IFileUpdater _fileUpdater;
     private readonly IGitRepositoryFactory _gitRepositoryFactory;
     private readonly IGlobalJson _globalJson;
     private readonly ILogger<BulkTemplateUpdater> _logger;
@@ -51,6 +53,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                IReleaseGeneration releaseGeneration,
                                IGitRepositoryFactory gitRepositoryFactory,
                                IBulkPackageConfigLoader bulkPackageConfigLoader,
+                               IFileUpdater fileUpdater,
                                ILogger<BulkTemplateUpdater> logger)
     {
         this._trackingCache = trackingCache;
@@ -62,6 +65,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         this._releaseGeneration = releaseGeneration;
         this._gitRepositoryFactory = gitRepositoryFactory;
         this._bulkPackageConfigLoader = bulkPackageConfigLoader;
+        this._fileUpdater = fileUpdater;
         this._logger = logger;
     }
 
@@ -187,13 +191,10 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         foreach (CopyInstruction copyInstruction in filesToUpdate)
         {
-            bool changed = await this.UpdateFileAsync(repoContext: repoContext,
-                                                      templateSourceFileName: copyInstruction.SourceFileName,
-                                                      targetFileName: copyInstruction.TargetFileName,
-                                                      applyChanges: copyInstruction.Apply,
-                                                      commitMessage: copyInstruction.Message,
-                                                      changelogUpdate: NoChangeLogUpdateAsync,
-                                                      cancellationToken: cancellationToken);
+            bool changed = await this._fileUpdater.UpdateFileAsync(repoContext: repoContext,
+                                                                   copyInstruction: copyInstruction,
+                                                                   changelogUpdate: NoChangeLogUpdateAsync,
+                                                                   cancellationToken: cancellationToken);
 
             if (changed)
             {
@@ -391,13 +392,12 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
             string targetFileName = targetSolutionFileName + dotSettingsExtension;
 
             string commitMessage = $"Updated Resharper settings for {repoRelativeSolutionFileName}";
-            bool changed = await this.UpdateFileAsync(repoContext: repoContext,
-                                                      templateSourceFileName: dotSettingsSourceFile,
-                                                      targetFileName: targetFileName,
-                                                      applyChanges: NoChange,
-                                                      commitMessage: commitMessage,
-                                                      changelogUpdate: NoChangeLogUpdateAsync,
-                                                      cancellationToken: cancellationToken);
+            CopyInstruction copyInstruction = new(SourceFileName: dotSettingsSourceFile, TargetFileName: targetFileName, Apply: NoChange, Message: commitMessage);
+
+            bool changed = await this._fileUpdater.UpdateFileAsync(repoContext: repoContext,
+                                                                   copyInstruction: copyInstruction,
+                                                                   changelogUpdate: NoChangeLogUpdateAsync,
+                                                                   cancellationToken: cancellationToken);
 
             if (changed)
             {
@@ -430,13 +430,8 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
 
         try
         {
-            bool changed = await this.UpdateFileAsync(repoContext: repoContext,
-                                                      templateSourceFileName: templateGlobalJsonFileName,
-                                                      targetFileName: targetGlobalJsonFileName,
-                                                      applyChanges: NoChange,
-                                                      commitMessage: message,
-                                                      changelogUpdate: ChangelogUpdate,
-                                                      cancellationToken: cancellationToken);
+            CopyInstruction copyInstruction = new(SourceFileName: templateGlobalJsonFileName, TargetFileName: targetGlobalJsonFileName, Apply: NoChange, Message: message);
+            bool changed = await this._fileUpdater.UpdateFileAsync(repoContext: repoContext, copyInstruction: copyInstruction, changelogUpdate: ChangelogUpdate, cancellationToken: cancellationToken);
 
             if (changed)
             {
@@ -526,52 +521,6 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
         }
     }
 
-    private async ValueTask<bool> UpdateFileAsync(RepoContext repoContext,
-                                                  string templateSourceFileName,
-                                                  string targetFileName,
-                                                  Func<byte[], (byte[] bytes, bool changed)> applyChanges,
-                                                  string commitMessage,
-                                                  Func<CancellationToken, ValueTask> changelogUpdate,
-                                                  CancellationToken cancellationToken)
-    {
-        this._logger.LogInformation($"Checking: {targetFileName} <-> {templateSourceFileName}");
-
-        Difference diff = await this.IsSameContentAsync(sourceFileName: templateSourceFileName, targetFileName: targetFileName, applyChanges: applyChanges, cancellationToken: cancellationToken);
-
-        return diff switch
-        {
-            Difference.TARGET_MISSING or Difference.DIFFERENT => await this.ReplaceFileAsync(repoContext: repoContext,
-                                                                                             templateGlobalJsonFileName: templateSourceFileName,
-                                                                                             targetGlobalJsonFileName: targetFileName,
-                                                                                             commitMessage: commitMessage,
-                                                                                             changelogUpdate: changelogUpdate,
-                                                                                             cancellationToken: cancellationToken),
-            _ => AlreadyUpToDate()
-        };
-
-        bool AlreadyUpToDate()
-        {
-            this._logger.LogInformation($"{targetFileName} is up to date with {templateSourceFileName}");
-
-            return false;
-        }
-    }
-
-    private async ValueTask<bool> ReplaceFileAsync(RepoContext repoContext,
-                                                   string templateGlobalJsonFileName,
-                                                   string targetGlobalJsonFileName,
-                                                   string commitMessage,
-                                                   Func<CancellationToken, ValueTask> changelogUpdate,
-                                                   CancellationToken cancellationToken)
-    {
-        this._logger.LogInformation($"Updating {targetGlobalJsonFileName} from {templateGlobalJsonFileName} -> {commitMessage}");
-
-        await changelogUpdate(cancellationToken);
-        await repoContext.Repository.CommitAsync(message: commitMessage, cancellationToken: cancellationToken);
-
-        return true;
-    }
-
     private async ValueTask<TemplateUpdateContext> BuildUpdateContextAsync(IGitRepository templateRepo,
                                                                            string workFolder,
                                                                            string trackingFileName,
@@ -619,48 +568,6 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
             : this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask<Difference> IsSameContentAsync(string sourceFileName, string targetFileName, Func<byte[], (byte[] bytes, bool changed)> applyChanges, CancellationToken cancellationToken)
-    {
-        if (!File.Exists(sourceFileName))
-        {
-            this._logger.LogDebug($"{sourceFileName} is missing");
-
-            return Difference.SOURCE_MISSING;
-        }
-
-        byte[] sourceBytes = await File.ReadAllBytesAsync(path: sourceFileName, cancellationToken: cancellationToken);
-        (sourceBytes, bool changed) = applyChanges(sourceBytes);
-
-        if (changed)
-        {
-            this._logger.LogInformation($"Transform on {sourceFileName} resulted in changes");
-        }
-
-        if (!File.Exists(targetFileName))
-        {
-            this._logger.LogDebug($"{targetFileName} is missing");
-
-            await File.WriteAllBytesAsync(path: targetFileName, bytes: sourceBytes, cancellationToken: cancellationToken);
-
-            return Difference.TARGET_MISSING;
-        }
-
-        byte[] targetBytes = await File.ReadAllBytesAsync(path: targetFileName, cancellationToken: cancellationToken);
-
-        if (sourceBytes.SequenceEqual(targetBytes))
-        {
-            this._logger.LogInformation($"{targetFileName} is unchanged");
-
-            return Difference.SAME;
-        }
-
-        this._logger.LogInformation($"{targetFileName} is different");
-
-        await File.WriteAllBytesAsync(path: targetFileName, bytes: sourceBytes, cancellationToken: cancellationToken);
-
-        return Difference.DIFFERENT;
-    }
-
     [DebuggerDisplay("Template: {UpdateContext.TemplateFolder}, Repo: {RepoContext.WorkingDirectory}")]
     [StructLayout(LayoutKind.Auto)]
     private readonly record struct FileContext(TemplateUpdateContext UpdateContext, RepoContext RepoContext)
@@ -677,16 +584,5 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
 
             return new(SourceFileName: sourceFileName, TargetFileName: targetFileName, Apply: apply, $"[{prefix}] Updated {fileName}");
         }
-    }
-
-    [DebuggerDisplay("Copy {SourceFileName} to {TargetFileName} => {Message}")]
-    private readonly record struct CopyInstruction(string SourceFileName, string TargetFileName, Func<byte[], (byte[] bytes, bool changed)> Apply, string Message);
-
-    private enum Difference
-    {
-        SAME,
-        SOURCE_MISSING,
-        TARGET_MISSING,
-        DIFFERENT
     }
 }

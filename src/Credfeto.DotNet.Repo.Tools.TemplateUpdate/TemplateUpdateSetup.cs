@@ -8,6 +8,7 @@ public static class TemplateUpdateSetup
 {
     public static IServiceCollection AddTemplateUpdate(this IServiceCollection services)
     {
-        return services.AddSingleton<IBulkTemplateUpdater, BulkTemplateUpdater>();
+        return services.AddSingleton<IBulkTemplateUpdater, BulkTemplateUpdater>()
+                       .AddSingleton<IFileUpdater, FileUpdater>();
     }
 }
