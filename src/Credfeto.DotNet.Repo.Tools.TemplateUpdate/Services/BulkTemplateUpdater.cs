@@ -288,7 +288,7 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
 
         if (Directory.Exists(sourceFolderName))
         {
-            return Directory.EnumerateFiles(sourceFolderName)
+            return Directory.EnumerateFiles(path: sourceFolderName, searchPattern: "*", searchOption: SearchOption.AllDirectories)
                             .Select(issueSourceFile => issueSourceFile.Substring(sourceFolderNamePrefixLength))
                             .Select(fileName => fileContext.MakeFile(fileName: fileName, prefix: prefix, apply: apply));
         }
