@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
+- Search of files for actions to be recursive
 ### Changed
 - Dependencies - Updated SonarAnalyzer.CSharp to 9.18.0.83559
 - Dependencies - Updated Meziantou.Analyzer to 2.0.139
