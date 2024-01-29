@@ -51,6 +51,8 @@ public sealed class FileUpdater : IFileUpdater
 
         byte[] sourceBytes = await this.ReadSourceFileAsync(copyInstruction: copyInstruction, cancellationToken: cancellationToken);
 
+        EnsureFolderExistsForFile(copyInstruction);
+
         if (!File.Exists(copyInstruction.TargetFileName))
         {
             return await this.OnTargetMissingAsync(copyInstruction: copyInstruction, sourceBytes: sourceBytes, cancellationToken: cancellationToken);
@@ -64,6 +66,16 @@ public sealed class FileUpdater : IFileUpdater
         }
 
         return await this.OnContentDifferentAsync(copyInstruction: copyInstruction, sourceBytes: sourceBytes, cancellationToken: cancellationToken);
+    }
+
+    private static void EnsureFolderExistsForFile(in CopyInstruction copyInstruction)
+    {
+        string? parent = Path.GetDirectoryName(copyInstruction.TargetFileName);
+
+        if (parent is not null && !Directory.Exists(parent))
+        {
+            Directory.CreateDirectory(parent);
+        }
     }
 
     private static async ValueTask<byte[]> ReadTargetFileAsync(CopyInstruction copyInstruction, CancellationToken cancellationToken)
