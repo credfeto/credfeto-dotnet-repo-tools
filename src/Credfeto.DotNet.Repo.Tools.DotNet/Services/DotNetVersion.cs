@@ -54,7 +54,16 @@ public sealed class DotNetVersion : IDotNetVersion
                                    RedirectStandardOutput = true,
                                    RedirectStandardError = true,
                                    UseShellExecute = false,
-                                   CreateNoWindow = true
+                                   CreateNoWindow = true,
+                                   Environment =
+                                   {
+                                       ["DOTNET_NOLOGO"] = "true",
+                                       ["DOTNET_PRINT_TELEMETRY_MESSAGE"] = "0",
+                                       ["DOTNET_ReadyToRun"] = "0",
+                                       ["DOTNET_TC_QuickJitForLoops"] = "1",
+                                       ["DOTNET_TieredPGO"] = "1",
+                                       ["MSBUILDTERMINALLOGGER"] = "true"
+                                   }
                                };
 
         using (Process? process = Process.Start(psi))
