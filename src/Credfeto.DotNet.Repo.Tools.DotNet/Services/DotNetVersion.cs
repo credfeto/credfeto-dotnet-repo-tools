@@ -37,12 +37,9 @@ public sealed class DotNetVersion : IDotNetVersion
             return null;
         }
 
-        if (!Version.TryParse(parts[0], out Version? version))
-        {
-            return version;
-        }
-
-        return version;
+        return Version.TryParse(parts[0], out Version? version)
+            ? version
+            : null;
     }
 
     private static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(string arguments, CancellationToken cancellationToken)
