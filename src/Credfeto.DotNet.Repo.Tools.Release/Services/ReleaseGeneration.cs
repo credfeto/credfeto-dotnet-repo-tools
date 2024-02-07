@@ -314,12 +314,19 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         this._logger.LogInformation($"Last Release was: {version}");
 
-        // NuGetVersion nextVersion = new(major: version.Major, minor: version.Minor, version.Patch + 1);
-        // this._logger.LogInformation($"Next release is: {version}");
-        //
-        // return nextVersion.ToString();
+        NuGetVersion nextVersion = new(major: version.Major, minor: version.Minor, patch: version.Patch);
+        this._logger.LogInformation($"Next release is: {version}");
 
-        return version.ToString();
+        bool exists = repoContext.Repository.DoesBranchExist($"release/{nextVersion}");
+
+        while (exists)
+        {
+            nextVersion = new(major: version.Major, minor: version.Minor, version.Patch + 1);
+            this._logger.LogInformation($"Next release is: {version}");
+            exists = repoContext.Repository.DoesBranchExist($"release/{nextVersion}");
+        }
+
+        return nextVersion.ToString();
     }
 
     private static class ScoreMultipliers
