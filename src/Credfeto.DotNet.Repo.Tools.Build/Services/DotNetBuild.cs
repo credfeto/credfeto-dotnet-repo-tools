@@ -261,7 +261,7 @@ public sealed class DotNetBuild : IDotNetBuild
                                        ["DOTNET_ReadyToRun"] = "0",
                                        ["DOTNET_TC_QuickJitForLoops"] = "1",
                                        ["DOTNET_TieredPGO"] = "1",
-                                       ["MSBUILDTERMINALLOGGER"] = "true"
+                                       ["MSBUILDTERMINALLOGGER"] = "false"
                                    }
                                };
 
