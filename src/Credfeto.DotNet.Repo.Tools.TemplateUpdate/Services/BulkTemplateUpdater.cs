@@ -431,7 +431,10 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
         try
         {
             CopyInstruction copyInstruction = new(SourceFileName: templateGlobalJsonFileName, TargetFileName: targetGlobalJsonFileName, Apply: NoChange, Message: message);
-            bool changed = await this._fileUpdater.UpdateFileAsync(repoContext: repoContext, copyInstruction: copyInstruction, changelogUpdate: ChangelogUpdate, cancellationToken: cancellationToken);
+            bool changed = await this._fileUpdater.UpdateFileAsync(repoContext: repoContext,
+                                                                   copyInstruction: copyInstruction,
+                                                                   changelogUpdate: ChangelogUpdateAsync,
+                                                                   cancellationToken: cancellationToken);
 
             if (changed)
             {
@@ -460,7 +463,7 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
             await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
         }
 
-        async ValueTask ChangelogUpdate(CancellationToken token)
+        async ValueTask ChangelogUpdateAsync(CancellationToken token)
         {
             await ChangeLogUpdater.RemoveEntryAsync(changeLogFileName: repoContext.ChangeLogFileName, type: CHANGELOG_ENTRY_TYPE, message: messagePrefix, cancellationToken: token);
             await ChangeLogUpdater.AddEntryAsync(changeLogFileName: repoContext.ChangeLogFileName, type: CHANGELOG_ENTRY_TYPE, message: message, cancellationToken: token);
