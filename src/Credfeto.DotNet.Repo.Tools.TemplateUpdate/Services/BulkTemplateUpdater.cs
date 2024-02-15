@@ -323,10 +323,13 @@ updateDependabotConfig -sourceRepo $sourceRepo -targetRepo $targetRepo
                 DotNetVersionSettings repoDotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
                 await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: repoDotNetSettings, cancellationToken: cancellationToken);
 
-                await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
+                if (StringComparer.Ordinal.Equals(x: updateContext.DotNetSettings.SdkVersion, y: repoDotNetSettings.SdkVersion))
+                {
+                    await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
-                lastKnownGoodBuild = repoContext.Repository.HeadRev;
-                await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
+                    lastKnownGoodBuild = repoContext.Repository.HeadRev;
+                    await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
+                }
             }
         }
 
