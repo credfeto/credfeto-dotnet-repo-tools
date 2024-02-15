@@ -5,7 +5,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
-using Credfeto.Extensions.Linq;
 
 namespace Credfeto.DotNet.Repo.Tools.DotNet.Services;
 
@@ -67,7 +66,7 @@ public sealed class DotNetVersion : IDotNetVersion
         {
             if (process is null)
             {
-                throw new InvalidOperationException("Failed to start git");
+                throw new InvalidOperationException("Failed to start dotnet");
             }
 
 #if NET7_0_OR_GREATER

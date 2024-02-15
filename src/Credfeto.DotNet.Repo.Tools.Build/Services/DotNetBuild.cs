@@ -284,7 +284,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
             await process.WaitForExitAsync(cancellationToken);
 
-            string result = output + Environment.NewLine + error;
+            string result = string.Join(separator: Environment.NewLine, output, error);
 
             return (result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries), process.ExitCode);
         }
