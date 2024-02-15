@@ -55,4 +55,32 @@ public static class RepoContextExtensions
     {
         return Path.Combine(path1: repoContext.WorkingDirectory, path2: "src");
     }
+
+    public static bool HasSubModules(this in RepoContext repoContext)
+    {
+        return repoContext.Repository.HasSubmodules;
+    }
+
+    public static bool HasDockerFiles(this in RepoContext repoContext)
+    {
+        // TODO: Implement this method
+        return false;
+    }
+
+    public static bool HasPython(this in RepoContext repoContext)
+    {
+        // TODO: Implement this method
+        return false;
+    }
+
+    public static bool HasNonStandardGithubActions(this in RepoContext repoContext)
+    {
+        // TODO: Implement this method
+        return false;
+    }
+
+    public static bool HasNpmAndYarn(this in RepoContext repoContext, [NotNullWhen(true)]out IReadOnlyList<string>? directories)
+    {
+
+    }
 }

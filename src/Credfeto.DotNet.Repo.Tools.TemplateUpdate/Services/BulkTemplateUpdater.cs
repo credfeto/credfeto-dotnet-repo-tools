@@ -164,7 +164,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
 
-        int totalUpdates = await this.UpdateStandardFilesAsync(updateContext: updateContext, repoContext: repoContext, cancellationToken: cancellationToken);
+        int totalUpdates = await this.UpdateStandardFilesAsync(updateContext: updateContext, repoContext: repoContext, packages: packages, cancellationToken: cancellationToken);
 
         if (repoContext.HasDotNetFiles(out string? sourceDirectory, out IReadOnlyList<string>? solutions, out IReadOnlyList<string>? projects))
         {
@@ -185,7 +185,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         }
     }
 
-    private async ValueTask<int> UpdateStandardFilesAsync(TemplateUpdateContext updateContext, RepoContext repoContext, CancellationToken cancellationToken)
+    private async ValueTask<int> UpdateStandardFilesAsync(TemplateUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
         FileContext fileContext = new(UpdateContext: updateContext, RepoContext: repoContext);
 
@@ -211,7 +211,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 -- Remove Obsolete Workflows(from config)
 -- Remove Obsolete Actions(from config)
  */
-        if (await this.UpdateDependabotConfigAsync(repoContext: repoContext, cancellationToken: cancellationToken))
+        if (await this.UpdateDependabotConfigAsync(repoContext: repoContext, packages: packages, cancellationToken: cancellationToken))
         {
             ++changes;
         }
@@ -219,11 +219,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         return changes;
     }
 
-    private async ValueTask<bool> UpdateDependabotConfigAsync(RepoContext repoContext, CancellationToken cancellationToken)
+    private async ValueTask<bool> UpdateDependabotConfigAsync(RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
         string dependabotConfig = Path.Combine(path1: repoContext.WorkingDirectory, path2: DOT_GITHUB_DIR, path3: "dependabot.yml");
 
-        string newConfig = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(repoContext: repoContext, cancellationToken: cancellationToken);
+        string newConfig = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(repoContext: repoContext, packages:packages, cancellationToken: cancellationToken);
         byte[] newConfigBytes = Encoding.UTF8.GetBytes(newConfig);
 
         bool writeNewConfig = false;
