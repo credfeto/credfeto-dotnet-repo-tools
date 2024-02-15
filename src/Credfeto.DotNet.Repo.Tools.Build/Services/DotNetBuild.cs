@@ -269,22 +269,24 @@ public sealed class DotNetBuild : IDotNetBuild
         {
             if (process is null)
             {
-                throw new InvalidOperationException("Failed to start git");
+                throw new InvalidOperationException("Failed to start dotnet");
             }
 
 #if NET7_0_OR_GREATER
             string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
 
-            // string error = await process.StandardError.ReadToEndAsync(cancellationToken);
+            string error = await process.StandardError.ReadToEndAsync(cancellationToken);
 #else
             string output = await process.StandardOutput.ReadToEndAsync();
 
-            // string error = await process.StandardError.ReadToEndAsync();
+            string error = await process.StandardError.ReadToEndAsync();
 #endif
 
             await process.WaitForExitAsync(cancellationToken);
 
-            return (output.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries), process.ExitCode);
+            string result = output + Environment.NewLine + error;
+
+            return (result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries), process.ExitCode);
         }
     }
 }
