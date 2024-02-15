@@ -82,4 +82,9 @@
     <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="ToStringWithoutOverrideAnalyzer" Version="0.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Credfeto.Extensions.Linq">
+      <HintPath>..\..\..\..\..\.nuget\packages\credfeto.extensions.linq\1.0.12.90\lib\net6.0\Credfeto.Extensions.Linq.dll</HintPath>
+    </Reference>
+  </ItemGroup>
 </Project>
