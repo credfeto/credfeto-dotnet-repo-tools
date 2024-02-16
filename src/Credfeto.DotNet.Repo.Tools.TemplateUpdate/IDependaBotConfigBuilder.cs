@@ -8,5 +8,7 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate;
 
 public interface IDependaBotConfigBuilder
 {
-    ValueTask<string> BuildDependabotConfigAsync(RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken);
+    ValueTask<string> BuildDependabotConfigAsync(RepoContext repoContext,
+                                                 string templateFolder,
+                                                 IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken);
 }

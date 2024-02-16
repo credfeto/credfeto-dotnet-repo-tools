@@ -18,7 +18,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
         this._logger = logger;
     }
 
-    public ValueTask<string> BuildDependabotConfigAsync(RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
+    public ValueTask<string> BuildDependabotConfigAsync(RepoContext repoContext, string templateFolder, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
         List<string> config =
         [
@@ -53,7 +53,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
             AllowAllDependencies(config);
         }
 
-        if (repoContext.HasNonStandardGithubActions())
+        if (repoContext.HasNonStandardGithubActions(templateFolder))
         {
             this.AddBaseConfig(config: config, ecoSystem: "github-actions", directory: "/", packageTypeLabel: "github-actions", reviewer: "credfeto");
             AllowAllDependencies(config);

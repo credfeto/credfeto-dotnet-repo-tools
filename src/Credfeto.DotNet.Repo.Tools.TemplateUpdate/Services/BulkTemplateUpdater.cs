@@ -211,7 +211,9 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 -- Remove Obsolete Workflows(from config)
 -- Remove Obsolete Actions(from config)
  */
-        if (await this.UpdateDependabotConfigAsync(repoContext: repoContext, packages: packages, cancellationToken: cancellationToken))
+        if (await this.UpdateDependabotConfigAsync(
+                updateContext: updateContext,
+                repoContext: repoContext, packages: packages, cancellationToken: cancellationToken))
         {
             ++changes;
         }
@@ -219,11 +221,14 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         return changes;
     }
 
-    private async ValueTask<bool> UpdateDependabotConfigAsync(RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
+    private async ValueTask<bool> UpdateDependabotConfigAsync(TemplateUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
         string dependabotConfig = Path.Combine(path1: repoContext.WorkingDirectory, path2: DOT_GITHUB_DIR, path3: "dependabot.yml");
 
-        string newConfig = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(repoContext: repoContext, packages:packages, cancellationToken: cancellationToken);
+        string newConfig = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(repoContext: repoContext,
+                                                                                          updateContext.TemplateFolder,
+
+                                                                                          packages:packages, cancellationToken: cancellationToken);
         byte[] newConfigBytes = Encoding.UTF8.GetBytes(newConfig);
 
         bool writeNewConfig = false;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -79,22 +80,59 @@ public static class RepoContextExtensions
                           .Any();
     }
 
+    public static bool HasNonStandardGithubActions(this in RepoContext repoContext, string templatePath)
+    {
+        string templateActionsPath = Path.Combine(path1: templatePath, path2: ".github", path3: "actions");
+        string repoActionsPath = Path.Combine(path1: repoContext.WorkingDirectory, path2: ".github", path3: "actions");
+
+        string templateWorkflowsPath = Path.Combine(path1: repoContext.WorkingDirectory, path2: ".github", path3: "workflows");
+        string repoWorkflowsPath = Path.Combine(path1: repoContext.WorkingDirectory, path2: ".github", path3: "workflows");
+
+        return HasAdditionalFiles(templatePath: templateActionsPath, repoPath: repoActionsPath, searchPattern: "*.yml") ||
+               HasAdditionalFiles(templatePath: templateWorkflowsPath, repoPath: repoWorkflowsPath, searchPattern: "*.yml");
+    }
+
+    private static bool HasAdditionalFiles(string templatePath, string repoPath, string searchPattern)
+    {
+        if (!Directory.Exists(repoPath))
+        {
+            return false;
+        }
+
+        if (!Directory.Exists(templatePath))
+        {
+            return true;
+        }
+
+        IEnumerable<string> repoFiles = GetFiles(basePath: repoPath, searchPattern: searchPattern)
+            .WithoutPrefix(repoPath.Length + 1);
+        IEnumerable<string> templateFiles = GetFiles(basePath: templatePath, searchPattern: searchPattern)
+            .WithoutPrefix(templatePath.Length + 1);
+
+        return repoFiles.Except(templateFiles, StringComparer.Ordinal)
+                        .Any();
+    }
+
     private static IEnumerable<string> GetFiles(this in RepoContext repoContext, string searchPattern)
     {
-        return Directory.EnumerateFiles(path: repoContext.WorkingDirectory, searchPattern: searchPattern, searchOption: SearchOption.AllDirectories);
+        return GetFiles(basePath: repoContext.WorkingDirectory, searchPattern: searchPattern);
     }
 
-    public static bool HasNonStandardGithubActions(this in RepoContext repoContext)
+    private static IEnumerable<string> GetFiles(string basePath, string searchPattern)
     {
-        // TODO: Implement this method
-        return false;
+        return Directory.EnumerateFiles(path: basePath, searchPattern: searchPattern, searchOption: SearchOption.AllDirectories);
     }
 
-    private static IEnumerable<string> GetDirectories(this IEnumerable<string> source, int prefix)
+    private static IEnumerable<string> GetDirectoriesOfFiles(this IEnumerable<string> source)
     {
         return source.Select(Path.GetDirectoryName)
                      .RemoveNulls()
-                     .Select(file => file.Substring(prefix));
+                     .Distinct(StringComparer.Ordinal);
+    }
+
+    private static IEnumerable<string> WithoutPrefix(this IEnumerable<string> source, int prefix)
+    {
+        return source.Select(file => file.Substring(prefix));
     }
 
     public static bool HasNpmAndYarn(this in RepoContext repoContext, [NotNullWhen(true)] out IReadOnlyList<string>? directories)
@@ -103,7 +141,8 @@ public static class RepoContextExtensions
         IReadOnlyList<string> dirs =
         [
             ..repoContext.GetFiles("package.json")
-                         .GetDirectories(prefix)
+                         .GetDirectoriesOfFiles()
+                         .WithoutPrefix(prefix)
         ];
 
         if (dirs is [])
