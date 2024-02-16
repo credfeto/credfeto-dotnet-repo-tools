@@ -9,10 +9,7 @@ namespace Credfeto.DotNet.Repo.Tools.Models;
 
 public static class RepoContextExtensions
 {
-    public static bool HasDotNetFiles(this in RepoContext repoContext,
-                                      [NotNullWhen(true)] out string? sourceDirectory,
-                                      [NotNullWhen(true)] out IReadOnlyList<string>? solutions,
-                                      [NotNullWhen(true)] out IReadOnlyList<string>? projects)
+    public static bool HasDotNetSolutions(this in RepoContext repoContext, [NotNullWhen(true)] out string? sourceDirectory, [NotNullWhen(true)] out IReadOnlyList<string>? solutions)
     {
         string sourceFolder = BuildSourceFolder(repoContext);
 
@@ -20,34 +17,52 @@ public static class RepoContextExtensions
         {
             sourceDirectory = null;
             solutions = null;
-            projects = null;
 
             return false;
         }
 
-        string[] foundSolutions = Directory.GetFiles(path: sourceFolder, searchPattern: "*.sln", searchOption: SearchOption.AllDirectories);
+        IReadOnlyList<string> foundSolutions = [..GetFiles(basePath: sourceFolder, searchPattern: "*.sln")];
 
-        if (foundSolutions.Length == 0)
+        if (foundSolutions is [])
         {
             sourceDirectory = null;
             solutions = null;
-            projects = null;
-
-            return false;
-        }
-
-        string[] foundProjects = Directory.GetFiles(path: sourceFolder, searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories);
-
-        if (foundProjects.Length == 0)
-        {
-            sourceDirectory = null;
-            solutions = null;
-            projects = null;
 
             return false;
         }
 
         sourceDirectory = sourceFolder;
+        solutions = foundSolutions;
+
+        return true;
+    }
+
+    public static bool HasDotNetFiles(this in RepoContext repoContext,
+                                      [NotNullWhen(true)] out string? sourceDirectory,
+                                      [NotNullWhen(true)] out IReadOnlyList<string>? solutions,
+                                      [NotNullWhen(true)] out IReadOnlyList<string>? projects)
+    {
+        if (!repoContext.HasDotNetSolutions(out string? foundSourceDirectory, out IReadOnlyList<string>? foundSolutions))
+        {
+            sourceDirectory = null;
+            solutions = null;
+            projects = null;
+
+            return false;
+        }
+
+        IReadOnlyList<string> foundProjects = [..GetFiles(basePath: foundSourceDirectory, searchPattern: "*.csproj")];
+
+        if (foundProjects is [])
+        {
+            sourceDirectory = null;
+            solutions = null;
+            projects = null;
+
+            return false;
+        }
+
+        sourceDirectory = foundSourceDirectory;
         solutions = foundSolutions;
         projects = foundProjects;
 
@@ -109,7 +124,7 @@ public static class RepoContextExtensions
         IEnumerable<string> templateFiles = GetFiles(basePath: templatePath, searchPattern: searchPattern)
             .WithoutPrefix(templatePath.Length + 1);
 
-        return repoFiles.Except(templateFiles, StringComparer.Ordinal)
+        return repoFiles.Except(second: templateFiles, comparer: StringComparer.Ordinal)
                         .Any();
     }
 

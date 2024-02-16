@@ -166,12 +166,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         int totalUpdates = await this.UpdateStandardFilesAsync(updateContext: updateContext, repoContext: repoContext, packages: packages, cancellationToken: cancellationToken);
 
-        if (repoContext.HasDotNetFiles(out string? sourceDirectory, out IReadOnlyList<string>? solutions, out IReadOnlyList<string>? projects))
+        if (repoContext.HasDotNetSolutions(out string? sourceDirectory, out IReadOnlyList<string>? solutions))
         {
             await this.UpdateDotNetAsync(updateContext: updateContext,
                                          repoContext: repoContext,
                                          packages: packages,
-                                         projects: projects,
                                          lastKnownGoodBuild: lastKnownGoodBuild,
                                          solutions: solutions,
                                          sourceDirectory: sourceDirectory,
@@ -211,9 +210,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 -- Remove Obsolete Workflows(from config)
 -- Remove Obsolete Actions(from config)
  */
-        if (await this.UpdateDependabotConfigAsync(
-                updateContext: updateContext,
-                repoContext: repoContext, packages: packages, cancellationToken: cancellationToken))
+        if (await this.UpdateDependabotConfigAsync(updateContext: updateContext, repoContext: repoContext, packages: packages, cancellationToken: cancellationToken))
         {
             ++changes;
         }
@@ -227,8 +224,8 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         string newConfig = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(repoContext: repoContext,
                                                                                           updateContext.TemplateFolder,
-
-                                                                                          packages:packages, cancellationToken: cancellationToken);
+                                                                                          packages: packages,
+                                                                                          cancellationToken: cancellationToken);
         byte[] newConfigBytes = Encoding.UTF8.GetBytes(newConfig);
 
         bool writeNewConfig = false;
@@ -348,13 +345,14 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     private async ValueTask UpdateDotNetAsync(TemplateUpdateContext updateContext,
                                               RepoContext repoContext,
                                               IReadOnlyList<PackageUpdate> packages,
-                                              IReadOnlyList<string> projects,
                                               string? lastKnownGoodBuild,
                                               IReadOnlyList<string> solutions,
                                               string sourceDirectory,
                                               int totalUpdates,
                                               CancellationToken cancellationToken)
     {
+        IReadOnlyList<string> projects = Directory.GetFiles(path: sourceDirectory, searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories);
+
         BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
 
         if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
