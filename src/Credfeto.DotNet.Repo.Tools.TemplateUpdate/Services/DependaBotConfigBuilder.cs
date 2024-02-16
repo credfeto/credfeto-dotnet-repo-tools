@@ -20,69 +20,69 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 
     public ValueTask<string> BuildDependabotConfigAsync(RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
-        List<string> config = [
+        List<string> config =
+        [
             "version: 2",
             "updates:"
-            ];
+        ];
 
         if (repoContext.HasSubModules())
         {
-            AddBaseConfig(config: config, ecoSystem: "gitsubmodule", directory: "/", "submodule", "credfeto");
+            this.AddBaseConfig(config: config, ecoSystem: "gitsubmodule", directory: "/", packageTypeLabel: "submodule", reviewer: "credfeto");
             AllowAllDependencies(config);
         }
 
-
-        if (repoContext.HasDotNetFiles(out _, out _, out _))
+        if (repoContext.HasDotNetFiles(sourceDirectory: out _, solutions: out _, projects: out _))
         {
-            AddDotNetConfig(config: config, packages: packages);
+            this.AddDotNetConfig(config: config, packages: packages);
         }
 
-        if(repoContext.HasNpmAndYarn(out IReadOnlyList<string>? directories))
+        if (repoContext.HasNpmAndYarn(out IReadOnlyList<string>? directories))
         {
             foreach (string dir in directories)
             {
-                AddBaseConfig(config: config, ecoSystem: "npm", directory: dir, "npm", "credfeto");
+                this.AddBaseConfig(config: config, ecoSystem: "npm", directory: dir, packageTypeLabel: "npm", reviewer: "credfeto");
                 config.Add("  versioning-strategy: increase-if-necessary");
                 AllowAllDependencies(config);
             }
         }
 
-        if(repoContext.HasDockerFiles())
+        if (repoContext.HasDockerFiles())
         {
-            AddBaseConfig(config: config, ecoSystem: "docker", directory: "/", "docker", "credfeto");
+            this.AddBaseConfig(config: config, ecoSystem: "docker", directory: "/", packageTypeLabel: "docker", reviewer: "credfeto");
             AllowAllDependencies(config);
         }
 
         if (repoContext.HasNonStandardGithubActions())
         {
-            AddBaseConfig(config: config, ecoSystem: "github-actions", directory: "/", "github-actions", "credfeto");
+            this.AddBaseConfig(config: config, ecoSystem: "github-actions", directory: "/", packageTypeLabel: "github-actions", reviewer: "credfeto");
             AllowAllDependencies(config);
         }
 
-        if(repoContext.HasPython())
+        if (repoContext.HasPython())
         {
-            AddBaseConfig(config: config, ecoSystem: "pip", directory: "/", "python", "credfeto");
+            this.AddBaseConfig(config: config, ecoSystem: "pip", directory: "/", packageTypeLabel: "python", reviewer: "credfeto");
             AllowAllDependencies(config);
         }
 
-
-
-        return ValueTask.FromResult(string.Join(Environment.NewLine, config));
+        return ValueTask.FromResult(string.Join(separator: Environment.NewLine, values: config));
     }
 
-    private static void AddDotNetConfig(List<string> config, IReadOnlyList<PackageUpdate> packages)
+    private void AddDotNetConfig(List<string> config, IReadOnlyList<PackageUpdate> packages)
     {
-        AddBaseConfig(config: config, ecoSystem: "github-actions", directory: "/", "nuget", "credfeto");
+        this.AddBaseConfig(config: config, ecoSystem: "github-actions", directory: "/", packageTypeLabel: "nuget", reviewer: "credfeto");
         AllowAllDependencies(config);
 
-        if (packages is not [])
+        if (packages is [])
         {
-            // Add packages to ignore
-            config.Add("  ignore:");
-            config.AddRange(packages.Select(package => package.ExactMatch
-                                                ? $"  - dependency-name: \"{package.PackageId}\""
-                                                : $"  - dependency-name: \"{package.PackageId}.*\""));
+            return;
         }
+
+        // Add packages to ignore
+        config.Add("  ignore:");
+        config.AddRange(packages.Select(package => package.ExactMatch
+                                            ? $"  - dependency-name: \"{package.PackageId}\""
+                                            : $"  - dependency-name: \"{package.PackageId}.*\""));
     }
 
     private static void AllowAllDependencies(List<string> config)
@@ -94,8 +94,10 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
         ]);
     }
 
-    private static void AddBaseConfig(List<string> config, string ecoSystem, string directory, string packageTypeLabel, string reviewer)
+    private void AddBaseConfig(List<string> config, string ecoSystem, string directory, string packageTypeLabel, string reviewer)
     {
+        this._logger.LogInformation($"Adding Dependabot config for {ecoSystem} in {directory}");
+
         config.AddRange([
             "",
             $"- package-ecosystem: {ecoSystem}",
@@ -114,7 +116,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
             "  labels:",
             $"  - \"{packageTypeLabel}\"",
             "  - \"dependencies\"",
-            "  - \"Changelog Not Required\"",
+            "  - \"Changelog Not Required\""
         ]);
     }
 }
