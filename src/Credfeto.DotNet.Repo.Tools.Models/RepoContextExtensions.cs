@@ -120,9 +120,9 @@ public static class RepoContextExtensions
         }
 
         IEnumerable<string> repoFiles = GetFiles(basePath: repoPath, searchPattern: searchPattern)
-            .WithoutPrefix(repoPath.Length + 1);
+            .WithoutPrefix(repoPath.Length);
         IEnumerable<string> templateFiles = GetFiles(basePath: templatePath, searchPattern: searchPattern)
-            .WithoutPrefix(templatePath.Length + 1);
+            .WithoutPrefix(templatePath.Length);
 
         return repoFiles.Except(second: templateFiles, comparer: StringComparer.Ordinal)
                         .Any();
@@ -152,12 +152,11 @@ public static class RepoContextExtensions
 
     public static bool HasNpmAndYarn(this in RepoContext repoContext, [NotNullWhen(true)] out IReadOnlyList<string>? directories)
     {
-        int prefix = repoContext.WorkingDirectory.Length + 1;
         IReadOnlyList<string> dirs =
         [
             ..repoContext.GetFiles("package.json")
                          .GetDirectoriesOfFiles()
-                         .WithoutPrefix(prefix)
+                         .WithoutPrefix(repoContext.WorkingDirectory.Length)
         ];
 
         if (dirs is [])
