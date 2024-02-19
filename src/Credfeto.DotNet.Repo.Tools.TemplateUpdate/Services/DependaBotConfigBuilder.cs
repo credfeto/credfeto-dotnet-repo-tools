@@ -70,7 +70,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 
     private void AddDotNetConfig(List<string> config, IReadOnlyList<PackageUpdate> packages)
     {
-        this.AddBaseConfig(config: config, ecoSystem: "github-actions", directory: "/", packageTypeLabel: "nuget", reviewer: "credfeto");
+        this.AddBaseConfig(config: config, ecoSystem: "nuget", directory: "/", packageTypeLabel: "nuget", reviewer: "credfeto");
         AllowAllDependencies(config);
 
         if (packages is [])
