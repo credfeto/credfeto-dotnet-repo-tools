@@ -223,7 +223,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         string dependabotConfig = Path.Combine(path1: repoContext.WorkingDirectory, path2: DOT_GITHUB_DIR, path3: "dependabot.yml");
 
         string newConfig = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(repoContext: repoContext,
-                                                                                          updateContext.TemplateFolder,
+                                                                                          templateFolder: updateContext.TemplateFolder,
                                                                                           packages: packages,
                                                                                           cancellationToken: cancellationToken);
         byte[] newConfigBytes = Encoding.UTF8.GetBytes(newConfig);
@@ -475,6 +475,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         const string branchPrefix = "depends/dotnet/sdk/";
         string branchName = branchPrefix + updateContext.DotNetSettings.SdkVersion;
+        string invalidBranchName = branchPrefix + Guid.NewGuid();
 
         bool branchCreated = false;
 
@@ -491,12 +492,27 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 if (branchCreated)
                 {
                     await repoContext.Repository.PushOriginAsync(branchName: branchName, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+                    await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: branchName,
+                                                                              branchPrefix: branchPrefix,
+                                                                              upstream: GitConstants.Upstream,
+                                                                              cancellationToken: cancellationToken);
+                    await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+                }
+                else
+                {
+                    await repoContext.Repository.PushAsync(cancellationToken);
+                    await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: invalidBranchName,
+                                                                              branchPrefix: branchPrefix,
+                                                                              upstream: GitConstants.Upstream,
+                                                                              cancellationToken: cancellationToken);
                 }
 
                 string lastKnownGoodBuild = repoContext.Repository.HeadRev;
                 await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
-
-                await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: branchName,
+            }
+            else
+            {
+                await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: invalidBranchName,
                                                                           branchPrefix: branchPrefix,
                                                                           upstream: GitConstants.Upstream,
                                                                           cancellationToken: cancellationToken);
@@ -534,13 +550,6 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 await repoContext.Repository.CreateBranchAsync(branchName: branchName, cancellationToken: cancellationToken);
 
                 branchCreated = true;
-            }
-            else
-            {
-                await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: branchName,
-                                                                          branchPrefix: branchPrefix,
-                                                                          upstream: GitConstants.Upstream,
-                                                                          cancellationToken: cancellationToken);
             }
         }
     }
