@@ -24,7 +24,6 @@ using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Microsoft.Extensions.Logging;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 
