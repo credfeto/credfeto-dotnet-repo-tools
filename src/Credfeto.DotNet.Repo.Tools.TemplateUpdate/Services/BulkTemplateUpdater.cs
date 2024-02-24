@@ -24,6 +24,7 @@ using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualBasic.CompilerServices;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 
@@ -382,6 +383,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                                         updateContext: updateContext,
                                                         sourceDirectory: sourceDirectory,
                                                         solutions: solutions,
+                                                        projects: projects,
                                                         buildSettings: buildSettings,
                                                         cancellationToken: cancellationToken);
 
@@ -462,6 +464,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                                         TemplateUpdateContext updateContext,
                                                         string sourceDirectory,
                                                         IReadOnlyList<string> solutions,
+                                                        IReadOnlyList<string> projects,
                                                         BuildSettings buildSettings,
                                                         CancellationToken cancellationToken)
     {
@@ -516,11 +519,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             await ChangeLogUpdater.RemoveEntryAsync(changeLogFileName: repoContext.ChangeLogFileName, type: CHANGELOG_ENTRY_TYPE, message: messagePrefix, cancellationToken: token);
             await ChangeLogUpdater.AddEntryAsync(changeLogFileName: repoContext.ChangeLogFileName, type: CHANGELOG_ENTRY_TYPE, message: message, cancellationToken: token);
 
-            bool ok = await this.CheckBuildAsync(updateContext: updateContext,
-                                                 sourceDirectory: sourceDirectory,
-                                                 solutions: solutions,
-                                                 buildSettings: buildSettings,
-                                                 cancellationToken: cancellationToken);
+            bool ok = projects is [] || await this.CheckBuildAsync(updateContext: updateContext,
+                                                                   sourceDirectory: sourceDirectory,
+                                                                   solutions: solutions,
+                                                                   buildSettings: buildSettings,
+                                                                   cancellationToken: cancellationToken);
 
             if (!ok)
             {
