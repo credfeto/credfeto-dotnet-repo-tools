@@ -191,6 +191,25 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         int changes = 0;
         IEnumerable<CopyInstruction> filesToUpdate = GetStandardFilesToUpdate(fileContext);
 
+        changes += await this.MakeCopyInstructionChangesAsync(repoContext: repoContext, cancellationToken: cancellationToken, filesToUpdate: filesToUpdate);
+
+        // TODO: Implement
+/*
+-- Remove Obsolete Workflows(from config)
+-- Remove Obsolete Actions(from config)
+ */
+        if (await this.UpdateDependabotConfigAsync(updateContext: updateContext, repoContext: repoContext, packages: packages, cancellationToken: cancellationToken))
+        {
+            ++changes;
+        }
+
+        return changes;
+    }
+
+    private async ValueTask<int> MakeCopyInstructionChangesAsync(RepoContext repoContext, IEnumerable<CopyInstruction> filesToUpdate, CancellationToken cancellationToken)
+    {
+        int changes = 0;
+
         foreach (CopyInstruction copyInstruction in filesToUpdate)
         {
             bool changed = await this._fileUpdater.UpdateFileAsync(repoContext: repoContext,
@@ -203,16 +222,6 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 ++changes;
                 await repoContext.Repository.PushAsync(cancellationToken);
             }
-        }
-
-        // TODO: Implement
-/*
--- Remove Obsolete Workflows(from config)
--- Remove Obsolete Actions(from config)
- */
-        if (await this.UpdateDependabotConfigAsync(updateContext: updateContext, repoContext: repoContext, packages: packages, cancellationToken: cancellationToken))
-        {
-            ++changes;
         }
 
         return changes;
@@ -393,17 +402,14 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         totalUpdates += await this.UpdateResharperSettingsAsync(repoContext: repoContext, updateContext: updateContext, solutions: solutions, cancellationToken: cancellationToken);
 
+        FileContext fileContext = new(UpdateContext: updateContext, RepoContext: repoContext);
+        IEnumerable<CopyInstruction> filesToUpdate = GetDotNetFilesToUpdate(fileContext);
+
+        totalUpdates += await this.MakeCopyInstructionChangesAsync(repoContext: repoContext, cancellationToken: cancellationToken, filesToUpdate: filesToUpdate);
+
         // TODO
 /*
    updateLabel -baseFolder $targetRepo
-   updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName "src\Directory.Build.props"
-        if($repo.Contains("funfair")) {
-           Log -message "Repo Folder contains 'funfair': $repo"
-           updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName "src\FunFair.props"
-           updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName "src\packageicon.png"
-       }
-   }
-   updateFileAndCommit -sourceRepo $sourceRepo -targetRepo $targetRepo -fileName "src\CodeAnalysis.ruleset"
  */
 
         if (totalUpdates == 0)
@@ -417,6 +423,18 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                                                   packages: packages,
                                                                   releaseConfig: updateContext.ReleaseConfig,
                                                                   cancellationToken: cancellationToken);
+        }
+    }
+
+    private static IEnumerable<CopyInstruction> GetDotNetFilesToUpdate(FileContext fileContext)
+    {
+        yield return fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, "src", "Directory.Build.props"), prefix: "Build Props");
+        yield return fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, "src", "CodeAnalysis.ruleset"), prefix: "Build Props");
+
+        if (fileContext.RepoContext.ClonePath.Contains(value: "funfair", comparisonType: StringComparison.OrdinalIgnoreCase))
+        {
+            yield return fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, "src", "FunFair.props"), prefix: "Build Props");
+            yield return fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, "src", "packageicon.png"), prefix: "Package Icon");
         }
     }
 

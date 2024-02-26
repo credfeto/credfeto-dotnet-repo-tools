@@ -7,6 +7,8 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
+
+- Cloning of Directory.build.props and other files in the src folder
 ### Fixed
 ### Changed
 ### Removed
