@@ -14,5 +14,5 @@ internal static partial class ChangeLogParsingRegex
     private const string REGEX_GEOIP = @"^\-\sGEOIP\s\-\s";
 
     // "- SDK - Updated DotNet SDK to "
-    private const string REGEX_DOTNET_SDK = @"^\-\sDotNet\sSDK\s*\-\s*";
+    private const string REGEX_DOTNET_SDK = @"^\s*\-\s*SDK\s*-\s*Updated\s*DotNet\s*SDK\s*to\s*";
 }
