@@ -11,6 +11,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - SDK - Updated DotNet SDK to 8.0.203
 - Dependencies - Updated Credfeto.Enumeration to 1.1.5.315
+- Dependencies - Updated FunFair.CodeAnalysis to 7.0.12.324
 ### Removed
 ### Deployment Changes
 
