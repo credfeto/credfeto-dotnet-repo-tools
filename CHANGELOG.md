@@ -37,7 +37,8 @@ Releases that have at least been deployed to staging, BUT NOT necessarily releas
 
 ## [1.0.15] - 2024-02-15
 ### Changed
-- Dependencies - Updated Credfeto.Enumeration.Source.Generation to 1.1.2.267
+
+- Dependencies - Updated Credfeto.Enumeration.Source.Generation to 1.1.3.296
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.9.28
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.16.122
 - Dependencies - Updated FunFair.CodeAnalysis to 7.0.8.274
