@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.Package;
 using Microsoft.Extensions.Logging;
@@ -86,5 +87,16 @@ internal static partial class BulkPackageUpdaterLoggingExtensions
     public static void LogExcludingPackage(this ILogger<BulkPackageUpdater> logger, PackageMatch package)
     {
         logger.LogExcludingPackage(packageId: package.PackageId, prefix: package.Prefix);
+    }
+
+    [LoggerMessage(EventId = 18, Level = LogLevel.Warning, Message = "{message}")]
+    public static partial void LogReleaseCreated(this ILogger<BulkPackageUpdater> logger, string message, Exception exception);
+
+    [LoggerMessage(EventId = 19, Level = LogLevel.Warning, Message = "SDK {sdkVersion} was requested, but not installed.  Currently installed SDKS: {installedSdks}")]
+    private static partial void LogMissingSdk(this ILogger<BulkPackageUpdater> logger, string sdkVersion, string installedSdks);
+
+    public static void LogMissingSdk(this ILogger<BulkPackageUpdater> logger, Version sdkVersion, IReadOnlyList<Version> installedSdks)
+    {
+        logger.LogMissingSdk(sdkVersion.ToString(), string.Join(separator: ", ", values: installedSdks));
     }
 }

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Git.Services.LoggingExtensions;
@@ -16,6 +17,14 @@ internal static partial class GitRepositoryLoggingExtensions
     [LoggerMessage(EventId = 4, Level = LogLevel.Information, Message = "Deleting branch {branch} from upstream {upstream}...")]
     public static partial void LogDeletingUpstreamBranch(this ILogger logger, string branch, string upstream);
 
-    [LoggerMessage(EventId = 4, Level = LogLevel.Information, Message = "Deleting branch {branch} is not upstream {upstream}...")]
+    [LoggerMessage(EventId = 5, Level = LogLevel.Information, Message = "Deleting branch {branch} is not upstream {upstream}...")]
     public static partial void LogSkippingDeleteOfUpstreamBranch(this ILogger logger, string branch, string upstream);
+
+    [Conditional("DEBUG")]
+    [LoggerMessage(EventId = 6, Level = LogLevel.Debug, Message = "{prefix} exit code: {exitCode}")]
+    public static partial void LogGitExitCode(this ILogger logger, string prefix, int exitCode);
+
+    [Conditional("DEBUG")]
+    [LoggerMessage(EventId = 7, Level = LogLevel.Warning, Message = "{message}")]
+    public static partial void LogGitMessage(this ILogger logger, string message);
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Microsoft.Extensions.Logging;
 
@@ -67,4 +68,15 @@ internal static partial class BulkTemplateUpdaterLoggingExtensions
 
     [LoggerMessage(EventId = 14, Level = LogLevel.Error, Message = "Build failed (after updating package)")]
     public static partial void LogBuildFailedAfterPackageUpdate(this ILogger<BulkTemplateUpdater> logger, Exception exception);
+
+    [LoggerMessage(EventId = 15, Level = LogLevel.Warning, Message = "{message}")]
+    public static partial void LogReleaseCreated(this ILogger<BulkTemplateUpdater> logger, string message, Exception exception);
+
+    [LoggerMessage(EventId = 16, Level = LogLevel.Warning, Message = "SDK {sdkVersion} was requested, but not installed.  Currently installed SDKS: {installedSdks}")]
+    private static partial void LogMissingSdk(this ILogger<BulkTemplateUpdater> logger, string sdkVersion, string installedSdks);
+
+    public static void LogMissingSdk(this ILogger<BulkTemplateUpdater> logger, Version sdkVersion, IReadOnlyList<Version> installedSdks)
+    {
+        logger.LogMissingSdk(sdkVersion.ToString(), string.Join(separator: ", ", values: installedSdks));
+    }
 }
