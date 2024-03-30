@@ -140,7 +140,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         catch (ReleaseCreatedException exception)
         {
             this._logger.LogReleaseCreatedAbortingRun(exception: exception);
-            this._logger.LogInformation(exception.Message);
+            this._logger.LogReleaseCreated(message: exception.Message, exception: exception);
         }
     }
 
@@ -560,7 +560,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         {
             if (!installedDotNetSdks.Contains(sdkVersion))
             {
-                this._logger.LogError($"SDK {sdkVersion} was requested, but not installed.  Currently installed SDKS: {string.Join(separator: ", ", values: installedDotNetSdks)}");
+                this._logger.LogMissingSdk(sdkVersion: sdkVersion, installedSdks: installedDotNetSdks);
 
                 throw new DotNetBuildErrorException("SDK version specified in global.json is not installed");
             }

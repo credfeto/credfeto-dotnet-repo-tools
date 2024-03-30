@@ -1,5 +1,6 @@
 using Credfeto.DotNet.Repo.Tools.Models;
 using Microsoft.Extensions.Logging;
+using NuGet.Versioning;
 
 namespace Credfeto.DotNet.Repo.Tools.Release.Services.LoggingExtensions;
 
@@ -38,5 +39,21 @@ internal static partial class ReleaseGenerationLoggingExtensions
     public static void LogIgnoredPackage(this ILogger<ReleaseGeneration> logger, in RepoContext repoContext, string packageId, int score)
     {
         logger.LogIgnoredPackage(clonePath: repoContext.ClonePath, packageId: packageId, score: score);
+    }
+
+    [LoggerMessage(EventId = 5, Level = LogLevel.Information, Message = "Last release was: {version}")]
+    private static partial void LogLastRelease(this ILogger<ReleaseGeneration> logger, string version);
+
+    public static void LogLastRelease(this ILogger<ReleaseGeneration> logger, NuGetVersion version)
+    {
+        logger.LogLastRelease(version.ToString());
+    }
+
+    [LoggerMessage(EventId = 6, Level = LogLevel.Information, Message = "Next release is: {version}")]
+    private static partial void LogNextRelease(this ILogger<ReleaseGeneration> logger, string version);
+
+    public static void LogNextRelease(this ILogger<ReleaseGeneration> logger, NuGetVersion version)
+    {
+        logger.LogNextRelease(version.ToString());
     }
 }

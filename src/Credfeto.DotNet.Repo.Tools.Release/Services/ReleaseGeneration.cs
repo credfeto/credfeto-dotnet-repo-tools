@@ -312,17 +312,17 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     {
         NuGetVersion version = this._versionDetector.FindVersion(repository: repoContext.Repository.Active, buildNumber: DEFAULT_BUILD_NUMBER);
 
-        this._logger.LogInformation($"Last Release was: {version}");
+        this._logger.LogLastRelease(version);
 
         NuGetVersion nextVersion = new(major: version.Major, minor: version.Minor, patch: version.Patch);
-        this._logger.LogInformation($"Next release is: {version}");
+        this._logger.LogNextRelease(version);
 
         bool exists = repoContext.Repository.DoesBranchExist($"release/{nextVersion}");
 
         while (exists)
         {
             nextVersion = new(major: version.Major, minor: version.Minor, version.Patch + 1);
-            this._logger.LogInformation($"Next release is: {version}");
+            this._logger.LogNextRelease(version);
             exists = repoContext.Repository.DoesBranchExist($"release/{nextVersion}");
         }
 

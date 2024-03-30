@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
+using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services.LoggingExtensions;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
@@ -96,7 +97,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 
     private void AddBaseConfig(List<string> config, string ecoSystem, string directory, string packageTypeLabel, string reviewer)
     {
-        this._logger.LogInformation($"Adding Dependabot config for {ecoSystem} in {directory}");
+        this._logger.LogAddingConfigForEcosystem(ecoSystem: ecoSystem, directory: directory);
 
         config.AddRange([
             "",

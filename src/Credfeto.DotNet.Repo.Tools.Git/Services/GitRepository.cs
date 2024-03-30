@@ -187,8 +187,7 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            (string[] result, int exitCode) =
-                await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push --set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push --set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -535,8 +534,7 @@ internal sealed class GitRepository : IGitRepository
         try
         {
             this._logger.LogDeletingUpstreamBranch(branch: branch, upstream: upstream);
-            (string[] result, int exitCode) =
-                await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push {upstream} \":{branch}\"", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push {upstream} \":{branch}\"", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -554,11 +552,11 @@ internal sealed class GitRepository : IGitRepository
 
     private void DumpExitCodeResult(IReadOnlyList<string> result, int exitCode, string prefix)
     {
-        this._logger.LogWarning($"{prefix} exit code: {exitCode}");
+        this._logger.LogGitExitCode(prefix: prefix, exitCode: exitCode);
 
         foreach (string line in result)
         {
-            this._logger.LogWarning(line);
+            this._logger.LogGitMessage(line);
         }
     }
 
