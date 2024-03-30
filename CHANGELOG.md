@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Roslynator.Analyzers to 4.12.0
 - Dependencies - Updated SonarAnalyzer.CSharp to 9.23.0.88079
 - Dependencies - Updated LibGit2Sharp to 0.30.0
+- Dependencies - Updated Microsoft.Extensions to 8.0.3
 ### Removed
 ### Deployment Changes
 
