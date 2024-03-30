@@ -17,6 +17,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated SonarAnalyzer.CSharp to 9.23.0.88079
 - Dependencies - Updated LibGit2Sharp to 0.30.0
 - Dependencies - Updated Microsoft.Extensions to 8.0.3
+- Dependencies - Updated TeamCity.VSTest.TestAdapter to 1.0.40
 ### Removed
 ### Deployment Changes
 
