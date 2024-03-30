@@ -61,7 +61,7 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FunFair.BuildCheck.Runner" Version="474.0.17.246" />
+    <PackageReference Include="FunFair.BuildCheck.Runner" Version="474.0.18.341" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
