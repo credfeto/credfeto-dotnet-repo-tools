@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -72,7 +73,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
         new(Name: "DO NOT MERGE", Description: "This pull request should not be merged yet", Colour: "ff0000", [], [])
     ];
 
-    public (string labels, string labeler) BuildLabelsConfig(IReadOnlyList<string> projects)
+    public LabelContent BuildLabelsConfig(IReadOnlyList<string> projects)
     {
         if (projects is [])
         {
@@ -81,18 +82,20 @@ public sealed class LabelsBuilder : ILabelsBuilder
 
         List<LabelConfig> labels = [..BaseLabels];
 
-        foreach (string fileName in projects)
-        {
-            string projectName = Path.GetFileNameWithoutExtension(fileName);
-            string labelName = BuildLabelName(projectName);
-            string colour = GetLabelColour(projectName);
-
-            LabelConfig lc = new(Name: labelName, $"Changes in ${projectName} project", Colour: colour, [$"src/${projectName}/**/*"], []);
-
-            labels.Add(lc);
-        }
+        labels.AddRange(projects.Select(BuildLabelConfig));
 
         return BuildFiles(labels);
+    }
+
+    private static LabelConfig BuildLabelConfig(string fileName)
+    {
+        string projectName = Path.GetFileNameWithoutExtension(fileName);
+        string labelName = BuildLabelName(projectName);
+        string colour = GetLabelColour(projectName);
+
+        LabelConfig lc = new(Name: labelName, $"Changes in ${projectName} project", Colour: colour, [$"src/${projectName}/**/*"], []);
+
+        return lc;
     }
 
     private static string BuildLabelName(string projectName)
@@ -122,69 +125,87 @@ public sealed class LabelsBuilder : ILabelsBuilder
         return "96f7d2";
     }
 
-    private static (string labels, string labeler) BuildFiles(IReadOnlyList<LabelConfig> labels)
+    private static LabelContent BuildFiles(IReadOnlyList<LabelConfig> labels)
     {
         IOrderedEnumerable<LabelConfig> sorted = labels.OrderBy(keySelector: x => x.Name, comparer: StringComparer.OrdinalIgnoreCase);
 
         StringBuilder labeller = new();
         StringBuilder labelsWithColour = new();
 
-        foreach (LabelConfig group in sorted)
+        foreach (LabelConfig labelConfig in sorted)
         {
-            labeller = AddLabelMatch(labeller: labeller, group: group);
-            labelsWithColour = AddLabelsWithColor(labelsWithColour: labelsWithColour, group: group);
+            labeller = AddLabelMatch(labeller: labeller, labelConfig: labelConfig);
+            labelsWithColour = AddLabelsWithColor(labelsWithColour: labelsWithColour, labelConfig: labelConfig);
         }
 
-        return (labelsWithColour.ToString(), labeller.ToString());
+        return new(labelsWithColour.ToString(), labeller.ToString());
     }
 
-    private static StringBuilder AddLabelMatch(StringBuilder labeller, in LabelConfig group)
+    private static StringBuilder AddLabelMatch(StringBuilder labeller, in LabelConfig labelConfig)
     {
-        if (group is { Paths: [], PathsExclude: [] })
+        if (labelConfig is { Paths: [], PathsExclude: [] })
         {
             return labeller;
         }
 
-        //Log -message "Adding group $groupName"
+        //Log -message "Adding labelConfig $groupName"
 
-        IEnumerable<(bool Include, string Path)> paths = BuildIncludePaths(group)
-            .Concat(BuildExcludePaths(group));
+        //Log -message " - Adding Group with file match"
+        return labeller.AppendLine($"\"{labelConfig.Name}\":")
+                       .AppendLine(BuildAllPathLine(labelConfig));
+    }
+
+    private static string BuildAllPathLine(in LabelConfig labelConfig)
+    {
+        IEnumerable<PathInfo> paths = BuildIncludePaths(labelConfig)
+            .Concat(BuildExcludePaths(labelConfig));
 
         string all = " - any: [ '" + string.Join(separator: ", ",
                                                  paths.Select(i => i.Include
                                                                   ? $"'{i.Path}'"
                                                                   : $"'!{i.Path}'")) + "' ]";
 
-        //Log -message " - Adding Group with file match"
-        return labeller.AppendLine($"\"{group.Name}\":")
-                       .AppendLine(all);
+        return all;
     }
 
-    private static IEnumerable<(bool Include, string Path)> BuildIncludePaths(in LabelConfig group)
+    private static IEnumerable<PathInfo> BuildIncludePaths(in LabelConfig labelConfig)
     {
-        return group.Paths.OrderBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase)
-                    .Select(path => (Include: true, Path: path));
+        return labelConfig.Paths.OrderBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase)
+                          .Select(Create);
+
+        static PathInfo Create(string path)
+        {
+            return new(Include: true, Path: path);
+        }
     }
 
-    private static IEnumerable<(bool Include, string Path)> BuildExcludePaths(in LabelConfig group)
+    private static IEnumerable<PathInfo> BuildExcludePaths(in LabelConfig labelConfig)
     {
-        return group.PathsExclude.OrderBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase)
-                    .Select(path => (Include: false, Path: path));
+        return labelConfig.PathsExclude.OrderBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase)
+                          .Select(Create);
+
+        static PathInfo Create(string path)
+        {
+            return new(Include: false, Path: path);
+        }
     }
 
-    private static StringBuilder AddLabelsWithColor(StringBuilder labelsWithColour, in LabelConfig group)
+    private static StringBuilder AddLabelsWithColor(StringBuilder labelsWithColour, in LabelConfig labelConfig)
     {
         //Log -message " - Adding Colour Group"
-        labelsWithColour = labelsWithColour.AppendLine($" - name: \"{group.Name}\"")
-                                           .AppendLine($"   color: \"{group.Colour}\"");
+        labelsWithColour = labelsWithColour.AppendLine($" - name: \"{labelConfig.Name}\"")
+                                           .AppendLine($"   color: \"{labelConfig.Colour}\"");
 
-        if (!string.IsNullOrWhiteSpace(group.Description))
+        if (!string.IsNullOrWhiteSpace(labelConfig.Description))
         {
-            labelsWithColour = labelsWithColour.AppendLine($"   description: \"{group.Description}\"");
+            labelsWithColour = labelsWithColour.AppendLine($"   description: \"{labelConfig.Description}\"");
         }
 
         labelsWithColour = labelsWithColour.AppendLine();
 
         return labelsWithColour;
     }
+
+    [DebuggerDisplay("Include: {Include}, Path: {Path}")]
+    private readonly record struct PathInfo(bool Include, string Path);
 }

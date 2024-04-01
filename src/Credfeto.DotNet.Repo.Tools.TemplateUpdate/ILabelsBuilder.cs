@@ -1,8 +1,9 @@
 using System.Collections.Generic;
+using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate;
 
 public interface ILabelsBuilder
 {
-    (string labels, string labeler) BuildLabelsConfig(IReadOnlyList<string> projects);
+    LabelContent BuildLabelsConfig(IReadOnlyList<string> projects);
 }
