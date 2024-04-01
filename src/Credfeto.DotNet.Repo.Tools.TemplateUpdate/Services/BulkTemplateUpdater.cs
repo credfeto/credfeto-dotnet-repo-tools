@@ -40,6 +40,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     private readonly IFileUpdater _fileUpdater;
     private readonly IGitRepositoryFactory _gitRepositoryFactory;
     private readonly IGlobalJson _globalJson;
+    private readonly ILabelsBuilder _labelsBuilder;
     private readonly ILogger<BulkTemplateUpdater> _logger;
     private readonly IReleaseConfigLoader _releaseConfigLoader;
     private readonly IReleaseGeneration _releaseGeneration;
@@ -56,6 +57,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                IBulkPackageConfigLoader bulkPackageConfigLoader,
                                IFileUpdater fileUpdater,
                                IDependaBotConfigBuilder dependaBotConfigBuilder,
+                               ILabelsBuilder labelsBuilder,
                                ILogger<BulkTemplateUpdater> logger)
     {
         this._trackingCache = trackingCache;
@@ -69,6 +71,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         this._bulkPackageConfigLoader = bulkPackageConfigLoader;
         this._fileUpdater = fileUpdater;
         this._dependaBotConfigBuilder = dependaBotConfigBuilder;
+        this._labelsBuilder = labelsBuilder;
         this._logger = logger;
     }
 
@@ -407,6 +410,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         totalUpdates += await this.MakeCopyInstructionChangesAsync(repoContext: repoContext, cancellationToken: cancellationToken, filesToUpdate: filesToUpdate);
 
+        if (await this.UpdateLabelAsync(repoContext: repoContext, projects: projects, cancellationToken: cancellationToken))
+        {
+            ++totalUpdates;
+        }
+
         // TODO
 /*
    updateLabel -baseFolder $targetRepo
@@ -424,6 +432,48 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                                                   releaseConfig: updateContext.ReleaseConfig,
                                                                   cancellationToken: cancellationToken);
         }
+    }
+
+    private async ValueTask<bool> UpdateLabelAsync(RepoContext repoContext, IReadOnlyList<string> projects, CancellationToken cancellationToken)
+    {
+        string labelsFileName = Path.Combine(path1: repoContext.WorkingDirectory, path2: DOT_GITHUB_DIR, path3: "labels.yml");
+        string labelersFileName = Path.Combine(path1: repoContext.WorkingDirectory, path2: DOT_GITHUB_DIR, path3: "labeler.yml");
+
+        (string labels, string labeler) = this._labelsBuilder.BuildLabelsConfig(projects: projects);
+
+        bool changed = false;
+
+        if (File.Exists(labelsFileName))
+        {
+            string content = await File.ReadAllTextAsync(path: labelsFileName, cancellationToken: cancellationToken);
+
+            if (!StringComparer.Ordinal.Equals(x: content, y: labels))
+            {
+                changed = true;
+            }
+        }
+
+        if (!changed && File.Exists(labelersFileName))
+        {
+            string content = await File.ReadAllTextAsync(path: labelersFileName, cancellationToken: cancellationToken);
+
+            if (!StringComparer.Ordinal.Equals(x: content, y: labeler))
+            {
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            await File.WriteAllTextAsync(path: labelsFileName, contents: labels, cancellationToken: cancellationToken);
+            await File.WriteAllTextAsync(path: labelersFileName, contents: labeler, cancellationToken: cancellationToken);
+            await repoContext.Repository.CommitAsync(message: "[PR] Updated labels", cancellationToken: cancellationToken);
+            await repoContext.Repository.PushAsync(cancellationToken);
+
+            return true;
+        }
+
+        return false;
     }
 
     private static IEnumerable<CopyInstruction> GetDotNetFilesToUpdate(FileContext fileContext)

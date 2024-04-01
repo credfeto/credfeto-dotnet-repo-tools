@@ -10,6 +10,7 @@ public static class TemplateUpdateSetup
     {
         return services.AddSingleton<IBulkTemplateUpdater, BulkTemplateUpdater>()
                        .AddSingleton<IFileUpdater, FileUpdater>()
-                       .AddSingleton<IDependaBotConfigBuilder, DependaBotConfigBuilder>();
+                       .AddSingleton<IDependaBotConfigBuilder, DependaBotConfigBuilder>()
+                       .AddSingleton<ILabelsBuilder, LabelsBuilder>();
     }
 }
