@@ -62,7 +62,7 @@ internal sealed class GitRepository : IGitRepository
 
         // # NOTE Loses all local commits on master
         // & git -C $repoPath reset --hard $upstreamBranch 2>&1 | Out-Null
-        await this.ResetUpstreamHardAsync(upstream: upstream, cancellationToken: cancellationToken, branch: defaultBranch);
+        await this.ResetUpstreamHardAsync(upstream: upstream, branch: defaultBranch, cancellationToken: cancellationToken);
 
         await this.FetchRemoteAsync(upstream: upstream, cancellationToken: cancellationToken);
 

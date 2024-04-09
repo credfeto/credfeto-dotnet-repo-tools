@@ -54,7 +54,7 @@ public sealed class DotNetBuild : IDotNetBuild
             if (buildSettings.Publishable)
             {
                 string? framework = buildSettings.Framework;
-                await this.DotNetPublishAsync(basePath: basePath, cancellationToken: cancellationToken, framework: framework);
+                await this.DotNetPublishAsync(basePath: basePath, framework: framework, cancellationToken: cancellationToken);
             }
         }
         finally

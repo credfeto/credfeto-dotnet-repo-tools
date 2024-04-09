@@ -69,7 +69,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         // *********************************************************
         // * 2 RELEASE NOTES AND DURATION
-        if (await this.ShouldNeverReleaseTimeAndContentBasedAsync(repoContext: repoContext, packages: packages, releaseConfig: releaseConfig, cancellationToken: cancellationToken))
+        if (await this.ShouldNeverReleaseTimeAndContentBasedAsync(repoContext: repoContext, releaseConfig: releaseConfig, packages: packages, cancellationToken: cancellationToken))
         {
             return;
         }
@@ -80,8 +80,8 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         if (await this.ShouldNeverReleaseCodeQualityAsync(repoContext: repoContext,
                                                           basePath: basePath,
                                                           buildSettings: buildSettings,
-                                                          solutions: solutions,
                                                           dotNetSettings: dotNetSettings,
+                                                          solutions: solutions,
                                                           cancellationToken: cancellationToken))
         {
             return;

@@ -87,11 +87,11 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                                     templateRepo: templateRepo,
                                                                                     workFolder: workFolder,
                                                                                     trackingFileName: trackingFileName,
-                                                                                    additionalNugetSources: additionalNugetSources,
                                                                                     releaseConfigFileName: releaseConfigFileName,
+                                                                                    additionalNugetSources: additionalNugetSources,
                                                                                     cancellationToken: cancellationToken);
 
-            await this.UpdateCachedPackagesAsync(workFolder: workFolder, cancellationToken: cancellationToken, packages: packages, updateContext: updateContext);
+            await this.UpdateCachedPackagesAsync(workFolder: workFolder, packages: packages, updateContext: updateContext, cancellationToken: cancellationToken);
 
             try
             {
@@ -113,7 +113,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             {
                 try
                 {
-                    await this.UpdateRepositoryAsync(updateContext: updateContext, packages: packages, cancellationToken: cancellationToken, repo: repo);
+                    await this.UpdateRepositoryAsync(updateContext: updateContext, packages: packages, repo: repo, cancellationToken: cancellationToken);
                 }
                 catch (SolutionCheckFailedException exception)
                 {
@@ -393,9 +393,9 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 await this.CommitDefaultBranchToRepositoryAsync(repoContext: repoContext,
                                                                 package: package,
                                                                 version: version,
-                                                                cancellationToken: cancellationToken,
                                                                 invalidUpdateBranch: invalidUpdateBranch,
-                                                                branchPrefix: branchPrefix);
+                                                                branchPrefix: branchPrefix,
+                                                                cancellationToken: cancellationToken);
             }
             else
             {
@@ -404,9 +404,9 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 await this.CommitToNamedBranchAsync(repoContext: repoContext,
                                                     package: package,
                                                     version: version,
-                                                    cancellationToken: cancellationToken,
                                                     branchForUpdate: branchForUpdate,
-                                                    branchPrefix: branchPrefix);
+                                                    branchPrefix: branchPrefix,
+                                                    cancellationToken: cancellationToken);
             }
         }
         finally
@@ -571,8 +571,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return new(WorkFolder: workFolder,
                    CacheFileName: cacheFileName,
                    TrackingFileName: trackingFileName,
-                   DotNetSettings: dotNetSettings,
                    AdditionalSources: additionalNugetSources,
+                   DotNetSettings: dotNetSettings,
                    ReleaseConfig: releaseConfig);
     }
 

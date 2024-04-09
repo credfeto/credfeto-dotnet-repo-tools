@@ -114,7 +114,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             {
                 try
                 {
-                    await this.UpdateRepositoryAsync(updateContext: updateContext, packages: packages, cancellationToken: cancellationToken, repo: repo);
+                    await this.UpdateRepositoryAsync(updateContext: updateContext, packages: packages, repo: repo, cancellationToken: cancellationToken);
                 }
                 catch (SolutionCheckFailedException exception)
                 {
@@ -194,7 +194,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         int changes = 0;
         IEnumerable<CopyInstruction> filesToUpdate = GetStandardFilesToUpdate(fileContext);
 
-        changes += await this.MakeCopyInstructionChangesAsync(repoContext: repoContext, cancellationToken: cancellationToken, filesToUpdate: filesToUpdate);
+        changes += await this.MakeCopyInstructionChangesAsync(repoContext: repoContext, filesToUpdate: filesToUpdate, cancellationToken: cancellationToken);
 
         // TODO: Implement
 /*
@@ -408,7 +408,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         FileContext fileContext = new(UpdateContext: updateContext, RepoContext: repoContext);
         IEnumerable<CopyInstruction> filesToUpdate = GetDotNetFilesToUpdate(fileContext);
 
-        totalUpdates += await this.MakeCopyInstructionChangesAsync(repoContext: repoContext, cancellationToken: cancellationToken, filesToUpdate: filesToUpdate);
+        totalUpdates += await this.MakeCopyInstructionChangesAsync(repoContext: repoContext, filesToUpdate: filesToUpdate, cancellationToken: cancellationToken);
 
         if (await this.UpdateLabelAsync(repoContext: repoContext, projects: projects, cancellationToken: cancellationToken))
         {

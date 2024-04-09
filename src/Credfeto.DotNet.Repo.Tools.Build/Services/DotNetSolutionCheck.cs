@@ -36,10 +36,10 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         foreach (string solution in solutions)
         {
             int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                                                      checkConfiguration: PreReleaseCheckConfiguration,
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
+                                                      checkConfiguration: PreReleaseCheckConfiguration,
                                                       buildServiceProvider: this._serviceProviderFactory.Build,
                                                       logger: this._logger,
                                                       cancellationToken: cancellationToken);
@@ -65,10 +65,10 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         foreach (string solution in solutions)
         {
             int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                                                      checkConfiguration: PreReleaseCheckConfiguration,
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
+                                                      checkConfiguration: PreReleaseCheckConfiguration,
                                                       buildServiceProvider: this._serviceProviderFactory.Build,
                                                       logger: this._logger,
                                                       cancellationToken: cancellationToken);
@@ -90,10 +90,10 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         foreach (string solution in solutions)
         {
             int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                                                      checkConfiguration: ReleaseCheckConfiguration,
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
+                                                      checkConfiguration: ReleaseCheckConfiguration,
                                                       buildServiceProvider: this._serviceProviderFactory.Build,
                                                       logger: this._logger,
                                                       cancellationToken: cancellationToken);
