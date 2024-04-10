@@ -54,7 +54,7 @@ internal sealed class Commands
 
         this.Dump(repositories);
 
-        string[] nugetSources = source?.ToArray() ?? Array.Empty<string>();
+        IReadOnlyList<string> nugetSources = source?.ToArray() ?? [];
         await this._bulkPackageUpdater.BulkUpdateAsync(templateRepository: templateRepository,
                                                        cacheFileName: cacheFileName,
                                                        trackingFileName: trackingFileName,
@@ -104,12 +104,15 @@ internal sealed class Commands
 
         IReadOnlyList<string> repositories = ExcludeTemplateRepo(repositories: source, templateRepository: templateRepository);
 
-        if (repositories.Count == 0)
-        {
-            throw new InvalidOperationException("No Repositories found");
-        }
+        return repositories is []
+            ? NoRepositories()
+            : repositories;
+    }
 
-        return repositories;
+    [DoesNotReturn]
+    private static IReadOnlyList<string> NoRepositories()
+    {
+        throw new InvalidOperationException("No Repositories found");
     }
 
     [Command("code-cleanup", Description = "Perform code cleanup in all repositories")]
