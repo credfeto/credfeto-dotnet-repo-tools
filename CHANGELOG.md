@@ -9,7 +9,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- SDK - Updated DotNet SDK to 8.0.203
 - Dependencies - Updated Credfeto.Enumeration to 1.1.5.315
 - Dependencies - Updated FunFair.CodeAnalysis to 7.0.12.324
 - Dependencies - Updated Meziantou.Analyzer to 2.0.146
@@ -18,6 +17,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated TeamCity.VSTest.TestAdapter to 1.0.40
 - Dependencies - Updated SonarAnalyzer.CSharp to 9.23.1.88495
 - Dependencies - Updated Microsoft.Extensions to 8.0.4
+- SDK - Updated DotNet SDK to 8.0.204
 ### Removed
 ### Deployment Changes
 
