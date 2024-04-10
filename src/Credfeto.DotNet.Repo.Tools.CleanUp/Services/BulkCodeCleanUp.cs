@@ -27,6 +27,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     private readonly IGitRepositoryFactory _gitRepositoryFactory;
     private readonly IGlobalJson _globalJson;
     private readonly ILogger<BulkCodeCleanUp> _logger;
+    private readonly IProjectXmlRewriter _projectXmlRewriter;
     private readonly IReleaseConfigLoader _releaseConfigLoader;
     private readonly ITrackingCache _trackingCache;
 
@@ -35,6 +36,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                            IGlobalJson globalJson,
                            IDotNetVersion dotNetVersion,
                            IReleaseConfigLoader releaseConfigLoader,
+                           IProjectXmlRewriter projectXmlRewriter,
                            ILogger<BulkCodeCleanUp> logger)
     {
         this._trackingCache = trackingCache;
@@ -42,6 +44,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         this._globalJson = globalJson;
         this._dotNetVersion = dotNetVersion;
         this._releaseConfigLoader = releaseConfigLoader;
+        this._projectXmlRewriter = projectXmlRewriter;
         this._logger = logger;
     }
 
@@ -206,13 +209,18 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         {
             XmlDocument doc = await LoadProjectAsync(path: project, cancellationToken: cancellationToken);
 
-            // TODO:
-            //     Project_cleanup (ordering)
+            this.ProjectCleanup(project: doc, projectFile: project);
 
             await SaveProjectAsync(project: project, doc: doc, cancellationToken: cancellationToken);
         }
 
         throw new NotSupportedException("Not yet available");
+    }
+
+    private void ProjectCleanup(XmlDocument project, string projectFile)
+    {
+        this._projectXmlRewriter.ReOrderPropertyGroups(project: project, filename: projectFile);
+        this._projectXmlRewriter.ReOrderIncludes(project: project);
     }
 
     private static async ValueTask SaveProjectAsync(string project, XmlDocument doc, CancellationToken cancellationToken)
@@ -223,6 +231,9 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         {
             doc.Save(xmlWriter);
         }
+
+        // TODO: Fix this.
+        await Task.Delay(millisecondsDelay: 1, cancellationToken: cancellationToken);
     }
 
     private static async ValueTask<XmlDocument> LoadProjectAsync(string path, CancellationToken cancellationToken)
