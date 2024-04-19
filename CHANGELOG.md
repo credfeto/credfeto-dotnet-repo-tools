@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.Test.Common to 6.1.49.427
 - Dependencies - Updated FunFair.BuildCheck to 474.0.19.418
 - Dependencies - Updated Roslynator.Analyzers to 4.12.1
+- Dependencies - Updated SmartAnalyzers.CSharpExtensions.Annotations to 4.2.10
 ### Removed
 ### Deployment Changes
 
