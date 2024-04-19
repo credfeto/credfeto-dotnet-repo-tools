@@ -9,7 +9,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated FunFair.Test.Common to 6.1.49.427
 - Dependencies - Updated FunFair.BuildCheck to 474.0.19.418
 - Dependencies - Updated Roslynator.Analyzers to 4.12.1
 - Dependencies - Updated SmartAnalyzers.CSharpExtensions.Annotations to 4.2.10
@@ -17,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated xunit.analyzers to 1.12.0
 - Dependencies - Updated xunit.runner.visualstudio to 2.5.8
 - Dependencies - Updated xunit to 2.7.1
+- Dependencies - Updated FunFair.Test.Common to 6.1.50.439
 ### Removed
 ### Deployment Changes
 
