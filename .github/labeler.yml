@@ -1,86 +1,86 @@
-"C#":
- - any: [ './**/*.cs', './**/*.csproj' ]
-"C# Project":
- - any: [ './**/*.csproj' ]
-"C# Solution":
- - any: [ './**/*.sln' ]
-"Powershell":
- - any: [ './**/*.ps1', './**/*.psm1' ]
-"SQL":
- - any: [ 'db/**/*', './**/*.sql' ]
-"Solidity":
- - any: [ './**/*.sol' ]
-"unit-tests":
- - any: [ 'src/*.Tests.*/**/*', 'src/*.Tests/**/*', 'src/*.Tests.Integration.*/**/*', 'src/*.Tests.Integration/**/*' ]
 ".NET update":
- - any: [ 'src/global.json' ]
-"Config Change":
- - any: [ 'src/**/*.json', '!src/global.json' ]
-"Static Code Analysis Rules":
- - any: [ 'src/CodeAnalysis.ruleset' ]
-"Migration Script":
- - any: [ 'tools/MigrationScripts/**/*' ]
-"Legal Text":
- - any: [ 'tools/LegalText/**/*' ]
+ - any: [ ''src/global.json'' ]
+"C#":
+ - any: [ ''./**/*.cs', './**/*.csproj'' ]
+"C# Project":
+ - any: [ ''./**/*.csproj'' ]
+"C# Solution":
+ - any: [ ''./**/*.sln'' ]
 "Change Log":
- - any: [ 'CHANGELOG.md' ]
-"Read Me":
- - any: [ 'README.md' ]
-"Setup":
- - any: [ 'SETUP.md' ]
-"Markdown":
- - any: [ './**/*.md' ]
+ - any: [ ''CHANGELOG.md'' ]
+"Config Change":
+ - any: [ ''src/**/*.json', '!src/global.json'' ]
+"credfeto-dotnet-repo-tools-build":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Build/**/*'' ]
+"credfeto-dotnet-repo-tools-build-interfaces":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Build.Interfaces/**/*'' ]
+"credfeto-dotnet-repo-tools-build-tests":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Build.Tests/**/*'' ]
+"credfeto-dotnet-repo-tools-cleanup":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.CleanUp/**/*'' ]
+"credfeto-dotnet-repo-tools-cleanup-interfaces":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces/**/*'' ]
+"credfeto-dotnet-repo-tools-cleanup-tests":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.CleanUp.Tests/**/*'' ]
+"credfeto-dotnet-repo-tools-cmd":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Cmd/**/*'' ]
+"credfeto-dotnet-repo-tools-dotnet":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.DotNet/**/*'' ]
+"credfeto-dotnet-repo-tools-dotnet-interfaces":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.DotNet.Interfaces/**/*'' ]
+"credfeto-dotnet-repo-tools-dotnet-tests":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.DotNet.Tests/**/*'' ]
+"credfeto-dotnet-repo-tools-git":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Git/**/*'' ]
+"credfeto-dotnet-repo-tools-git-interfaces":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Git.Interfaces/**/*'' ]
+"credfeto-dotnet-repo-tools-git-tests":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Git.Tests/**/*'' ]
+"credfeto-dotnet-repo-tools-models":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Models/**/*'' ]
+"credfeto-dotnet-repo-tools-packages":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Packages/**/*'' ]
+"credfeto-dotnet-repo-tools-packages-interfaces":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Packages.Interfaces/**/*'' ]
+"credfeto-dotnet-repo-tools-packages-tests":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Packages.Tests/**/*'' ]
+"credfeto-dotnet-repo-tools-release":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Release/**/*'' ]
+"credfeto-dotnet-repo-tools-release-interfaces":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Release.Interfaces/**/*'' ]
+"credfeto-dotnet-repo-tools-release-tests":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Release.Tests/**/*'' ]
+"credfeto-dotnet-repo-tools-templateupdate":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.TemplateUpdate/**/*'' ]
+"credfeto-dotnet-repo-tools-templateupdate-interfaces":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces/**/*'' ]
+"credfeto-dotnet-repo-tools-templateupdate-tests":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests/**/*'' ]
+"credfeto-dotnet-repo-tracking":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tracking/**/*'' ]
+"credfeto-dotnet-repo-tracking-interfaces":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tracking.Interfaces/**/*'' ]
+"credfeto-dotnet-repo-tracking-tests":
+ - any: [ ''src/$Credfeto.DotNet.Repo.Tracking.Tests/**/*'' ]
 "github-actions":
- - any: [ '.github/workflows/*.yml' ]
-"Build":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Build/**/*' ]
-"Build.Interfaces":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Build.Interfaces/**/*' ]
-"Build.Tests":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Build.Tests/**/*' ]
-"CleanUp":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.CleanUp/**/*' ]
-"CleanUp.Interfaces":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces/**/*' ]
-"CleanUp.Tests":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.CleanUp.Tests/**/*' ]
-"Cmd":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Cmd/**/*' ]
-"DotNet":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.DotNet/**/*' ]
-"DotNet.Interfaces":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.DotNet.Interfaces/**/*' ]
-"DotNet.Tests":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.DotNet.Tests/**/*' ]
-"Git":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Git/**/*' ]
-"Git.Interfaces":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Git.Interfaces/**/*' ]
-"Git.Tests":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Git.Tests/**/*' ]
-"Models":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Models/**/*' ]
-"Packages":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Packages/**/*' ]
-"Packages.Interfaces":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Packages.Interfaces/**/*' ]
-"Packages.Tests":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Packages.Tests/**/*' ]
-"Release":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Release/**/*' ]
-"Release.Interfaces":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Release.Interfaces/**/*' ]
-"Release.Tests":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.Release.Tests/**/*' ]
-"TemplateUpdate":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.TemplateUpdate/**/*' ]
-"TemplateUpdate.Interfaces":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces/**/*' ]
-"TemplateUpdate.Tests":
- - any: [ 'src/Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests/**/*' ]
-"Credfeto.DotNet.Repo.Tracking":
- - any: [ 'src/Credfeto.DotNet.Repo.Tracking/**/*' ]
-"Credfeto.DotNet.Repo.Tracking.Interfaces":
- - any: [ 'src/Credfeto.DotNet.Repo.Tracking.Interfaces/**/*' ]
-"Credfeto.DotNet.Repo.Tracking.Tests":
- - any: [ 'src/Credfeto.DotNet.Repo.Tracking.Tests/**/*' ]
+ - any: [ ''.github/workflows/*.yml'' ]
+"Legal Text":
+ - any: [ ''tools/LegalText/**/*'' ]
+"Markdown":
+ - any: [ ''./**/*.md'' ]
+"Migration Script":
+ - any: [ ''tools/MigrationScripts/**/*'' ]
+"Powershell":
+ - any: [ ''./**/*.ps1', './**/*.psm1'' ]
+"Read Me":
+ - any: [ ''README.md'' ]
+"Setup":
+ - any: [ ''SETUP.md'' ]
+"Solidity":
+ - any: [ ''./**/*.sol'' ]
+"SQL":
+ - any: [ ''./**/*.sql', 'db/**/*'' ]
+"Static Code Analysis Rules":
+ - any: [ ''src/CodeAnalysis.ruleset'' ]
+"unit-tests":
+ - any: [ ''src/*.Tests.*/**/*', 'src/*.Tests.Integration.*/**/*', 'src/*.Tests.Integration/**/*', 'src/*.Tests/**/*'' ]
