@@ -518,7 +518,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         PackageMatch packageMatch = new(PackageId: package.PackageId, Prefix: !package.ExactMatch);
         this._logger.LogIncludingPackage(packageMatch);
 
-        IReadOnlyList<PackageMatch> excludedPackages = this.GetExcludedPackages(package.Exclude ?? Array.Empty<PackageExclude>());
+        IReadOnlyList<PackageMatch> excludedPackages = this.GetExcludedPackages(package.Exclude ?? []);
 
         return new(PackageMatch: packageMatch, ExcludedPackages: excludedPackages);
     }
@@ -527,7 +527,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     {
         if (excludes.Count == 0)
         {
-            return Array.Empty<PackageMatch>();
+            return [];
         }
 
         List<PackageMatch> excludedPackages = [];

@@ -117,7 +117,7 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         if (!StringComparer.InvariantCultureIgnoreCase.Equals(x: outputType, y: "Exe"))
         {
-            return Array.Empty<string>();
+            return [];
         }
 
         XmlNode? publishableNode = doc.SelectSingleNode("/Project/PropertyGroup/IsPublishable");
@@ -135,11 +135,11 @@ public sealed class DotNetBuild : IDotNetBuild
 
             if (targetFrameworksNode is not null)
             {
-                return targetFrameworksNode.InnerText.Split(';');
+                return targetFrameworksNode.InnerText.Split(separator: ';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             }
         }
 
-        return Array.Empty<string>();
+        return [];
     }
 
     private static bool IsPackable(XmlDocument doc, string outputType)
