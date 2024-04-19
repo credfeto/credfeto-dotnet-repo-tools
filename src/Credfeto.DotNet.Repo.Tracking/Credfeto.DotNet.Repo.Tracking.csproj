@@ -70,12 +70,12 @@
     <PackageReference Include="Credfeto.Enumeration.Source.Generation" Version="1.1.5.315" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="CSharpIsNullAnalyzer" Version="0.1.495" PrivateAssets="all" ExcludeAssets="runtime" />
     <PackageReference Include="FunFair.CodeAnalysis" Version="7.0.13.341" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Meziantou.Analyzer" Version="2.0.147" PrivateAssets="All" ExcludeAssets="runtime" />
+    <PackageReference Include="Meziantou.Analyzer" Version="2.0.149" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.9.28" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Nullable.Extended.Analyzer" Version="1.15.6169" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Philips.CodeAnalysis.DuplicateCodeAnalyzer" Version="1.1.7" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Philips.CodeAnalysis.MaintainabilityAnalyzers" Version="1.5.0" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Roslynator.Analyzers" Version="4.12.0" PrivateAssets="All" ExcludeAssets="runtime" />
+    <PackageReference Include="Roslynator.Analyzers" Version="4.12.1" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="SecurityCodeScan.VS2019" Version="5.6.7" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="SmartAnalyzers.CSharpExtensions.Annotations" Version="4.2.9" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="SonarAnalyzer.CSharp" Version="9.23.1.88495" PrivateAssets="All" ExcludeAssets="runtime" />
