@@ -9,7 +9,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated FunFair.BuildCheck to 474.0.19.418
 - Dependencies - Updated Roslynator.Analyzers to 4.12.1
 - Dependencies - Updated xunit.analyzers to 1.12.0
 - Dependencies - Updated xunit.runner.visualstudio to 2.5.8
@@ -19,6 +18,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.CodeAnalysis to 7.0.14.369
 - Dependencies - Updated FunFair.Test.Common to 6.1.51.455
 - Dependencies - Updated SonarAnalyzer.CSharp to 9.24.0.89429
+- Dependencies - Updated FunFair.BuildCheck to 474.0.20.429
 ### Removed
 ### Deployment Changes
 
