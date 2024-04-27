@@ -211,7 +211,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
             this.ProjectCleanup(project: doc, projectFile: project);
 
-            await SaveProjectAsync(project: project, doc: doc, cancellationToken: cancellationToken);
+            await SaveProjectAsync(project: project, doc: doc);
         }
 
         throw new NotSupportedException("Not yet available");
@@ -223,17 +223,15 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         this._projectXmlRewriter.ReOrderIncludes(project: project);
     }
 
-    private static async ValueTask SaveProjectAsync(string project, XmlDocument doc, CancellationToken cancellationToken)
+    private static async ValueTask SaveProjectAsync(string project, XmlDocument doc)
     {
         XmlWriterSettings settings = new() { Indent = true, IndentChars = "  ", NewLineOnAttributes = false, OmitXmlDeclaration = true };
 
         await using (XmlWriter xmlWriter = XmlWriter.Create(outputFileName: project, settings: settings))
         {
             doc.Save(xmlWriter);
+            await ValueTask.CompletedTask;
         }
-
-        // TODO: Fix this.
-        await Task.Delay(millisecondsDelay: 1, cancellationToken: cancellationToken);
     }
 
     private static async ValueTask<XmlDocument> LoadProjectAsync(string path, CancellationToken cancellationToken)

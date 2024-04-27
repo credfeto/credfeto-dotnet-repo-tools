@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Xml;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
@@ -9,6 +12,88 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
     public void ReOrderPropertyGroups(XmlDocument project, string filename)
     {
+        List<XmlElement> toRemove = [];
+
+        XmlNodeList? propertyGroups = project.SelectNodes("PropertyGroup");
+
+        if (propertyGroups is null)
+        {
+            return;
+        }
+
+        foreach (XmlElement propertyGroup in propertyGroups)
+        {
+            Dictionary<string, string> attributes = new(StringComparer.Ordinal);
+
+            foreach (XmlAttribute attribute in propertyGroup.Attributes)
+            {
+                string attValue = propertyGroup.GetAttribute(attribute.Name);
+                attributes[attribute.Name] = attValue;
+            }
+
+            XmlNodeList? children = propertyGroup.SelectNodes("*");
+
+            if (children is null)
+            {
+                continue;
+            }
+
+            Dictionary<string, XmlNode> orderedChildren = new(StringComparer.Ordinal);
+            bool replace = true;
+
+            foreach (XmlNode child in children)
+            {
+                string name = child.Name;
+
+                if (IsComment(child))
+                {
+                    replace = false;
+                    Log(message: $"{filename} SKIPPING GROUP AS Found Comment");
+
+                    break;
+                }
+
+                if (orderedChildren.ContainsKey(name))
+                {
+                    replace = false;
+
+                    if (IsDefineConstants(child))
+                    {
+                        // Skip DefineConstants as they can be added many times
+                        break;
+                    }
+
+                    Log(message: $"{filename} SKIPPING GROUP AS Found Duplicate item {name}");
+
+                    break;
+                }
+
+                orderedChildren[name] = child;
+            }
+
+            if (replace)
+            {
+                if (orderedChildren.Count > 0)
+                {
+                    propertyGroup.RemoveAll();
+
+                    foreach (string entryKey in orderedChildren.Keys.OrderBy(keySelector: x => x, comparer: StringComparer.Ordinal))
+                    {
+                        XmlNode item = orderedChildren[entryKey];
+                        propertyGroup.AppendChild(item);
+                    }
+
+                    foreach (KeyValuePair<string, string> attribute in attributes)
+                    {
+                        propertyGroup.SetAttribute(name: attribute.Key, value: attribute.Value);
+                    }
+                }
+                else
+                {
+                    toRemove.Add(propertyGroup);
+                }
+            }
+        }
 /*
     $toRemove = @()
 
@@ -66,7 +151,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
    }
  */
 
-        throw new NotSupportedException("Needs to be written");
+        //       throw new NotSupportedException("Needs to be written");
     }
 
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
@@ -176,5 +261,20 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
            }
          */
         throw new NotSupportedException("Needs to be written");
+    }
+
+    private static bool IsDefineConstants(XmlNode node)
+    {
+        return StringComparer.Ordinal.Equals(x: node.Name, y: "DefineConstants");
+    }
+
+    private static bool IsComment(XmlNode node)
+    {
+        return node.NodeType == XmlNodeType.Comment;
+    }
+
+    private static void Log(string message)
+    {
+        Debug.WriteLine(message);
     }
 }
