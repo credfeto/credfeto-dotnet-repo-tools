@@ -219,13 +219,20 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
     private void ProjectCleanup(XmlDocument project, string projectFile)
     {
-        this._projectXmlRewriter.ReOrderPropertyGroups(project: project, filename: projectFile);
-        this._projectXmlRewriter.ReOrderIncludes(project: project);
+        this._projectXmlRewriter.ReOrderPropertyGroups(projectDocument: project, filename: projectFile);
+        this._projectXmlRewriter.ReOrderIncludes(projectDocument: project);
     }
 
     private static async ValueTask SaveProjectAsync(string project, XmlDocument doc)
     {
-        XmlWriterSettings settings = new() { Indent = true, IndentChars = "  ", NewLineOnAttributes = false, OmitXmlDeclaration = true };
+        XmlWriterSettings settings = new()
+                                     {
+                                         Indent = true,
+                                         IndentChars = "  ",
+                                         NewLineOnAttributes = false,
+                                         OmitXmlDeclaration = true,
+                                         Async = true
+                                     };
 
         await using (XmlWriter xmlWriter = XmlWriter.Create(outputFileName: project, settings: settings))
         {

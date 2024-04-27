@@ -4,7 +4,7 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp;
 
 public interface IProjectXmlRewriter
 {
-    void ReOrderPropertyGroups(XmlDocument project, string filename);
+    void ReOrderPropertyGroups(XmlDocument projectDocument, string filename);
 
-    void ReOrderIncludes(XmlDocument project);
+    void ReOrderIncludes(XmlDocument projectDocument);
 }

@@ -10,8 +10,13 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 {
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
-    public void ReOrderPropertyGroups(XmlDocument project, string filename)
+    public void ReOrderPropertyGroups(XmlDocument projectDocument, string filename)
     {
+        if (projectDocument.SelectSingleNode("Project") is not XmlElement project)
+        {
+            return;
+        }
+
         List<XmlElement> toRemove = [];
 
         XmlNodeList? propertyGroups = project.SelectNodes("PropertyGroup");
@@ -31,10 +36,13 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
                 attributes[attribute.Name] = attValue;
             }
 
-            XmlNodeList? children = propertyGroup.SelectNodes("*");
+            XmlNodeList children = propertyGroup.ChildNodes;
 
-            if (children is null)
+            if (children.OfType<XmlNode>()
+                        .Any(IsComment))
             {
+                Log(message: $"{filename} SKIPPING GROUP AS Found Comment");
+
                 continue;
             }
 
@@ -44,14 +52,6 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
             foreach (XmlNode child in children)
             {
                 string name = child.Name;
-
-                if (IsComment(child))
-                {
-                    replace = false;
-                    Log(message: $"{filename} SKIPPING GROUP AS Found Comment");
-
-                    break;
-                }
 
                 if (orderedChildren.ContainsKey(name))
                 {
@@ -155,7 +155,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
     }
 
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
-    public void ReOrderIncludes(XmlDocument project)
+    public void ReOrderIncludes(XmlDocument projectDocument)
     {
         /*
              $itemGroups = $project.SelectNodes("ItemGroup")
