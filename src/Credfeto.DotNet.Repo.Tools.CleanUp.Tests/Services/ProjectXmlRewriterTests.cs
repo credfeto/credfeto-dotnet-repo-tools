@@ -211,7 +211,7 @@ public sealed class ProjectXmlRewriterTests : TestBase
 
         XmlDocument doc = LoadXml(originalXml);
 
-        this._projectXmlRewriter.ReOrderPropertyGroups(project: doc, filename: "test.csproj");
+        this._projectXmlRewriter.ReOrderPropertyGroups(projectDocument: doc, filename: "test.csproj");
 
         string actual = await SaveDocAsync(doc);
         Assert.Equal(expected: txtExpected, actual: actual);
