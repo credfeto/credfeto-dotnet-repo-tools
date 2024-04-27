@@ -49,7 +49,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
             Dictionary<string, XmlNode> orderedChildren = new(StringComparer.Ordinal);
             bool replace = true;
 
-            foreach (XmlNode child in children)
+            foreach (XmlElement child in children)
             {
                 string name = child.Name;
 
