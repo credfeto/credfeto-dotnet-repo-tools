@@ -1,4 +1,8 @@
 ﻿using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
+using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
+using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using FunFair.Test.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -21,6 +25,12 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 
     private static IServiceCollection Configure(IServiceCollection services)
     {
-        return services.AddCleanUp();
+        return services.AddMockedService<ITrackingCache>()
+                       .AddMockedService<IGitRepositoryFactory>()
+                       .AddMockedService<IGlobalJson>()
+                       .AddMockedService<IProjectXmlRewriter>()
+                       .AddMockedService<IReleaseConfigLoader>()
+                       .AddMockedService<IDotNetVersion>()
+                       .AddCleanUp();
     }
 }
