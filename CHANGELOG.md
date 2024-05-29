@@ -21,6 +21,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated xunit.runner.visualstudio to 2.8.1
 - Dependencies - Updated xunit to 2.8.1
 - Dependencies - Updated Microsoft.Extensions to 8.0.6
+- SDK - Updated DotNet SDK to 8.0.301
 ### Removed
 ### Deployment Changes
 
