@@ -11,7 +11,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.1.7.384
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.10.48
-- Dependencies - Updated Roslynator.Analyzers to 4.12.3
 - Dependencies - Updated Microsoft.NET.Test.Sdk to 17.10.0
 - Dependencies - Updated xunit.analyzers to 1.14.0
 - Dependencies - Updated xunit.runner.visualstudio to 2.8.1
@@ -22,6 +21,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.Test.Common to 6.1.58.514
 - Dependencies - Updated SonarAnalyzer.CSharp to 9.26.0.92422
 - Dependencies - Updated Meziantou.Analyzer to 2.0.155
+- Dependencies - Updated Roslynator.Analyzers to 4.12.4
 ### Removed
 ### Deployment Changes
 
