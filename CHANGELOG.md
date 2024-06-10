@@ -22,6 +22,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated SonarAnalyzer.CSharp to 9.26.0.92422
 - Dependencies - Updated Meziantou.Analyzer to 2.0.155
 - Dependencies - Updated Roslynator.Analyzers to 4.12.4
+- Dependencies - Updated Serilog.Enrichers.Environment to 3.0.0
 ### Removed
 ### Deployment Changes
 
