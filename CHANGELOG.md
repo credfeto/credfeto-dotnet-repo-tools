@@ -20,10 +20,10 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Roslynator.Analyzers to 4.12.4
 - Dependencies - Updated Serilog.Enrichers.Environment to 3.0.0
 - Dependencies - Updated Serilog.Sinks.Console to 6.0.0
-- Dependencies - Updated FunFair.Test.Common to 6.1.59.527
 - Dependencies - Updated SonarAnalyzer.CSharp to 9.27.0.93347
 - SDK - Updated DotNet SDK to 8.0.302
 - Dependencies - Updated FunFair.CodeAnalysis to 7.0.18.436
+- Dependencies - Updated FunFair.Test.Common to 6.1.60.530
 ### Removed
 ### Deployment Changes
 
