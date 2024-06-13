@@ -16,7 +16,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated xunit.runner.visualstudio to 2.8.1
 - Dependencies - Updated xunit to 2.8.1
 - Dependencies - Updated Microsoft.Extensions to 8.0.6
-- Dependencies - Updated Meziantou.Analyzer to 2.0.155
 - Dependencies - Updated Roslynator.Analyzers to 4.12.4
 - Dependencies - Updated Serilog.Enrichers.Environment to 3.0.0
 - Dependencies - Updated Serilog.Sinks.Console to 6.0.0
@@ -24,6 +23,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - SDK - Updated DotNet SDK to 8.0.302
 - Dependencies - Updated FunFair.CodeAnalysis to 7.0.18.436
 - Dependencies - Updated FunFair.Test.Common to 6.1.60.530
+- Dependencies - Updated Meziantou.Analyzer to 2.0.156
 ### Removed
 ### Deployment Changes
 
