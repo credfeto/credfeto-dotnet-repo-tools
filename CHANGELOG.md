@@ -17,7 +17,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated xunit to 2.8.1
 - Dependencies - Updated Microsoft.Extensions to 8.0.6
 - Dependencies - Updated Roslynator.Analyzers to 4.12.4
-- Dependencies - Updated Serilog.Enrichers.Environment to 3.0.0
 - Dependencies - Updated Serilog.Sinks.Console to 6.0.0
 - Dependencies - Updated SonarAnalyzer.CSharp to 9.27.0.93347
 - SDK - Updated DotNet SDK to 8.0.302
@@ -26,6 +25,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Serilog.Enrichers.Thread to 4.0.0
 - Dependencies - Updated Serilog.Enrichers.Process to 3.0.0
 - Dependencies - Updated Meziantou.Analyzer to 2.0.158
+- Dependencies - Updated Serilog.Enrichers.Environment to 3.0.1
 ### Removed
 ### Deployment Changes
 
