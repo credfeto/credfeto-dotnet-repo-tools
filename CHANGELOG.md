@@ -12,7 +12,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Enumeration to 1.1.7.384
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.10.48
 - Dependencies - Updated Microsoft.NET.Test.Sdk to 17.10.0
-- Dependencies - Updated Microsoft.Extensions to 8.0.6
 - Dependencies - Updated Roslynator.Analyzers to 4.12.4
 - Dependencies - Updated Serilog.Sinks.Console to 6.0.0
 - Dependencies - Updated FunFair.CodeAnalysis to 7.0.18.436
@@ -27,6 +26,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated xunit to 2.9.0
 - SDK - Updated DotNet SDK to 8.0.303
 - Dependencies - Updated Meziantou.Analyzer to 2.0.160
+- Dependencies - Updated Microsoft.Extensions to 8.0.7
 ### Removed
 ### Deployment Changes
 
