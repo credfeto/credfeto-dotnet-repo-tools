@@ -10,6 +10,4 @@ namespace Credfeto.DotNet.Repo.Tracking.SerializationContext;
                              WriteIndented = false,
                              IncludeFields = false)]
 [JsonSerializable(typeof(TrackingItems))]
-internal sealed partial class TrackingSerializationContext : JsonSerializerContext
-{
-}
+internal sealed partial class TrackingSerializationContext : JsonSerializerContext;
