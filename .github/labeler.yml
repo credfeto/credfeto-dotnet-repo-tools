@@ -1,86 +1,86 @@
 ".NET update":
- - any: [ ''src/global.json'' ]
+ - any: [ 'src/global.json' ]
 "C#":
- - any: [ ''./**/*.cs', './**/*.csproj'' ]
+ - any: [ './**/*.cs', './**/*.csproj' ]
 "C# Project":
- - any: [ ''./**/*.csproj'' ]
+ - any: [ './**/*.csproj' ]
 "C# Solution":
- - any: [ ''./**/*.sln'' ]
+ - any: [ './**/*.sln' ]
 "Change Log":
- - any: [ ''CHANGELOG.md'' ]
+ - any: [ 'CHANGELOG.md' ]
 "Config Change":
- - any: [ ''src/**/*.json', '!src/global.json'' ]
+ - any: [ 'src/**/*.json', '!src/global.json' ]
 "credfeto-dotnet-repo-tools-build":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Build/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Build/**/*' ]
 "credfeto-dotnet-repo-tools-build-interfaces":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Build.Interfaces/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Build.Interfaces/**/*' ]
 "credfeto-dotnet-repo-tools-build-tests":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Build.Tests/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Build.Tests/**/*' ]
 "credfeto-dotnet-repo-tools-cleanup":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.CleanUp/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.CleanUp/**/*' ]
 "credfeto-dotnet-repo-tools-cleanup-interfaces":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces/**/*' ]
 "credfeto-dotnet-repo-tools-cleanup-tests":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.CleanUp.Tests/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.CleanUp.Tests/**/*' ]
 "credfeto-dotnet-repo-tools-cmd":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Cmd/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Cmd/**/*' ]
 "credfeto-dotnet-repo-tools-dotnet":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.DotNet/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.DotNet/**/*' ]
 "credfeto-dotnet-repo-tools-dotnet-interfaces":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.DotNet.Interfaces/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.DotNet.Interfaces/**/*' ]
 "credfeto-dotnet-repo-tools-dotnet-tests":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.DotNet.Tests/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.DotNet.Tests/**/*' ]
 "credfeto-dotnet-repo-tools-git":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Git/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Git/**/*' ]
 "credfeto-dotnet-repo-tools-git-interfaces":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Git.Interfaces/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Git.Interfaces/**/*' ]
 "credfeto-dotnet-repo-tools-git-tests":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Git.Tests/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Git.Tests/**/*' ]
 "credfeto-dotnet-repo-tools-models":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Models/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Models/**/*' ]
 "credfeto-dotnet-repo-tools-packages":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Packages/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Packages/**/*' ]
 "credfeto-dotnet-repo-tools-packages-interfaces":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Packages.Interfaces/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Packages.Interfaces/**/*' ]
 "credfeto-dotnet-repo-tools-packages-tests":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Packages.Tests/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Packages.Tests/**/*' ]
 "credfeto-dotnet-repo-tools-release":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Release/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Release/**/*' ]
 "credfeto-dotnet-repo-tools-release-interfaces":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Release.Interfaces/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Release.Interfaces/**/*' ]
 "credfeto-dotnet-repo-tools-release-tests":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.Release.Tests/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Release.Tests/**/*' ]
 "credfeto-dotnet-repo-tools-templateupdate":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.TemplateUpdate/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.TemplateUpdate/**/*' ]
 "credfeto-dotnet-repo-tools-templateupdate-interfaces":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces/**/*' ]
 "credfeto-dotnet-repo-tools-templateupdate-tests":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests/**/*' ]
 "credfeto-dotnet-repo-tracking":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tracking/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tracking/**/*' ]
 "credfeto-dotnet-repo-tracking-interfaces":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tracking.Interfaces/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tracking.Interfaces/**/*' ]
 "credfeto-dotnet-repo-tracking-tests":
- - any: [ ''src/$Credfeto.DotNet.Repo.Tracking.Tests/**/*'' ]
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tracking.Tests/**/*' ]
 "github-actions":
- - any: [ ''.github/workflows/*.yml'' ]
+ - any: [ '.github/workflows/*.yml' ]
 "Legal Text":
- - any: [ ''tools/LegalText/**/*'' ]
+ - any: [ 'tools/LegalText/**/*' ]
 "Markdown":
- - any: [ ''./**/*.md'' ]
+ - any: [ './**/*.md' ]
 "Migration Script":
- - any: [ ''tools/MigrationScripts/**/*'' ]
+ - any: [ 'tools/MigrationScripts/**/*' ]
 "Powershell":
- - any: [ ''./**/*.ps1', './**/*.psm1'' ]
+ - any: [ './**/*.ps1', './**/*.psm1' ]
 "Read Me":
- - any: [ ''README.md'' ]
+ - any: [ 'README.md' ]
 "Setup":
- - any: [ ''SETUP.md'' ]
+ - any: [ 'SETUP.md' ]
 "Solidity":
- - any: [ ''./**/*.sol'' ]
+ - any: [ './**/*.sol' ]
 "SQL":
- - any: [ ''./**/*.sql', 'db/**/*'' ]
+ - any: [ './**/*.sql', 'db/**/*' ]
 "Static Code Analysis Rules":
- - any: [ ''src/CodeAnalysis.ruleset'' ]
+ - any: [ 'src/CodeAnalysis.ruleset' ]
 "unit-tests":
- - any: [ ''src/*.Tests.*/**/*', 'src/*.Tests.Integration.*/**/*', 'src/*.Tests.Integration/**/*', 'src/*.Tests/**/*'' ]
+ - any: [ 'src/*.Tests.*/**/*', 'src/*.Tests.Integration.*/**/*', 'src/*.Tests.Integration/**/*', 'src/*.Tests/**/*' ]
