@@ -10,6 +10,4 @@ namespace Credfeto.DotNet.Repo.Tools.DotNet.Models;
                              IncludeFields = false)]
 [JsonSerializable(typeof(GlobalJsonPacket))]
 [SuppressMessage(category: "ReSharper", checkId: "PartialTypeWithSinglePart", Justification = "Required for " + nameof(JsonSerializerContext) + " code generation")]
-internal sealed partial class GlobalJsonJsonSerializerContext : JsonSerializerContext
-{
-}
+internal sealed partial class GlobalJsonJsonSerializerContext : JsonSerializerContext;
