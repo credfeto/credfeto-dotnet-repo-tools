@@ -8,6 +8,15 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
+### Changed
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.0.23] - 2024-07-13
+### Fixed
 - Quotes in labeler.yml generation
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.1.7.384
@@ -29,12 +38,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.Test.Common to 6.1.62.556
 - Dependencies - Updated SonarAnalyzer.CSharp to 9.29.0.95321
 - Dependencies - Updated FunFair.BuildCheck to 474.0.21.530
-### Removed
-### Deployment Changes
 
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 ## [1.0.22] - 2024-05-16
 ### Changed
 - Dependencies - Updated Roslynator.Analyzers to 4.12.1
