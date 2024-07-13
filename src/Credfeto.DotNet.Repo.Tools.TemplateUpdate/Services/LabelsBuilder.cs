@@ -160,10 +160,10 @@ public sealed class LabelsBuilder : ILabelsBuilder
         IEnumerable<PathInfo> paths = BuildIncludePaths(labelConfig)
             .Concat(BuildExcludePaths(labelConfig));
 
-        string all = " - any: [ '" + string.Join(separator: ", ",
+        string all = " - any: [ " + string.Join(separator: ", ",
                                                  paths.Select(i => i.Include
                                                                   ? $"'{i.Path}'"
-                                                                  : $"'!{i.Path}'")) + "' ]";
+                                                                  : $"'!{i.Path}'")) + " ]";
 
         return all;
     }
