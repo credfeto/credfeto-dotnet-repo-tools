@@ -14,6 +14,4 @@ namespace Credfeto.DotNet.Repo.Tools.Release.Models;
 [JsonSerializable(typeof(ReleaseConfigSettings))]
 [JsonSerializable(typeof(RepoConfigMatch))]
 [JsonSerializable(typeof(IReadOnlyList<RepoConfigMatch>))]
-internal sealed partial class ReleaseConfigSerializationContext : JsonSerializerContext
-{
-}
+internal sealed partial class ReleaseConfigSerializationContext : JsonSerializerContext;
