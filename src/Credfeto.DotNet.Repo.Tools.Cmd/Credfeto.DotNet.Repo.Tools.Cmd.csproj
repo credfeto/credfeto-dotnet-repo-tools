@@ -45,7 +45,7 @@
     <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditLevel>low</NuGetAuditLevel>
-    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditMode>direct</NuGetAuditMode>
   </PropertyGroup>
   <PropertyGroup>
     <Authors>Mark Ridgwell</Authors>
