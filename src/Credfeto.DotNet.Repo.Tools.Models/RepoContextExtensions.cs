@@ -147,7 +147,7 @@ public static class RepoContextExtensions
 
     private static IEnumerable<string> WithoutPrefix(this IEnumerable<string> source, int prefix)
     {
-        return source.Select(file => file.Substring(prefix));
+        return source.Select(file => file[prefix..]);
     }
 
     public static bool HasNpmAndYarn(this in RepoContext repoContext, [NotNullWhen(true)] out IReadOnlyList<string>? directories)

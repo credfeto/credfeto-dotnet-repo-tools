@@ -24,7 +24,7 @@ public sealed class GitRepositoryLocator : IGitRepositoryLocator
 
         if (work.EndsWith(value: GIT_SUFFIX, comparisonType: StringComparison.OrdinalIgnoreCase))
         {
-            return work.Substring(startIndex: 0, work.Length - GIT_SUFFIX.Length);
+            return work[..^GIT_SUFFIX.Length];
         }
 
         return work;

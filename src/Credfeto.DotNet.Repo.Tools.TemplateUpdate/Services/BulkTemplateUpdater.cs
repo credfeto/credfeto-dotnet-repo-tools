@@ -341,7 +341,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         if (Directory.Exists(sourceFolderName))
         {
             return Directory.EnumerateFiles(path: sourceFolderName, searchPattern: "*", searchOption: SearchOption.AllDirectories)
-                            .Select(issueSourceFile => issueSourceFile.Substring(sourceFolderNamePrefixLength))
+                            .Select(issueSourceFile => issueSourceFile[sourceFolderNamePrefixLength..])
                             .Select(fileName => fileContext.MakeFile(fileName: fileName, prefix: prefix, apply: apply));
         }
 
@@ -505,7 +505,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         foreach (string targetSolutionFileName in solutions)
         {
-            string repoRelativeSolutionFileName = targetSolutionFileName.Substring(repoContext.WorkingDirectory.Length + 1);
+            string repoRelativeSolutionFileName = targetSolutionFileName[(repoContext.WorkingDirectory.Length + 1)..];
             string targetFileName = targetSolutionFileName + dotSettingsExtension;
 
             string commitMessage = $"Updated Resharper settings for {repoRelativeSolutionFileName}";

@@ -125,7 +125,7 @@ internal sealed class GitRepository : IGitRepository
 
         if (target.StartsWith(value: prefix, comparisonType: StringComparison.Ordinal))
         {
-            return target.Substring(prefix.Length);
+            return target[prefix.Length..];
         }
 
         throw new GitException($"Failed to find HEAD branch for remote {upstream}");
@@ -316,7 +316,7 @@ internal sealed class GitRepository : IGitRepository
         return
         [
             ..this.Active.Branches.Where(IsRemoteBranch)
-                  .Select(b => b.UpstreamBranchCanonicalName.Substring(prefix.Length))
+                  .Select(b => b.UpstreamBranchCanonicalName[prefix.Length..])
                   .Where(b => !StringComparer.Ordinal.Equals(x: b, y: "HEAD"))
         ];
 
@@ -380,7 +380,7 @@ internal sealed class GitRepository : IGitRepository
     private static string NormaliseBranchName(Branch branch, string upstream)
     {
         return IsRemote(branch: branch, upstream: upstream) && branch.FriendlyName.StartsWith(upstream + "/", comparisonType: StringComparison.Ordinal)
-            ? branch.FriendlyName.Substring(upstream.Length + 1)
+            ? branch.FriendlyName[(upstream.Length + 1)..]
             : branch.FriendlyName;
     }
 

@@ -25,6 +25,10 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         }
     }
 
+    private static string NewId =>
+        Guid.NewGuid()
+            .ToString();
+
     [Fact]
     public void GetNonExistent()
     {
@@ -54,7 +58,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
     [Fact]
     public Task LoadNonExistentFileAsync()
     {
-        string trackingFile = Path.Combine(path1: this.TempFolder, $"{Guid.NewGuid().ToString()}.json");
+        string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
 
         return Assert.ThrowsAsync<FileNotFoundException>(() => this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: CancellationToken.None)
                                                                    .AsTask());
@@ -63,7 +67,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
     [Fact]
     public async Task LoadEmptyFileAsync()
     {
-        string trackingFile = Path.Combine(path1: this.TempFolder, $"{Guid.NewGuid().ToString()}.json");
+        string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
         this.Output.WriteLine(trackingFile);
 
         await File.WriteAllTextAsync(path: trackingFile, contents: "{}", cancellationToken: CancellationToken.None);
@@ -81,7 +85,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
     [Fact]
     public async Task LoadPopulatedFileAsync()
     {
-        string trackingFile = Path.Combine(path1: this.TempFolder, $"{Guid.NewGuid().ToString()}.json");
+        string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
         this.Output.WriteLine(trackingFile);
 
         await File.WriteAllTextAsync(path: trackingFile, contents: "{\"Test1\":\"Hello World\",\"Test2\":\"Banana\"}", cancellationToken: CancellationToken.None);
@@ -104,7 +108,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
     [Fact]
     public async Task SaveEmptyFileAsync()
     {
-        string trackingFile = Path.Combine(path1: this.TempFolder, $"{Guid.NewGuid().ToString()}.json");
+        string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
         this.Output.WriteLine(trackingFile);
 
         this._trackingCache.Set(repoUrl: "Test1", value: "Hello World");
@@ -121,7 +125,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
     [Fact]
     public async Task SaveWithContentFileAsync()
     {
-        string trackingFile = Path.Combine(path1: this.TempFolder, $"{Guid.NewGuid().ToString()}.json");
+        string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
         this.Output.WriteLine(trackingFile);
 
         this._trackingCache.Set(repoUrl: "Test1", value: "Hello World");
