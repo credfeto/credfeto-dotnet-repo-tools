@@ -247,12 +247,28 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         static bool IsPackageUpdaterBranch(string branch)
         {
-            return branch.StartsWith(value: "depends/", comparisonType: StringComparison.Ordinal) && !branch.StartsWith(value: "/preview/", comparisonType: StringComparison.Ordinal);
+            if (branch.StartsWith(value: "depends/", comparisonType: StringComparison.Ordinal))
+            {
+                if (IsDotNetSdkPreviewUpdate(branch))
+                {
+                    // DOTNET SDK Preview testing branch - don't consider this as a pending update branch
+                    return false;
+                }
+
+                return true;
+            }
+
+            return false;
         }
 
         static bool IsDependabotBranch(string branch)
         {
             return branch.StartsWith(value: "dependabot/", comparisonType: StringComparison.Ordinal);
+        }
+
+        static bool IsDotNetSdkPreviewUpdate(string branch)
+        {
+            return branch.StartsWith(value: "depends/sdk/dotnet/", comparisonType: StringComparison.Ordinal) && branch.EndsWith(value: "/preview", comparisonType: StringComparison.Ordinal);
         }
     }
 
