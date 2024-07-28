@@ -34,7 +34,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditLevel>low</NuGetAuditLevel>
-    <NuGetAuditMode>all</NuGetAuditMode>
+    <NuGetAuditMode>direct</NuGetAuditMode>
   </PropertyGroup>
   <PropertyGroup>
     <AnalysisLevel>latest</AnalysisLevel>
