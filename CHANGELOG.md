@@ -14,6 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Date to 1.1.17.403
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.19.278
 - Dependencies - Updated Meziantou.Analyzer to 2.0.163
+- Dependencies - Updated FunFair.CodeAnalysis to 7.0.19.498
 ### Removed
 ### Deployment Changes
 
