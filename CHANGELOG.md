@@ -10,7 +10,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated ThisAssembly.AssemblyInfo to 1.5.0
-- Dependencies - Updated Credfeto.Date to 1.1.17.403
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.19.278
 - Dependencies - Updated Meziantou.Analyzer to 2.0.163
 - Dependencies - Updated FunFair.Test.Common to 6.1.64.606
@@ -19,6 +18,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.11.20
 - Dependencies - Updated SonarAnalyzer.CSharp to 9.32.0.97167
 - Dependencies - Updated FunFair.CodeAnalysis to 7.0.20.512
+- Dependencies - Updated Credfeto.Date to 1.1.18.420
 ### Removed
 ### Deployment Changes
 
