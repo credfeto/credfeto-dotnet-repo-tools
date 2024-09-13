@@ -21,6 +21,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Date to 1.1.21.444
 - Dependencies - Updated FunFair.Test.Common to 6.1.69.630
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.23.319
+- Dependencies - Updated Roslynator.Analyzers to 4.12.5
 ### Removed
 ### Deployment Changes
 
