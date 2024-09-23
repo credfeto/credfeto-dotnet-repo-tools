@@ -22,6 +22,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.23.319
 - Dependencies - Updated Roslynator.Analyzers to 4.12.5
 - Dependencies - Updated Meziantou.Analyzer to 2.0.168
+- Dependencies - Updated xunit to 2.9.1
 ### Removed
 ### Deployment Changes
 
