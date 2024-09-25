@@ -60,12 +60,22 @@ public sealed class FileUpdater : IFileUpdater
 
         byte[] targetBytes = await ReadTargetFileAsync(copyInstruction: copyInstruction, cancellationToken: cancellationToken);
 
-        if (sourceBytes.SequenceEqual(targetBytes))
+        if (IsSameContent(sourceBytes: sourceBytes, targetBytes: targetBytes))
         {
             return this.OnContentUnchanged(copyInstruction);
         }
 
+        if (copyInstruction.IsTargetNewer(sourceBytes, targetBytes))
+        {
+            return this.OnContentTargetNewer(copyInstruction);
+        }
+
         return await this.OnContentDifferentAsync(copyInstruction: copyInstruction, sourceBytes: sourceBytes, cancellationToken: cancellationToken);
+    }
+
+    private static bool IsSameContent(byte[] sourceBytes, byte[] targetBytes)
+    {
+        return sourceBytes.SequenceEqual(targetBytes);
     }
 
     private static void EnsureFolderExistsForFile(in CopyInstruction copyInstruction)
@@ -115,6 +125,13 @@ public sealed class FileUpdater : IFileUpdater
         this._logger.LogTargetIdenticalToSource(copyInstruction);
 
         return Difference.SAME;
+    }
+
+    private Difference OnContentTargetNewer(in CopyInstruction copyInstruction)
+    {
+        this._logger.LogTargetNewerThanSource(copyInstruction);
+
+        return Difference.TARGET_NEWER;
     }
 
     private async ValueTask<Difference> OnTargetMissingAsync(CopyInstruction copyInstruction, byte[] sourceBytes, CancellationToken cancellationToken)

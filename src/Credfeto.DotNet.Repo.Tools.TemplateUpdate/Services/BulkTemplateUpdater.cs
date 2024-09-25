@@ -24,6 +24,7 @@ using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Microsoft.Extensions.Logging;
+using NuGet.Versioning;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 
@@ -509,7 +510,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             string targetFileName = targetSolutionFileName + dotSettingsExtension;
 
             string commitMessage = $"Updated Resharper settings for {repoRelativeSolutionFileName}";
-            CopyInstruction copyInstruction = new(SourceFileName: dotSettingsSourceFile, TargetFileName: targetFileName, Apply: NoChange, Message: commitMessage);
+            CopyInstruction copyInstruction = new(SourceFileName: dotSettingsSourceFile, TargetFileName: targetFileName, Apply: NoChange, IsTargetNewer: NoVersionCheck, Message: commitMessage);
 
             bool changed = await this._fileUpdater.UpdateFileAsync(repoContext: repoContext,
                                                                    copyInstruction: copyInstruction,
@@ -549,7 +550,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         try
         {
-            CopyInstruction copyInstruction = new(SourceFileName: templateGlobalJsonFileName, TargetFileName: targetGlobalJsonFileName, Apply: NoChange, Message: message);
+            CopyInstruction copyInstruction = new(SourceFileName: templateGlobalJsonFileName, TargetFileName: targetGlobalJsonFileName, Apply: NoChange, GlobalSdkVersionCheck, Message: message);
             bool changed = await this._fileUpdater.UpdateFileAsync(repoContext: repoContext,
                                                                    copyInstruction: copyInstruction,
                                                                    changelogUpdate: ChangelogUpdateAsync,
@@ -620,11 +621,37 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 branchCreated = true;
             }
         }
+
+        bool GlobalSdkVersionCheck(byte[] source, byte[] target)
+        {
+            if (buildSettings.Framework is null)
+            {
+                // older/invalid
+                return false;
+            }
+
+            if (updateContext.DotNetSettings.SdkVersion is null)
+            {
+                // Newer
+                return true;
+            }
+
+            NuGetVersion targetVersion = new (buildSettings.Framework);
+            NuGetVersion sourceVersion = new (updateContext.DotNetSettings.SdkVersion);
+
+            return VersionCheck.IsTargetNewer(sourceVersion, targetVersion);
+        }
     }
+
 
     private static (byte[] source, bool changed) NoChange(byte[] source)
     {
         return (source, false);
+    }
+
+    private static bool NoVersionCheck(byte[] source, byte[] target)
+    {
+        return false;
     }
 
     private async Task<bool> CheckBuildAsync(TemplateUpdateContext updateContext,
@@ -712,7 +739,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             string sourceFileName = Path.Combine(path1: this.UpdateContext.TemplateFolder, path2: fileName);
             string targetFileName = Path.Combine(path1: this.RepoContext.WorkingDirectory, path2: fileName);
 
-            return new(SourceFileName: sourceFileName, TargetFileName: targetFileName, Apply: apply, $"[{prefix}] Updated {fileName}");
+            return new(SourceFileName: sourceFileName, TargetFileName: targetFileName, Apply: apply, (_,_)=> false, $"[{prefix}] Updated {fileName}");
         }
     }
 }

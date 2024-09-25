@@ -5,5 +5,6 @@ public enum Difference
     SAME,
     SOURCE_MISSING,
     TARGET_MISSING,
+    TARGET_NEWER,
     DIFFERENT
 }

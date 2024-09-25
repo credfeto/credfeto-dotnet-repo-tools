@@ -34,6 +34,11 @@ internal static partial class FileUpdaterLoggingExtensions
     [LoggerMessage(EventId = 8, Level = LogLevel.Information, Message = "Committing {targetFileName} : {message}")]
     private static partial void LogCommitting(this ILogger<FileUpdater> logger, string targetFileName, string message);
 
+    [LoggerMessage(EventId = 9, Level = LogLevel.Debug, Message = "{targetFileName} is the same as {sourceFileName}")]
+    [Conditional("DEBUG")]
+    private static partial void LogTargetNewerThanSource(this ILogger<FileUpdater> logger, string sourceFileName, string targetFileName);
+
+
     public static void LogCheckingFile(this ILogger<FileUpdater> logger, in CopyInstruction copyInstruction)
     {
         logger.LogCheckingFile(sourceFileName: copyInstruction.SourceFileName, targetFileName: copyInstruction.TargetFileName);
@@ -57,6 +62,11 @@ internal static partial class FileUpdaterLoggingExtensions
     public static void LogTargetIdenticalToSource(this ILogger<FileUpdater> logger, in CopyInstruction copyInstruction)
     {
         logger.LogTargetIdenticalToSource(sourceFileName: copyInstruction.SourceFileName, targetFileName: copyInstruction.TargetFileName);
+    }
+
+    public static void LogTargetNewerThanSource(this ILogger<FileUpdater> logger, in CopyInstruction copyInstruction)
+    {
+        logger.LogTargetNewerThanSource(sourceFileName: copyInstruction.SourceFileName, targetFileName: copyInstruction.TargetFileName);
     }
 
     public static void LogTargetMissing(this ILogger<FileUpdater> logger, in CopyInstruction copyInstruction)
