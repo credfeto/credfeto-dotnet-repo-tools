@@ -624,20 +624,25 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         bool GlobalSdkVersionCheck(byte[] source, byte[] target)
         {
+
             if (buildSettings.Framework is null)
             {
                 // older/invalid
+                this._logger.LogInformation("No Target SDK Version");
                 return false;
             }
 
             if (updateContext.DotNetSettings.SdkVersion is null)
             {
                 // Newer
+                this._logger.LogInformation("No Source SDK Version");
                 return true;
             }
 
             NuGetVersion targetVersion = new (buildSettings.Framework);
             NuGetVersion sourceVersion = new (updateContext.DotNetSettings.SdkVersion);
+
+            this._logger.LogInformation("Comparing SDK Versions: {Source} -> {Target}", sourceVersion, targetVersion);
 
             return VersionCheck.IsDotNetSdkTargetNewer(sourceVersion, targetVersion);
         }
