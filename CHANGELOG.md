@@ -9,6 +9,14 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.0.25] - 2024-09-25
+### Changed
 - Dependencies - Updated ThisAssembly.AssemblyInfo to 1.5.0
 - Dependencies - Updated Microsoft.Extensions to 8.0.8
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.11.20
@@ -24,12 +32,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated xunit to 2.9.1
 - Dependencies - Updated Roslynator.Analyzers to 4.12.6
 - Checking SDK Versions so it does not overwrite a newer one with an older one
-### Removed
-### Deployment Changes
 
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 ## [1.0.24] - 2024-07-25
 ### Fixed
 - Excluded unmerged dotnet sdk preview branches from prohibiting a release
