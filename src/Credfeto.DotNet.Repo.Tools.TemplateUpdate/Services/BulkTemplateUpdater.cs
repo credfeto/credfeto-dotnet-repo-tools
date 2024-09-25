@@ -639,7 +639,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             NuGetVersion targetVersion = new (buildSettings.Framework);
             NuGetVersion sourceVersion = new (updateContext.DotNetSettings.SdkVersion);
 
-            return VersionCheck.IsTargetNewer(sourceVersion, targetVersion);
+            return VersionCheck.IsDotNetSdkTargetNewer(sourceVersion, targetVersion);
         }
     }
 
