@@ -10,6 +10,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.24.345
+- Dependencies - Updated xunit to 2.9.2
 ### Removed
 ### Deployment Changes
 
