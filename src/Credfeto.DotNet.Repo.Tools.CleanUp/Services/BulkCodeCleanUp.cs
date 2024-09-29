@@ -220,7 +220,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     private void ProjectCleanup(XmlDocument project, string projectFile)
     {
         this._projectXmlRewriter.ReOrderPropertyGroups(projectDocument: project, filename: projectFile);
-        this._projectXmlRewriter.ReOrderIncludes(projectDocument: project);
+        this._projectXmlRewriter.ReOrderIncludes(projectDocument: project, filename: projectFile);
     }
 
     private static async ValueTask SaveProjectAsync(string project, XmlDocument doc)

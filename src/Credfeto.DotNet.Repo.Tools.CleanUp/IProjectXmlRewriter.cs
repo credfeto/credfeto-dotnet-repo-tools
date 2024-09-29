@@ -6,5 +6,5 @@ public interface IProjectXmlRewriter
 {
     void ReOrderPropertyGroups(XmlDocument projectDocument, string filename);
 
-    void ReOrderIncludes(XmlDocument projectDocument);
+    void ReOrderIncludes(XmlDocument projectDocument, string filename);
 }

@@ -30,112 +30,113 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
     }
 
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
-    public void ReOrderIncludes(XmlDocument projectDocument)
+    public void ReOrderIncludes(XmlDocument projectDocument, string filename)
     {
-        /*
-             $itemGroups = $project.SelectNodes("ItemGroup")
+        if (projectDocument.SelectSingleNode("Project") is not XmlElement project)
+        {
+            return;
+        }
 
-           $normalItems = @{}
-           $privateItems = @{}
-           $projectItems = @{}
+        XmlNodeList? itemGroups = project.SelectNodes("ItemGroup");
 
-           foreach($itemGroup in $itemGroups) {
-               if($itemGroup.HasAttributes) {
-                   # Skip groups that have attributes
-                   Continue
-               }
+        if (itemGroups is null)
+        {
+            return;
+        }
 
-               $toRemove = @()
+        List<XmlElement> sourceGroups = [];
+        Dictionary<string, XmlNode> projectReferences = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, XmlNode> packageReferencesNormal = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, XmlNode> packageReferencesPrivateGroup = new(StringComparer.OrdinalIgnoreCase);
 
-               # Extract Package References
-               $includes = $itemGroup.SelectNodes("PackageReference")
-               if($includes.Count -ne 0) {
+        foreach (XmlElement itemGroup in itemGroups)
+        {
+            if (itemGroup.HasAttributes)
+            {
+                Log($"SKIPPING GROUP AS Found Attribute : {filename}");
 
-                   foreach($include in $includes) {
+                continue;
+            }
 
-                       [string]$packageId = $include.GetAttribute("Include")
-                       [string]$private = $include.GetAttribute("PrivateAssets")
-                       $toRemove += $include
+            if (itemGroup.ChildNodes.OfType<XmlNode>()
+                         .Any(IsComment))
+            {
+                Log($"SKIPPING GROUP AS Found Comment : {filename}");
 
-                       if([string]::IsNullOrEmpty($private)) {
-                           if(!$normalItems.Contains($packageId.ToUpper())) {
-                               $normalItems.Add($packageId.ToUpper(), $include)
-                           }
-                       }
-                       else {
-                           if(!$privateItems.Contains($packageId.ToUpper())) {
-                               $privateItems.Add($packageId.ToUpper(), $include)
-                           }
-                       }
-                   }
-               }
+                continue;
+            }
 
-               # Extract Project References
-               $includes = $itemGroup.SelectNodes("ProjectReference")
-               if($includes.Count -ne 0) {
+            sourceGroups.Add(itemGroup);
 
-                   foreach($include in $includes) {
+            foreach (XmlElement reference in itemGroup.ChildNodes)
+            {
+                if (StringComparer.Ordinal.Equals(x: reference.Name, y: "PackageReference"))
+                {
+                    string packageId = reference.GetAttribute("Include");
+                    string privateAssets = reference.GetAttribute("PrivateAssets");
 
-                       [string]$projectPath = $include.GetAttribute("Include")
+                    if (string.IsNullOrEmpty(privateAssets))
+                    {
+                        if (!packageReferencesNormal.TryAdd(key: packageId, value: reference))
+                        {
+                            Log($"SKIPPING GROUP AS Found Duplicate item {packageId} : {filename}");
 
-                       $toRemove += $include
-                       if(!$projectItems.Contains($projectPath.ToUpper())) {
-                           $projectItems.Add($projectPath.ToUpper(), $include)
-                       }
-                   }
-               }
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        if (!packageReferencesPrivateGroup.TryAdd(key: packageId, value: reference))
+                        {
+                            Log($"SKIPPING GROUP AS Found Duplicate item {packageId} : {filename}");
 
-               # Folder Includes
-               $includes = $itemGroup.SelectNodes("Folder")
-               if($includes.Count -ne 0) {
-                   foreach($include in $includes) {
-                       Log -message "* Found Folder to remove $( $include.Include )"
-                       $toRemove += $include
-                   }
-               }
+                            return;
+                        }
+                    }
+                }
+                else if (StringComparer.Ordinal.Equals(x: reference.Name, y: "ProjectReference"))
+                {
+                    string projectPath = reference.GetAttribute("Include");
 
-               # Remove items marked for deletion
-               foreach($include in $toRemove) {
-                   [void]$itemGroup.RemoveChild($include)
-               }
+                    if (!projectReferences.TryAdd(key: projectPath, value: reference))
+                    {
+                        Log($"SKIPPING GROUP AS Found Duplicate item {projectPath} : {filename}");
 
-               # Remove Empty item Groups
-               if($itemGroup.ChildNodes.Count -eq 0) {
-                   [void]$project.RemoveChild($itemGroup)
-               }
-           }
+                        return;
+                    }
+                }
+                else
+                {
+                    Log($"SKIPPING GROUP AS Found Unknown item {reference.Name} : {filename}");
 
-           # Write References to projects
-           if($projectItems.Count -ne 0) {
-               $itemGroup = $data.CreateElement("ItemGroup")
-               foreach($includeKey in $projectItems.Keys | Sort-Object -CaseSensitive ) {
-                   $include = $projectItems[$includeKey]
-                   $itemGroup.AppendChild($include)
-               }
-               $project.AppendChild($itemGroup)
-           }
+                    return;
+                }
+            }
+        }
 
-           # Write References that are not dev only dependencies
-           if($normalItems.Count -ne 0) {
-               $itemGroup = $data.CreateElement("ItemGroup")
-               foreach($includeKey in $normalItems.Keys | Sort-Object -CaseSensitive ) {
-                   $include = $normalItems[$includeKey]
-                   $itemGroup.AppendChild($include)
-               }
-               $project.AppendChild($itemGroup)
-           }
+        // Add in New item groups at the end of the file for each of the types of reference
+        AppendReferences(projectDocument: projectDocument, source: projectReferences, project: project);
+        AppendReferences(projectDocument: projectDocument, source: packageReferencesNormal, project: project);
+        AppendReferences(projectDocument: projectDocument, source: packageReferencesPrivateGroup, project: project);
 
-           # Write References that are dev only dependencies
-           if($privateItems.Count -ne 0) {
-               $itemGroup = $data.CreateElement("ItemGroup")
-               foreach($includeKey in $privateItems.Keys | Sort-Object -CaseSensitive ) {
-                   $include = $privateItems[$includeKey]
-                   $itemGroup.AppendChild($include)
-               }
-               $project.AppendChild($itemGroup)
-           }
-         */
-        throw new NotSupportedException("Needs to be written");
+        RemoveNodes(sourceGroups);
+    }
+
+    private static void AppendReferences(XmlDocument projectDocument, Dictionary<string, XmlNode> source, XmlElement project)
+    {
+        if (source.Count == 0)
+        {
+            return;
+        }
+
+        XmlElement itemGroup = projectDocument.CreateElement("ItemGroup");
+
+        foreach ((string _, XmlNode node)in source.OrderBy(keySelector: x => x.Key, comparer: StringComparer.OrdinalIgnoreCase))
+        {
+            itemGroup.AppendChild(node);
+        }
+
+        project.AppendChild(itemGroup);
     }
 
     private static void RemoveNodes(List<XmlElement> toRemove)
