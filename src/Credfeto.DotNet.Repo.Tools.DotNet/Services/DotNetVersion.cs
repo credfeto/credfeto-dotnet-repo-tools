@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,7 +18,7 @@ public sealed class DotNetVersion : IDotNetVersion
 
         if (exitCode != 0)
         {
-            throw new InvalidOperationException("Failed to list installed SDKs");
+            return CouldNotListInstalledSdks();
         }
 
         return
@@ -26,6 +27,12 @@ public sealed class DotNetVersion : IDotNetVersion
                     .RemoveNulls()
                     .OrderByDescending(x => x)
         ];
+    }
+
+    [DoesNotReturn]
+    private static IReadOnlyList<Version> CouldNotListInstalledSdks()
+    {
+        throw new InvalidOperationException("Failed to list installed SDKs");
     }
 
     private static Version? ExtractVersion(string line)

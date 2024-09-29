@@ -378,7 +378,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
                 if (projects is not [])
                 {
-                    await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: repoDotNetSettings, cancellationToken: cancellationToken);
+                    await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: repoDotNetSettings, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
                     if (StringComparer.Ordinal.Equals(x: updateContext.DotNetSettings.SdkVersion, y: repoDotNetSettings.SdkVersion))
                     {
@@ -550,7 +550,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         try
         {
-            CopyInstruction copyInstruction = new(SourceFileName: templateGlobalJsonFileName, TargetFileName: targetGlobalJsonFileName, Apply: NoChange, GlobalSdkVersionCheck, Message: message);
+            CopyInstruction copyInstruction = new(SourceFileName: templateGlobalJsonFileName,
+                                                  TargetFileName: targetGlobalJsonFileName,
+                                                  Apply: NoChange,
+                                                  IsTargetNewer: GlobalSdkVersionCheck,
+                                                  Message: message);
             bool changed = await this._fileUpdater.UpdateFileAsync(repoContext: repoContext,
                                                                    copyInstruction: copyInstruction,
                                                                    changelogUpdate: ChangelogUpdateAsync,
@@ -624,11 +628,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         bool GlobalSdkVersionCheck(byte[] source, byte[] target)
         {
-
             if (buildSettings.Framework is null)
             {
                 // older/invalid
                 this._logger.LogInformation("No Target SDK Version");
+
                 return false;
             }
 
@@ -636,18 +640,18 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             {
                 // Newer
                 this._logger.LogInformation("No Source SDK Version");
+
                 return true;
             }
 
-            NuGetVersion targetVersion = new (buildSettings.Framework);
-            NuGetVersion sourceVersion = new (updateContext.DotNetSettings.SdkVersion);
+            NuGetVersion targetVersion = new(buildSettings.Framework);
+            NuGetVersion sourceVersion = new(updateContext.DotNetSettings.SdkVersion);
 
-            this._logger.LogInformation("Comparing SDK Versions: {Source} -> {Target}", sourceVersion, targetVersion);
+            this._logger.LogInformation(message: "Comparing SDK Versions: {Source} -> {Target}", sourceVersion, targetVersion);
 
-            return VersionCheck.IsDotNetSdkTargetNewer(sourceVersion, targetVersion);
+            return VersionCheck.IsDotNetSdkTargetNewer(sourceVersion: sourceVersion, targetVersion: targetVersion);
         }
     }
-
 
     private static (byte[] source, bool changed) NoChange(byte[] source)
     {
@@ -667,7 +671,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         try
         {
-            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: updateContext.DotNetSettings, cancellationToken: cancellationToken);
+            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: updateContext.DotNetSettings, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
             await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
@@ -744,7 +748,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             string sourceFileName = Path.Combine(path1: this.UpdateContext.TemplateFolder, path2: fileName);
             string targetFileName = Path.Combine(path1: this.RepoContext.WorkingDirectory, path2: fileName);
 
-            return new(SourceFileName: sourceFileName, TargetFileName: targetFileName, Apply: apply, (_,_)=> false, $"[{prefix}] Updated {fileName}");
+            return new(SourceFileName: sourceFileName, TargetFileName: targetFileName, Apply: apply, IsTargetNewer: (_, _) => false, $"[{prefix}] Updated {fileName}");
         }
     }
 }

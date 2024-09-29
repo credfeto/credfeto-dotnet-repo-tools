@@ -8,6 +8,7 @@ using FunFair.BuildCheck.Interfaces;
 using FunFair.BuildCheck.Runner;
 using FunFair.BuildCheck.Runner.Services;
 using Microsoft.Extensions.Logging;
+using NuGet.Versioning;
 
 namespace Credfeto.DotNet.Repo.Tools.Build.Services;
 
@@ -27,9 +28,9 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         this._logger = logger;
     }
 
-    public async ValueTask PreCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, CancellationToken cancellationToken)
+    public async ValueTask PreCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, BuildSettings buildSettings, CancellationToken cancellationToken)
     {
-        IFrameworkSettings frameworkSettings = new FrameworkSettings(dotNetSettings);
+        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(dotNetSettings: dotNetSettings, buildSettings: buildSettings);
 
         bool allOk = true;
 
@@ -54,32 +55,6 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         {
             throw new SolutionCheckFailedException();
         }
-    }
-
-    public async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, CancellationToken cancellationToken)
-    {
-        IFrameworkSettings frameworkSettings = new FrameworkSettings(dotNetSettings);
-
-        bool allOk = true;
-
-        foreach (string solution in solutions)
-        {
-            int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                                                      warningsAsErrors: true,
-                                                      frameworkSettings: frameworkSettings,
-                                                      projectClassifier: ProjectClassifier,
-                                                      checkConfiguration: PreReleaseCheckConfiguration,
-                                                      buildServiceProvider: this._serviceProviderFactory.Build,
-                                                      logger: this._logger,
-                                                      cancellationToken: cancellationToken);
-
-            if (errors != 0)
-            {
-                allOk = false;
-            }
-        }
-
-        return allOk;
     }
 
     public async ValueTask ReleaseCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, CancellationToken cancellationToken)
@@ -108,5 +83,47 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         {
             throw new SolutionCheckFailedException();
         }
+    }
+
+    public async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, BuildSettings buildSettings, CancellationToken cancellationToken)
+    {
+        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(dotNetSettings: dotNetSettings, buildSettings: buildSettings);
+
+        bool allOk = true;
+
+        foreach (string solution in solutions)
+        {
+            int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
+                                                      warningsAsErrors: true,
+                                                      frameworkSettings: frameworkSettings,
+                                                      projectClassifier: ProjectClassifier,
+                                                      checkConfiguration: PreReleaseCheckConfiguration,
+                                                      buildServiceProvider: this._serviceProviderFactory.Build,
+                                                      logger: this._logger,
+                                                      cancellationToken: cancellationToken);
+
+            if (errors != 0)
+            {
+                allOk = false;
+            }
+        }
+
+        return allOk;
+    }
+
+    private static IFrameworkSettings DefineFrameworkSettings(in DotNetVersionSettings dotNetSettings, in BuildSettings buildSettings)
+    {
+        if (!string.IsNullOrEmpty(dotNetSettings.SdkVersion) && !string.IsNullOrEmpty(buildSettings.Framework))
+        {
+            NuGetVersion standardFramework = new(dotNetSettings.SdkVersion);
+            NuGetVersion buildFramework = new(buildSettings.Framework);
+
+            if (buildFramework.IsPrerelease && buildFramework > standardFramework)
+            {
+                return new FrameworkSettings(buildSettings: buildSettings, allowPreRelease: buildFramework.IsPrerelease);
+            }
+        }
+
+        return new FrameworkSettings(dotNetSettings);
     }
 }

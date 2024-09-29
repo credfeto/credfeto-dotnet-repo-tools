@@ -295,7 +295,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     {
         if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
         {
-            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, cancellationToken: cancellationToken);
+            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
             await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
@@ -485,7 +485,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     {
         try
         {
-            bool checkOk = await this._dotNetSolutionCheck.PostCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, cancellationToken: cancellationToken);
+            bool checkOk = await this._dotNetSolutionCheck.PostCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
             if (checkOk)
             {

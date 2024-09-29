@@ -1,4 +1,5 @@
 using System;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using FunFair.BuildCheck.Interfaces;
 
@@ -6,11 +7,20 @@ namespace Credfeto.DotNet.Repo.Tools.Build.Services;
 
 internal sealed class FrameworkSettings : IFrameworkSettings
 {
-    private readonly DotNetVersionSettings _dotNetSettings;
-
     public FrameworkSettings(in DotNetVersionSettings dotNetSettings)
     {
-        this._dotNetSettings = dotNetSettings;
+        this.DotNetSdkVersion = dotNetSettings.SdkVersion;
+        this.DotNetAllowPreReleaseSdk = dotNetSettings.AllowPreRelease
+            ? "true"
+            : "false";
+    }
+
+    public FrameworkSettings(in BuildSettings buildSettings, bool allowPreRelease)
+    {
+        this.DotNetSdkVersion = buildSettings.Framework;
+        this.DotNetAllowPreReleaseSdk = allowPreRelease
+            ? "true"
+            : "false";
     }
 
     public bool IsNullableGloballyEnforced => true;
@@ -23,12 +33,9 @@ internal sealed class FrameworkSettings : IFrameworkSettings
 
     public string? DotnetTargetFramework => Environment.GetEnvironmentVariable("DOTNET_CORE_APP_TARGET_FRAMEWORK");
 
-    public string? DotNetSdkVersion => this._dotNetSettings.SdkVersion;
+    public string? DotNetSdkVersion { get; }
 
-    public string DotNetAllowPreReleaseSdk =>
-        this._dotNetSettings.AllowPreRelease
-            ? "true"
-            : "false";
+    public string DotNetAllowPreReleaseSdk { get; }
 
     public bool XmlDocumentationRequired => StringComparer.InvariantCulture.Equals(Environment.GetEnvironmentVariable("XML_DOCUMENTATION"), y: "true");
 }
