@@ -5,15 +5,17 @@ using System.Xml;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 using FunFair.Test.Common;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests.Services;
 
 [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Unit tests")]
-public sealed class ProjectXmlRewriterTests : TestBase
+public sealed class ProjectXmlRewriterTests : LoggingTestBase
 {
     private readonly IProjectXmlRewriter _projectXmlRewriter;
 
-    public ProjectXmlRewriterTests()
+    public ProjectXmlRewriterTests(ITestOutputHelper output)
+        : base(output)
     {
         this._projectXmlRewriter = new ProjectXmlRewriter();
     }
@@ -46,8 +48,6 @@ public sealed class ProjectXmlRewriterTests : TestBase
     <EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>true</EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <OptimizationPreference>speed</OptimizationPreference>
-    <IsTrimmable>true</IsTrimmable>
-    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <!-- Dotnet 7 features -->
     <TieredPGO>true</TieredPGO>
     <UseSystemResourceKeys>true</UseSystemResourceKeys>
@@ -59,6 +59,7 @@ public sealed class ProjectXmlRewriterTests : TestBase
     <NuGetAudit>true</NuGetAudit>
   </PropertyGroup>
   <PropertyGroup>
+    <!-- Code Anlalysis -->
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     <CodeAnalysisRuleSet>$(SolutionDir)\CodeAnalysis.ruleset</CodeAnalysisRuleSet>
@@ -68,6 +69,7 @@ public sealed class ProjectXmlRewriterTests : TestBase
     <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
   </PropertyGroup>
   <PropertyGroup>
+    <!-- Package properties -->
     <Authors>Mark Ridgwell</Authors>
     <Company>Mark Ridgwell</Company>
     <Copyright>Mark Ridgwell</Copyright>
@@ -136,8 +138,6 @@ public sealed class ProjectXmlRewriterTests : TestBase
     <EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>true</EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <OptimizationPreference>speed</OptimizationPreference>
-    <IsTrimmable>true</IsTrimmable>
-    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <!-- Dotnet 7 features -->
     <TieredPGO>true</TieredPGO>
     <UseSystemResourceKeys>true</UseSystemResourceKeys>
@@ -149,6 +149,7 @@ public sealed class ProjectXmlRewriterTests : TestBase
     <NuGetAudit>true</NuGetAudit>
   </PropertyGroup>
   <PropertyGroup>
+    <!-- Code Anlalysis -->
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
     <CodeAnalysisRuleSet>$(SolutionDir)\CodeAnalysis.ruleset</CodeAnalysisRuleSet>
@@ -158,6 +159,7 @@ public sealed class ProjectXmlRewriterTests : TestBase
     <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
   </PropertyGroup>
   <PropertyGroup>
+    <!-- Package properties -->
     <Authors>Mark Ridgwell</Authors>
     <Company>Mark Ridgwell</Company>
     <Copyright>Mark Ridgwell</Copyright>
@@ -211,7 +213,7 @@ public sealed class ProjectXmlRewriterTests : TestBase
   <PropertyGroup>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
     <EnablePackageValidation>true</EnablePackageValidation>
-    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <Features>strict;flow-analysis</Features>
     <GenerateNeutralResourcesLanguageAttribute>true</GenerateNeutralResourcesLanguageAttribute>
     <ImplicitUsings>disable</ImplicitUsings>
@@ -232,8 +234,6 @@ public sealed class ProjectXmlRewriterTests : TestBase
     <EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>true</EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <OptimizationPreference>speed</OptimizationPreference>
-    <IsTrimmable>true</IsTrimmable>
-    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <TieredPGO>true</TieredPGO>
     <UseSystemResourceKeys>true</UseSystemResourceKeys>
     <IlcOptimizationPreference>Size</IlcOptimizationPreference>
@@ -311,7 +311,6 @@ public sealed class ProjectXmlRewriterTests : TestBase
     <EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>true</EnableMicrosoftExtensionsConfigurationBinderSourceGenerator>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <EnablePackageValidation>true</EnablePackageValidation>
-    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
@@ -325,7 +324,6 @@ public sealed class ProjectXmlRewriterTests : TestBase
     <IsPackable>true</IsPackable>
     <IsPublishable>false</IsPublishable>
     <IsTrimmable>false</IsTrimmable>
-    <IsTrimmable>true</IsTrimmable>
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <LangVersion>latest</LangVersion>
     <NeutralLanguage>en-GB</NeutralLanguage>
@@ -394,6 +392,10 @@ public sealed class ProjectXmlRewriterTests : TestBase
         this._projectXmlRewriter.ReOrderPropertyGroups(projectDocument: doc, filename: "test.csproj");
 
         string actual = await SaveDocAsync(doc);
+        this.Output.WriteLine(">>>>>> ACTUAL <<<<<<");
+        this.Output.WriteLine(actual);
+        this.Output.WriteLine(">>>>> EXPECTED <<<<<");
+        this.Output.WriteLine(txtExpected);
         Assert.Equal(expected: txtExpected, actual: actual);
     }
 

@@ -17,8 +17,6 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
             return;
         }
 
-        List<XmlElement> toRemove = [];
-
         XmlNodeList? propertyGroups = project.SelectNodes("PropertyGroup");
 
         if (propertyGroups is null)
@@ -26,132 +24,9 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
             return;
         }
 
-        foreach (XmlElement propertyGroup in propertyGroups)
-        {
-            Dictionary<string, string> attributes = new(StringComparer.Ordinal);
+        MergeProprtiesOfMultipleGroups(propertyGroups: propertyGroups);
 
-            foreach (XmlAttribute attribute in propertyGroup.Attributes)
-            {
-                string attValue = propertyGroup.GetAttribute(attribute.Name);
-                attributes[attribute.Name] = attValue;
-            }
-
-            XmlNodeList children = propertyGroup.ChildNodes;
-
-            if (children.OfType<XmlNode>()
-                        .Any(IsComment))
-            {
-                Log(message: $"{filename} SKIPPING GROUP AS Found Comment");
-
-                continue;
-            }
-
-            Dictionary<string, XmlNode> orderedChildren = new(StringComparer.Ordinal);
-            bool replace = true;
-
-            foreach (XmlElement child in children)
-            {
-                string name = child.Name;
-
-                if (orderedChildren.ContainsKey(name))
-                {
-                    replace = false;
-
-                    if (IsDefineConstants(child))
-                    {
-                        // Skip DefineConstants as they can be added many times
-                        break;
-                    }
-
-                    Log(message: $"{filename} SKIPPING GROUP AS Found Duplicate item {name}");
-
-                    break;
-                }
-
-                orderedChildren[name] = child;
-            }
-
-            if (replace)
-            {
-                if (orderedChildren.Count > 0)
-                {
-                    propertyGroup.RemoveAll();
-
-                    foreach (string entryKey in orderedChildren.Keys.OrderBy(keySelector: x => x, comparer: StringComparer.Ordinal))
-                    {
-                        XmlNode item = orderedChildren[entryKey];
-                        propertyGroup.AppendChild(item);
-                    }
-
-                    foreach (KeyValuePair<string, string> attribute in attributes)
-                    {
-                        propertyGroup.SetAttribute(name: attribute.Key, value: attribute.Value);
-                    }
-                }
-                else
-                {
-                    toRemove.Add(propertyGroup);
-                }
-            }
-        }
-/*
-    $toRemove = @()
-
-   $propertyGroups = $project.SelectNodes("PropertyGroup")
-   foreach($propertyGroup in $propertyGroups) {
-       $children = $propertyGroup.SelectNodes("*")
-       $attributes = [ordered]@{}
-       foreach($attribute in $propertyGroup.Attributes) {
-           $attValue = $propertyGroup.GetAttribute($attribute.Name)
-           $attributes[$attribute.Name] = $attValue
-       }
-       $orderedChildren = @{}
-       [bool]$replace = $true
-       foreach($child in $children) {
-           [string]$name = ($child.Name).ToString().ToUpper()
-           if($name -eq "#COMMENT") {
-               $replace = $false;
-               Log -message "$filename SKIPPING GROUP AS Found Comment"
-               Break
-           }
-
-           if($orderedChildren.Contains($name)) {
-               $replace = $false;
-               if($name -eq "DEFINECONSTANTS") {
-                   # Skip DefineConstants as they can be added many times
-                   Break
-               }
-               Log -message "$filename SKIPPING GROUP AS Found Duplicate item $name"
-               Break
-           }
-           $orderedChildren.Add($name, $child)
-       }
-
-       if($replace) {
-           if($orderedChildren) {
-               $propertyGroup.RemoveAll()
-               foreach($entryKey in $orderedChildren.Keys | Sort-Object -CaseSensitive) {
-                   $item = $orderedChildren[$entryKey]
-                   $propertyGroup.AppendChild($item)
-               }
-
-               foreach($attribute in $attributes.Keys) {
-                   $propertyGroup.SetAttribute($attribute, $attributes[$attribute])
-               }
-           }
-           else {
-               $toRemove.Add($propertyGroup)
-           }
-       }
-   }
-
-   # remove any empty groups
-   foreach($item in $toRemove) {
-       [void]$project.RemoveChild($item)
-   }
- */
-
-        //       throw new NotSupportedException("Needs to be written");
+        ReOrderPropertyGroupWithAttributesOrComments(filename: filename, propertyGroups: propertyGroups);
     }
 
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
@@ -261,6 +136,169 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
            }
          */
         throw new NotSupportedException("Needs to be written");
+    }
+
+    private static void RemoveNodes(List<XmlElement> toRemove)
+    {
+        foreach (XmlElement item in toRemove)
+        {
+            // ! Should always have a parent here
+            XmlNode parent = item.ParentNode!;
+
+            parent.RemoveChild(item);
+        }
+    }
+
+    private static void MergeProprtiesOfMultipleGroups(XmlNodeList propertyGroups)
+    {
+        IReadOnlyList<XmlElement> combinablePropertyGroups =
+        [
+            ..propertyGroups.OfType<XmlElement>()
+                            .Where(IsCombinableGroup)
+        ];
+
+        XmlElement? targetPropertyGroup = combinablePropertyGroups.FirstOrDefault();
+
+        if (targetPropertyGroup is null)
+        {
+            return;
+        }
+
+        List<XmlElement> toRemove = [];
+        Dictionary<string, XmlNode> orderedChildren = new(StringComparer.Ordinal);
+
+        foreach (XmlElement propertyGroup in combinablePropertyGroups)
+        {
+            XmlNodeList children = propertyGroup.ChildNodes;
+
+            foreach (XmlElement child in children)
+            {
+                orderedChildren.Add(key: child.Name, value: child);
+            }
+
+            if (targetPropertyGroup != propertyGroup)
+            {
+                toRemove.Add(propertyGroup);
+            }
+        }
+
+        // Empty the target property group
+        targetPropertyGroup.RemoveAll();
+
+        // Add the children we've added to the target property group
+        foreach (string entryKey in orderedChildren.Keys.OrderBy(keySelector: x => x, comparer: StringComparer.Ordinal))
+        {
+            XmlNode item = orderedChildren[entryKey];
+            targetPropertyGroup.AppendChild(item);
+        }
+
+        // remove the old groups
+        RemoveNodes(toRemove);
+    }
+
+    private static bool IsCombinableGroup(XmlElement propertyGroup)
+    {
+        if (propertyGroup.HasAttributes)
+        {
+            return false;
+        }
+
+        XmlNodeList children = propertyGroup.ChildNodes;
+
+        HashSet<string> childNames = new(StringComparer.Ordinal);
+
+        foreach (XmlNode child in children)
+        {
+            if (IsComment(child))
+            {
+                return false;
+            }
+
+            if (IsDefineConstants(child))
+            {
+                return false;
+            }
+
+            if (!childNames.Add(child.Name))
+            {
+                // Has a duplicate name
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
+    private static void ReOrderPropertyGroupWithAttributesOrComments(string filename, XmlNodeList propertyGroups)
+    {
+        IReadOnlyList<XmlElement> nonCombinablePropertyGroups =
+        [
+            ..propertyGroups.OfType<XmlElement>()
+                            .Where(ph => !IsCombinableGroup(ph))
+        ];
+
+        foreach (XmlElement propertyGroup in nonCombinablePropertyGroups)
+        {
+            Dictionary<string, string> attributes = new(StringComparer.Ordinal);
+
+            foreach (XmlAttribute attribute in propertyGroup.Attributes)
+            {
+                string attValue = propertyGroup.GetAttribute(attribute.Name);
+                attributes[attribute.Name] = attValue;
+            }
+
+            XmlNodeList children = propertyGroup.ChildNodes;
+
+            if (children.OfType<XmlNode>()
+                        .Any(IsComment))
+            {
+                Log(message: $"{filename} SKIPPING GROUP AS Found Comment");
+
+                continue;
+            }
+
+            Dictionary<string, XmlNode> orderedChildren = new(StringComparer.Ordinal);
+            bool replace = true;
+
+            foreach (XmlElement child in children)
+            {
+                if (IsDefineConstants(child))
+                {
+                    // Skip DefineConstants as they can be added many times
+                    replace = false;
+
+                    break;
+                }
+
+                string name = child.Name;
+
+                if (!orderedChildren.TryAdd(key: name, value: child))
+                {
+                    replace = false;
+
+                    Log(message: $"{filename} SKIPPING GROUP AS Found Duplicate item {name}");
+
+                    break;
+                }
+            }
+
+            if (replace)
+            {
+                propertyGroup.RemoveAll();
+
+                foreach (string entryKey in orderedChildren.Keys.OrderBy(keySelector: x => x, comparer: StringComparer.Ordinal))
+                {
+                    XmlNode item = orderedChildren[entryKey];
+                    propertyGroup.AppendChild(item);
+                }
+
+                foreach (KeyValuePair<string, string> attribute in attributes)
+                {
+                    propertyGroup.SetAttribute(name: attribute.Key, value: attribute.Value);
+                }
+            }
+        }
     }
 
     private static bool IsDefineConstants(XmlNode node)
