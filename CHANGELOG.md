@@ -7,7 +7,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
-- Initial Cleanup for project files
 ### Fixed
 ### Changed
 ### Removed
@@ -16,6 +15,10 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.0.27] - 2024-09-30
+### Added
+- Initial Cleanup for project files
+
 ## [1.0.26] - 2024-09-29
 ### Changed
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.24.345
