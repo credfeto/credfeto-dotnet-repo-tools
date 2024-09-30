@@ -69,6 +69,8 @@ internal sealed class GitRepository : IGitRepository
         // & git -C $repoPath prune 2>&1 | Out-Null
         await this.PruneAsync(cancellationToken: cancellationToken);
 
+        this.ResetActiveRepoLink();
+
         if (this.HasUncommittedChanges())
         {
             throw new GitException("Failed to reset to " + defaultBranch + " - uncommitted changes");

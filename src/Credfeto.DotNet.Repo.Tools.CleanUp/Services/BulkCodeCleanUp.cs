@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Credfeto.ChangeLog;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services.LoggingExtensions;
@@ -22,6 +23,7 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
 public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 {
+    private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetVersion _dotNetVersion;
     private readonly IGitRepositoryFactory _gitRepositoryFactory;
     private readonly IGlobalJson _globalJson;
@@ -36,6 +38,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                            IDotNetVersion dotNetVersion,
                            IReleaseConfigLoader releaseConfigLoader,
                            IProjectXmlRewriter projectXmlRewriter,
+                           IDotNetBuild dotNetBuild,
                            ILogger<BulkCodeCleanUp> logger)
     {
         this._trackingCache = trackingCache;
@@ -44,6 +47,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         this._dotNetVersion = dotNetVersion;
         this._releaseConfigLoader = releaseConfigLoader;
         this._projectXmlRewriter = projectXmlRewriter;
+        this._dotNetBuild = dotNetBuild;
         this._logger = logger;
     }
 
@@ -203,17 +207,57 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     {
         IReadOnlyList<string> projects = Directory.GetFiles(path: sourceDirectory, searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories);
 
+        if (projects is not [])
+        {
+            return;
+        }
+
+        BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
+
+        await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
+
+        bool lastBuildFailed = false;
+
         foreach (string project in projects)
         {
+            if (lastBuildFailed)
+            {
+                try
+                {
+                    await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
+                }
+                catch (DotNetBuildErrorException)
+                {
+                    await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+
+                    throw;
+                }
+            }
+
             XmlDocument doc = await LoadProjectAsync(path: project, cancellationToken: cancellationToken);
+
+            string projectName = Path.GetFileName(project);
 
             this.ProjectCleanup(project: doc, projectFile: project);
 
             await SaveProjectAsync(project: project, doc: doc);
-        }
 
-        await repoContext.Repository.CommitAsync(message: "Code cleanup", cancellationToken: cancellationToken);
-        await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
+            try
+            {
+                await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
+
+                lastBuildFailed = false;
+                await repoContext.Repository.CommitAsync($"Cleanup: {projectName}", cancellationToken: cancellationToken);
+                await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
+            }
+            catch (DotNetBuildErrorException exception)
+            {
+                this._logger.LogBuildFailedOnRepoCheck(exception: exception);
+
+                await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+                lastBuildFailed = true;
+            }
+        }
     }
 
     private void ProjectCleanup(XmlDocument project, string projectFile)
