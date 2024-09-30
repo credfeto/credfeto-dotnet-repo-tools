@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -190,7 +189,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     {
         if (repoContext.HasDotNetSolutions(out string? sourceDirectory, out IReadOnlyList<string>? _))
         {
-            await this.UpdateDotNetAsync(updateContext: updateContext, repoContext: repoContext, sourceDirectory: sourceDirectory, cancellationToken: cancellationToken);
+            await this.UpdateDotNetAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, cancellationToken: cancellationToken);
         }
         else
         {
@@ -200,8 +199,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
     }
 
-    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Debug logging")]
-    private async ValueTask UpdateDotNetAsync(CleanupUpdateContext updateContext, RepoContext repoContext, string sourceDirectory, CancellationToken cancellationToken)
+    private async ValueTask UpdateDotNetAsync(RepoContext repoContext, string sourceDirectory, CancellationToken cancellationToken)
     {
         IReadOnlyList<string> projects = Directory.GetFiles(path: sourceDirectory, searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories);
 
@@ -214,7 +212,8 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             await SaveProjectAsync(project: project, doc: doc);
         }
 
-        throw new NotSupportedException("Not yet available");
+        await repoContext.Repository.CommitAsync(message: "Code cleanup", cancellationToken: cancellationToken);
+        await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
     }
 
     private void ProjectCleanup(XmlDocument project, string projectFile)
