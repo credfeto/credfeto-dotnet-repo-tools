@@ -35,8 +35,9 @@ public sealed class BulkPackageConfigLoader : IBulkPackageConfigLoader
 
         await using (Stream result = await httpClient.GetStreamAsync(requestUri: uri, cancellationToken: cancellationToken))
         {
-            IReadOnlyList<PackageUpdate> packages =
-                await JsonSerializer.DeserializeAsync(utf8Json: result, jsonTypeInfo: PackageConfigSerializationContext.Default.IReadOnlyListPackageUpdate, cancellationToken: cancellationToken) ?? [];
+            IReadOnlyList<PackageUpdate> packages = await JsonSerializer.DeserializeAsync(utf8Json: result,
+                                                                                          jsonTypeInfo: PackageConfigSerializationContext.Default.IReadOnlyListPackageUpdate,
+                                                                                          cancellationToken: cancellationToken) ?? [];
 
             if (packages.Count == 0)
             {
@@ -56,7 +57,8 @@ public sealed class BulkPackageConfigLoader : IBulkPackageConfigLoader
     {
         byte[] content = await File.ReadAllBytesAsync(path: filename, cancellationToken: cancellationToken);
 
-        IReadOnlyList<PackageUpdate> packages = JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: PackageConfigSerializationContext.Default.IReadOnlyListPackageUpdate) ?? [];
+        IReadOnlyList<PackageUpdate> packages = JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: PackageConfigSerializationContext.Default.IReadOnlyListPackageUpdate) ??
+                                                [];
 
         if (packages.Count == 0)
         {

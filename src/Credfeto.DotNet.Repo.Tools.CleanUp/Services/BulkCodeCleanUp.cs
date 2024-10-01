@@ -113,7 +113,8 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     {
         await this.LoadTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
 
-        using (IGitRepository templateRepo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
+        using (IGitRepository templateRepo =
+               await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
             CleanupUpdateContext updateContext = await this.BuildUpdateContextAsync(templateRepo: templateRepo,
                                                                                     workFolder: workFolder,
@@ -170,7 +171,8 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     {
         this._logger.LogProcessingRepo(repo);
 
-        using (IGitRepository repository = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
+        using (IGitRepository repository =
+               await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
             if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
             {
@@ -200,7 +202,10 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             this._logger.LogNoDotNetFilesFound();
         }
 
-        await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
+        await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext,
+                                                      updateContext: updateContext,
+                                                      value: repoContext.Repository.HeadRev,
+                                                      cancellationToken: cancellationToken);
     }
 
     private async ValueTask UpdateDotNetAsync(RepoContext repoContext, string sourceDirectory, CancellationToken cancellationToken)

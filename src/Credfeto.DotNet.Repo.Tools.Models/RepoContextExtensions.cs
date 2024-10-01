@@ -9,7 +9,9 @@ namespace Credfeto.DotNet.Repo.Tools.Models;
 
 public static class RepoContextExtensions
 {
-    public static bool HasDotNetSolutions(this in RepoContext repoContext, [NotNullWhen(true)] out string? sourceDirectory, [NotNullWhen(true)] out IReadOnlyList<string>? solutions)
+    public static bool HasDotNetSolutions(this in RepoContext repoContext,
+                                          [NotNullWhen(true)] out string? sourceDirectory,
+                                          [NotNullWhen(true)] out IReadOnlyList<string>? solutions)
     {
         string sourceFolder = BuildSourceFolder(repoContext);
 

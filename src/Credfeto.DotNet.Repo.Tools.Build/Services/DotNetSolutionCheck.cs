@@ -85,7 +85,10 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         }
     }
 
-    public async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, BuildSettings buildSettings, CancellationToken cancellationToken)
+    public async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions,
+                                                DotNetVersionSettings dotNetSettings,
+                                                BuildSettings buildSettings,
+                                                CancellationToken cancellationToken)
     {
         IFrameworkSettings frameworkSettings = DefineFrameworkSettings(dotNetSettings: dotNetSettings, buildSettings: buildSettings);
 

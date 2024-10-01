@@ -38,7 +38,6 @@ internal static partial class FileUpdaterLoggingExtensions
     [Conditional("DEBUG")]
     private static partial void LogTargetNewerThanSource(this ILogger<FileUpdater> logger, string sourceFileName, string targetFileName);
 
-
     public static void LogCheckingFile(this ILogger<FileUpdater> logger, in CopyInstruction copyInstruction)
     {
         logger.LogCheckingFile(sourceFileName: copyInstruction.SourceFileName, targetFileName: copyInstruction.TargetFileName);

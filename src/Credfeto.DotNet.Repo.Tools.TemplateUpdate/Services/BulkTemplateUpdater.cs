@@ -88,7 +88,8 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         IReadOnlyList<PackageUpdate> packages = await this._bulkPackageConfigLoader.LoadAsync(path: packagesFileName, cancellationToken: cancellationToken);
 
-        using (IGitRepository templateRepo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
+        using (IGitRepository templateRepo =
+               await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
             TemplateUpdateContext updateContext = await this.BuildUpdateContextAsync(templateRepo: templateRepo,
                                                                                      workFolder: workFolder,
@@ -107,7 +108,10 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         }
     }
 
-    private async ValueTask UpdateRepositoriesAsync(TemplateUpdateContext updateContext, IReadOnlyList<string> repositories, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
+    private async ValueTask UpdateRepositoriesAsync(TemplateUpdateContext updateContext,
+                                                    IReadOnlyList<string> repositories,
+                                                    IReadOnlyList<PackageUpdate> packages,
+                                                    CancellationToken cancellationToken)
     {
         try
         {
@@ -145,7 +149,8 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         this._logger.LogProcessingRepo(repo);
 
-        using (IGitRepository repository = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
+        using (IGitRepository repository =
+               await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
             if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
             {
@@ -164,7 +169,10 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         }
     }
 
-    private async ValueTask ProcessRepoUpdatesAsync(TemplateUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
+    private async ValueTask ProcessRepoUpdatesAsync(TemplateUpdateContext updateContext,
+                                                    RepoContext repoContext,
+                                                    IReadOnlyList<PackageUpdate> packages,
+                                                    CancellationToken cancellationToken)
     {
         string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
 
@@ -184,11 +192,17 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         else
         {
             this._logger.LogNoDotNetFilesFound();
-            await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
+            await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext,
+                                                          updateContext: updateContext,
+                                                          value: repoContext.Repository.HeadRev,
+                                                          cancellationToken: cancellationToken);
         }
     }
 
-    private async ValueTask<int> UpdateStandardFilesAsync(TemplateUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
+    private async ValueTask<int> UpdateStandardFilesAsync(TemplateUpdateContext updateContext,
+                                                          RepoContext repoContext,
+                                                          IReadOnlyList<PackageUpdate> packages,
+                                                          CancellationToken cancellationToken)
     {
         FileContext fileContext = new(UpdateContext: updateContext, RepoContext: repoContext);
 
@@ -231,7 +245,10 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         return changes;
     }
 
-    private async ValueTask<bool> UpdateDependabotConfigAsync(TemplateUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
+    private async ValueTask<bool> UpdateDependabotConfigAsync(TemplateUpdateContext updateContext,
+                                                              RepoContext repoContext,
+                                                              IReadOnlyList<PackageUpdate> packages,
+                                                              CancellationToken cancellationToken)
     {
         string dependabotConfig = Path.Combine(path1: repoContext.WorkingDirectory, path2: DOT_GITHUB_DIR, path3: "dependabot.yml");
 
@@ -374,18 +391,25 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
             if (File.Exists(repoGlobalJson))
             {
-                DotNetVersionSettings repoDotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
+                DotNetVersionSettings repoDotNetSettings =
+                    await this._globalJson.LoadGlobalJsonAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
 
                 if (projects is not [])
                 {
-                    await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: repoDotNetSettings, buildSettings: buildSettings, cancellationToken: cancellationToken);
+                    await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions,
+                                                                  dotNetSettings: repoDotNetSettings,
+                                                                  buildSettings: buildSettings,
+                                                                  cancellationToken: cancellationToken);
 
                     if (StringComparer.Ordinal.Equals(x: updateContext.DotNetSettings.SdkVersion, y: repoDotNetSettings.SdkVersion))
                     {
                         await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
                         lastKnownGoodBuild = repoContext.Repository.HeadRev;
-                        await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
+                        await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext,
+                                                                      updateContext: updateContext,
+                                                                      value: lastKnownGoodBuild,
+                                                                      cancellationToken: cancellationToken);
                     }
                 }
             }
@@ -489,7 +513,10 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         }
     }
 
-    private async Task<int> UpdateResharperSettingsAsync(RepoContext repoContext, TemplateUpdateContext updateContext, IReadOnlyList<string> solutions, CancellationToken cancellationToken)
+    private async Task<int> UpdateResharperSettingsAsync(RepoContext repoContext,
+                                                         TemplateUpdateContext updateContext,
+                                                         IReadOnlyList<string> solutions,
+                                                         CancellationToken cancellationToken)
     {
         const string dotSettingsExtension = ".DotSettings";
 
@@ -510,7 +537,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             string targetFileName = targetSolutionFileName + dotSettingsExtension;
 
             string commitMessage = $"Updated Resharper settings for {repoRelativeSolutionFileName}";
-            CopyInstruction copyInstruction = new(SourceFileName: dotSettingsSourceFile, TargetFileName: targetFileName, Apply: NoChange, IsTargetNewer: NoVersionCheck, Message: commitMessage);
+            CopyInstruction copyInstruction = new(SourceFileName: dotSettingsSourceFile,
+                                                  TargetFileName: targetFileName,
+                                                  Apply: NoChange,
+                                                  IsTargetNewer: NoVersionCheck,
+                                                  Message: commitMessage);
 
             bool changed = await this._fileUpdater.UpdateFileAsync(repoContext: repoContext,
                                                                    copyInstruction: copyInstruction,
@@ -581,7 +612,10 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 }
 
                 string lastKnownGoodBuild = repoContext.Repository.HeadRev;
-                await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
+                await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext,
+                                                              updateContext: updateContext,
+                                                              value: lastKnownGoodBuild,
+                                                              cancellationToken: cancellationToken);
             }
             else
             {
@@ -671,7 +705,10 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         try
         {
-            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: updateContext.DotNetSettings, buildSettings: buildSettings, cancellationToken: cancellationToken);
+            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions,
+                                                          dotNetSettings: updateContext.DotNetSettings,
+                                                          buildSettings: buildSettings,
+                                                          cancellationToken: cancellationToken);
 
             await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
@@ -709,7 +746,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         ReleaseConfig releaseConfig = await this._releaseConfigLoader.LoadAsync(path: releaseConfigFileName, cancellationToken: cancellationToken);
 
-        return new(WorkFolder: workFolder, TemplateFolder: templateRepo.WorkingDirectory, TrackingFileName: trackingFileName, DotNetSettings: dotNetSettings, ReleaseConfig: releaseConfig);
+        return new(WorkFolder: workFolder,
+                   TemplateFolder: templateRepo.WorkingDirectory,
+                   TrackingFileName: trackingFileName,
+                   DotNetSettings: dotNetSettings,
+                   ReleaseConfig: releaseConfig);
     }
 
     private ValueTask LoadTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)

@@ -161,9 +161,9 @@ public sealed class LabelsBuilder : ILabelsBuilder
             .Concat(BuildExcludePaths(labelConfig));
 
         string all = " - any: [ " + string.Join(separator: ", ",
-                                                 paths.Select(i => i.Include
-                                                                  ? $"'{i.Path}'"
-                                                                  : $"'!{i.Path}'")) + " ]";
+                                                paths.Select(i => i.Include
+                                                                 ? $"'{i.Path}'"
+                                                                 : $"'!{i.Path}'")) + " ]";
 
         return all;
     }

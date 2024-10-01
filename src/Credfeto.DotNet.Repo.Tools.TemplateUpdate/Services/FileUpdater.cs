@@ -19,7 +19,10 @@ public sealed class FileUpdater : IFileUpdater
         this._logger = logger;
     }
 
-    public async ValueTask<bool> UpdateFileAsync(RepoContext repoContext, CopyInstruction copyInstruction, Func<CancellationToken, ValueTask> changelogUpdate, CancellationToken cancellationToken)
+    public async ValueTask<bool> UpdateFileAsync(RepoContext repoContext,
+                                                 CopyInstruction copyInstruction,
+                                                 Func<CancellationToken, ValueTask> changelogUpdate,
+                                                 CancellationToken cancellationToken)
     {
         this._logger.LogCheckingFile(copyInstruction);
 
@@ -65,7 +68,7 @@ public sealed class FileUpdater : IFileUpdater
             return this.OnContentUnchanged(copyInstruction);
         }
 
-        if (copyInstruction.IsTargetNewer(sourceBytes, targetBytes))
+        if (copyInstruction.IsTargetNewer(arg1: sourceBytes, arg2: targetBytes))
         {
             return this.OnContentTargetNewer(copyInstruction);
         }
@@ -150,7 +153,10 @@ public sealed class FileUpdater : IFileUpdater
         return Difference.SOURCE_MISSING;
     }
 
-    private async ValueTask<bool> CommitFileAsync(RepoContext repoContext, CopyInstruction copyInstruction, Func<CancellationToken, ValueTask> changelogUpdate, CancellationToken cancellationToken)
+    private async ValueTask<bool> CommitFileAsync(RepoContext repoContext,
+                                                  CopyInstruction copyInstruction,
+                                                  Func<CancellationToken, ValueTask> changelogUpdate,
+                                                  CancellationToken cancellationToken)
     {
         this._logger.LogCommitting(copyInstruction);
 

@@ -186,7 +186,8 @@ public sealed class ReleaseGeneration : IReleaseGeneration
                                                                              IReadOnlyList<PackageUpdate> packages,
                                                                              CancellationToken cancellationToken)
     {
-        string releaseNotes = await ChangeLogReader.ExtractReleaseNotesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
+        string releaseNotes =
+            await ChangeLogReader.ExtractReleaseNotesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
 
         int autoUpdateCount = this.IsAllAutoUpdates(repoContext: repoContext, releaseNotes: releaseNotes, packages: packages);
 
@@ -268,7 +269,8 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         static bool IsDotNetSdkPreviewUpdate(string branch)
         {
-            return branch.StartsWith(value: "depends/sdk/dotnet/", comparisonType: StringComparison.Ordinal) && branch.EndsWith(value: "/preview", comparisonType: StringComparison.Ordinal);
+            return branch.StartsWith(value: "depends/sdk/dotnet/", comparisonType: StringComparison.Ordinal) &&
+                   branch.EndsWith(value: "/preview", comparisonType: StringComparison.Ordinal);
         }
     }
 

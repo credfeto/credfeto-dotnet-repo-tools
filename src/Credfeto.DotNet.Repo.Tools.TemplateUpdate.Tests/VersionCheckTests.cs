@@ -21,6 +21,6 @@ public sealed class VersionCheckTests : TestBase
         NuGetVersion targetVersion = new(target);
 
         bool actualIsNewer = VersionCheck.IsDotNetSdkTargetNewer(sourceVersion: sourceVersion, targetVersion: targetVersion);
-        Assert.Equal(shouldBeNewer, actualIsNewer);
+        Assert.Equal(expected: shouldBeNewer, actual: actualIsNewer);
     }
 }

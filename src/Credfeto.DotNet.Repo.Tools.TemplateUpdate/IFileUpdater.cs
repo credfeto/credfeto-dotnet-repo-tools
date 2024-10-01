@@ -8,5 +8,8 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate;
 
 public interface IFileUpdater
 {
-    ValueTask<bool> UpdateFileAsync(RepoContext repoContext, CopyInstruction copyInstruction, Func<CancellationToken, ValueTask> changelogUpdate, CancellationToken cancellationToken);
+    ValueTask<bool> UpdateFileAsync(RepoContext repoContext,
+                                    CopyInstruction copyInstruction,
+                                    Func<CancellationToken, ValueTask> changelogUpdate,
+                                    CancellationToken cancellationToken);
 }
