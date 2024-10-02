@@ -9,6 +9,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+- Added support for the build & deploy labels to switch to ubuntu latest
 ### Removed
 ### Deployment Changes
 

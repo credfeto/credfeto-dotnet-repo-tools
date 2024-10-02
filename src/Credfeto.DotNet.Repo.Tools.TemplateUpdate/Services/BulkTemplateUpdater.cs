@@ -316,7 +316,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         StringBuilder stringBuilder = new(Encoding.UTF8.GetString(source));
 
-        stringBuilder = stringBuilder.Replace(oldValue: "runs-on: [self-hosted, linux]", newValue: "runs-on: ubuntu-latest");
+        const string ubuntuLatest = "runs-on: ubuntu-latest";
+
+        stringBuilder = stringBuilder.Replace(oldValue: "runs-on: [self-hosted, linux]", newValue: ubuntuLatest)
+                                     .Replace(oldValue: "runs-on: [self-hosted, linux, build]", newValue: ubuntuLatest)
+                                     .Replace(oldValue: "runs-on: [self-hosted, linux, deploy]", newValue: ubuntuLatest);
 
         byte[] target = Encoding.UTF8.GetBytes(stringBuilder.ToString());
 
