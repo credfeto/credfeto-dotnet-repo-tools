@@ -9,13 +9,16 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Added support for the build & deploy labels to switch to ubuntu latest
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.0.28] - 2024-10-02
+### Changed
+- Added support for the build & deploy labels to switch to ubuntu latest
+
 ## [1.0.27] - 2024-09-30
 ### Added
 - Initial Cleanup for project files
