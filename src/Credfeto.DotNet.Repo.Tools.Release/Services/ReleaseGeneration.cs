@@ -158,7 +158,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     {
         try
         {
-            await this._dotNetSolutionCheck.ReleaseCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, cancellationToken: cancellationToken);
+            await this._dotNetSolutionCheck.ReleaseCheckAsync(solutions: solutions, repositoryDotNetSettings: dotNetSettings, cancellationToken: cancellationToken);
         }
         catch (SolutionCheckFailedException)
         {

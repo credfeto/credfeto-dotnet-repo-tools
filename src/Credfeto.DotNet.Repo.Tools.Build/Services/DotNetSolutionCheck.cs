@@ -28,9 +28,12 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         this._logger = logger;
     }
 
-    public async ValueTask PreCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, BuildSettings buildSettings, CancellationToken cancellationToken)
+    public async ValueTask PreCheckAsync(IReadOnlyList<string> solutions,
+                                         DotNetVersionSettings repositoryDotNetSettings,
+                                         DotNetVersionSettings templateDotNetSettings,
+                                         CancellationToken cancellationToken)
     {
-        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(dotNetSettings: dotNetSettings, buildSettings: buildSettings);
+        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
 
         bool allOk = true;
 
@@ -57,9 +60,9 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         }
     }
 
-    public async ValueTask ReleaseCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings dotNetSettings, CancellationToken cancellationToken)
+    public async ValueTask ReleaseCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings repositoryDotNetSettings, CancellationToken cancellationToken)
     {
-        IFrameworkSettings frameworkSettings = new FrameworkSettings(dotNetSettings);
+        IFrameworkSettings frameworkSettings = new FrameworkSettings(repositoryDotNetSettings);
         bool allOk = true;
 
         foreach (string solution in solutions)
@@ -86,11 +89,11 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
     }
 
     public async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions,
-                                                DotNetVersionSettings dotNetSettings,
-                                                BuildSettings buildSettings,
+                                                DotNetVersionSettings repositoryDotNetSettings,
+                                                DotNetVersionSettings templateDotNetSettings,
                                                 CancellationToken cancellationToken)
     {
-        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(dotNetSettings: dotNetSettings, buildSettings: buildSettings);
+        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
 
         bool allOk = true;
 
@@ -114,19 +117,19 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         return allOk;
     }
 
-    private static IFrameworkSettings DefineFrameworkSettings(in DotNetVersionSettings dotNetSettings, in BuildSettings buildSettings)
+    private static IFrameworkSettings DefineFrameworkSettings(in DotNetVersionSettings repositoryDotNetSettings, in DotNetVersionSettings templateDotNetSettings)
     {
-        if (!string.IsNullOrEmpty(dotNetSettings.SdkVersion) && !string.IsNullOrEmpty(buildSettings.Framework))
+        if (!string.IsNullOrEmpty(repositoryDotNetSettings.SdkVersion) && !string.IsNullOrEmpty(templateDotNetSettings.SdkVersion))
         {
-            NuGetVersion standardFramework = new(dotNetSettings.SdkVersion);
-            NuGetVersion buildFramework = new(buildSettings.Framework);
+            NuGetVersion standardFramework = new(templateDotNetSettings.SdkVersion);
+            NuGetVersion buildFramework = new(repositoryDotNetSettings.SdkVersion);
 
             if (buildFramework.IsPrerelease && buildFramework > standardFramework)
             {
-                return new FrameworkSettings(buildSettings: buildSettings, allowPreRelease: buildFramework.IsPrerelease);
+                return new FrameworkSettings(repositoryDotNetSettings);
             }
         }
 
-        return new FrameworkSettings(dotNetSettings);
+        return new FrameworkSettings(repositoryDotNetSettings);
     }
 }

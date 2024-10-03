@@ -309,7 +309,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     {
         if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
         {
-            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, dotNetSettings: dotNetSettings, buildSettings: buildSettings, cancellationToken: cancellationToken);
+            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, repositoryDotNetSettings: dotNetSettings, templateDotNetSettings: updateContext.DotNetSettings, cancellationToken: cancellationToken);
 
             await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
@@ -332,6 +332,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                   solutions: solutions,
                                                                   sourceDirectory: sourceDirectory,
                                                                   buildSettings: buildSettings,
+                                                                  repositoryDotNetVersionSettings:dotNetSettings,
                                                                   updatesMade: updatesMade,
                                                                   package: package,
                                                                   cancellationToken: cancellationToken);
@@ -362,6 +363,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                           IReadOnlyList<string> solutions,
                                                           string sourceDirectory,
                                                           BuildSettings buildSettings,
+                                                          DotNetVersionSettings repositoryDotNetVersionSettings,
                                                           IReadOnlyList<PackageVersion> updatesMade,
                                                           PackageUpdate package,
                                                           CancellationToken cancellationToken)
@@ -369,7 +371,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         bool ok = await this.PostUpdateCheckAsync(solutions: solutions,
                                                   sourceDirectory: sourceDirectory,
                                                   buildSettings: buildSettings,
-                                                  dotNetSettings: updateContext.DotNetSettings,
+                                                  repositoryDotNetVersionSettings: repositoryDotNetVersionSettings,
+                                                  templateDotNetSettings: updateContext.DotNetSettings,
                                                   cancellationToken: cancellationToken);
 
         NuGetVersion version = GetUpdateVersion(updatesMade);
@@ -503,14 +506,15 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     private async ValueTask<bool> PostUpdateCheckAsync(IReadOnlyList<string> solutions,
                                                        string sourceDirectory,
                                                        BuildSettings buildSettings,
-                                                       DotNetVersionSettings dotNetSettings,
+                                                       DotNetVersionSettings repositoryDotNetVersionSettings,
+                                                       DotNetVersionSettings templateDotNetSettings,
                                                        CancellationToken cancellationToken)
     {
         try
         {
             bool checkOk = await this._dotNetSolutionCheck.PostCheckAsync(solutions: solutions,
-                                                                          dotNetSettings: dotNetSettings,
-                                                                          buildSettings: buildSettings,
+                                                                          repositoryDotNetSettings: repositoryDotNetVersionSettings,
+                                                                          templateDotNetSettings: templateDotNetSettings,
                                                                           cancellationToken: cancellationToken);
 
             if (checkOk)

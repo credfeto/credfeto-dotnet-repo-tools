@@ -15,14 +15,6 @@ internal sealed class FrameworkSettings : IFrameworkSettings
             : "false";
     }
 
-    public FrameworkSettings(in BuildSettings buildSettings, bool allowPreRelease)
-    {
-        this.DotNetSdkVersion = buildSettings.Framework;
-        this.DotNetAllowPreReleaseSdk = allowPreRelease
-            ? "true"
-            : "false";
-    }
-
     public bool IsNullableGloballyEnforced => true;
 
     public string ProjectImport => Environment.GetEnvironmentVariable("DOTNET_PACK_PROJECT_METADATA_IMPORT") ?? string.Empty;

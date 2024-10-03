@@ -401,8 +401,8 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 if (projects is not [])
                 {
                     await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions,
-                                                                  dotNetSettings: repoDotNetSettings,
-                                                                  buildSettings: buildSettings,
+                                                                  repositoryDotNetSettings: repoDotNetSettings,
+                                                                  templateDotNetSettings: updateContext.DotNetSettings,
                                                                   cancellationToken: cancellationToken);
 
                     if (StringComparer.Ordinal.Equals(x: updateContext.DotNetSettings.SdkVersion, y: repoDotNetSettings.SdkVersion))
@@ -581,6 +581,8 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         string branchName = branchPrefix + updateContext.DotNetSettings.SdkVersion;
         string invalidBranchName = branchPrefix + Guid.NewGuid();
 
+        DotNetVersionSettings solutionDotNetSettings = await this._globalJson.LoadGlobalJsonAsync(targetGlobalJsonFileName, cancellationToken);
+
         bool branchCreated = false;
 
         try
@@ -666,7 +668,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         bool GlobalSdkVersionCheck(byte[] source, byte[] target)
         {
-            if (buildSettings.Framework is null)
+            if (solutionDotNetSettings.SdkVersion is null)
             {
                 // older/invalid
                 this._logger.LogInformation("No Target SDK Version");
@@ -682,7 +684,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 return true;
             }
 
-            NuGetVersion targetVersion = new(buildSettings.Framework);
+            NuGetVersion targetVersion = new(solutionDotNetSettings.SdkVersion);
             NuGetVersion sourceVersion = new(updateContext.DotNetSettings.SdkVersion);
 
             this._logger.LogInformation(message: "Comparing SDK Versions: {Source} -> {Target}", sourceVersion, targetVersion);
@@ -709,9 +711,10 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         try
         {
+            // TODO: Why is this
             await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions,
-                                                          dotNetSettings: updateContext.DotNetSettings,
-                                                          buildSettings: buildSettings,
+                                                          repositoryDotNetSettings: updateContext.DotNetSettings,
+                                                          templateDotNetSettings: updateContext.DotNetSettings,
                                                           cancellationToken: cancellationToken);
 
             await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
