@@ -1,4 +1,5 @@
-﻿using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
+﻿using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
+using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
@@ -31,6 +32,7 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
                        .AddMockedService<IProjectXmlRewriter>()
                        .AddMockedService<IReleaseConfigLoader>()
                        .AddMockedService<IDotNetVersion>()
+                       .AddMockedService<IDotNetBuild>()
                        .AddCleanUp();
     }
 }
