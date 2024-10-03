@@ -553,7 +553,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         string branchName = branchPrefix + updateContext.DotNetSettings.SdkVersion;
         string invalidBranchName = branchPrefix + Guid.NewGuid();
 
-        DotNetVersionSettings solutionDotNetSettings = await this._globalJson.LoadGlobalJsonAsync(sourceDirectory, cancellationToken);
+        DotNetVersionSettings solutionDotNetSettings = await this._globalJson.LoadGlobalJsonAsync(repoContext.WorkingDirectory, cancellationToken);
 
         bool branchCreated = false;
 
