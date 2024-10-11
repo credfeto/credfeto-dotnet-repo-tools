@@ -309,7 +309,10 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     {
         if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
         {
-            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions, repositoryDotNetSettings: dotNetSettings, templateDotNetSettings: updateContext.DotNetSettings, cancellationToken: cancellationToken);
+            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions,
+                                                          repositoryDotNetSettings: dotNetSettings,
+                                                          templateDotNetSettings: updateContext.DotNetSettings,
+                                                          cancellationToken: cancellationToken);
 
             await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
 
@@ -332,7 +335,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                   solutions: solutions,
                                                                   sourceDirectory: sourceDirectory,
                                                                   buildSettings: buildSettings,
-                                                                  repositoryDotNetVersionSettings:dotNetSettings,
+                                                                  repositoryDotNetVersionSettings: dotNetSettings,
                                                                   updatesMade: updatesMade,
                                                                   package: package,
                                                                   cancellationToken: cancellationToken);
