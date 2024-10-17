@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Meziantou.Analyzer to 2.0.170
 - Dependencies - Updated Roslynator.Analyzers to 4.12.8
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.25.383
+- Dependencies - Updated Microsoft.Extensions to 8.0.10
 ### Removed
 ### Deployment Changes
 
