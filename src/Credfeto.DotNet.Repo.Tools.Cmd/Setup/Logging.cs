@@ -18,14 +18,12 @@ internal static class Logging
 
     private static Logger CreateLogger()
     {
-        string processName = ExecutableVersionInformation.ProgramName();
-
         return new LoggerConfiguration().Enrich.FromLogContext()
                                         .Enrich.WithDemystifiedStackTraces()
                                         .Enrich.WithMachineName()
                                         .Enrich.WithProcessId()
                                         .Enrich.WithThreadId()
-                                        .Enrich.WithProperty(name: "ProcessName", value: processName)
+                                        .Enrich.WithProperty(name: "ProcessName", value: VersionInformation.Product)
                                         .WriteTo.Console()
                                         .CreateLogger();
     }

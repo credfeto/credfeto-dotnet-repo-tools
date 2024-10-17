@@ -16,7 +16,7 @@ internal static class Program
 {
     private static async Task<int> Main(string[] args)
     {
-        Console.WriteLine($"{ExecutableVersionInformation.ProgramName()} {ExecutableVersionInformation.ProgramVersion()}");
+        Console.WriteLine($"{VersionInformation.Product} {VersionInformation.Version}");
         Console.WriteLine();
 
         try
