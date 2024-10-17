@@ -9,6 +9,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+- SDK - Updated DotNet SDK to 9.0.100-rc.2.24474.11
 ### Removed
 ### Deployment Changes
 
