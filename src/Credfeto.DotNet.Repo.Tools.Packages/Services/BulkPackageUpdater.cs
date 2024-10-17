@@ -449,6 +449,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             // nothing to do - may already be a PR that's being worked on
             this._logger.LogSkippingPackageCommit(repoContext: repoContext, branch: branchForUpdate, packageId: package.PackageId, version: version);
 
+            await repoContext.Repository.ResetToMasterAsync(GitConstants.Upstream, cancellationToken: cancellationToken);
+
             return;
         }
 
@@ -461,6 +463,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                   branchPrefix: branchPrefix,
                                                                   upstream: GitConstants.Upstream,
                                                                   cancellationToken: cancellationToken);
+        await repoContext.Repository.ResetToMasterAsync(GitConstants.Upstream, cancellationToken: cancellationToken);
     }
 
     private async ValueTask CommitDefaultBranchToRepositoryAsync(RepoContext repoContext,
