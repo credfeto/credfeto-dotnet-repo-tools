@@ -344,6 +344,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "pr-lint.yml"), prefix: "Linters"),
             fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "CODEOWNERS"), prefix: "Config"),
             fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "PULL_REQUEST_TEMPLATE.md"), prefix: "Config"),
+            fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "FUNDING.yml"), prefix: "Config"),
             fileContext.MakeFile(fileName: "CONTRIBUTING.md", prefix: "Documentation"),
             fileContext.MakeFile(fileName: "SECURITY.md", prefix: "Documentation")
         ];
