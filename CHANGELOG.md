@@ -13,13 +13,13 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Roslynator.Analyzers to 4.12.8
 - Dependencies - Updated Microsoft.Extensions to 8.0.10
 - Dependencies - Updated NuGet to 6.11.1
-- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.26.395
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.2.16
 - Dependencies - Updated Credfeto.Enumeration to 1.1.14.596
 - Dependencies - Updated FunFair.Test.Common to 6.1.72.736
 - Dependencies - Updated FunFair.CodeAnalysis to 7.0.24.635
 - Dependencies - Updated Meziantou.Analyzer to 2.0.173
 - Dependencies - Updated Credfeto.Date to 1.1.24.528
+- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.27.401
 ### Removed
 ### Deployment Changes
 
