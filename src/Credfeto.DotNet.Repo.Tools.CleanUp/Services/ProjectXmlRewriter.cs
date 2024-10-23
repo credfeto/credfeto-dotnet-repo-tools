@@ -10,38 +10,41 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 {
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
-    public void ReOrderPropertyGroups(XmlDocument projectDocument, string filename)
+    public bool ReOrderPropertyGroups(XmlDocument projectDocument, string filename)
     {
         if (projectDocument.SelectSingleNode("Project") is not XmlElement project)
         {
-            return;
+            return false;
         }
 
         XmlNodeList? propertyGroups = project.SelectNodes("PropertyGroup");
 
         if (propertyGroups is null)
         {
-            return;
+            return false;
         }
 
         MergeProprtiesOfMultipleGroups(propertyGroups: propertyGroups);
 
         ReOrderPropertyGroupWithAttributesOrComments(filename: filename, propertyGroups: propertyGroups);
+
+        // TODO: can this be optimised?
+        return true;
     }
 
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
-    public void ReOrderIncludes(XmlDocument projectDocument, string filename)
+    public bool ReOrderIncludes(XmlDocument projectDocument, string filename)
     {
         if (projectDocument.SelectSingleNode("Project") is not XmlElement project)
         {
-            return;
+            return false;
         }
 
         XmlNodeList? itemGroups = project.SelectNodes("ItemGroup");
 
         if (itemGroups is null)
         {
-            return;
+            return false;
         }
 
         List<XmlElement> sourceGroups = [];
@@ -81,7 +84,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
                         {
                             Log($"SKIPPING GROUP AS Found Duplicate item {packageId} : {filename}");
 
-                            return;
+                            return false;
                         }
                     }
                     else
@@ -90,7 +93,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
                         {
                             Log($"SKIPPING GROUP AS Found Duplicate item {packageId} : {filename}");
 
-                            return;
+                            return false;
                         }
                     }
                 }
@@ -102,14 +105,14 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
                     {
                         Log($"SKIPPING GROUP AS Found Duplicate item {projectPath} : {filename}");
 
-                        return;
+                        return false;
                     }
                 }
                 else
                 {
                     Log($"SKIPPING GROUP AS Found Unknown item {reference.Name} : {filename}");
 
-                    return;
+                    return false;
                 }
             }
         }
@@ -120,6 +123,9 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         AppendReferences(projectDocument: projectDocument, source: packageReferencesPrivateGroup, project: project);
 
         RemoveNodes(sourceGroups);
+
+        // TODO: can this be optimised?
+        return true;
     }
 
     private static void AppendReferences(XmlDocument projectDocument, Dictionary<string, XmlNode> source, XmlElement project)

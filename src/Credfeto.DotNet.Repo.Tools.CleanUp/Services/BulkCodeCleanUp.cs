@@ -211,16 +211,19 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask RemoveXmlDocCommentsAsync(RepoContext repoContext, string sourceDirectory, BuildSettings buildSettings, CancellationToken cancellationToken)
+    private async ValueTask FileCleanupAsync(RepoContext repoContext,
+                                             string sourceDirectory,
+                                             BuildSettings buildSettings,
+                                             IReadOnlyList<string> sourceFiles,
+                                             Func<string, ValueTask<bool>> cleaner,
+                                             CancellationToken cancellationToken)
     {
-        BuildOverride buildOverride = new(PreRelease: true);
-
-        IReadOnlyList<string> sourceFiles = Directory.GetFiles(path: sourceDirectory, searchPattern: "*.cs", searchOption: SearchOption.AllDirectories);
-
-        if (sourceFiles is not [])
+        if (sourceFiles is [])
         {
             return;
         }
+
+        BuildOverride buildOverride = new(PreRelease: true);
 
         await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
 
@@ -243,18 +246,14 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                 }
             }
 
-            string content = await File.ReadAllTextAsync(path: sourceFile, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
-            string cleanedContent = this._xmlDocCommentRemover.RemoveXmlDocComments(content);
+            bool changed = await cleaner(sourceFile);
 
-            if (StringComparer.InvariantCultureIgnoreCase.Equals(x: content, y: cleanedContent))
+            if (!changed)
             {
-                // no changes
                 continue;
             }
 
             string sourceFileName = Path.GetFileName(sourceFile);
-
-            await File.WriteAllTextAsync(path: sourceFile, contents: cleanedContent, cancellationToken: cancellationToken);
 
             try
             {
@@ -274,65 +273,80 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         }
     }
 
+    private async ValueTask RemoveXmlDocCommentsAsync(RepoContext repoContext, string sourceDirectory, BuildSettings buildSettings, CancellationToken cancellationToken)
+    {
+        IReadOnlyList<string> sourceFiles = Directory.GetFiles(path: sourceDirectory, searchPattern: "*.cs", searchOption: SearchOption.AllDirectories);
+
+        await this.FileCleanupAsync(repoContext: repoContext,
+                                    sourceDirectory: sourceDirectory,
+                                    buildSettings: buildSettings,
+                                    sourceFiles: sourceFiles,
+                                    cleaner: DoCleanupAsync,
+                                    cancellationToken: cancellationToken);
+
+        async ValueTask<bool> DoCleanupAsync(string fileName)
+        {
+            string content = await File.ReadAllTextAsync(path: fileName, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
+            string cleanedContent = this._xmlDocCommentRemover.RemoveXmlDocComments(content);
+
+            if (StringComparer.InvariantCultureIgnoreCase.Equals(x: content, y: cleanedContent))
+            {
+                // no changes
+                return false;
+            }
+
+            await File.WriteAllTextAsync(path: fileName, contents: cleanedContent, cancellationToken: cancellationToken);
+
+            return true;
+        }
+    }
+
     private async ValueTask ReOrderProjectFilesAsync(RepoContext repoContext, string sourceDirectory, IReadOnlyList<string> projects, BuildSettings buildSettings, CancellationToken cancellationToken)
     {
-        if (projects is not [])
+        if (projects is [])
         {
             return;
         }
 
-        BuildOverride buildOverride = new(PreRelease: true);
+        await this.FileCleanupAsync(repoContext: repoContext,
+                                    sourceDirectory: sourceDirectory,
+                                    buildSettings: buildSettings,
+                                    sourceFiles: projects,
+                                    cleaner: DoCleanupAsync,
+                                    cancellationToken: cancellationToken);
 
-        await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
-
-        bool lastBuildFailed = false;
-
-        foreach (string project in projects)
+        async ValueTask<bool> DoCleanupAsync(string project)
         {
-            if (lastBuildFailed)
-            {
-                try
-                {
-                    await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
-                }
-                catch (DotNetBuildErrorException)
-                {
-                    await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
-
-                    throw;
-                }
-            }
-
             XmlDocument doc = await LoadProjectAsync(path: project, cancellationToken: cancellationToken);
 
             string projectName = Path.GetFileName(project);
 
-            this.ProjectCleanup(project: doc, projectFile: project);
+            if (!this.ProjectCleanup(project: doc, projectFile: projectName))
+            {
+                return false;
+            }
 
             await SaveProjectAsync(project: project, doc: doc);
 
-            try
-            {
-                await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
-
-                lastBuildFailed = false;
-                await repoContext.Repository.CommitAsync($"Cleanup: {projectName}", cancellationToken: cancellationToken);
-                await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
-            }
-            catch (DotNetBuildErrorException exception)
-            {
-                this._logger.LogBuildFailedOnRepoCheck(exception: exception);
-
-                await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
-                lastBuildFailed = true;
-            }
+            return true;
         }
     }
 
-    private void ProjectCleanup(XmlDocument project, string projectFile)
+    private bool ProjectCleanup(XmlDocument project, string projectFile)
     {
-        this._projectXmlRewriter.ReOrderPropertyGroups(projectDocument: project, filename: projectFile);
-        this._projectXmlRewriter.ReOrderIncludes(projectDocument: project, filename: projectFile);
+        int changes = 0;
+
+        if (this._projectXmlRewriter.ReOrderPropertyGroups(projectDocument: project, filename: projectFile))
+        {
+            ++changes;
+        }
+
+        if (this._projectXmlRewriter.ReOrderIncludes(projectDocument: project, filename: projectFile))
+        {
+            ++changes;
+        }
+
+        return changes != 0;
     }
 
     private static async ValueTask SaveProjectAsync(string project, XmlDocument doc)
