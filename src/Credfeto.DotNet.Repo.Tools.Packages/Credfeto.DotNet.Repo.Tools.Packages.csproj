@@ -39,17 +39,15 @@
   <PropertyGroup>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
+    <Authors>Mark Ridgwell</Authors>
     <CodeAnalysisRuleSet>$(SolutionDir)\CodeAnalysis.ruleset</CodeAnalysisRuleSet>
     <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
-  </PropertyGroup>
-  <PropertyGroup>
-    <Authors>Mark Ridgwell</Authors>
     <Company>Mark Ridgwell</Company>
     <Copyright>Mark Ridgwell</Copyright>
     <Description>Dotnet Repository Update tools</Description>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
     <NeutralLanguage>en-GB</NeutralLanguage>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReleaseNotes>$(ReleaseNotes)</PackageReleaseNotes>
