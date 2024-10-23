@@ -16,10 +16,30 @@ namespace Credfeto.DotNet.Repo.Tools.Build.Services;
 
 public sealed class DotNetBuild : IDotNetBuild
 {
-    // MSB3243 - two assemblies of the same name, but different version
-    // NU1802 - restoring from HTTP source
-    private const string NO_WARN = "-p:NoWarn=NU1802";
     private const string BUILD_VERSION = "0.0.0.1-do-not-distribute";
+
+    private static readonly IReadOnlyList<string> NoWarnAll =
+    [
+        // MSB3243 - two assemblies of the same name, but different version
+        // NU1802 - restoring from HTTP source
+        "NU1802"
+    ];
+
+    private static readonly IReadOnlyList<string> NoWarnPreRelease =
+    [
+        // NU1901 - Package with low severity detected
+        "NU1901",
+
+        // NU1902 -Package with moderate severity detected
+        "NU1902",
+
+        // NU1903 - Package with high severity detected
+        "NU1903",
+
+        // NU1904 - Package with critical severity detected
+        "NU1904"
+    ];
+
     private readonly ILogger<DotNetBuild> _logger;
     private readonly IProjectXmlLoader _projectLoader;
 
@@ -30,7 +50,7 @@ public sealed class DotNetBuild : IDotNetBuild
         this._projectLoader = new ProjectXmlLoader();
     }
 
-    public async ValueTask BuildAsync(string basePath, BuildSettings buildSettings, CancellationToken cancellationToken)
+    public async ValueTask BuildAsync(string basePath, BuildSettings buildSettings, BuildOverride buildOverride, CancellationToken cancellationToken)
     {
         this._logger.LogStartingBuild(basePath);
 
@@ -38,23 +58,23 @@ public sealed class DotNetBuild : IDotNetBuild
 
         try
         {
-            await this.DotNetCleanAsync(basePath: basePath, cancellationToken: cancellationToken);
+            await this.DotNetCleanAsync(basePath: basePath, buildOverride: buildOverride, cancellationToken: cancellationToken);
 
-            await this.DotNetRestoreAsync(basePath: basePath, cancellationToken: cancellationToken);
+            await this.DotNetRestoreAsync(basePath: basePath, buildOverride: buildOverride, cancellationToken: cancellationToken);
 
-            await this.DotNetBuildAsync(basePath: basePath, cancellationToken: cancellationToken);
+            await this.DotNetBuildAsync(basePath: basePath, buildOverride: buildOverride, cancellationToken: cancellationToken);
 
-            await this.DotNetTestAsync(basePath: basePath, cancellationToken: cancellationToken);
+            await this.DotNetTestAsync(basePath: basePath, buildOverride: buildOverride, cancellationToken: cancellationToken);
 
             if (buildSettings.Packable)
             {
-                await this.DotNetPackAsync(basePath: basePath, cancellationToken: cancellationToken);
+                await this.DotNetPackAsync(basePath: basePath, buildOverride: buildOverride, cancellationToken: cancellationToken);
             }
 
             if (buildSettings.Publishable)
             {
                 string? framework = buildSettings.Framework;
-                await this.DotNetPublishAsync(basePath: basePath, framework: framework, cancellationToken: cancellationToken);
+                await this.DotNetPublishAsync(basePath: basePath, buildOverride: buildOverride, framework: framework, cancellationToken: cancellationToken);
             }
         }
         finally
@@ -154,63 +174,100 @@ public sealed class DotNetBuild : IDotNetBuild
         return packableNode is not null && StringComparer.InvariantCultureIgnoreCase.Equals(x: packableNode.InnerText, y: "True");
     }
 
-    private async ValueTask DotNetPublishAsync(string basePath, string? framework, CancellationToken cancellationToken)
+    private async ValueTask DotNetPublishAsync(string basePath, BuildOverride buildOverride, string? framework, CancellationToken cancellationToken)
     {
+        string noWarn = BuildNoWarn(buildOverride);
+
         if (string.IsNullOrWhiteSpace(framework))
         {
             this._logger.LogPublishingNoFramework();
             await this.ExecRequireCleanAsync(basePath: basePath,
-                                             $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
+                                             $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {noWarn}",
                                              cancellationToken: cancellationToken);
         }
         else
         {
             this._logger.LogPublishingWithFramework(framework);
             await this.ExecRequireCleanAsync(basePath: basePath,
-                                             $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --framework:{framework} --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {NO_WARN}",
+                                             $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --framework:{framework} --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {noWarn}",
                                              cancellationToken: cancellationToken);
         }
     }
 
-    private ValueTask DotNetPackAsync(string basePath, in CancellationToken cancellationToken)
+    private static string BuildNoWarn(in BuildOverride buildOverride)
     {
-        this._logger.LogPacking();
+        if (buildOverride.PreRelease)
+        {
+            return Build([
+                .. NoWarnPreRelease.Concat(NoWarnAll)
+                                   .Distinct(StringComparer.Ordinal)
+            ]);
+        }
 
-        return this.ExecRequireCleanAsync(basePath: basePath,
-                                          $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}",
-                                          cancellationToken: cancellationToken);
+        return Build(NoWarnAll);
+
+        static string Build(IReadOnlyList<string> items)
+        {
+            if (items is [])
+            {
+                return string.Empty;
+            }
+
+            string quotedPropertyEscape = OperatingSystem.IsLinux()
+                ? "'"
+                : "\\";
+
+            return $"-nowarn:{quotedPropertyEscape}\"{string.Join(separator: ';', items.OrderBy(keySelector: x => x, comparer: StringComparer.Ordinal))}{quotedPropertyEscape}\"";
+        }
     }
 
-    private ValueTask DotNetTestAsync(string basePath, in CancellationToken cancellationToken)
+    private ValueTask DotNetPackAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
     {
+        string noWarn = BuildNoWarn(buildOverride);
+
+        this._logger.LogPacking();
+
+        return this.ExecRequireCleanAsync(basePath: basePath, $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {noWarn}", cancellationToken: cancellationToken);
+    }
+
+    private ValueTask DotNetTestAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
+    {
+        string noWarn = BuildNoWarn(buildOverride);
+
         this._logger.LogTesting();
 
         return this.ExecRequireCleanAsync(basePath: basePath,
-                                          $"test --no-build --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} --filter FullyQualifiedName\\!~Integration {NO_WARN}",
+                                          $"test --no-build --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} --filter FullyQualifiedName\\!~Integration {noWarn}",
                                           cancellationToken: cancellationToken);
     }
 
-    private ValueTask DotNetBuildAsync(string basePath, in CancellationToken cancellationToken)
+    private ValueTask DotNetBuildAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
     {
+        string noWarn = BuildNoWarn(buildOverride);
+
         this._logger.LogBuilding();
 
         return this.ExecRequireCleanAsync(basePath: basePath,
-                                          $"build --no-restore -warnAsError -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {NO_WARN}",
+                                          $"build --no-restore -warnAsError -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {noWarn}",
                                           cancellationToken: cancellationToken);
     }
 
-    private ValueTask DotNetRestoreAsync(string basePath, in CancellationToken cancellationToken)
+    private ValueTask DotNetRestoreAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
     {
+        string noWarn = BuildNoWarn(buildOverride);
+
         this._logger.LogRestoring();
 
-        return this.ExecRequireCleanAsync(basePath: basePath, $"restore -nodeReuse:False -r:linux-x64 {NO_WARN}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(basePath: basePath, $"restore -nodeReuse:False -r:linux-x64 {noWarn}", cancellationToken: cancellationToken);
     }
 
-    private ValueTask DotNetCleanAsync(string basePath, in CancellationToken cancellationToken)
+    private ValueTask DotNetCleanAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
     {
+        string noWarn = BuildNoWarn(buildOverride);
+
         this._logger.LogCleaning();
 
-        return this.ExecRequireCleanAsync(basePath: basePath, $"clean --configuration:Release -nodeReuse:False {NO_WARN}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(basePath: basePath, $"clean --configuration:Release -nodeReuse:False {noWarn}", cancellationToken: cancellationToken);
     }
 
     private async ValueTask StopBuildServerAsync(string basePath, CancellationToken cancellationToken)

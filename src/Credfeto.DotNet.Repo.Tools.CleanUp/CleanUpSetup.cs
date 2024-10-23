@@ -9,6 +9,7 @@ public static class CleanUpSetup
     public static IServiceCollection AddCleanUp(this IServiceCollection services)
     {
         return services.AddSingleton<IBulkCodeCleanUp, BulkCodeCleanUp>()
-                       .AddSingleton<IProjectXmlRewriter, ProjectXmlRewriter>();
+                       .AddSingleton<IProjectXmlRewriter, ProjectXmlRewriter>()
+                       .AddSingleton<IXmlDocCommentRemover, XmlDocCommentRemover>();
     }
 }

@@ -32,12 +32,15 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     private readonly IReleaseConfigLoader _releaseConfigLoader;
     private readonly ITrackingCache _trackingCache;
 
+    private readonly IXmlDocCommentRemover _xmlDocCommentRemover;
+
     public BulkCodeCleanUp(ITrackingCache trackingCache,
                            IGitRepositoryFactory gitRepositoryFactory,
                            IGlobalJson globalJson,
                            IDotNetVersion dotNetVersion,
                            IReleaseConfigLoader releaseConfigLoader,
                            IProjectXmlRewriter projectXmlRewriter,
+                           IXmlDocCommentRemover xmlDocCommentRemover,
                            IDotNetBuild dotNetBuild,
                            ILogger<BulkCodeCleanUp> logger)
     {
@@ -47,6 +50,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         this._dotNetVersion = dotNetVersion;
         this._releaseConfigLoader = releaseConfigLoader;
         this._projectXmlRewriter = projectXmlRewriter;
+        this._xmlDocCommentRemover = xmlDocCommentRemover;
         this._dotNetBuild = dotNetBuild;
         this._logger = logger;
     }
@@ -113,8 +117,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     {
         await this.LoadTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
 
-        using (IGitRepository templateRepo =
-               await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
+        using (IGitRepository templateRepo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
             CleanupUpdateContext updateContext = await this.BuildUpdateContextAsync(templateRepo: templateRepo,
                                                                                     workFolder: workFolder,
@@ -171,8 +174,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     {
         this._logger.LogProcessingRepo(repo);
 
-        using (IGitRepository repository =
-               await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
+        using (IGitRepository repository = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
             if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
             {
@@ -195,31 +197,93 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     {
         if (repoContext.HasDotNetSolutions(out string? sourceDirectory, out IReadOnlyList<string>? _))
         {
-            await this.UpdateDotNetAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, cancellationToken: cancellationToken);
+            IReadOnlyList<string> projects = Directory.GetFiles(path: sourceDirectory, searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories);
+            BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
+
+            await this.ReOrderProjectFilesAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, projects: projects, buildSettings: buildSettings, cancellationToken: cancellationToken);
+            await this.RemoveXmlDocCommentsAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
         }
         else
         {
             this._logger.LogNoDotNetFilesFound();
         }
 
-        await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext,
-                                                      updateContext: updateContext,
-                                                      value: repoContext.Repository.HeadRev,
-                                                      cancellationToken: cancellationToken);
+        await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask UpdateDotNetAsync(RepoContext repoContext, string sourceDirectory, CancellationToken cancellationToken)
+    private async ValueTask RemoveXmlDocCommentsAsync(RepoContext repoContext, string sourceDirectory, BuildSettings buildSettings, CancellationToken cancellationToken)
     {
-        IReadOnlyList<string> projects = Directory.GetFiles(path: sourceDirectory, searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories);
+        BuildOverride buildOverride = new(PreRelease: true);
 
+        IReadOnlyList<string> sourceFiles = Directory.GetFiles(path: sourceDirectory, searchPattern: "*.cs", searchOption: SearchOption.AllDirectories);
+
+        if (sourceFiles is not [])
+        {
+            return;
+        }
+
+        await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+
+        bool lastBuildFailed = false;
+
+        foreach (string sourceFile in sourceFiles)
+        {
+            if (lastBuildFailed)
+            {
+                try
+                {
+                    await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+                    lastBuildFailed = false;
+                }
+                catch (DotNetBuildErrorException)
+                {
+                    await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+
+                    throw;
+                }
+            }
+
+            string content = await File.ReadAllTextAsync(path: sourceFile, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
+            string cleanedContent = this._xmlDocCommentRemover.RemoveXmlDocComments(content);
+
+            if (StringComparer.InvariantCultureIgnoreCase.Equals(x: content, y: cleanedContent))
+            {
+                // no changes
+                continue;
+            }
+
+            string sourceFileName = Path.GetFileName(sourceFile);
+
+            await File.WriteAllTextAsync(path: sourceFile, contents: cleanedContent, cancellationToken: cancellationToken);
+
+            try
+            {
+                await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+
+                lastBuildFailed = false;
+                await repoContext.Repository.CommitAsync($"Cleanup: {sourceFileName}", cancellationToken: cancellationToken);
+                await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
+            }
+            catch (DotNetBuildErrorException exception)
+            {
+                this._logger.LogBuildFailedOnRepoCheck(exception: exception);
+
+                await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+                lastBuildFailed = true;
+            }
+        }
+    }
+
+    private async ValueTask ReOrderProjectFilesAsync(RepoContext repoContext, string sourceDirectory, IReadOnlyList<string> projects, BuildSettings buildSettings, CancellationToken cancellationToken)
+    {
         if (projects is not [])
         {
             return;
         }
 
-        BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
+        BuildOverride buildOverride = new(PreRelease: true);
 
-        await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
+        await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
 
         bool lastBuildFailed = false;
 
@@ -229,7 +293,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             {
                 try
                 {
-                    await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
+                    await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
                 }
                 catch (DotNetBuildErrorException)
                 {
@@ -249,7 +313,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
             try
             {
-                await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
+                await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
 
                 lastBuildFailed = false;
                 await repoContext.Repository.CommitAsync($"Cleanup: {projectName}", cancellationToken: cancellationToken);
