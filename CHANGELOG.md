@@ -11,7 +11,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - Dependencies - Updated Roslynator.Analyzers to 4.12.9
 - Dependencies - Updated NSubstitute to 5.3.0
-- Dependencies - Updated FunFair.CodeAnalysis to 7.0.28.680
 - Dependencies - Updated Credfeto.Date to 1.1.28.575
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.31.447
 - Dependencies - Updated FunFair.Test.Common to 6.1.234.940
@@ -19,6 +18,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Meziantou.Analyzer to 2.0.177
 - Dependencies - Updated Credfeto.Enumeration to 1.1.19.652
 - Dependencies - Updated Serilog.Enrichers.Demystifier to 1.0.3
+- Dependencies - Updated FunFair.CodeAnalysis to 7.0.29.685
 ### Removed
 ### Deployment Changes
 
