@@ -1,11 +1,9 @@
-using Credfeto.DotNet.Repo.Tools.Release.Extensions;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using FunFair.Test.Common;
-using Xunit;
 
 namespace Credfeto.DotNet.Repo.Tools.Release.Tests.Extensions;
 
-public sealed class ReleaseConfigExtensionsTests : TestBase
+public sealed partial class ReleaseConfigExtensionsTests : TestBase
 {
     private readonly ReleaseConfig _releaseConfig;
 
@@ -18,25 +16,15 @@ public sealed class ReleaseConfigExtensionsTests : TestBase
                                       new(Repo: "template", MatchType: MatchType.CONTAINS, Include: true),
                                       new(Repo: "git@github.com:example/never-release.git", MatchType: MatchType.EXACT, Include: true)
                                   ],
-                                  [],
-                                  []);
-    }
-
-    [Theory]
-    [InlineData("git@github.com:credfeto/cs-template.git")]
-    [InlineData("git@github.com:example/never-release.git")]
-    public void ShouldNeverAutoReleaseRepo_ReturnsTrue(string repoUrl)
-    {
-        bool status = this._releaseConfig.ShouldNeverAutoReleaseRepo(repoUrl);
-        Assert.True(condition: status, userMessage: "Should never release");
-    }
-
-    [Theory]
-    [InlineData("git@github.com:credfeto/example1.git")]
-    [InlineData("git@github.com:example/allow-release.git")]
-    public void ShouldNeverAutoReleaseRepo_ReturnsFalse(string repoUrl)
-    {
-        bool status = this._releaseConfig.ShouldNeverAutoReleaseRepo(repoUrl);
-        Assert.False(condition: status, userMessage: "Allow releases");
+                                  [
+                                      new(Repo: "git@github.com:example/auto-upgrade-true.git", MatchType: MatchType.EXACT, Include: true),
+                                      new(Repo: "git@github.com:example/auto-upgrade-false.git", MatchType: MatchType.EXACT, Include: false)
+                                  ],
+                                  [
+                                      new(Repo: "credfeto", MatchType: MatchType.CONTAINS, Include: true),
+                                      new(Repo: "code-analysis", MatchType: MatchType.CONTAINS, Include: false),
+                                      new(Repo: "git@github.com:example/never-match.git", MatchType: MatchType.EXACT, Include: false),
+                                      new(Repo: "git@github.com:example/always-match.git", MatchType: MatchType.EXACT, Include: true)
+                                  ]);
     }
 }
