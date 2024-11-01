@@ -1,3 +1,4 @@
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -25,7 +26,7 @@ public sealed class ReleaseConfigLoaderTests : TestBase
     public async Task LoadFromUrlAsync()
     {
         const string releaseConfigJson =
-            "{\n\"settings\": {\n\"autoReleasePendingPackages\": 1,\n\"minimumHoursBeforeAutoRelease\": 4,\n\"inactivityHoursBeforeAutoRelease\": 8\n},\n\"neverRelease\": [\n{\n\"repo\": \"template\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"git@github.com:funfair-tech/funfair-server-content-package.git\",\n\"match\": \"exact\",\n\"include\": true\n}\n],\n\"allowedAutoUpgrade\": [\n{\n\"repo\": \"template\",\n\"match\": \"contains\",\n\"include\": false\n},\n{\n\"repo\": \"credfeto\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"BuildBot\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"CoinBot\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"funfair-server-balance-bot\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"funfair-server-build-check\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"funfair-server-build-version\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"funfair-content-package-builder\",\n\"match\": \"contains\",\n\"include\": true\n}\n],\n\"alwaysMatch\": [\n{\n\"repo\": \"git@github.com:funfair-tech/funfair-server-content-package.git\",\n\"match\": \"exact\",\n\"include\": false\n},\n{\n\"repo\": \"code-analysis\",\n\"match\": \"contains\",\n\"include\": false\n}\n]\n}";
+            "{\n\"settings\": {\n\"autoReleasePendingPackages\": 1,\n\"minimumHoursBeforeAutoRelease\": 4,\n\"inactivityHoursBeforeAutoRelease\": 8\n},\n\"neverRelease\": [\n{\n\"repo\": \"template\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"git@github.com:example/never-release.git\",\n\"match\": \"exact\",\n\"include\": true\n}\n],\n\"allowedAutoUpgrade\": [\n{\n\"repo\": \"template\",\n\"match\": \"contains\",\n\"include\": false\n},\n{\n\"repo\": \"credfeto\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"BuildBot\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"CoinBot\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"funfair-server-balance-bot\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"funfair-server-build-check\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"funfair-server-build-version\",\n\"match\": \"contains\",\n\"include\": true\n},\n{\n\"repo\": \"funfair-content-package-builder\",\n\"match\": \"contains\",\n\"include\": true\n}\n],\n\"alwaysMatch\": [\n{\n\"repo\": \"git@github.com:funfair-tech/funfair-server-content-package.git\",\n\"match\": \"exact\",\n\"include\": false\n},\n{\n\"repo\": \"code-analysis\",\n\"match\": \"contains\",\n\"include\": false\n}\n]\n}";
 
         this._httpClientFactory.MockCreateClientWithResponse(nameof(ReleaseConfigLoader), httpStatusCode: HttpStatusCode.OK, responseMessage: releaseConfigJson);
 
@@ -34,5 +35,13 @@ public sealed class ReleaseConfigLoaderTests : TestBase
         Assert.Equal(expected: 1, actual: config.AutoReleasePendingPackages);
         Assert.Equal(expected: 4, actual: config.MinimumHoursBeforeAutoRelease);
         Assert.Equal(expected: 8, actual: config.InactivityHoursBeforeAutoRelease);
+
+        Assert.NotEmpty(config.NeverRelease);
+        Assert.Contains(collection: config.NeverRelease, filter: x => StringComparer.Ordinal.Equals(x: x.Repo, y: "template") && x is { MatchType: MatchType.CONTAINS, Include: true });
+        Assert.Contains(collection: config.NeverRelease,
+                        filter: x => StringComparer.Ordinal.Equals(x: x.Repo, y: "git@github.com:example/never-release.git") && x is { MatchType: MatchType.EXACT, Include: true });
+
+        Assert.NotEmpty(config.AlwaysMatch);
+        Assert.NotEmpty(config.AllowedAutoUpgrade);
     }
 }
