@@ -42,6 +42,11 @@ public sealed class ReleaseConfigLoaderTests : TestBase
                         filter: x => StringComparer.Ordinal.Equals(x: x.Repo, y: "git@github.com:example/never-release.git") && x is { MatchType: MatchType.EXACT, Include: true });
 
         Assert.NotEmpty(config.AlwaysMatch);
+
+        Assert.Contains(collection: config.AlwaysMatch, filter: x => StringComparer.Ordinal.Equals(x: x.Repo, y: "code-analysis") && x is { MatchType: MatchType.CONTAINS, Include: false });
+
         Assert.NotEmpty(config.AllowedAutoUpgrade);
+
+        Assert.Contains(collection: config.AllowedAutoUpgrade, filter: x => StringComparer.Ordinal.Equals(x: x.Repo, y: "template") && x is { MatchType: MatchType.CONTAINS, Include: false });
     }
 }
