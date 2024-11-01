@@ -62,8 +62,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         // *********************************************************
         // * 1 TEMPLATE REPOS
 
-        if (releaseConfig.ShouldNeverAutoReleaseRepo(repoContext))
-        {
+        if (releaseConfig.ShouldNeverAutoReleaseRepo(repoContext.ClonePath)) {
             return;
         }
 
@@ -127,12 +126,12 @@ public sealed class ReleaseGeneration : IReleaseGeneration
             return true;
         }
 
-        if (releaseConfig.ShouldAlwaysCreatePatchRelease(repoContext))
+        if (releaseConfig.ShouldAlwaysCreatePatchRelease(repoContext.ClonePath))
         {
             return false;
         }
 
-        if (releaseConfig.CheckRepoForAllowedAutoUpgrade(repoContext))
+        if (releaseConfig.CheckRepoForAllowedAutoUpgrade(repoContext.ClonePath))
         {
             if (!buildSettings.Publishable)
             {
