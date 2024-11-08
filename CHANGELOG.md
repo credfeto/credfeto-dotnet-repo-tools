@@ -15,6 +15,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.21.536
 - Dependencies - Updated Credfeto.Package to 1.10.47.800
 - Dependencies - Updated xunit.analyzers to 1.17.0
+- Dependencies - Updated Credfeto.Enumeration to 1.1.22.677
 ### Removed
 ### Deployment Changes
 
