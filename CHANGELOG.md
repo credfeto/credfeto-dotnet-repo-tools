@@ -19,6 +19,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.22.554
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.11.111
 - Dependencies - Updated FunFair.Test.Common to 6.1.238.970
+- Dependencies - Updated NuGet to 6.12.1
 ### Removed
 ### Deployment Changes
 
