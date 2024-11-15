@@ -193,7 +193,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         targetPropertyGroup.RemoveAll();
 
         // Add the children we've added to the target property group
-        foreach (string entryKey in orderedChildren.Keys.OrderBy(keySelector: x => x, comparer: StringComparer.Ordinal))
+        foreach (string entryKey in orderedChildren.Keys.Order(comparer: StringComparer.Ordinal))
         {
             XmlNode item = orderedChildren[entryKey];
             targetPropertyGroup.AppendChild(item);
@@ -294,7 +294,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
             {
                 propertyGroup.RemoveAll();
 
-                foreach (string entryKey in orderedChildren.Keys.OrderBy(keySelector: x => x, comparer: StringComparer.Ordinal))
+                foreach (string entryKey in orderedChildren.Keys.Order(comparer: StringComparer.Ordinal))
                 {
                     XmlNode item = orderedChildren[entryKey];
                     propertyGroup.AppendChild(item);

@@ -170,7 +170,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
 
     private static IEnumerable<PathInfo> BuildIncludePaths(in LabelConfig labelConfig)
     {
-        return labelConfig.Paths.OrderBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase)
+        return labelConfig.Paths.Order(comparer: StringComparer.OrdinalIgnoreCase)
                           .Select(Create);
 
         static PathInfo Create(string path)
@@ -181,7 +181,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
 
     private static IEnumerable<PathInfo> BuildExcludePaths(in LabelConfig labelConfig)
     {
-        return labelConfig.PathsExclude.OrderBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase)
+        return labelConfig.PathsExclude.Order(comparer: StringComparer.OrdinalIgnoreCase)
                           .Select(Create);
 
         static PathInfo Create(string path)

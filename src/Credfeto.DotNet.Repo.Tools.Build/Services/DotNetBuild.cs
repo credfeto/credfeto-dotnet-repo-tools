@@ -217,7 +217,7 @@ public sealed class DotNetBuild : IDotNetBuild
                 ? "'"
                 : "\\";
 
-            return $"-nowarn:{quotedPropertyEscape}\"{string.Join(separator: ';', items.OrderBy(keySelector: x => x, comparer: StringComparer.Ordinal))}{quotedPropertyEscape}\"";
+            return $"-nowarn:{quotedPropertyEscape}\"{string.Join(separator: ';', items.Order(comparer: StringComparer.Ordinal))}{quotedPropertyEscape}\"";
         }
     }
 

@@ -25,7 +25,7 @@ public sealed class DotNetVersion : IDotNetVersion
         [
             ..output.Select(ExtractVersion)
                     .RemoveNulls()
-                    .OrderByDescending(x => x)
+                    .OrderDescending()
         ];
     }
 
