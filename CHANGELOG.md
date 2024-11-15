@@ -9,7 +9,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Credfeto.Enumeration to 1.1.23.685
 - Dependencies - Updated Meziantou.Analyzer to 2.0.179
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.12.19
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.35.483
@@ -17,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Microsoft.Extensions to 9.0.0
 - Dependencies - Updated NuGet to 6.12.1
 - Dependencies - Updated Credfeto.Package to 1.10.49.844
+- Dependencies - Updated Credfeto.Enumeration to 1.1.24.699
 ### Removed
 ### Deployment Changes
 
