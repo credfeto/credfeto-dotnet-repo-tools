@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.Test.Common to 6.1.239.979
 - Dependencies - Updated Microsoft.Extensions to 9.0.0
 - Dependencies - Updated NuGet to 6.12.1
+- Dependencies - Updated Credfeto.Package to 1.10.49.844
 ### Removed
 ### Deployment Changes
 
