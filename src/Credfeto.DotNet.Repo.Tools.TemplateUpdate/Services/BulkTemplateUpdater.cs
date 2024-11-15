@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.ChangeLog;
+using Credfeto.ChangeLog.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
@@ -124,6 +125,10 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 catch (DotNetBuildErrorException exception)
                 {
                     this._logger.LogBuildFailedOnRepoCheck(exception: exception);
+                }
+                catch (ReleaseTooOldException exception)
+                {
+                    this._logger.LogBuildFailedOnCreateRelease(message: exception.Message, exception: exception);
                 }
                 finally
                 {

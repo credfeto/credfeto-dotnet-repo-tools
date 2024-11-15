@@ -79,4 +79,7 @@ internal static partial class BulkTemplateUpdaterLoggingExtensions
     {
         logger.LogMissingSdk(sdkVersion.ToString(), string.Join(separator: ", ", values: installedSdks));
     }
+
+    [LoggerMessage(EventId = 17, Level = LogLevel.Error, Message = "Could not create release: {message}")]
+    public static partial void LogBuildFailedOnCreateRelease(this ILogger<BulkTemplateUpdater> logger, string message, Exception exception);
 }
