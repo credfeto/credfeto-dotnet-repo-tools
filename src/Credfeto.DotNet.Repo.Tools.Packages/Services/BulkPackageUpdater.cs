@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Credfeto.ChangeLog;
+using Credfeto.ChangeLog.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
@@ -122,6 +123,10 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 catch (DotNetBuildErrorException exception)
                 {
                     this._logger.LogBuildFailedOnRepoCheck(exception: exception);
+                }
+                catch (ReleaseTooOldException exception)
+                {
+                    this._logger.LogBuildFailedOnCreateRelease(message: exception.Message, exception: exception);
                 }
                 finally
                 {
@@ -430,7 +435,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             // nothing to do - may already be a PR that's being worked on
             this._logger.LogSkippingPackageCommit(repoContext: repoContext, branch: branchForUpdate, packageId: package.PackageId, version: version);
 
-            await repoContext.Repository.ResetToMasterAsync(GitConstants.Upstream, cancellationToken: cancellationToken);
+            await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
             return;
         }
@@ -441,7 +446,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         await CommitChangeWithChangelogAsync(repoContext: repoContext, package: package, version: version, cancellationToken: cancellationToken);
         await repoContext.Repository.PushOriginAsync(branchName: branchForUpdate, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
         await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: branchForUpdate, branchPrefix: branchPrefix, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
-        await repoContext.Repository.ResetToMasterAsync(GitConstants.Upstream, cancellationToken: cancellationToken);
+        await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
     }
 
     private async ValueTask CommitDefaultBranchToRepositoryAsync(RepoContext repoContext,

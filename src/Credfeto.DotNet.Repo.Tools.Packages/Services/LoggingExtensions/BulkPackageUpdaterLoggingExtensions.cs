@@ -14,6 +14,7 @@ internal static partial class BulkPackageUpdaterLoggingExtensions
     [LoggerMessage(EventId = 2, Level = LogLevel.Error, Message = "Build failed (On repo check)")]
     public static partial void LogBuildFailedOnRepoCheck(this ILogger<BulkPackageUpdater> logger, Exception exception);
 
+
     [LoggerMessage(EventId = 3, Level = LogLevel.Warning, Message = "Release created - aborting run")]
     public static partial void LogReleaseCreatedAbortingRun(this ILogger<BulkPackageUpdater> logger, Exception exception);
 
@@ -99,4 +100,8 @@ internal static partial class BulkPackageUpdaterLoggingExtensions
     {
         logger.LogMissingSdk(sdkVersion.ToString(), string.Join(separator: ", ", values: installedSdks));
     }
+
+    [LoggerMessage(EventId = 20, Level = LogLevel.Error, Message = "Build failed - could not create release: {message}")]
+    public static partial void LogBuildFailedOnCreateRelease(this ILogger<BulkPackageUpdater> logger, string message, Exception exception);
+
 }
