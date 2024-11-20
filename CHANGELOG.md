@@ -20,6 +20,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.36.497
 - Dependencies - Updated Meziantou.Analyzer to 2.0.180
 - Dependencies - Updated Microsoft.NET.Test.Sdk to 17.12.0
+- Dependencies - Updated Credfeto.ChangeLog to 1.10.23.586
 ### Removed
 ### Deployment Changes
 
