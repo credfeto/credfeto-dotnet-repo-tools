@@ -9,7 +9,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Meziantou.Analyzer to 2.0.179
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.12.19
 - Dependencies - Updated FunFair.Test.Common to 6.1.239.979
 - Dependencies - Updated Microsoft.Extensions to 9.0.0
@@ -19,6 +18,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Date to 1.1.32.629
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.12.127
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.36.497
+- Dependencies - Updated Meziantou.Analyzer to 2.0.180
 ### Removed
 ### Deployment Changes
 
