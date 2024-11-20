@@ -13,7 +13,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.Test.Common to 6.1.239.979
 - Dependencies - Updated Microsoft.Extensions to 9.0.0
 - Dependencies - Updated NuGet to 6.12.1
-- Dependencies - Updated Credfeto.Package to 1.10.49.844
 - Dependencies - Updated Credfeto.Enumeration to 1.1.24.699
 - Dependencies - Updated Credfeto.Date to 1.1.32.629
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.12.127
@@ -21,6 +20,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Meziantou.Analyzer to 2.0.180
 - Dependencies - Updated Microsoft.NET.Test.Sdk to 17.12.0
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.23.586
+- Dependencies - Updated Credfeto.Package to 1.10.50.855
 ### Removed
 ### Deployment Changes
 
