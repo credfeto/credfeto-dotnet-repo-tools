@@ -60,7 +60,7 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git.Interfaces\Credfeto.DotNet.Repo.Tools.Git.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Credfeto.Extensions.Linq" Version="1.0.41.518" />
+    <PackageReference Include="Credfeto.Extensions.Linq" Version="1.0.42.521" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
