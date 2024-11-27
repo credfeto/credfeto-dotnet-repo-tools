@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.20.155
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.3.0.106239
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.36.618
+- Dependencies - Updated Credfeto.Date to 1.1.39.654
 ### Removed
 ### Deployment Changes
 
