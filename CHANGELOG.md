@@ -9,11 +9,11 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Credfeto.ChangeLog to 1.10.40.631
 - Dependencies - Updated Credfeto.Date to 1.1.41.663
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.22.164
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.45.534
 - Dependencies - Updated Credfeto.Package to 1.10.68.912
+- Dependencies - Updated Credfeto.ChangeLog to 1.10.41.633
 ### Removed
 ### Deployment Changes
 
