@@ -60,7 +60,7 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.DotNet.Interfaces\Credfeto.DotNet.Repo.Tools.DotNet.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Credfeto.Extensions.Linq" Version="1.0.46.536" />
+    <PackageReference Include="Credfeto.Extensions.Linq" Version="1.0.47.538" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
   </ItemGroup>
   <ItemGroup>
