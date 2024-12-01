@@ -10,6 +10,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.24.168
+- Dependencies - Updated Credfeto.ChangeLog to 1.10.44.639
 ### Removed
 ### Deployment Changes
 
