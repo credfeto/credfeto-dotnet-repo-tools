@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated LibGit2Sharp to 0.31.0
 - Dependencies - Updated Credfeto.Date to 1.1.46.673
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.50.544
+- Dependencies - Updated Credfeto.Package to 1.10.77.934
 ### Removed
 ### Deployment Changes
 
