@@ -9,17 +9,20 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated LibGit2Sharp to 0.31.0
-- Dependencies - Updated Credfeto.Date to 1.1.46.673
-- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.50.544
-- Dependencies - Updated Credfeto.Package to 1.10.77.934
-- Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.27.174
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.0.59] - 2024-12-03
+### Changed
+- Dependencies - Updated LibGit2Sharp to 0.31.0
+- Dependencies - Updated Credfeto.Date to 1.1.46.673
+- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.50.544
+- Dependencies - Updated Credfeto.Package to 1.10.77.934
+- Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.27.174
+
 ## [1.0.58] - 2024-12-03
 ### Changed
 - Dependencies - Updated Credfeto.Date to 1.1.45.671
