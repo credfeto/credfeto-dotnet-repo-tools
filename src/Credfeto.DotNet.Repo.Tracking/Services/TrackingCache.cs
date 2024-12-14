@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -67,9 +68,7 @@ public sealed class TrackingCache : ITrackingCache
 
     public string? Get(string repoUrl)
     {
-        return this._cache.TryGetValue(key: repoUrl, out string? value)
-            ? value
-            : null;
+        return this._cache.GetValueOrDefault(repoUrl);
     }
 
     public void Set(string repoUrl, string? value)
