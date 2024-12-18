@@ -9,7 +9,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Credfeto.Package to 1.10.80.944
 - SDK - Updated DotNet SDK to 9.0.101
 - Dependencies - Updated Credfeto.Enumeration to 1.2.43.772
 - Dependencies - Updated Roslynator.Analyzers to 4.12.10
@@ -18,7 +17,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.57.691
 - Dependencies - Updated Credfeto.Date to 1.1.50.696
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.54.566
-- Dependencies - Updated Credfeto.Package to 1.10.81.946
+- Dependencies - Updated Credfeto.Package to 1.10.86.998
 ### Removed
 ### Deployment Changes
 
