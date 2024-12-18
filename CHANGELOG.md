@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.4.0.108396
 - Dependencies - Updated xunit.analyzers to 1.18.0
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.57.691
+- Dependencies - Updated Credfeto.Date to 1.1.50.696
 ### Removed
 ### Deployment Changes
 
