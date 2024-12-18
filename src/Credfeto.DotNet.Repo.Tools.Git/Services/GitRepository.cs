@@ -487,7 +487,7 @@ internal sealed class GitRepository : IGitRepository
 
         if (exitCode != 0)
         {
-            this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Commit");
+            this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Commit \"{message}\"");
         }
     }
 
