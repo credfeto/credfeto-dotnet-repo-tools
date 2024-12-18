@@ -317,7 +317,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
         async ValueTask<bool> DoCleanupAsync(string project)
         {
-            XmlDocument doc = await LoadProjectAsync(path: project, cancellationToken: cancellationToken);
+            (XmlDocument doc, string content) = await LoadProjectAsync(path: project, cancellationToken: cancellationToken);
 
             string projectName = Path.GetFileName(project);
 
@@ -328,7 +328,9 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
             await SaveProjectAsync(project: project, doc: doc);
 
-            return true;
+            string contentAfter = await LoadProjectTextAsync(path: project, cancellationToken: cancellationToken);
+
+            return !StringComparer.Ordinal.Equals(x: contentAfter, y: content);
         }
     }
 
@@ -371,14 +373,19 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         }
     }
 
-    private static async ValueTask<XmlDocument> LoadProjectAsync(string path, CancellationToken cancellationToken)
+    private static async ValueTask<(XmlDocument doc, string content)> LoadProjectAsync(string path, CancellationToken cancellationToken)
     {
-        string content = await File.ReadAllTextAsync(path: path, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
+        string content = await LoadProjectTextAsync(path: path, cancellationToken: cancellationToken);
         XmlDocument doc = new();
 
         doc.LoadXml(content);
 
-        return doc;
+        return (doc, content);
+    }
+
+    private static Task<string> LoadProjectTextAsync(string path, in CancellationToken cancellationToken)
+    {
+        return File.ReadAllTextAsync(path: path, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
     }
 
     private async ValueTask<CleanupUpdateContext> BuildUpdateContextAsync(IGitRepository templateRepo,
