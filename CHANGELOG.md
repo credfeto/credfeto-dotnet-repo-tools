@@ -9,6 +9,14 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.0.63] - 2024-12-18
+### Changed
 - SDK - Updated DotNet SDK to 9.0.101
 - Dependencies - Updated Credfeto.Enumeration to 1.2.43.772
 - Dependencies - Updated Roslynator.Analyzers to 4.12.10
@@ -21,12 +29,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.BuildCheck to 474.0.22.923
 - Dependencies - Updated FunFair.Test.Common to 6.1.241.1032
 - Dependencies - Updated Serilog.Extensions.Logging to 9.0.0
-### Removed
-### Deployment Changes
 
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 ## [1.0.62] - 2024-12-04
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.40.746
