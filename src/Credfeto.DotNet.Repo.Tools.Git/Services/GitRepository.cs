@@ -127,7 +127,10 @@ internal sealed class GitRepository : IGitRepository
 
         if (target.StartsWith(value: prefix, comparisonType: StringComparison.Ordinal))
         {
-            return target[prefix.Length..];
+            string branch = target[prefix.Length..];
+            this._logger.DefaultBranchForUpstream(branch: branch, upstream: upstream);
+
+            return branch;
         }
 
         throw new GitException($"Failed to find HEAD branch for remote {upstream}");
@@ -189,8 +192,7 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            (string[] result, int exitCode) =
-                await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push --set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push --set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -537,8 +539,7 @@ internal sealed class GitRepository : IGitRepository
         try
         {
             this._logger.LogDeletingUpstreamBranch(branch: branch, upstream: upstream);
-            (string[] result, int exitCode) =
-                await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push {upstream} \":{branch}\"", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push {upstream} \":{branch}\"", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {

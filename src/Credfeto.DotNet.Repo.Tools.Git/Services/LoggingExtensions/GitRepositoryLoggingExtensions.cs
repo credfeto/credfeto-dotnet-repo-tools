@@ -24,4 +24,7 @@ internal static partial class GitRepositoryLoggingExtensions
 
     [LoggerMessage(EventId = 7, Level = LogLevel.Warning, Message = "{message}")]
     public static partial void LogGitMessage(this ILogger logger, string message);
+
+    [LoggerMessage(EventId = 8, Level = LogLevel.Information, Message = "Found default branch {branch} for upstream {upstream}...")]
+    public static partial void DefaultBranchForUpstream(this ILogger logger, string branch, string upstream);
 }
