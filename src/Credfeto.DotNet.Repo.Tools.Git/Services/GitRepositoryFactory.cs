@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Git.Helpers;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Git.Services.LoggingExtensions;
 using LibGit2Sharp;
 using Microsoft.Extensions.Logging;
 
@@ -12,8 +13,7 @@ namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 
 public sealed class GitRepositoryFactory : IGitRepositoryFactory
 {
-    private static readonly CloneOptions GitCloneOptions =
-        new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
+    private static readonly CloneOptions GitCloneOptions = new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
 
     private readonly IGitRepositoryLocator _locator;
     private readonly ILogger<GitRepositoryFactory> _logger;
@@ -35,6 +35,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
 
     private async ValueTask<IGitRepository> OpenRepoAsync(string repoUrl, string workingDirectory, CancellationToken cancellationToken)
     {
+        this._logger.OpeningRepo(repoUrl: repoUrl, repoPath: workingDirectory);
         IGitRepository? repo = null;
 
         try
@@ -58,6 +59,8 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
 
     private async ValueTask<IGitRepository> CloneRepositoryAsync(string workDir, string destinationPath, string repoUrl, CancellationToken cancellationToken)
     {
+        this._logger.CloningRepo(repoUrl: repoUrl, repoPath: destinationPath);
+
         string? path = IsHttps(repoUrl)
             ? Repository.Clone(sourceUrl: repoUrl, workdirPath: destinationPath, options: GitCloneOptions)
             : await CloneSshAsync(sourceUrl: repoUrl, workdirPath: workDir, destinationPath: destinationPath, cancellationToken: cancellationToken);
