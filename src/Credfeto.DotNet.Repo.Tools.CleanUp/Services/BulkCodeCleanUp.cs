@@ -246,12 +246,18 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                 }
             }
 
+            this._logger.CleaningFile(sourceFile);
+
             bool changed = await cleaner(sourceFile);
 
             if (!changed)
             {
+                this._logger.CleaningFileUnchanged(sourceFile);
+
                 continue;
             }
+
+            this._logger.CleaningFileDifferent(sourceFile);
 
             string sourceFileName = Path.GetFileName(sourceFile);
 

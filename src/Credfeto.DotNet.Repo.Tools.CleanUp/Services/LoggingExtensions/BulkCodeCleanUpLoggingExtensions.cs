@@ -82,4 +82,13 @@ internal static partial class BulkCodeCleanUpLoggingExtensions
 
     [LoggerMessage(EventId = 21, Level = LogLevel.Information, Message = "Project Cleanup Completed: {filename} Changes: {changes}")]
     public static partial void CompletingProjectCleaup(this ILogger<BulkCodeCleanUp> logger, string filename, int changes);
+
+    [LoggerMessage(EventId = 22, Level = LogLevel.Information, Message = "Cleaning: {filename}")]
+    public static partial void CleaningFile(this ILogger<BulkCodeCleanUp> logger, string filename);
+
+    [LoggerMessage(EventId = 23, Level = LogLevel.Information, Message = "Cleaning: {filename} (unchanged)")]
+    public static partial void CleaningFileUnchanged(this ILogger<BulkCodeCleanUp> logger, string filename);
+
+    [LoggerMessage(EventId = 24, Level = LogLevel.Information, Message = "Cleaning: {filename} (introduced changes)")]
+    public static partial void CleaningFileDifferent(this ILogger<BulkCodeCleanUp> logger, string filename);
 }
