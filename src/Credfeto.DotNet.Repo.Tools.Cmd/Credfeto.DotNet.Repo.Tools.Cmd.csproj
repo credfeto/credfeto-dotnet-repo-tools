@@ -91,7 +91,7 @@
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="codecracker.CSharp" Version="1.1.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Credfeto.Enumeration.Source.Generation" Version="1.2.43.772" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Credfeto.Version.Information.Generator" Version="1.0.28.176" PrivateAssets="All" ExcludeAssets="runtime" />
+    <PackageReference Include="Credfeto.Version.Information.Generator" Version="1.0.32.207" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="CSharpIsNullAnalyzer" Version="0.1.593" PrivateAssets="all" ExcludeAssets="runtime" />
     <PackageReference Include="FunFair.CodeAnalysis" Version="7.0.32.711" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Meziantou.Analyzer" Version="2.0.182" PrivateAssets="All" ExcludeAssets="runtime" />
@@ -99,7 +99,7 @@
     <PackageReference Include="Nullable.Extended.Analyzer" Version="1.15.6169" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Philips.CodeAnalysis.DuplicateCodeAnalyzer" Version="1.1.7" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Philips.CodeAnalysis.MaintainabilityAnalyzers" Version="1.5.0" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Roslynator.Analyzers" Version="4.12.9" PrivateAssets="All" ExcludeAssets="runtime" />
+    <PackageReference Include="Roslynator.Analyzers" Version="4.12.10" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="SecurityCodeScan.VS2019" Version="5.6.7" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="SmartAnalyzers.CSharpExtensions.Annotations" Version="4.2.11" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="SonarAnalyzer.CSharp" Version="10.3.0.106239" PrivateAssets="All" ExcludeAssets="runtime" />
