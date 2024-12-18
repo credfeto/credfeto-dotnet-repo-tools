@@ -24,12 +24,15 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
             return false;
         }
 
+        string before = projectDocument.InnerXml;
+
         MergeProprtiesOfMultipleGroups(propertyGroups: propertyGroups);
 
         ReOrderPropertyGroupWithAttributesOrComments(filename: filename, propertyGroups: propertyGroups);
 
-        // TODO: can this be optimised?
-        return true;
+        string after = projectDocument.InnerXml;
+
+        return !StringComparer.Ordinal.Equals(x: before, y: after);
     }
 
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
@@ -46,6 +49,8 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         {
             return false;
         }
+
+        string before = projectDocument.InnerXml;
 
         List<XmlElement> sourceGroups = [];
         Dictionary<string, XmlNode> projectReferences = new(StringComparer.OrdinalIgnoreCase);
@@ -124,8 +129,9 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
         RemoveNodes(sourceGroups);
 
-        // TODO: can this be optimised?
-        return true;
+        string after = projectDocument.InnerXml;
+
+        return !StringComparer.Ordinal.Equals(x: before, y: after);
     }
 
     private static void AppendReferences(XmlDocument projectDocument, Dictionary<string, XmlNode> source, XmlElement project)

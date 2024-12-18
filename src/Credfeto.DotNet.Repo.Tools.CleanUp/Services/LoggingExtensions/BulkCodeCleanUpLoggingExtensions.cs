@@ -76,4 +76,10 @@ internal static partial class BulkCodeCleanUpLoggingExtensions
     {
         logger.LogMissingSdk(sdkVersion.ToString(), string.Join(separator: ", ", values: installedSdks));
     }
+
+    [LoggerMessage(EventId = 20, Level = LogLevel.Information, Message = "Project Cleanup Starting: {filename}")]
+    public static partial void StartingProjectCleaup(this ILogger<BulkCodeCleanUp> logger, string filename);
+
+    [LoggerMessage(EventId = 21, Level = LogLevel.Information, Message = "Project Cleanup Completed: {filename} Changes: {changes}")]
+    public static partial void CompletingProjectCleaup(this ILogger<BulkCodeCleanUp> logger, string filename, int changes);
 }

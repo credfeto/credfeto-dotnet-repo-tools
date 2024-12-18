@@ -334,6 +334,8 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
     private bool ProjectCleanup(XmlDocument project, string projectFile)
     {
+        this._logger.StartingProjectCleaup(projectFile);
+
         int changes = 0;
 
         if (this._projectXmlRewriter.ReOrderPropertyGroups(projectDocument: project, filename: projectFile))
@@ -345,6 +347,8 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         {
             ++changes;
         }
+
+        this._logger.CompletingProjectCleaup(filename: projectFile, changes: changes);
 
         return changes != 0;
     }
