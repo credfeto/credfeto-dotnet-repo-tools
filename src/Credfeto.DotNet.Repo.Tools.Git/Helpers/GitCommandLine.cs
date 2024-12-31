@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,8 +8,10 @@ namespace Credfeto.DotNet.Repo.Tools.Git.Helpers;
 
 internal static class GitCommandLine
 {
-    public static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(string repoPath, string arguments, CancellationToken cancellationToken)
+    public static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(string clonePath, string repoPath, string arguments, CancellationToken cancellationToken)
     {
+        EnsureNotLocked(repoUrl: clonePath, workingDirectory: repoPath);
+
         ProcessStartInfo psi = new()
                                {
                                    FileName = "git",
@@ -42,6 +45,16 @@ internal static class GitCommandLine
             string result = string.Join(separator: Environment.NewLine, output, error);
 
             return (result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries), process.ExitCode);
+        }
+    }
+
+    public static void EnsureNotLocked(string repoUrl, string workingDirectory)
+    {
+        string lockFile = Path.Combine(path1: workingDirectory, path2: ".git", path3: "lock.json");
+
+        if (File.Exists(lockFile))
+        {
+            throw new GitRepositoryLockedException($"Repository {repoUrl} at {workingDirectory} is locked.");
         }
     }
 }

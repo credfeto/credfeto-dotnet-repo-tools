@@ -88,7 +88,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
 
     private static async ValueTask<string?> CloneSshAsync(string sourceUrl, string workdirPath, string destinationPath, CancellationToken cancellationToken)
     {
-        await GitCommandLine.ExecAsync(repoPath: workdirPath, $"clone --recurse-submodules {sourceUrl} {destinationPath}", cancellationToken: cancellationToken);
+        await GitCommandLine.ExecAsync(clonePath: sourceUrl, repoPath: workdirPath, $"clone --recurse-submodules {sourceUrl} {destinationPath}", cancellationToken: cancellationToken);
 
         return destinationPath;
     }

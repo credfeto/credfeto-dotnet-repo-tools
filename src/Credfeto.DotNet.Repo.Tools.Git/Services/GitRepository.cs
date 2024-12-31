@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,7 +46,7 @@ internal sealed class GitRepository : IGitRepository
 
     public async ValueTask ResetToMasterAsync(string upstream, CancellationToken cancellationToken)
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         string defaultBranch = this.GetDefaultBranch(upstream: upstream);
 
@@ -84,7 +83,7 @@ internal sealed class GitRepository : IGitRepository
 
     public void RemoveAllLocalBranches()
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         Repository repo = this.Active;
         string headCanonicalName = repo.Head.CanonicalName;
@@ -108,11 +107,11 @@ internal sealed class GitRepository : IGitRepository
 
     public async ValueTask CommitAsync(string message, CancellationToken cancellationToken)
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         try
         {
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "add -A", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, arguments: "add -A", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -129,7 +128,7 @@ internal sealed class GitRepository : IGitRepository
 
     public string GetDefaultBranch(string upstream)
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         Repository repo = this.Active;
         Branch headBranch = repo.Branches.FirstOrDefault(IsHeadBranch) ?? throw new GitException($"Failed to find remote branches for {upstream}");
@@ -154,7 +153,7 @@ internal sealed class GitRepository : IGitRepository
 
     public bool HasUncommittedChanges()
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         return this.Active.RetrieveStatus()
                    .IsDirty;
@@ -162,13 +161,13 @@ internal sealed class GitRepository : IGitRepository
 
     public async ValueTask CommitNamedAsync(string message, IReadOnlyList<string> files, CancellationToken cancellationToken)
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         try
         {
             foreach (string file in files)
             {
-                (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"add {file}", cancellationToken: cancellationToken);
+                (string[] result, int exitCode) = await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, $"add {file}", cancellationToken: cancellationToken);
 
                 if (exitCode != 0)
                 {
@@ -186,11 +185,11 @@ internal sealed class GitRepository : IGitRepository
 
     public async ValueTask PushAsync(CancellationToken cancellationToken)
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         try
         {
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "push", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, arguments: "push", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -207,11 +206,14 @@ internal sealed class GitRepository : IGitRepository
 
     public async ValueTask PushOriginAsync(string branchName, string upstream, CancellationToken cancellationToken)
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         try
         {
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push --set-upstream {upstream} {branchName} -v", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(clonePath: this.ClonePath,
+                                                                             repoPath: this.WorkingDirectory,
+                                                                             $"push --set-upstream {upstream} {branchName} -v",
+                                                                             cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -228,7 +230,7 @@ internal sealed class GitRepository : IGitRepository
 
     public bool DoesBranchExist(string branchName)
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         return this.Active.Branches.Any(Match);
 
@@ -240,11 +242,12 @@ internal sealed class GitRepository : IGitRepository
 
     public async ValueTask CreateBranchAsync(string branchName, CancellationToken cancellationToken)
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         try
         {
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"checkout -b {branchName}", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) =
+                await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, $"checkout -b {branchName}", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -260,7 +263,7 @@ internal sealed class GitRepository : IGitRepository
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Debug logging")]
     public async ValueTask RemoveBranchesForPrefixAsync(string branchForUpdate, string branchPrefix, string upstream, CancellationToken cancellationToken)
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         Repository repo = this.Active;
         string headCanonicalName = repo.Head.CanonicalName;
@@ -336,14 +339,14 @@ internal sealed class GitRepository : IGitRepository
 
     public DateTimeOffset GetLastCommitDate()
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         return this.Active.Head.Tip.Author.When;
     }
 
     public IReadOnlyCollection<string> GetRemoteBranches(string upstream)
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         const string prefix = "refs/heads/";
 
@@ -360,23 +363,14 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
-    private void EnsureNotLocked()
-    {
-        string lockFile = Path.Combine(path1: this.WorkingDirectory, path2: ".git", path3: "lock.json");
-
-        if (File.Exists(lockFile))
-        {
-            throw new GitRepositoryLockedException($"Repository {this.ClonePath} at {this.WorkingDirectory} is locked.");
-        }
-    }
-
     private async Task ResetUpstreamHardAsync(string upstream, string branch, CancellationToken cancellationToken)
     {
         string branchName = BuildUpstreamBranch(upstream: upstream, branch: branch);
 
         try
         {
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"reset {branchName} --hard", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) =
+                await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, $"reset {branchName} --hard", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -393,7 +387,8 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "reset HEAD --hard", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) =
+                await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, arguments: "reset HEAD --hard", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -435,11 +430,12 @@ internal sealed class GitRepository : IGitRepository
 
     public async ValueTask CheckoutAsync(string branchName, CancellationToken cancellationToken)
     {
-        this.EnsureNotLocked();
+        this.ResetActiveRepoLink();
 
         try
         {
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"checkout {branchName}", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) =
+                await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, $"checkout {branchName}", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -474,7 +470,7 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "prune", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, arguments: "prune", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -491,7 +487,8 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, arguments: "clean -f -x -d", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) =
+                await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, arguments: "clean -f -x -d", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -508,8 +505,10 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            (string[] result, int exitCode) =
-                await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"fetch --prune --recurse-submodules {remote.Name}", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(clonePath: this.ClonePath,
+                                                                             repoPath: this.WorkingDirectory,
+                                                                             $"fetch --prune --recurse-submodules {remote.Name}",
+                                                                             cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -524,7 +523,7 @@ internal sealed class GitRepository : IGitRepository
 
     private async ValueTask CommitWithMessageAsync(string message, CancellationToken cancellationToken)
     {
-        (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"commit -m \"{message}\"", cancellationToken: cancellationToken);
+        (string[] result, int exitCode) = await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, $"commit -m \"{message}\"", cancellationToken: cancellationToken);
 
         if (exitCode != 0)
         {
@@ -580,7 +579,8 @@ internal sealed class GitRepository : IGitRepository
         try
         {
             this._logger.LogDeletingUpstreamBranch(branch: branch, upstream: upstream);
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"push {upstream} \":{branch}\"", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) =
+                await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, $"push {upstream} \":{branch}\"", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -611,7 +611,7 @@ internal sealed class GitRepository : IGitRepository
         try
         {
             this._logger.LogDeletingLocalBranch(branch);
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(repoPath: this.WorkingDirectory, $"branch -D {branch}", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, $"branch -D {branch}", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
