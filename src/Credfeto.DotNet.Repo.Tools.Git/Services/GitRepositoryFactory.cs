@@ -37,6 +37,8 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
                 return this.OpenRepoAsync(repoUrl: repoUrl, workingDirectory: workingDirectory, cancellationToken: cancellationToken);
             }
 
+            this._logger.DestroyingAndReCloning(repoUrl: repoUrl, repoPath: workingDirectory);
+
             // clear repo before cloning - no idea what the state is going to be at this point
             Directory.Delete(path: workingDirectory, recursive: true);
         }

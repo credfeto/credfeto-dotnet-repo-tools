@@ -51,6 +51,8 @@ internal sealed class GitRepository : IGitRepository
 
         string defaultBranch = this.GetDefaultBranch(upstream: upstream);
 
+        this.ResetActiveRepoLink();
+
         await this.FetchRemoteAsync(upstream: upstream, cancellationToken: cancellationToken);
 
         await this.ResetHeadHardAsync(cancellationToken);

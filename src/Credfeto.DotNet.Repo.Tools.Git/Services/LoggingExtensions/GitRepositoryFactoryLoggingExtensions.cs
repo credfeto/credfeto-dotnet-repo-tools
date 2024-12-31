@@ -9,4 +9,7 @@ internal static partial class GitRepositoryFactoryLoggingExtensions
 
     [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Cloning {repoUrl} into {repoPath}")]
     public static partial void CloningRepo(this ILogger<GitRepositoryFactory> logger, string repoUrl, string repoPath);
+
+    [LoggerMessage(EventId = 3, Level = LogLevel.Warning, Message = "Destroying clone of {repoUrl} and re-cloning into {repoPath} as respository is locked")]
+    public static partial void DestroyingAndReCloning(this ILogger<GitRepositoryFactory> logger, string repoUrl, string repoPath);
 }
