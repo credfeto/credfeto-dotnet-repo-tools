@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 
 namespace Credfeto.DotNet.Repo.Tools.Git.Helpers;
 
