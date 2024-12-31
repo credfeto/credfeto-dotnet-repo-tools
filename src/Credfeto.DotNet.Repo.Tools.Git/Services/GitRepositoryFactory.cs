@@ -28,9 +28,20 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
     {
         string workingDirectory = this._locator.GetWorkingDirectory(workDir: workDir, repoUrl: repoUrl);
 
-        return Directory.Exists(workingDirectory)
-            ? this.OpenRepoAsync(repoUrl: repoUrl, workingDirectory: workingDirectory, cancellationToken: cancellationToken)
-            : this.CloneRepositoryAsync(workDir: workDir, destinationPath: workingDirectory, repoUrl: repoUrl, cancellationToken: cancellationToken);
+        if (Directory.Exists(workingDirectory))
+        {
+            string lockFile = Path.Combine(path1: workingDirectory, path2: ".git", path3: "lock.json");
+
+            if (!File.Exists(lockFile))
+            {
+                return this.OpenRepoAsync(repoUrl: repoUrl, workingDirectory: workingDirectory, cancellationToken: cancellationToken);
+            }
+
+            // clear repo before cloning - no idea what the state is going to be at this point
+            Directory.Delete(path: workingDirectory, recursive: true);
+        }
+
+        return this.CloneRepositoryAsync(workDir: workDir, destinationPath: workingDirectory, repoUrl: repoUrl, cancellationToken: cancellationToken);
     }
 
     private async ValueTask<IGitRepository> OpenRepoAsync(string repoUrl, string workingDirectory, CancellationToken cancellationToken)

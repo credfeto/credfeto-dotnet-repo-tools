@@ -9,6 +9,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+- If repo is locked when trying to open then destroy it and re-clone it
 ### Removed
 ### Deployment Changes
 
