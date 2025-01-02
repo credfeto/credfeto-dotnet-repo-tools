@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
+- Excluded gennerated source
 ### Changed
 - Dependencies - Updated Credfeto.Date to 1.1.53.725
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.57.595

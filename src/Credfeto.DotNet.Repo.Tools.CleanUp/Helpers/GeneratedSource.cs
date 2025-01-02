@@ -7,7 +7,12 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Helpers;
 
 internal static class GeneratedSource
 {
-    private static readonly IReadOnlyList<string> Markers = [Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, ".generated."];
+    private static readonly IReadOnlyList<string> Markers =
+    [
+        Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar,
+        Path.DirectorySeparatorChar + "generated" + Path.DirectorySeparatorChar,
+        ".generated."
+    ];
 
     public static bool IsNonGenerated(string filename)
     {

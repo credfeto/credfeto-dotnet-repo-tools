@@ -313,8 +313,13 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         return
         [
             ..Directory.GetFiles(path: sourceDirectory, searchPattern: "*.cs", searchOption: SearchOption.AllDirectories)
-                       .Where(GeneratedSource.IsNonGenerated)
+                       .Where(IsNonGenerated)
         ];
+
+        bool IsNonGenerated(string filename)
+        {
+            return GeneratedSource.IsNonGenerated(filename.Substring(sourceDirectory.Length));
+        }
     }
 
     private async ValueTask ReOrderProjectFilesAsync(RepoContext repoContext, string sourceDirectory, IReadOnlyList<string> projects, BuildSettings buildSettings, CancellationToken cancellationToken)
