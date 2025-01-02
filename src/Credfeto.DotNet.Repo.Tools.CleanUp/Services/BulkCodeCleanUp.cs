@@ -321,9 +321,9 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         }
     }
 
-    private static bool IsGenerated(in ReadOnlySpan<char> fn)
+    private static bool IsGenerated(in ReadOnlySpan<char> filename)
     {
-        return fn.Contains(value: "/obj", comparisonType: StringComparison.Ordinal) || fn.Contains(value: ".generated.", comparisonType: StringComparison.Ordinal);
+        return filename.Contains(value: "/obj/", comparisonType: StringComparison.Ordinal) || filename.Contains(value: ".generated.", comparisonType: StringComparison.Ordinal);
     }
 
     private async ValueTask ReOrderProjectFilesAsync(RepoContext repoContext, string sourceDirectory, IReadOnlyList<string> projects, BuildSettings buildSettings, CancellationToken cancellationToken)
