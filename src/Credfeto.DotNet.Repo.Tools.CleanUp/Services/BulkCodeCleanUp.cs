@@ -281,7 +281,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
     private async ValueTask RemoveXmlDocCommentsAsync(RepoContext repoContext, string sourceDirectory, BuildSettings buildSettings, CancellationToken cancellationToken)
     {
-        IReadOnlyList<string> sourceFiles = Directory.GetFiles(path: sourceDirectory, searchPattern: "*.cs", searchOption: SearchOption.AllDirectories);
+        IReadOnlyList<string> sourceFiles = SourceFilesExcludingGenerated(sourceDirectory);
 
         await this.FileCleanupAsync(repoContext: repoContext,
                                     sourceDirectory: sourceDirectory,
@@ -305,6 +305,25 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
             return true;
         }
+    }
+
+    private static IReadOnlyList<string> SourceFilesExcludingGenerated(string sourceDirectory)
+    {
+        return
+        [
+            ..Directory.GetFiles(path: sourceDirectory, searchPattern: "*.cs", searchOption: SearchOption.AllDirectories)
+                       .Where(IsNonGenerated)
+        ];
+
+        bool IsNonGenerated(string filename)
+        {
+            return IsGenerated(filename.AsSpan(filename.Length));
+        }
+    }
+
+    private static bool IsGenerated(in ReadOnlySpan<char> fn)
+    {
+        return fn.Contains(value: "/obj", comparisonType: StringComparison.Ordinal) || fn.Contains(value: ".generated.", comparisonType: StringComparison.Ordinal);
     }
 
     private async ValueTask ReOrderProjectFilesAsync(RepoContext repoContext, string sourceDirectory, IReadOnlyList<string> projects, BuildSettings buildSettings, CancellationToken cancellationToken)
