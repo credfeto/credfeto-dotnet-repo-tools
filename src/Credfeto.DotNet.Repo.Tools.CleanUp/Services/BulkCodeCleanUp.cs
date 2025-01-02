@@ -9,6 +9,7 @@ using System.Xml;
 using Credfeto.ChangeLog;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
+using Credfeto.DotNet.Repo.Tools.CleanUp.Helpers;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
@@ -312,18 +313,8 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         return
         [
             ..Directory.GetFiles(path: sourceDirectory, searchPattern: "*.cs", searchOption: SearchOption.AllDirectories)
-                       .Where(IsNonGenerated)
+                       .Where(GeneratedSource.IsNonGenerated)
         ];
-
-        bool IsNonGenerated(string filename)
-        {
-            return IsGenerated(filename.AsSpan(filename.Length));
-        }
-    }
-
-    private static bool IsGenerated(in ReadOnlySpan<char> filename)
-    {
-        return filename.Contains(value: "/obj/", comparisonType: StringComparison.Ordinal) || filename.Contains(value: ".generated.", comparisonType: StringComparison.Ordinal);
     }
 
     private async ValueTask ReOrderProjectFilesAsync(RepoContext repoContext, string sourceDirectory, IReadOnlyList<string> projects, BuildSettings buildSettings, CancellationToken cancellationToken)
