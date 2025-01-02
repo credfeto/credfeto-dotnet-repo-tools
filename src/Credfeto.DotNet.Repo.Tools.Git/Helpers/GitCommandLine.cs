@@ -51,7 +51,7 @@ internal static class GitCommandLine
 
     public static void EnsureNotLocked(string repoUrl, string workingDirectory)
     {
-        string lockFile = Path.Combine(path1: workingDirectory, path2: ".git", path3: "lock.json");
+        string lockFile = Path.Combine(path1: workingDirectory, path2: ".git", path3: "index.lock");
 
         if (File.Exists(lockFile))
         {
