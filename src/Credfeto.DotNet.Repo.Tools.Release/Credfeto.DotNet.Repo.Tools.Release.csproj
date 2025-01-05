@@ -69,7 +69,7 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.63.721" />
+    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.64.723" />
     <PackageReference Include="Credfeto.Date.Interfaces" Version="1.1.56.735" />
     <PackageReference Include="FunFair.BuildVersion.Detection" Version="6.2.15.250" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.0" />
