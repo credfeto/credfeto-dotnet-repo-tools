@@ -9,6 +9,14 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.0.84] - 2025-01-08
+### Changed
 - Dependencies - Updated Credfeto.Date to 1.1.59.744
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.63.614
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.40.246
@@ -17,12 +25,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Enumeration to 1.2.52.820
 - Dependencies - Updated Meziantou.Analyzer to 2.0.185
 - Dependencies - Updated xunit to 2.9.3
-### Removed
-### Deployment Changes
 
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 ## [1.0.82] - 2025-01-07
 ### Changed
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.68.734
