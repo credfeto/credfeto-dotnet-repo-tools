@@ -9,7 +9,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Credfeto.Date to 1.1.60.748
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.41.250
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.64.618
 - Dependencies - Updated Credfeto.Enumeration to 1.2.53.824
@@ -18,6 +17,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Meziantou.Analyzer to 2.0.186
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.5.0.109200
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.73.752
+- Dependencies - Updated Credfeto.Date to 1.1.61.756
 ### Removed
 ### Deployment Changes
 
