@@ -10,6 +10,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated Credfeto.Package to 1.10.115.1150
+- Dependencies - Updated Roslynator.Analyzers to 4.12.11
 ### Removed
 ### Deployment Changes
 
