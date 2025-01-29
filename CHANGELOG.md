@@ -9,14 +9,17 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Credfeto.Package to 1.10.115.1150
-- Dependencies - Updated Roslynator.Analyzers to 4.12.11
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.0.102] - 2025-01-29
+### Changed
+- Dependencies - Updated Credfeto.Package to 1.10.115.1150
+- Dependencies - Updated Roslynator.Analyzers to 4.12.11
+
 ## [1.0.101] - 2025-01-28
 ### Changed
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.84.819
