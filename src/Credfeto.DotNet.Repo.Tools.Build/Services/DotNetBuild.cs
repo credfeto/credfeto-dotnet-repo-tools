@@ -182,14 +182,14 @@ public sealed class DotNetBuild : IDotNetBuild
         {
             this._logger.LogPublishingNoFramework();
             await this.ExecRequireCleanAsync(basePath: basePath,
-                                             $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {noWarn}",
+                                             $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained -p:CSharpier_Check:true -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {noWarn}",
                                              cancellationToken: cancellationToken);
         }
         else
         {
             this._logger.LogPublishingWithFramework(framework);
             await this.ExecRequireCleanAsync(basePath: basePath,
-                                             $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --framework:{framework} --self-contained -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {noWarn}",
+                                             $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --framework:{framework} --self-contained -p:CSharpier_Check:true -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {noWarn}",
                                              cancellationToken: cancellationToken);
         }
     }
@@ -227,7 +227,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
         this._logger.LogPacking();
 
-        return this.ExecRequireCleanAsync(basePath: basePath, $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {noWarn}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(basePath: basePath, $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} -p:CSharpier_Check:true  {noWarn}", cancellationToken: cancellationToken);
     }
 
     private ValueTask DotNetTestAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
@@ -237,7 +237,7 @@ public sealed class DotNetBuild : IDotNetBuild
         this._logger.LogTesting();
 
         return this.ExecRequireCleanAsync(basePath: basePath,
-                                          $"test --no-build --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} --filter FullyQualifiedName\\!~Integration {noWarn}",
+                                          $"test --no-build --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} -p:CSharpier_Check:true --filter FullyQualifiedName\\!~Integration {noWarn}",
                                           cancellationToken: cancellationToken);
     }
 
@@ -248,7 +248,7 @@ public sealed class DotNetBuild : IDotNetBuild
         this._logger.LogBuilding();
 
         return this.ExecRequireCleanAsync(basePath: basePath,
-                                          $"build --no-restore -warnAsError -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} {noWarn}",
+                                          $"build --no-restore -warnAsError -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} -p:CSharpier_Check:true {noWarn}",
                                           cancellationToken: cancellationToken);
     }
 
