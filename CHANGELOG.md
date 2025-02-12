@@ -17,6 +17,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated xunit.runner.visualstudio to 3.0.2
 - Dependencies - Updated Credfeto.Package to 1.10.120.1183
 - Dependencies - Updated FunFair.Test.Common to 6.1.257.1137
+- SDK - Updated DotNet SDK to 9.0.200
 ### Removed
 ### Deployment Changes
 
