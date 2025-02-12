@@ -12,4 +12,5 @@ public readonly record struct PackageUpdateContext(
     string TrackingFileName,
     IReadOnlyList<string> AdditionalSources,
     DotNetVersionSettings DotNetSettings,
-    ReleaseConfig ReleaseConfig);
+    ReleaseConfig ReleaseConfig
+);

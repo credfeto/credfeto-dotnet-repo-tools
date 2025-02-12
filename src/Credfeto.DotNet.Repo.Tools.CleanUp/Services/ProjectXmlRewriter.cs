@@ -66,8 +66,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
                 continue;
             }
 
-            if (itemGroup.ChildNodes.OfType<XmlNode>()
-                         .Any(IsComment))
+            if (itemGroup.ChildNodes.OfType<XmlNode>().Any(IsComment))
             {
                 Log($"SKIPPING GROUP AS Found Comment : {filename}");
 
@@ -143,7 +142,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
         XmlElement itemGroup = projectDocument.CreateElement("ItemGroup");
 
-        foreach ((string _, XmlNode node)in source.OrderBy(keySelector: x => x.Key, comparer: StringComparer.OrdinalIgnoreCase))
+        foreach ((string _, XmlNode node) in source.OrderBy(keySelector: x => x.Key, comparer: StringComparer.OrdinalIgnoreCase))
         {
             itemGroup.AppendChild(node);
         }
@@ -164,11 +163,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
     private static void MergeProprtiesOfMultipleGroups(XmlNodeList propertyGroups)
     {
-        IReadOnlyList<XmlElement> combinablePropertyGroups =
-        [
-            ..propertyGroups.OfType<XmlElement>()
-                            .Where(IsCombinableGroup)
-        ];
+        IReadOnlyList<XmlElement> combinablePropertyGroups = [.. propertyGroups.OfType<XmlElement>().Where(IsCombinableGroup)];
 
         XmlElement? targetPropertyGroup = combinablePropertyGroups.FirstOrDefault();
 
@@ -245,11 +240,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
     private static void ReOrderPropertyGroupWithAttributesOrComments(string filename, XmlNodeList propertyGroups)
     {
-        IReadOnlyList<XmlElement> nonCombinablePropertyGroups =
-        [
-            ..propertyGroups.OfType<XmlElement>()
-                            .Where(ph => !IsCombinableGroup(ph))
-        ];
+        IReadOnlyList<XmlElement> nonCombinablePropertyGroups = [.. propertyGroups.OfType<XmlElement>().Where(ph => !IsCombinableGroup(ph))];
 
         foreach (XmlElement propertyGroup in nonCombinablePropertyGroups)
         {
@@ -263,8 +254,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
             XmlNodeList children = propertyGroup.ChildNodes;
 
-            if (children.OfType<XmlNode>()
-                        .Any(IsComment))
+            if (children.OfType<XmlNode>().Any(IsComment))
             {
                 Log(message: $"{filename} SKIPPING GROUP AS Found Comment");
 

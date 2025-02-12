@@ -32,10 +32,6 @@ public sealed class GitRepositoryLocator : IGitRepositoryLocator
 
     private static string[] SplitToFolders(string work)
     {
-        return
-        [
-            ..work.Split(separator: '/', options: StringSplitOptions.RemoveEmptyEntries)
-                  .SelectMany(item => item.Split(separator: ':', options: StringSplitOptions.RemoveEmptyEntries))
-        ];
+        return [.. work.Split(separator: '/', options: StringSplitOptions.RemoveEmptyEntries).SelectMany(item => item.Split(separator: ':', options: StringSplitOptions.RemoveEmptyEntries))];
     }
 }

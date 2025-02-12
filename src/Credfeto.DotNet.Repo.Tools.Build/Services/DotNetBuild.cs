@@ -22,22 +22,19 @@ public sealed class DotNetBuild : IDotNetBuild
     [
         // MSB3243 - two assemblies of the same name, but different version
         // NU1802 - restoring from HTTP source
-        "NU1802"
+        "NU1802",
     ];
 
     private static readonly IReadOnlyList<string> NoWarnPreRelease =
     [
         // NU1901 - Package with low severity detected
         "NU1901",
-
         // NU1902 -Package with moderate severity detected
         "NU1902",
-
         // NU1903 - Package with high severity detected
         "NU1903",
-
         // NU1904 - Package with critical severity detected
-        "NU1904"
+        "NU1904",
     ];
 
     private readonly ILogger<DotNetBuild> _logger;
@@ -110,8 +107,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
         packable |= IsPackable(doc: doc, outputType: outputTypeNode.InnerText);
 
-        string? candidateFramework = GetTargetFrameworks(doc: doc, outputType: outputTypeNode.InnerText)
-            .MaxBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase);
+        string? candidateFramework = GetTargetFrameworks(doc: doc, outputType: outputTypeNode.InnerText).MaxBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase);
 
         if (candidateFramework is not null)
         {
@@ -181,16 +177,20 @@ public sealed class DotNetBuild : IDotNetBuild
         if (string.IsNullOrWhiteSpace(framework))
         {
             this._logger.LogPublishingNoFramework();
-            await this.ExecRequireCleanAsync(basePath: basePath,
-                                             $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained -p:CSharpier_Check:true -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {noWarn}",
-                                             cancellationToken: cancellationToken);
+            await this.ExecRequireCleanAsync(
+                basePath: basePath,
+                $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained -p:CSharpier_Check:true -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {noWarn}",
+                cancellationToken: cancellationToken
+            );
         }
         else
         {
             this._logger.LogPublishingWithFramework(framework);
-            await this.ExecRequireCleanAsync(basePath: basePath,
-                                             $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --framework:{framework} --self-contained -p:CSharpier_Check:true -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {noWarn}",
-                                             cancellationToken: cancellationToken);
+            await this.ExecRequireCleanAsync(
+                basePath: basePath,
+                $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --framework:{framework} --self-contained -p:CSharpier_Check:true -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {noWarn}",
+                cancellationToken: cancellationToken
+            );
         }
     }
 
@@ -198,10 +198,7 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         if (buildOverride.PreRelease)
         {
-            return Build([
-                .. NoWarnPreRelease.Concat(NoWarnAll)
-                                   .Distinct(StringComparer.Ordinal)
-            ]);
+            return Build([.. NoWarnPreRelease.Concat(NoWarnAll).Distinct(StringComparer.Ordinal)]);
         }
 
         return Build(NoWarnAll);
@@ -213,9 +210,7 @@ public sealed class DotNetBuild : IDotNetBuild
                 return string.Empty;
             }
 
-            string quotedPropertyEscape = OperatingSystem.IsLinux()
-                ? "'"
-                : "\\";
+            string quotedPropertyEscape = OperatingSystem.IsLinux() ? "'" : "\\";
 
             return $"-nowarn:{quotedPropertyEscape}\"{string.Join(separator: ';', items.Order(comparer: StringComparer.Ordinal))}{quotedPropertyEscape}\"";
         }
@@ -227,7 +222,11 @@ public sealed class DotNetBuild : IDotNetBuild
 
         this._logger.LogPacking();
 
-        return this.ExecRequireCleanAsync(basePath: basePath, $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} -p:CSharpier_Check:true  {noWarn}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(
+            basePath: basePath,
+            $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} -p:CSharpier_Check:true  {noWarn}",
+            cancellationToken: cancellationToken
+        );
     }
 
     private ValueTask DotNetTestAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
@@ -236,9 +235,11 @@ public sealed class DotNetBuild : IDotNetBuild
 
         this._logger.LogTesting();
 
-        return this.ExecRequireCleanAsync(basePath: basePath,
-                                          $"test --no-build --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} -p:CSharpier_Check:true --filter FullyQualifiedName\\!~Integration {noWarn}",
-                                          cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(
+            basePath: basePath,
+            $"test --no-build --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} -p:CSharpier_Check:true --filter FullyQualifiedName\\!~Integration {noWarn}",
+            cancellationToken: cancellationToken
+        );
     }
 
     private ValueTask DotNetBuildAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
@@ -247,9 +248,11 @@ public sealed class DotNetBuild : IDotNetBuild
 
         this._logger.LogBuilding();
 
-        return this.ExecRequireCleanAsync(basePath: basePath,
-                                          $"build --no-restore -warnAsError -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} -p:CSharpier_Check:true {noWarn}",
-                                          cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(
+            basePath: basePath,
+            $"build --no-restore -warnAsError -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} -p:CSharpier_Check:true {noWarn}",
+            cancellationToken: cancellationToken
+        );
     }
 
     private ValueTask DotNetRestoreAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
@@ -305,24 +308,24 @@ public sealed class DotNetBuild : IDotNetBuild
     private static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(string basePath, string arguments, CancellationToken cancellationToken)
     {
         ProcessStartInfo psi = new()
-                               {
-                                   FileName = "dotnet",
-                                   WorkingDirectory = basePath,
-                                   Arguments = arguments,
-                                   RedirectStandardOutput = true,
-                                   RedirectStandardError = true,
-                                   UseShellExecute = false,
-                                   CreateNoWindow = true,
-                                   Environment =
-                                   {
-                                       ["DOTNET_NOLOGO"] = "true",
-                                       ["DOTNET_PRINT_TELEMETRY_MESSAGE"] = "0",
-                                       ["DOTNET_ReadyToRun"] = "0",
-                                       ["DOTNET_TC_QuickJitForLoops"] = "1",
-                                       ["DOTNET_TieredPGO"] = "1",
-                                       ["MSBUILDTERMINALLOGGER"] = "false"
-                                   }
-                               };
+        {
+            FileName = "dotnet",
+            WorkingDirectory = basePath,
+            Arguments = arguments,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            Environment =
+            {
+                ["DOTNET_NOLOGO"] = "true",
+                ["DOTNET_PRINT_TELEMETRY_MESSAGE"] = "0",
+                ["DOTNET_ReadyToRun"] = "0",
+                ["DOTNET_TC_QuickJitForLoops"] = "1",
+                ["DOTNET_TieredPGO"] = "1",
+                ["MSBUILDTERMINALLOGGER"] = "false",
+            },
+        };
 
         using (Process? process = Process.Start(psi))
         {

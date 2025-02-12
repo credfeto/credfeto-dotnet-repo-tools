@@ -123,55 +123,55 @@ public sealed class ReleaseConfigLoaderTests : TestBase
     private void MockConfig()
     {
         const string releaseConfigJson = """
-                                         {
-                                             "settings": {
-                                                 "autoReleasePendingPackages": 1,
-                                                 "minimumHoursBeforeAutoRelease": 4,
-                                                 "inactivityHoursBeforeAutoRelease": 8
-                                             },
-                                             "neverRelease": [
-                                                 {
-                                                     "repo": "template",
-                                                     "match": "contains",
-                                                     "include": true
-                                                 },
-                                                 {
-                                                     "repo": "git@github.com:example/never-release.git",
-                                                     "match": "exact",
-                                                     "include": true
-                                                 }
-                                             ],
-                                             "allowedAutoUpgrade": [
-                                                 {
-                                                     "repo": "template",
-                                                     "match": "contains",
-                                                     "include": false
-                                                 },
-                                                 {
-                                                     "repo": "credfeto",
-                                                     "match": "contains",
-                                                     "include": true
-                                                 }
-                                             ],
-                                             "alwaysMatch": [
-                                                 {
-                                                     "repo": "git@github.com:example/always-match.git",
-                                                     "match": "exact",
-                                                     "include": false
-                                                 },
-                                                 {
-                                                     "repo": "code-analysis",
-                                                     "match": "contains",
-                                                     "include": true
-                                                 },
-                                                 {
-                                                     "repo": "credfeto",
-                                                     "match": "contains",
-                                                     "include": true
-                                                 }
-                                             ]
-                                         }
-                                         """;
+            {
+                "settings": {
+                    "autoReleasePendingPackages": 1,
+                    "minimumHoursBeforeAutoRelease": 4,
+                    "inactivityHoursBeforeAutoRelease": 8
+                },
+                "neverRelease": [
+                    {
+                        "repo": "template",
+                        "match": "contains",
+                        "include": true
+                    },
+                    {
+                        "repo": "git@github.com:example/never-release.git",
+                        "match": "exact",
+                        "include": true
+                    }
+                ],
+                "allowedAutoUpgrade": [
+                    {
+                        "repo": "template",
+                        "match": "contains",
+                        "include": false
+                    },
+                    {
+                        "repo": "credfeto",
+                        "match": "contains",
+                        "include": true
+                    }
+                ],
+                "alwaysMatch": [
+                    {
+                        "repo": "git@github.com:example/always-match.git",
+                        "match": "exact",
+                        "include": false
+                    },
+                    {
+                        "repo": "code-analysis",
+                        "match": "contains",
+                        "include": true
+                    },
+                    {
+                        "repo": "credfeto",
+                        "match": "contains",
+                        "include": true
+                    }
+                ]
+            }
+            """;
 
         this._httpClientFactory.MockCreateClientWithResponse(nameof(ReleaseConfigLoader), httpStatusCode: HttpStatusCode.OK, responseMessage: releaseConfigJson);
     }

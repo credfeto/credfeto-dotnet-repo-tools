@@ -8,10 +8,12 @@ namespace Credfeto.DotNet.Repo.Tools.Release.Models;
 internal sealed class ReleaseConfiguration
 {
     [JsonConstructor]
-    public ReleaseConfiguration(ReleaseConfigSettings settings,
-                                IReadOnlyList<RepoConfigMatch> neverRelease,
-                                IReadOnlyList<RepoConfigMatch> allowedAutoUpgrade,
-                                IReadOnlyList<RepoConfigMatch> alwaysMatch)
+    public ReleaseConfiguration(
+        ReleaseConfigSettings settings,
+        IReadOnlyList<RepoConfigMatch> neverRelease,
+        IReadOnlyList<RepoConfigMatch> allowedAutoUpgrade,
+        IReadOnlyList<RepoConfigMatch> alwaysMatch
+    )
     {
         this.Settings = settings;
         this.NeverRelease = neverRelease;

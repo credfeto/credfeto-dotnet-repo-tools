@@ -18,20 +18,22 @@ public static class GitSetup
 
     public static IServiceCollection AddGit(this IServiceCollection services)
     {
-        return services.AddSingleton<IGitRepositoryListLoader, GitRepositoryListLoader>()
-                       .AddSingleton<IGitRepositoryFactory, GitRepositoryFactory>()
-                       .AddSingleton<IGitRepositoryLocator, GitRepositoryLocator>()
-                       .AddRepositoryListLoaderHttpClient();
+        return services
+            .AddSingleton<IGitRepositoryListLoader, GitRepositoryListLoader>()
+            .AddSingleton<IGitRepositoryFactory, GitRepositoryFactory>()
+            .AddSingleton<IGitRepositoryLocator, GitRepositoryLocator>()
+            .AddRepositoryListLoaderHttpClient();
     }
 
     private static IServiceCollection AddRepositoryListLoaderHttpClient(this IServiceCollection services)
     {
-        return services.AddHttpClient(nameof(GitRepositoryListLoader), configureClient: ConfigureClient)
-                       .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                       .ConfigurePrimaryHttpMessageHandler(configureHandler: CreateHandler)
-                       .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(ClientPolicyTimeout))
-                       .AddTransientHttpErrorPolicy(x => x.WaitAndRetryAsync(retryCount: RETRY_COUNT, sleepDurationProvider: _ => SleepDuration))
-                       .Services;
+        return services
+            .AddHttpClient(nameof(GitRepositoryListLoader), configureClient: ConfigureClient)
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+            .ConfigurePrimaryHttpMessageHandler(configureHandler: CreateHandler)
+            .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(ClientPolicyTimeout))
+            .AddTransientHttpErrorPolicy(x => x.WaitAndRetryAsync(retryCount: RETRY_COUNT, sleepDurationProvider: _ => SleepDuration))
+            .Services;
     }
 
     private static HttpClientHandler CreateHandler(IServiceProvider serviceProvider)

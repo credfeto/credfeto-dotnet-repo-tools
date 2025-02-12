@@ -19,17 +19,18 @@ internal static class ApplicationSetup
 {
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
-        return services.AddDate()
-                       .AddGit()
-                       .AddPackageUpdater()
-                       .AddTracking()
-                       .AddDotNet()
-                       .AddBuild()
-                       .AddBuildVersionDetection(new BranchSettings(releaseSuffix: null, package: null))
-                       .AddReleaseGeneration()
-                       .AddBulkPackageUpdater()
-                       .AddCleanUp()
-                       .AddTemplateUpdate()
-                       .AddSingleton<IServiceProviderFactory, ServiceProviderFactory>();
+        return services
+            .AddDate()
+            .AddGit()
+            .AddPackageUpdater()
+            .AddTracking()
+            .AddDotNet()
+            .AddBuild()
+            .AddBuildVersionDetection(new BranchSettings(releaseSuffix: null, package: null))
+            .AddReleaseGeneration()
+            .AddBulkPackageUpdater()
+            .AddCleanUp()
+            .AddTemplateUpdate()
+            .AddSingleton<IServiceProviderFactory, ServiceProviderFactory>();
     }
 }

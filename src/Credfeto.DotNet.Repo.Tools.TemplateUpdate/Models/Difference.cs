@@ -6,5 +6,5 @@ public enum Difference
     SOURCE_MISSING,
     TARGET_MISSING,
     TARGET_NEWER,
-    DIFFERENT
+    DIFFERENT,
 }

@@ -10,14 +10,16 @@ namespace Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 
 public interface IReleaseGeneration
 {
-    ValueTask TryCreateNextPatchAsync(RepoContext repoContext,
-                                      string basePath,
-                                      BuildSettings buildSettings,
-                                      DotNetVersionSettings dotNetSettings,
-                                      IReadOnlyList<string> solutions,
-                                      IReadOnlyList<PackageUpdate> packages,
-                                      ReleaseConfig releaseConfig,
-                                      CancellationToken cancellationToken);
+    ValueTask TryCreateNextPatchAsync(
+        RepoContext repoContext,
+        string basePath,
+        BuildSettings buildSettings,
+        DotNetVersionSettings dotNetSettings,
+        IReadOnlyList<string> solutions,
+        IReadOnlyList<PackageUpdate> packages,
+        ReleaseConfig releaseConfig,
+        CancellationToken cancellationToken
+    );
 
     ValueTask CreateAsync(RepoContext repoContext, CancellationToken cancellationToken);
 }

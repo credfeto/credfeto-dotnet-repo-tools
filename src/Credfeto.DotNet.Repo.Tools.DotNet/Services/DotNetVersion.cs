@@ -21,12 +21,7 @@ public sealed class DotNetVersion : IDotNetVersion
             return CouldNotListInstalledSdks();
         }
 
-        return
-        [
-            ..output.Select(ExtractVersion)
-                    .RemoveNulls()
-                    .OrderDescending()
-        ];
+        return [.. output.Select(ExtractVersion).RemoveNulls().OrderDescending()];
     }
 
     [DoesNotReturn]
@@ -44,31 +39,29 @@ public sealed class DotNetVersion : IDotNetVersion
             return null;
         }
 
-        return Version.TryParse(parts[0], out Version? version)
-            ? version
-            : null;
+        return Version.TryParse(parts[0], out Version? version) ? version : null;
     }
 
     private static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(string arguments, CancellationToken cancellationToken)
     {
         ProcessStartInfo psi = new()
-                               {
-                                   FileName = "dotnet",
-                                   Arguments = arguments,
-                                   RedirectStandardOutput = true,
-                                   RedirectStandardError = true,
-                                   UseShellExecute = false,
-                                   CreateNoWindow = true,
-                                   Environment =
-                                   {
-                                       ["DOTNET_NOLOGO"] = "true",
-                                       ["DOTNET_PRINT_TELEMETRY_MESSAGE"] = "0",
-                                       ["DOTNET_ReadyToRun"] = "0",
-                                       ["DOTNET_TC_QuickJitForLoops"] = "1",
-                                       ["DOTNET_TieredPGO"] = "1",
-                                       ["MSBUILDTERMINALLOGGER"] = "false"
-                                   }
-                               };
+        {
+            FileName = "dotnet",
+            Arguments = arguments,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            Environment =
+            {
+                ["DOTNET_NOLOGO"] = "true",
+                ["DOTNET_PRINT_TELEMETRY_MESSAGE"] = "0",
+                ["DOTNET_ReadyToRun"] = "0",
+                ["DOTNET_TC_QuickJitForLoops"] = "1",
+                ["DOTNET_TieredPGO"] = "1",
+                ["MSBUILDTERMINALLOGGER"] = "false",
+            },
+        };
 
         using (Process? process = Process.Start(psi))
         {

@@ -21,11 +21,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 
     public ValueTask<string> BuildDependabotConfigAsync(RepoContext repoContext, string templateFolder, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
-        List<string> config =
-        [
-            "version: 2",
-            "updates:"
-        ];
+        List<string> config = ["version: 2", "updates:"];
 
         if (repoContext.HasSubModules())
         {
@@ -81,43 +77,40 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 
         // Add packages to ignore
         config.Add("  ignore:");
-        config.AddRange(packages.Select(package => package.ExactMatch
-                                            ? $"  - dependency-name: \"{package.PackageId}\""
-                                            : $"  - dependency-name: \"{package.PackageId}.*\""));
+        config.AddRange(packages.Select(package => package.ExactMatch ? $"  - dependency-name: \"{package.PackageId}\"" : $"  - dependency-name: \"{package.PackageId}.*\""));
     }
 
     private static void AllowAllDependencies(List<string> config)
     {
         // allow all packages
-        config.AddRange([
-            "  allow:",
-            "  - dependency-type: all"
-        ]);
+        config.AddRange(["  allow:", "  - dependency-type: all"]);
     }
 
     private void AddBaseConfig(List<string> config, string ecoSystem, string directory, string packageTypeLabel, string reviewer)
     {
         this._logger.LogAddingConfigForEcosystem(ecoSystem: ecoSystem, directory: directory);
 
-        config.AddRange([
-            "",
-            $"- package-ecosystem: {ecoSystem}",
-            $"  directory: \"{directory}\"",
-            "  schedule:",
-            "    interval: daily",
-            "    time: \"03:00\"",
-            "    timezone: \"Europe/London\"",
-            "  open-pull-requests-limit: 99",
-            "  reviewers:",
-            $"  - {reviewer}",
-            "  assignees:",
-            $"  - {reviewer}",
-            "  commit-message:",
-            "    prefix: \"[Dependencies]\"",
-            "  labels:",
-            $"  - \"{packageTypeLabel}\"",
-            "  - \"dependencies\"",
-            "  - \"Changelog Not Required\""
-        ]);
+        config.AddRange(
+            [
+                "",
+                $"- package-ecosystem: {ecoSystem}",
+                $"  directory: \"{directory}\"",
+                "  schedule:",
+                "    interval: daily",
+                "    time: \"03:00\"",
+                "    timezone: \"Europe/London\"",
+                "  open-pull-requests-limit: 99",
+                "  reviewers:",
+                $"  - {reviewer}",
+                "  assignees:",
+                $"  - {reviewer}",
+                "  commit-message:",
+                "    prefix: \"[Dependencies]\"",
+                "  labels:",
+                $"  - \"{packageTypeLabel}\"",
+                "  - \"dependencies\"",
+                "  - \"Changelog Not Required\"",
+            ]
+        );
     }
 }

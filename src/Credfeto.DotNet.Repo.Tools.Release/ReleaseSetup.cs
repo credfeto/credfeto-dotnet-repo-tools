@@ -18,19 +18,18 @@ public static class ReleaseSetup
 
     public static IServiceCollection AddReleaseGeneration(this IServiceCollection services)
     {
-        return services.AddSingleton<IReleaseConfigLoader, ReleaseConfigLoader>()
-                       .AddSingleton<IReleaseGeneration, ReleaseGeneration>()
-                       .AddReleaseConfigLoaderLoaderHttpClient();
+        return services.AddSingleton<IReleaseConfigLoader, ReleaseConfigLoader>().AddSingleton<IReleaseGeneration, ReleaseGeneration>().AddReleaseConfigLoaderLoaderHttpClient();
     }
 
     private static IServiceCollection AddReleaseConfigLoaderLoaderHttpClient(this IServiceCollection services)
     {
-        return services.AddHttpClient(nameof(ReleaseConfigLoader), configureClient: ConfigureClient)
-                       .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                       .ConfigurePrimaryHttpMessageHandler(configureHandler: CreateHandler)
-                       .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(ClientPolicyTimeout))
-                       .AddTransientHttpErrorPolicy(x => x.WaitAndRetryAsync(retryCount: RETRY_COUNT, sleepDurationProvider: _ => SleepDuration))
-                       .Services;
+        return services
+            .AddHttpClient(nameof(ReleaseConfigLoader), configureClient: ConfigureClient)
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+            .ConfigurePrimaryHttpMessageHandler(configureHandler: CreateHandler)
+            .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(ClientPolicyTimeout))
+            .AddTransientHttpErrorPolicy(x => x.WaitAndRetryAsync(retryCount: RETRY_COUNT, sleepDurationProvider: _ => SleepDuration))
+            .Services;
     }
 
     private static HttpClientHandler CreateHandler(IServiceProvider serviceProvider)
