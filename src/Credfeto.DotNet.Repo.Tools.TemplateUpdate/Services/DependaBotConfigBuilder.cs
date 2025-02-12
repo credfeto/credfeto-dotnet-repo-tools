@@ -77,7 +77,52 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 
         // Add packages to ignore
         config.Add("  ignore:");
-        config.AddRange(packages.Select(package => package.ExactMatch ? $"  - dependency-name: \"{package.PackageId}\"" : $"  - dependency-name: \"{package.PackageId}.*\""));
+
+        IReadOnlyList<PackageUpdate> packagesToAdd = [.. DetermineMinimalDotnetPackages(packages).OrderBy(p => p.PackageId, StringComparer.OrdinalIgnoreCase)];
+
+        config.AddRange(packagesToAdd.Select(package => package.ExactMatch ? $"  - dependency-name: \"{package.PackageId}\"" : $"  - dependency-name: \"{package.PackageId}.*\""));
+    }
+
+    private static IEnumerable<PackageUpdate> DetermineMinimalDotnetPackages(IReadOnlyList<PackageUpdate> packages)
+    {
+        // Add Wildcard packages
+        List<string> wildcardPackages = [];
+        foreach (PackageUpdate package in packages.Where(package => !package.ExactMatch).OrderBy(package => package.PackageId.Length))
+        {
+            if (wildcardPackages.Exists(candidate => IsWildcardMatch(package: package, wildcardPackage: candidate)))
+            {
+                continue;
+            }
+
+            wildcardPackages.Add(package.PackageId);
+
+            yield return package;
+        }
+
+        // Add exact match packages
+        HashSet<string> exactPackages = new(StringComparer.OrdinalIgnoreCase);
+        foreach (PackageUpdate package in packages.Where(package => package.ExactMatch).OrderBy(package => package.PackageId.Length))
+        {
+            if (wildcardPackages.Exists(candidate => IsWildcardMatch(package: package, wildcardPackage: candidate)))
+            {
+                // Excluded by a wildcard
+                continue;
+            }
+
+            if (!exactPackages.Add(package.PackageId))
+            {
+                // Excluded as already added
+                continue;
+            }
+
+            yield return package;
+        }
+    }
+
+    private static bool IsWildcardMatch(PackageUpdate package, string wildcardPackage)
+    {
+        return StringComparer.OrdinalIgnoreCase.Equals(x: package.PackageId, y: wildcardPackage)
+            || package.PackageId.StartsWith(wildcardPackage + ".", comparisonType: StringComparison.OrdinalIgnoreCase);
     }
 
     private static void AllowAllDependencies(List<string> config)

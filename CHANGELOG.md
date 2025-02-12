@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
+- Dependabot package ignore list so it doesn't generate duplicates
 ### Changed
 ### Removed
 ### Deployment Changes
