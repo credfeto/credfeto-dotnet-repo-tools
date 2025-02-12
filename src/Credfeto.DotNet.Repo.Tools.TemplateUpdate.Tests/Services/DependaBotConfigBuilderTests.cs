@@ -5,7 +5,7 @@ using Xunit.Abstractions;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests.Services;
 
-public abstract class DependaBotConfigBuilderTests : LoggingTestBase
+public sealed class DependaBotConfigBuilderTests : LoggingTestBase
 {
     private readonly IDependaBotConfigBuilder _dependaBotConfigBuilder;
 
