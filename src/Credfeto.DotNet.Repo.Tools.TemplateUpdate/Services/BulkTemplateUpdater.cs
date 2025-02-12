@@ -338,6 +338,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         return
         [
             fileContext.MakeFile(fileName: ".editorconfig", prefix: "Config"),
+            fileContext.MakeFile(fileName: ".csharpier", prefix: "Config"),
             fileContext.MakeFile(fileName: ".gitleaks.toml", prefix: "Config"),
             fileContext.MakeFile(fileName: ".gitignore", prefix: "Config"),
             fileContext.MakeFile(fileName: ".gitattributes", prefix: "Config"),
