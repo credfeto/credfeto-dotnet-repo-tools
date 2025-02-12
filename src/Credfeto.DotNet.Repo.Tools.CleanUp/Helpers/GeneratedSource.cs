@@ -11,7 +11,7 @@ internal static class GeneratedSource
     [
         Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar,
         Path.DirectorySeparatorChar + "generated" + Path.DirectorySeparatorChar,
-        ".generated."
+        ".generated.",
     ];
 
     public static bool IsNonGenerated(string filename)

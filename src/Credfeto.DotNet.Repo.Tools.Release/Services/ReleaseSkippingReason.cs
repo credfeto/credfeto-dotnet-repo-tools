@@ -29,5 +29,5 @@ internal enum ReleaseSkippingReason
     FAILED_RELEASE_CHECK,
 
     [Description("DOES NOT BUILD")]
-    DOES_NOT_BUILD
+    DOES_NOT_BUILD,
 }

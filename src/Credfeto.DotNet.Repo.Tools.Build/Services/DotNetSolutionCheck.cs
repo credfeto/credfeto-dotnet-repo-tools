@@ -28,10 +28,12 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         this._logger = logger;
     }
 
-    public async ValueTask PreCheckAsync(IReadOnlyList<string> solutions,
-                                         DotNetVersionSettings repositoryDotNetSettings,
-                                         DotNetVersionSettings templateDotNetSettings,
-                                         CancellationToken cancellationToken)
+    public async ValueTask PreCheckAsync(
+        IReadOnlyList<string> solutions,
+        DotNetVersionSettings repositoryDotNetSettings,
+        DotNetVersionSettings templateDotNetSettings,
+        CancellationToken cancellationToken
+    )
     {
         IFrameworkSettings frameworkSettings = DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
 
@@ -39,14 +41,16 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
 
         foreach (string solution in solutions)
         {
-            int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                                                      warningsAsErrors: true,
-                                                      frameworkSettings: frameworkSettings,
-                                                      projectClassifier: ProjectClassifier,
-                                                      checkConfiguration: PreReleaseCheckConfiguration,
-                                                      buildServiceProvider: this._serviceProviderFactory.Build,
-                                                      logger: this._logger,
-                                                      cancellationToken: cancellationToken);
+            int errors = await CheckRunner.CheckAsync(
+                solutionFileName: solution,
+                warningsAsErrors: true,
+                frameworkSettings: frameworkSettings,
+                projectClassifier: ProjectClassifier,
+                checkConfiguration: PreReleaseCheckConfiguration,
+                buildServiceProvider: this._serviceProviderFactory.Build,
+                logger: this._logger,
+                cancellationToken: cancellationToken
+            );
 
             if (errors != 0)
             {
@@ -67,14 +71,16 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
 
         foreach (string solution in solutions)
         {
-            int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                                                      warningsAsErrors: true,
-                                                      frameworkSettings: frameworkSettings,
-                                                      projectClassifier: ProjectClassifier,
-                                                      checkConfiguration: ReleaseCheckConfiguration,
-                                                      buildServiceProvider: this._serviceProviderFactory.Build,
-                                                      logger: this._logger,
-                                                      cancellationToken: cancellationToken);
+            int errors = await CheckRunner.CheckAsync(
+                solutionFileName: solution,
+                warningsAsErrors: true,
+                frameworkSettings: frameworkSettings,
+                projectClassifier: ProjectClassifier,
+                checkConfiguration: ReleaseCheckConfiguration,
+                buildServiceProvider: this._serviceProviderFactory.Build,
+                logger: this._logger,
+                cancellationToken: cancellationToken
+            );
 
             if (errors != 0)
             {
@@ -88,10 +94,12 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         }
     }
 
-    public async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions,
-                                                DotNetVersionSettings repositoryDotNetSettings,
-                                                DotNetVersionSettings templateDotNetSettings,
-                                                CancellationToken cancellationToken)
+    public async ValueTask<bool> PostCheckAsync(
+        IReadOnlyList<string> solutions,
+        DotNetVersionSettings repositoryDotNetSettings,
+        DotNetVersionSettings templateDotNetSettings,
+        CancellationToken cancellationToken
+    )
     {
         IFrameworkSettings frameworkSettings = DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
 
@@ -99,14 +107,16 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
 
         foreach (string solution in solutions)
         {
-            int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                                                      warningsAsErrors: true,
-                                                      frameworkSettings: frameworkSettings,
-                                                      projectClassifier: ProjectClassifier,
-                                                      checkConfiguration: PreReleaseCheckConfiguration,
-                                                      buildServiceProvider: this._serviceProviderFactory.Build,
-                                                      logger: this._logger,
-                                                      cancellationToken: cancellationToken);
+            int errors = await CheckRunner.CheckAsync(
+                solutionFileName: solution,
+                warningsAsErrors: true,
+                frameworkSettings: frameworkSettings,
+                projectClassifier: ProjectClassifier,
+                checkConfiguration: PreReleaseCheckConfiguration,
+                buildServiceProvider: this._serviceProviderFactory.Build,
+                logger: this._logger,
+                cancellationToken: cancellationToken
+            );
 
             if (errors != 0)
             {

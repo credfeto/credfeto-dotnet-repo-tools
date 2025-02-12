@@ -8,7 +8,6 @@ public static class BuildSetup
 {
     public static IServiceCollection AddBuild(this IServiceCollection services)
     {
-        return services.AddSingleton<IDotNetSolutionCheck, DotNetSolutionCheck>()
-                       .AddSingleton<IDotNetBuild, DotNetBuild>();
+        return services.AddSingleton<IDotNetSolutionCheck, DotNetSolutionCheck>().AddSingleton<IDotNetBuild, DotNetBuild>();
     }
 }

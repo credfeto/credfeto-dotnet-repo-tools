@@ -38,10 +38,11 @@ public sealed class GitRepositoryListLoader : IGitRepositoryListLoader
 
     private static IEnumerable<string> SplitText(string result)
     {
-        return result.Split(separator: "\r\n", options: StringSplitOptions.RemoveEmptyEntries)
-                     .SelectMany(r => r.Split(separator: "\n\r", options: StringSplitOptions.RemoveEmptyEntries))
-                     .SelectMany(r => r.Split(separator: "\n", options: StringSplitOptions.RemoveEmptyEntries))
-                     .SelectMany(r => r.Split(separator: "\r", options: StringSplitOptions.RemoveEmptyEntries));
+        return result
+            .Split(separator: "\r\n", options: StringSplitOptions.RemoveEmptyEntries)
+            .SelectMany(r => r.Split(separator: "\n\r", options: StringSplitOptions.RemoveEmptyEntries))
+            .SelectMany(r => r.Split(separator: "\n", options: StringSplitOptions.RemoveEmptyEntries))
+            .SelectMany(r => r.Split(separator: "\r", options: StringSplitOptions.RemoveEmptyEntries));
     }
 
     private static bool IsHttp(Uri uri)
@@ -58,10 +59,6 @@ public sealed class GitRepositoryListLoader : IGitRepositoryListLoader
 
     private static IReadOnlyList<string> GetRepos(IEnumerable<string> lines)
     {
-        return
-        [
-            ..lines.Where(l => !string.IsNullOrWhiteSpace(l))
-                   .Select(l => l.Trim())
-        ];
+        return [.. lines.Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l.Trim())];
     }
 }

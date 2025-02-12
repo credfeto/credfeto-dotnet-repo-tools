@@ -7,11 +7,13 @@ namespace Credfeto.DotNet.Repo.Tools.Packages;
 
 public static class TrackingCacheExtensions
 {
-    public static async ValueTask UpdateTrackingAsync(this ITrackingCache trackingCache,
-                                                      RepoContext repoContext,
-                                                      PackageUpdateContext updateContext,
-                                                      string? value,
-                                                      CancellationToken cancellationToken)
+    public static async ValueTask UpdateTrackingAsync(
+        this ITrackingCache trackingCache,
+        RepoContext repoContext,
+        PackageUpdateContext updateContext,
+        string? value,
+        CancellationToken cancellationToken
+    )
     {
         trackingCache.Set(repoUrl: repoContext.ClonePath, value: value);
 

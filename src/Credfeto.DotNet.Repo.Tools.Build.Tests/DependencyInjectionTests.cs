@@ -9,9 +9,7 @@ namespace Credfeto.DotNet.Repo.Tools.Build.Tests;
 public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 {
     public DependencyInjectionTests(ITestOutputHelper output)
-        : base(output: output, dependencyInjectionRegistration: Configure)
-    {
-    }
+        : base(output: output, dependencyInjectionRegistration: Configure) { }
 
     [Fact]
     public void DotNetBuildMustBeRegistered()
@@ -27,7 +25,6 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 
     private static IServiceCollection Configure(IServiceCollection services)
     {
-        return services.AddMockedService<IServiceProviderFactory>()
-                       .AddBuild();
+        return services.AddMockedService<IServiceProviderFactory>().AddBuild();
     }
 }

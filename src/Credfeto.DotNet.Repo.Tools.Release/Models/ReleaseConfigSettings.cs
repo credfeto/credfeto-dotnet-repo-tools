@@ -4,7 +4,8 @@ using System.Text.Json.Serialization;
 namespace Credfeto.DotNet.Repo.Tools.Release.Models;
 
 [DebuggerDisplay(
-    "AutoReleasePendingPackages: {AutoReleasePendingPackages}, MinimumHoursBeforeAutoRelease: {MinimumHoursBeforeAutoRelease}, InactivityHoursBeforeAutoRelease: {InactivityHoursBeforeAutoRelease}")]
+    "AutoReleasePendingPackages: {AutoReleasePendingPackages}, MinimumHoursBeforeAutoRelease: {MinimumHoursBeforeAutoRelease}, InactivityHoursBeforeAutoRelease: {InactivityHoursBeforeAutoRelease}"
+)]
 internal sealed class ReleaseConfigSettings
 {
     [JsonConstructor]

@@ -8,8 +8,6 @@ public readonly record struct RepoMatch(string Repo, MatchType MatchType, bool I
 {
     public bool IsMatch(string repo)
     {
-        return this.MatchType == MatchType.EXACT
-            ? StringComparer.OrdinalIgnoreCase.Equals(x: repo, y: this.Repo)
-            : repo.Contains(value: this.Repo, comparisonType: StringComparison.OrdinalIgnoreCase);
+        return this.MatchType == MatchType.EXACT ? StringComparer.OrdinalIgnoreCase.Equals(x: repo, y: this.Repo) : repo.Contains(value: this.Repo, comparisonType: StringComparison.OrdinalIgnoreCase);
     }
 }

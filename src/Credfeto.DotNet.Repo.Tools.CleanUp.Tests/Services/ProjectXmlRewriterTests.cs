@@ -70,13 +70,13 @@ public sealed partial class ProjectXmlRewriterTests : LoggingTestBase
     private static async ValueTask<string> SaveDocAsync(XmlDocument doc)
     {
         XmlWriterSettings settings = new()
-                                     {
-                                         Indent = true,
-                                         IndentChars = "  ",
-                                         NewLineOnAttributes = false,
-                                         OmitXmlDeclaration = true,
-                                         Async = true
-                                     };
+        {
+            Indent = true,
+            IndentChars = "  ",
+            NewLineOnAttributes = false,
+            OmitXmlDeclaration = true,
+            Async = true,
+        };
 
         StringWriter sw = new();
 

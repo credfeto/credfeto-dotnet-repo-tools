@@ -5,7 +5,8 @@ using System.Runtime.InteropServices;
 namespace Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 
 [DebuggerDisplay(
-    "AutoReleasePendingPackages: {AutoReleasePendingPackages}, MinimumHoursBeforeAutoRelease: {MinimumHoursBeforeAutoRelease}, InactivityHoursBeforeAutoRelease: {InactivityHoursBeforeAutoRelease}")]
+    "AutoReleasePendingPackages: {AutoReleasePendingPackages}, MinimumHoursBeforeAutoRelease: {MinimumHoursBeforeAutoRelease}, InactivityHoursBeforeAutoRelease: {InactivityHoursBeforeAutoRelease}"
+)]
 [StructLayout(LayoutKind.Auto)]
 public readonly record struct ReleaseConfig(
     int AutoReleasePendingPackages,
@@ -13,4 +14,5 @@ public readonly record struct ReleaseConfig(
     double InactivityHoursBeforeAutoRelease,
     IReadOnlyList<RepoMatch> NeverRelease,
     IReadOnlyList<RepoMatch> AllowedAutoUpgrade,
-    IReadOnlyList<RepoMatch> AlwaysMatch);
+    IReadOnlyList<RepoMatch> AlwaysMatch
+);

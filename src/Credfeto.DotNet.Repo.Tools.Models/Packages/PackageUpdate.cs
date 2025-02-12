@@ -8,12 +8,7 @@ namespace Credfeto.DotNet.Repo.Tools.Models.Packages;
 public sealed class PackageUpdate
 {
     [JsonConstructor]
-    public PackageUpdate(string packageId,
-                         string packageType,
-                         bool exactMatch,
-                         bool versionBumpPackage,
-                         bool prohibitVersionBumpWhenReferenced,
-                         IReadOnlyList<PackageExclude>? exclude)
+    public PackageUpdate(string packageId, string packageType, bool exactMatch, bool versionBumpPackage, bool prohibitVersionBumpWhenReferenced, IReadOnlyList<PackageExclude>? exclude)
     {
         this.PackageId = packageId;
         this.PackageType = packageType;

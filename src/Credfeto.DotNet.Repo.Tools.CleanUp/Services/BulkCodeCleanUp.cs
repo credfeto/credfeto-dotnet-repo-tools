@@ -35,15 +35,17 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
     private readonly IXmlDocCommentRemover _xmlDocCommentRemover;
 
-    public BulkCodeCleanUp(ITrackingCache trackingCache,
-                           IGitRepositoryFactory gitRepositoryFactory,
-                           IGlobalJson globalJson,
-                           IDotNetVersion dotNetVersion,
-                           IReleaseConfigLoader releaseConfigLoader,
-                           IProjectXmlRewriter projectXmlRewriter,
-                           IXmlDocCommentRemover xmlDocCommentRemover,
-                           IDotNetBuild dotNetBuild,
-                           ILogger<BulkCodeCleanUp> logger)
+    public BulkCodeCleanUp(
+        ITrackingCache trackingCache,
+        IGitRepositoryFactory gitRepositoryFactory,
+        IGlobalJson globalJson,
+        IDotNetVersion dotNetVersion,
+        IReleaseConfigLoader releaseConfigLoader,
+        IProjectXmlRewriter projectXmlRewriter,
+        IXmlDocCommentRemover xmlDocCommentRemover,
+        IDotNetBuild dotNetBuild,
+        ILogger<BulkCodeCleanUp> logger
+    )
     {
         this._trackingCache = trackingCache;
         this._gitRepositoryFactory = gitRepositoryFactory;
@@ -108,23 +110,27 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
      *
      *  Return true
      */
-    public async ValueTask BulkUpdateAsync(string templateRepository,
-                                           string trackingFileName,
-                                           string packagesFileName,
-                                           string workFolder,
-                                           string releaseConfigFileName,
-                                           IReadOnlyList<string> repositories,
-                                           CancellationToken cancellationToken)
+    public async ValueTask BulkUpdateAsync(
+        string templateRepository,
+        string trackingFileName,
+        string packagesFileName,
+        string workFolder,
+        string releaseConfigFileName,
+        IReadOnlyList<string> repositories,
+        CancellationToken cancellationToken
+    )
     {
         await this.LoadTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
 
         using (IGitRepository templateRepo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
-            CleanupUpdateContext updateContext = await this.BuildUpdateContextAsync(templateRepo: templateRepo,
-                                                                                    workFolder: workFolder,
-                                                                                    trackingFileName: trackingFileName,
-                                                                                    releaseConfigFileName: releaseConfigFileName,
-                                                                                    cancellationToken: cancellationToken);
+            CleanupUpdateContext updateContext = await this.BuildUpdateContextAsync(
+                templateRepo: templateRepo,
+                workFolder: workFolder,
+                trackingFileName: trackingFileName,
+                releaseConfigFileName: releaseConfigFileName,
+                cancellationToken: cancellationToken
+            );
 
             try
             {
@@ -180,10 +186,12 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
             {
                 this._logger.LogNoChangelogFound();
-                await this._trackingCache.UpdateTrackingAsync(new(Repository: repository, ChangeLogFileName: "?"),
-                                                              updateContext: updateContext,
-                                                              value: repository.HeadRev,
-                                                              cancellationToken: cancellationToken);
+                await this._trackingCache.UpdateTrackingAsync(
+                    new(Repository: repository, ChangeLogFileName: "?"),
+                    updateContext: updateContext,
+                    value: repository.HeadRev,
+                    cancellationToken: cancellationToken
+                );
 
                 return;
             }
@@ -212,12 +220,14 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask FileCleanupAsync(RepoContext repoContext,
-                                             string sourceDirectory,
-                                             BuildSettings buildSettings,
-                                             IReadOnlyList<string> sourceFiles,
-                                             Func<string, ValueTask<bool>> cleaner,
-                                             CancellationToken cancellationToken)
+    private async ValueTask FileCleanupAsync(
+        RepoContext repoContext,
+        string sourceDirectory,
+        BuildSettings buildSettings,
+        IReadOnlyList<string> sourceFiles,
+        Func<string, ValueTask<bool>> cleaner,
+        CancellationToken cancellationToken
+    )
     {
         if (sourceFiles is [])
         {
@@ -284,12 +294,14 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     {
         IReadOnlyList<string> sourceFiles = SourceFilesExcludingGenerated(sourceDirectory);
 
-        await this.FileCleanupAsync(repoContext: repoContext,
-                                    sourceDirectory: sourceDirectory,
-                                    buildSettings: buildSettings,
-                                    sourceFiles: sourceFiles,
-                                    cleaner: DoCleanupAsync,
-                                    cancellationToken: cancellationToken);
+        await this.FileCleanupAsync(
+            repoContext: repoContext,
+            sourceDirectory: sourceDirectory,
+            buildSettings: buildSettings,
+            sourceFiles: sourceFiles,
+            cleaner: DoCleanupAsync,
+            cancellationToken: cancellationToken
+        );
 
         async ValueTask<bool> DoCleanupAsync(string fileName)
         {
@@ -310,11 +322,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
     private static IReadOnlyList<string> SourceFilesExcludingGenerated(string sourceDirectory)
     {
-        return
-        [
-            ..Directory.GetFiles(path: sourceDirectory, searchPattern: "*.cs", searchOption: SearchOption.AllDirectories)
-                       .Where(IsNonGenerated)
-        ];
+        return [.. Directory.GetFiles(path: sourceDirectory, searchPattern: "*.cs", searchOption: SearchOption.AllDirectories).Where(IsNonGenerated)];
 
         bool IsNonGenerated(string filename)
         {
@@ -329,12 +337,14 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             return;
         }
 
-        await this.FileCleanupAsync(repoContext: repoContext,
-                                    sourceDirectory: sourceDirectory,
-                                    buildSettings: buildSettings,
-                                    sourceFiles: projects,
-                                    cleaner: DoCleanupAsync,
-                                    cancellationToken: cancellationToken);
+        await this.FileCleanupAsync(
+            repoContext: repoContext,
+            sourceDirectory: sourceDirectory,
+            buildSettings: buildSettings,
+            sourceFiles: projects,
+            cleaner: DoCleanupAsync,
+            cancellationToken: cancellationToken
+        );
 
         async ValueTask<bool> DoCleanupAsync(string project)
         {
@@ -379,13 +389,13 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     private static async ValueTask SaveProjectAsync(string project, XmlDocument doc)
     {
         XmlWriterSettings settings = new()
-                                     {
-                                         Indent = true,
-                                         IndentChars = "  ",
-                                         NewLineOnAttributes = false,
-                                         OmitXmlDeclaration = true,
-                                         Async = true
-                                     };
+        {
+            Indent = true,
+            IndentChars = "  ",
+            NewLineOnAttributes = false,
+            OmitXmlDeclaration = true,
+            Async = true,
+        };
 
         await using (XmlWriter xmlWriter = XmlWriter.Create(outputFileName: project, settings: settings))
         {
@@ -409,11 +419,13 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         return File.ReadAllTextAsync(path: path, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask<CleanupUpdateContext> BuildUpdateContextAsync(IGitRepository templateRepo,
-                                                                          string workFolder,
-                                                                          string trackingFileName,
-                                                                          string releaseConfigFileName,
-                                                                          CancellationToken cancellationToken)
+    private async ValueTask<CleanupUpdateContext> BuildUpdateContextAsync(
+        IGitRepository templateRepo,
+        string workFolder,
+        string trackingFileName,
+        string releaseConfigFileName,
+        CancellationToken cancellationToken
+    )
     {
         DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.WorkingDirectory, cancellationToken: cancellationToken);
 
@@ -451,8 +463,6 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
     private ValueTask SaveTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)
     {
-        return string.IsNullOrWhiteSpace(trackingFile)
-            ? ValueTask.CompletedTask
-            : this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
+        return string.IsNullOrWhiteSpace(trackingFile) ? ValueTask.CompletedTask : this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
     }
 }

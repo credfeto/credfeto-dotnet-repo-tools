@@ -26,8 +26,6 @@ public static class ReleaseConfigExtensions
 
     private static bool MatchesPolicy(this IReadOnlyList<RepoMatch> grouping, string repoClonePath, bool policy)
     {
-        return grouping.Where(match => match.IsMatch(repoClonePath))
-                       .Select(match => match.Include)
-                       .FirstOrDefault(policy);
+        return grouping.Where(match => match.IsMatch(repoClonePath)).Select(match => match.Include).FirstOrDefault(policy);
     }
 }

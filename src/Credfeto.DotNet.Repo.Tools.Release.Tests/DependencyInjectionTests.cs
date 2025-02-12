@@ -13,18 +13,17 @@ namespace Credfeto.DotNet.Repo.Tools.Release.Tests;
 public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 {
     public DependencyInjectionTests(ITestOutputHelper output)
-        : base(output: output, dependencyInjectionRegistration: Configure)
-    {
-    }
+        : base(output: output, dependencyInjectionRegistration: Configure) { }
 
     private static IServiceCollection Configure(IServiceCollection services)
     {
-        return services.AddMockedService<ICurrentTimeSource>()
-                       .AddMockedService<IDotNetBuild>()
-                       .AddMockedService<IDotNetSolutionCheck>()
-                       .AddMockedService<ITrackingCache>()
-                       .AddMockedService<IVersionDetector>()
-                       .AddReleaseGeneration();
+        return services
+            .AddMockedService<ICurrentTimeSource>()
+            .AddMockedService<IDotNetBuild>()
+            .AddMockedService<IDotNetSolutionCheck>()
+            .AddMockedService<ITrackingCache>()
+            .AddMockedService<IVersionDetector>()
+            .AddReleaseGeneration();
     }
 
     [Fact]

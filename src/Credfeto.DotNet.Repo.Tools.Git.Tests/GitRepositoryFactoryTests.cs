@@ -20,8 +20,7 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
         : base(output)
     {
         IGitRepositoryLocator gitRepositoryLocator = GetSubstitute<IGitRepositoryLocator>();
-        gitRepositoryLocator.GetWorkingDirectory(Arg.Any<string>(), Arg.Any<string>())
-                            .Returns(Path.Combine(path1: this.TempFolder, path2: "scratch"));
+        gitRepositoryLocator.GetWorkingDirectory(Arg.Any<string>(), Arg.Any<string>()).Returns(Path.Combine(path1: this.TempFolder, path2: "scratch"));
 
         this._gitRepositoryFactory = new GitRepositoryFactory(locator: gitRepositoryLocator, this.GetTypedLogger<GitRepositoryFactory>());
     }
@@ -37,8 +36,7 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
     {
         CancellationToken cancellationToken = CancellationToken.None;
 
-        using (IGitRepository repo =
-               await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: Repositories.GitHubSsh, cancellationToken: cancellationToken))
+        using (IGitRepository repo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: Repositories.GitHubSsh, cancellationToken: cancellationToken))
         {
             this.Output.WriteLine($"Repo: {repo.ClonePath}");
 
@@ -55,10 +53,7 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
 
             await repo.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
-            await repo.RemoveBranchesForPrefixAsync(branchForUpdate: "depends/delete-me",
-                                                    branchPrefix: "depends/",
-                                                    upstream: GitConstants.Upstream,
-                                                    cancellationToken: cancellationToken);
+            await repo.RemoveBranchesForPrefixAsync(branchForUpdate: "depends/delete-me", branchPrefix: "depends/", upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
             repo.RemoveAllLocalBranches();
 
@@ -73,10 +68,7 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
 
     private static string GenerateUniqueBranchId()
     {
-        return Guid.NewGuid()
-                   .ToString()
-                   .Replace(oldValue: "-", newValue: string.Empty, comparisonType: StringComparison.Ordinal)
-                   .ToLowerInvariant();
+        return Guid.NewGuid().ToString().Replace(oldValue: "-", newValue: string.Empty, comparisonType: StringComparison.Ordinal).ToLowerInvariant();
     }
 
     [Fact]

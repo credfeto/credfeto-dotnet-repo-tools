@@ -9,9 +9,7 @@ internal sealed class FrameworkSettings : IFrameworkSettings
     public FrameworkSettings(in DotNetVersionSettings dotNetSettings)
     {
         this.DotNetSdkVersion = dotNetSettings.SdkVersion;
-        this.DotNetAllowPreReleaseSdk = dotNetSettings.AllowPreRelease
-            ? "true"
-            : "false";
+        this.DotNetAllowPreReleaseSdk = dotNetSettings.AllowPreRelease ? "true" : "false";
     }
 
     public bool IsNullableGloballyEnforced => true;
