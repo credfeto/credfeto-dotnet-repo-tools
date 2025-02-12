@@ -7,8 +7,17 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
-- Csharppier and CSharpier_Check:true to builds
 ### Fixed
+### Changed
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.1.0] - 2025-02-12
+### Added
+- Csharppier and CSharpier_Check:true to builds
 ### Changed
 - Dependencies - Updated FunFair.CodeAnalysis to 7.0.67.907
 - Dependencies - Updated Microsoft.Sbom.Targets to 3.1.0
@@ -19,12 +28,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Package to 1.10.120.1183
 - Dependencies - Updated FunFair.Test.Common to 6.1.257.1137
 - SDK - Updated DotNet SDK to 9.0.200
-### Removed
-### Deployment Changes
 
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 ## [1.0.106] - 2025-02-04
 ### Changed
 - Dependencies - Updated Credfeto.Package to 1.10.118.1173
