@@ -14,17 +14,25 @@ internal sealed class FrameworkSettings : IFrameworkSettings
 
     public bool IsNullableGloballyEnforced => true;
 
-    public string ProjectImport => Environment.GetEnvironmentVariable("DOTNET_PACK_PROJECT_METADATA_IMPORT") ?? string.Empty;
+    public string ProjectImport =>
+        Environment.GetEnvironmentVariable("DOTNET_PACK_PROJECT_METADATA_IMPORT") ?? string.Empty;
 
-    public string? DotnetPackable => Environment.GetEnvironmentVariable(variable: "DOTNET_PACKABLE");
+    public string? DotnetPackable =>
+        Environment.GetEnvironmentVariable(variable: "DOTNET_PACKABLE");
 
-    public string? DotnetPublishable => Environment.GetEnvironmentVariable(variable: "DOTNET_PUBLISHABLE");
+    public string? DotnetPublishable =>
+        Environment.GetEnvironmentVariable(variable: "DOTNET_PUBLISHABLE");
 
-    public string? DotnetTargetFramework => Environment.GetEnvironmentVariable("DOTNET_CORE_APP_TARGET_FRAMEWORK");
+    public string? DotnetTargetFramework =>
+        Environment.GetEnvironmentVariable("DOTNET_CORE_APP_TARGET_FRAMEWORK");
 
     public string? DotNetSdkVersion { get; }
 
     public string DotNetAllowPreReleaseSdk { get; }
 
-    public bool XmlDocumentationRequired => StringComparer.InvariantCulture.Equals(Environment.GetEnvironmentVariable("XML_DOCUMENTATION"), y: "true");
+    public bool XmlDocumentationRequired =>
+        StringComparer.InvariantCulture.Equals(
+            Environment.GetEnvironmentVariable("XML_DOCUMENTATION"),
+            y: "true"
+        );
 }

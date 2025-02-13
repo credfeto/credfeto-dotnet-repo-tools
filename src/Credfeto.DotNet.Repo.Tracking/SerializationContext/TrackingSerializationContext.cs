@@ -3,7 +3,11 @@ using System.Text.Json.Serialization;
 
 namespace Credfeto.DotNet.Repo.Tracking.SerializationContext;
 
-[SuppressMessage(category: "ReSharper", checkId: "PartialTypeWithSinglePart", Justification = "Required for JsonSerializerContext")]
+[SuppressMessage(
+    category: "ReSharper",
+    checkId: "PartialTypeWithSinglePart",
+    Justification = "Required for JsonSerializerContext"
+)]
 [JsonSourceGenerationOptions(
     GenerationMode = JsonSourceGenerationMode.Serialization | JsonSourceGenerationMode.Metadata,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,

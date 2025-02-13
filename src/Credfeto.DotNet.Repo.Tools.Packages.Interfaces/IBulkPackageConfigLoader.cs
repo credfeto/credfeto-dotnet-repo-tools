@@ -7,5 +7,8 @@ namespace Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 
 public interface IBulkPackageConfigLoader
 {
-    ValueTask<IReadOnlyList<PackageUpdate>> LoadAsync(string path, in CancellationToken cancellationToken);
+    ValueTask<IReadOnlyList<PackageUpdate>> LoadAsync(
+        string path,
+        in CancellationToken cancellationToken
+    );
 }

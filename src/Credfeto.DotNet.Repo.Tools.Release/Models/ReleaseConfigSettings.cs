@@ -9,7 +9,11 @@ namespace Credfeto.DotNet.Repo.Tools.Release.Models;
 internal sealed class ReleaseConfigSettings
 {
     [JsonConstructor]
-    public ReleaseConfigSettings(int autoReleasePendingPackages, double minimumHoursBeforeAutoRelease, double inactivityHoursBeforeAutoRelease)
+    public ReleaseConfigSettings(
+        int autoReleasePendingPackages,
+        double minimumHoursBeforeAutoRelease,
+        double inactivityHoursBeforeAutoRelease
+    )
     {
         this.AutoReleasePendingPackages = autoReleasePendingPackages;
         this.MinimumHoursBeforeAutoRelease = minimumHoursBeforeAutoRelease;

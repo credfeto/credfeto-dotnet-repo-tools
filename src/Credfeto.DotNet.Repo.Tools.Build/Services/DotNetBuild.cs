@@ -47,7 +47,12 @@ public sealed class DotNetBuild : IDotNetBuild
         this._projectLoader = new ProjectXmlLoader();
     }
 
-    public async ValueTask BuildAsync(string basePath, BuildSettings buildSettings, BuildOverride buildOverride, CancellationToken cancellationToken)
+    public async ValueTask BuildAsync(
+        string basePath,
+        BuildSettings buildSettings,
+        BuildOverride buildOverride,
+        CancellationToken cancellationToken
+    )
     {
         this._logger.LogStartingBuild(basePath);
 
@@ -55,32 +60,63 @@ public sealed class DotNetBuild : IDotNetBuild
 
         try
         {
-            await this.DotNetCleanAsync(basePath: basePath, buildOverride: buildOverride, cancellationToken: cancellationToken);
+            await this.DotNetCleanAsync(
+                basePath: basePath,
+                buildOverride: buildOverride,
+                cancellationToken: cancellationToken
+            );
 
-            await this.DotNetRestoreAsync(basePath: basePath, buildOverride: buildOverride, cancellationToken: cancellationToken);
+            await this.DotNetRestoreAsync(
+                basePath: basePath,
+                buildOverride: buildOverride,
+                cancellationToken: cancellationToken
+            );
 
-            await this.DotNetBuildAsync(basePath: basePath, buildOverride: buildOverride, cancellationToken: cancellationToken);
+            await this.DotNetBuildAsync(
+                basePath: basePath,
+                buildOverride: buildOverride,
+                cancellationToken: cancellationToken
+            );
 
-            await this.DotNetTestAsync(basePath: basePath, buildOverride: buildOverride, cancellationToken: cancellationToken);
+            await this.DotNetTestAsync(
+                basePath: basePath,
+                buildOverride: buildOverride,
+                cancellationToken: cancellationToken
+            );
 
             if (buildSettings.Packable)
             {
-                await this.DotNetPackAsync(basePath: basePath, buildOverride: buildOverride, cancellationToken: cancellationToken);
+                await this.DotNetPackAsync(
+                    basePath: basePath,
+                    buildOverride: buildOverride,
+                    cancellationToken: cancellationToken
+                );
             }
 
             if (buildSettings.Publishable)
             {
                 string? framework = buildSettings.Framework;
-                await this.DotNetPublishAsync(basePath: basePath, buildOverride: buildOverride, framework: framework, cancellationToken: cancellationToken);
+                await this.DotNetPublishAsync(
+                    basePath: basePath,
+                    buildOverride: buildOverride,
+                    framework: framework,
+                    cancellationToken: cancellationToken
+                );
             }
         }
         finally
         {
-            await this.StopBuildServerAsync(basePath: basePath, cancellationToken: cancellationToken);
+            await this.StopBuildServerAsync(
+                basePath: basePath,
+                cancellationToken: cancellationToken
+            );
         }
     }
 
-    public async ValueTask<BuildSettings> LoadBuildSettingsAsync(IReadOnlyList<string> projects, CancellationToken cancellationToken)
+    public async ValueTask<BuildSettings> LoadBuildSettingsAsync(
+        IReadOnlyList<string> projects,
+        CancellationToken cancellationToken
+    )
     {
         bool packable = false;
         bool publishable = false;
@@ -88,15 +124,28 @@ public sealed class DotNetBuild : IDotNetBuild
 
         foreach (string project in projects)
         {
-            XmlDocument doc = await this._projectLoader.LoadAsync(path: project, cancellationToken: cancellationToken);
+            XmlDocument doc = await this._projectLoader.LoadAsync(
+                path: project,
+                cancellationToken: cancellationToken
+            );
 
-            this.CheckProjectSettings(doc: doc, packable: ref packable, publishable: ref publishable, framework: ref framework);
+            this.CheckProjectSettings(
+                doc: doc,
+                packable: ref packable,
+                publishable: ref publishable,
+                framework: ref framework
+            );
         }
 
         return new(Publishable: publishable, Packable: packable, Framework: framework);
     }
 
-    private void CheckProjectSettings(XmlDocument doc, ref bool packable, ref bool publishable, ref string? framework)
+    private void CheckProjectSettings(
+        XmlDocument doc,
+        ref bool packable,
+        ref bool publishable,
+        ref string? framework
+    )
     {
         XmlNode? outputTypeNode = doc.SelectSingleNode("/Project/PropertyGroup/OutputType");
 
@@ -107,7 +156,11 @@ public sealed class DotNetBuild : IDotNetBuild
 
         packable |= IsPackable(doc: doc, outputType: outputTypeNode.InnerText);
 
-        string? candidateFramework = GetTargetFrameworks(doc: doc, outputType: outputTypeNode.InnerText).MaxBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase);
+        string? candidateFramework = GetTargetFrameworks(
+                doc: doc,
+                outputType: outputTypeNode.InnerText
+            )
+            .MaxBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase);
 
         if (candidateFramework is not null)
         {
@@ -120,7 +173,10 @@ public sealed class DotNetBuild : IDotNetBuild
             }
             else
             {
-                if (StringComparer.OrdinalIgnoreCase.Compare(x: candidateFramework, y: framework) > 0)
+                if (
+                    StringComparer.OrdinalIgnoreCase.Compare(x: candidateFramework, y: framework)
+                    > 0
+                )
                 {
                     framework = candidateFramework;
                     this._logger.LogFoundFramework(framework);
@@ -138,20 +194,33 @@ public sealed class DotNetBuild : IDotNetBuild
 
         XmlNode? publishableNode = doc.SelectSingleNode("/Project/PropertyGroup/IsPublishable");
 
-        if (publishableNode is not null && StringComparer.InvariantCultureIgnoreCase.Equals(x: publishableNode.InnerText, y: "True"))
+        if (
+            publishableNode is not null
+            && StringComparer.InvariantCultureIgnoreCase.Equals(
+                x: publishableNode.InnerText,
+                y: "True"
+            )
+        )
         {
-            XmlNode? targetFrameworkNode = doc.SelectSingleNode("/Project/PropertyGroup/TargetFramework");
+            XmlNode? targetFrameworkNode = doc.SelectSingleNode(
+                "/Project/PropertyGroup/TargetFramework"
+            );
 
             if (targetFrameworkNode is not null)
             {
                 return [targetFrameworkNode.InnerText];
             }
 
-            XmlNode? targetFrameworksNode = doc.SelectSingleNode("/Project/PropertyGroup/TargetFrameworks");
+            XmlNode? targetFrameworksNode = doc.SelectSingleNode(
+                "/Project/PropertyGroup/TargetFrameworks"
+            );
 
             if (targetFrameworksNode is not null)
             {
-                return targetFrameworksNode.InnerText.Split(separator: ';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+                return targetFrameworksNode.InnerText.Split(
+                    separator: ';',
+                    StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries
+                );
             }
         }
 
@@ -167,10 +236,19 @@ public sealed class DotNetBuild : IDotNetBuild
 
         XmlNode? packableNode = doc.SelectSingleNode("/Project/PropertyGroup/IsPackable");
 
-        return packableNode is not null && StringComparer.InvariantCultureIgnoreCase.Equals(x: packableNode.InnerText, y: "True");
+        return packableNode is not null
+            && StringComparer.InvariantCultureIgnoreCase.Equals(
+                x: packableNode.InnerText,
+                y: "True"
+            );
     }
 
-    private async ValueTask DotNetPublishAsync(string basePath, BuildOverride buildOverride, string? framework, CancellationToken cancellationToken)
+    private async ValueTask DotNetPublishAsync(
+        string basePath,
+        BuildOverride buildOverride,
+        string? framework,
+        CancellationToken cancellationToken
+    )
     {
         string noWarn = BuildNoWarn(buildOverride);
 
@@ -216,7 +294,11 @@ public sealed class DotNetBuild : IDotNetBuild
         }
     }
 
-    private ValueTask DotNetPackAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
+    private ValueTask DotNetPackAsync(
+        string basePath,
+        in BuildOverride buildOverride,
+        in CancellationToken cancellationToken
+    )
     {
         string noWarn = BuildNoWarn(buildOverride);
 
@@ -229,7 +311,11 @@ public sealed class DotNetBuild : IDotNetBuild
         );
     }
 
-    private ValueTask DotNetTestAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
+    private ValueTask DotNetTestAsync(
+        string basePath,
+        in BuildOverride buildOverride,
+        in CancellationToken cancellationToken
+    )
     {
         string noWarn = BuildNoWarn(buildOverride);
 
@@ -242,7 +328,11 @@ public sealed class DotNetBuild : IDotNetBuild
         );
     }
 
-    private ValueTask DotNetBuildAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
+    private ValueTask DotNetBuildAsync(
+        string basePath,
+        in BuildOverride buildOverride,
+        in CancellationToken cancellationToken
+    )
     {
         string noWarn = BuildNoWarn(buildOverride);
 
@@ -255,34 +345,65 @@ public sealed class DotNetBuild : IDotNetBuild
         );
     }
 
-    private ValueTask DotNetRestoreAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
+    private ValueTask DotNetRestoreAsync(
+        string basePath,
+        in BuildOverride buildOverride,
+        in CancellationToken cancellationToken
+    )
     {
         string noWarn = BuildNoWarn(buildOverride);
 
         this._logger.LogRestoring();
 
-        return this.ExecRequireCleanAsync(basePath: basePath, $"restore -nodeReuse:False -r:linux-x64 {noWarn}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(
+            basePath: basePath,
+            $"restore -nodeReuse:False -r:linux-x64 {noWarn}",
+            cancellationToken: cancellationToken
+        );
     }
 
-    private ValueTask DotNetCleanAsync(string basePath, in BuildOverride buildOverride, in CancellationToken cancellationToken)
+    private ValueTask DotNetCleanAsync(
+        string basePath,
+        in BuildOverride buildOverride,
+        in CancellationToken cancellationToken
+    )
     {
         string noWarn = BuildNoWarn(buildOverride);
 
         this._logger.LogCleaning();
 
-        return this.ExecRequireCleanAsync(basePath: basePath, $"clean --configuration:Release -nodeReuse:False {noWarn}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(
+            basePath: basePath,
+            $"clean --configuration:Release -nodeReuse:False {noWarn}",
+            cancellationToken: cancellationToken
+        );
     }
 
-    private async ValueTask StopBuildServerAsync(string basePath, CancellationToken cancellationToken)
+    private async ValueTask StopBuildServerAsync(
+        string basePath,
+        CancellationToken cancellationToken
+    )
     {
         this._logger.LogStoppingBuildServer();
-        await ExecAsync(basePath: basePath, arguments: "build-server shutdown", cancellationToken: cancellationToken);
+        await ExecAsync(
+            basePath: basePath,
+            arguments: "build-server shutdown",
+            cancellationToken: cancellationToken
+        );
         this._logger.LogStoppedBuildServer();
     }
 
-    private async ValueTask ExecRequireCleanAsync(string basePath, string arguments, CancellationToken cancellationToken)
+    private async ValueTask ExecRequireCleanAsync(
+        string basePath,
+        string arguments,
+        CancellationToken cancellationToken
+    )
     {
-        (string[] results, int exitCode) = await ExecAsync(basePath: basePath, arguments: arguments, cancellationToken: cancellationToken);
+        (string[] results, int exitCode) = await ExecAsync(
+            basePath: basePath,
+            arguments: arguments,
+            cancellationToken: cancellationToken
+        );
 
         if (exitCode != 0)
         {
@@ -305,7 +426,11 @@ public sealed class DotNetBuild : IDotNetBuild
         }
     }
 
-    private static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(string basePath, string arguments, CancellationToken cancellationToken)
+    private static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(
+        string basePath,
+        string arguments,
+        CancellationToken cancellationToken
+    )
     {
         ProcessStartInfo psi = new()
         {
@@ -348,7 +473,13 @@ public sealed class DotNetBuild : IDotNetBuild
 
             string result = string.Join(separator: Environment.NewLine, output, error);
 
-            return (result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries), process.ExitCode);
+            return (
+                result.Split(
+                    separator: Environment.NewLine,
+                    options: StringSplitOptions.RemoveEmptyEntries
+                ),
+                process.ExitCode
+            );
         }
     }
 }

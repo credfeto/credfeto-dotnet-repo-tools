@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,13 +20,29 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
         this._logger = logger;
     }
 
-    public ValueTask<string> BuildDependabotConfigAsync(RepoContext repoContext, string templateFolder, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Needs Review"
+    )]
+    public ValueTask<string> BuildDependabotConfigAsync(
+        RepoContext repoContext,
+        string templateFolder,
+        IReadOnlyList<PackageUpdate> packages,
+        CancellationToken cancellationToken
+    )
     {
         List<string> config = ["version: 2", "updates:"];
 
         if (repoContext.HasSubModules())
         {
-            this.AddBaseConfig(config: config, ecoSystem: "gitsubmodule", directory: "/", packageTypeLabel: "submodule", reviewer: "credfeto");
+            this.AddBaseConfig(
+                config: config,
+                ecoSystem: "gitsubmodule",
+                directory: "/",
+                packageTypeLabel: "submodule",
+                reviewer: "credfeto"
+            );
             AllowAllDependencies(config);
         }
 
@@ -38,7 +55,13 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
         {
             foreach (string dir in directories)
             {
-                this.AddBaseConfig(config: config, ecoSystem: "npm", directory: dir, packageTypeLabel: "npm", reviewer: "credfeto");
+                this.AddBaseConfig(
+                    config: config,
+                    ecoSystem: "npm",
+                    directory: dir,
+                    packageTypeLabel: "npm",
+                    reviewer: "credfeto"
+                );
                 config.Add("  versioning-strategy: increase-if-necessary");
                 AllowAllDependencies(config);
             }
@@ -46,19 +69,37 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 
         if (repoContext.HasDockerFiles())
         {
-            this.AddBaseConfig(config: config, ecoSystem: "docker", directory: "/", packageTypeLabel: "docker", reviewer: "credfeto");
+            this.AddBaseConfig(
+                config: config,
+                ecoSystem: "docker",
+                directory: "/",
+                packageTypeLabel: "docker",
+                reviewer: "credfeto"
+            );
             AllowAllDependencies(config);
         }
 
         if (repoContext.HasNonStandardGithubActions(templateFolder))
         {
-            this.AddBaseConfig(config: config, ecoSystem: "github-actions", directory: "/", packageTypeLabel: "github-actions", reviewer: "credfeto");
+            this.AddBaseConfig(
+                config: config,
+                ecoSystem: "github-actions",
+                directory: "/",
+                packageTypeLabel: "github-actions",
+                reviewer: "credfeto"
+            );
             AllowAllDependencies(config);
         }
 
         if (repoContext.HasPython())
         {
-            this.AddBaseConfig(config: config, ecoSystem: "pip", directory: "/", packageTypeLabel: "python", reviewer: "credfeto");
+            this.AddBaseConfig(
+                config: config,
+                ecoSystem: "pip",
+                directory: "/",
+                packageTypeLabel: "python",
+                reviewer: "credfeto"
+            );
             AllowAllDependencies(config);
         }
 
@@ -67,7 +108,13 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 
     private void AddDotNetConfig(List<string> config, IReadOnlyList<PackageUpdate> packages)
     {
-        this.AddBaseConfig(config: config, ecoSystem: "nuget", directory: "/", packageTypeLabel: "nuget", reviewer: "credfeto");
+        this.AddBaseConfig(
+            config: config,
+            ecoSystem: "nuget",
+            directory: "/",
+            packageTypeLabel: "nuget",
+            reviewer: "credfeto"
+        );
         AllowAllDependencies(config);
 
         if (packages is [])
@@ -78,18 +125,38 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
         // Add packages to ignore
         config.Add("  ignore:");
 
-        IReadOnlyList<PackageUpdate> packagesToAdd = [.. DetermineMinimalDotnetPackages(packages).OrderBy(p => p.PackageId, StringComparer.OrdinalIgnoreCase)];
+        IReadOnlyList<PackageUpdate> packagesToAdd =
+        [
+            .. DetermineMinimalDotnetPackages(packages)
+                .OrderBy(p => p.PackageId, StringComparer.OrdinalIgnoreCase),
+        ];
 
-        config.AddRange(packagesToAdd.Select(package => package.ExactMatch ? $"  - dependency-name: \"{package.PackageId}\"" : $"  - dependency-name: \"{package.PackageId}.*\""));
+        config.AddRange(
+            packagesToAdd.Select(package =>
+                package.ExactMatch
+                    ? $"  - dependency-name: \"{package.PackageId}\""
+                    : $"  - dependency-name: \"{package.PackageId}.*\""
+            )
+        );
     }
 
-    private static IEnumerable<PackageUpdate> DetermineMinimalDotnetPackages(IReadOnlyList<PackageUpdate> packages)
+    private static IEnumerable<PackageUpdate> DetermineMinimalDotnetPackages(
+        IReadOnlyList<PackageUpdate> packages
+    )
     {
         // Add Wildcard packages
         List<string> wildcardPackages = [];
-        foreach (PackageUpdate package in packages.Where(package => !package.ExactMatch).OrderBy(package => package.PackageId.Length))
+        foreach (
+            PackageUpdate package in packages
+                .Where(package => !package.ExactMatch)
+                .OrderBy(package => package.PackageId.Length)
+        )
         {
-            if (wildcardPackages.Exists(candidate => IsWildcardMatch(package: package, wildcardPackage: candidate)))
+            if (
+                wildcardPackages.Exists(candidate =>
+                    IsWildcardMatch(package: package, wildcardPackage: candidate)
+                )
+            )
             {
                 continue;
             }
@@ -101,9 +168,17 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 
         // Add exact match packages
         HashSet<string> exactPackages = new(StringComparer.OrdinalIgnoreCase);
-        foreach (PackageUpdate package in packages.Where(package => package.ExactMatch).OrderBy(package => package.PackageId.Length))
+        foreach (
+            PackageUpdate package in packages
+                .Where(package => package.ExactMatch)
+                .OrderBy(package => package.PackageId.Length)
+        )
         {
-            if (wildcardPackages.Exists(candidate => IsWildcardMatch(package: package, wildcardPackage: candidate)))
+            if (
+                wildcardPackages.Exists(candidate =>
+                    IsWildcardMatch(package: package, wildcardPackage: candidate)
+                )
+            )
             {
                 // Excluded by a wildcard
                 continue;
@@ -122,7 +197,10 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
     private static bool IsWildcardMatch(PackageUpdate package, string wildcardPackage)
     {
         return StringComparer.OrdinalIgnoreCase.Equals(x: package.PackageId, y: wildcardPackage)
-            || package.PackageId.StartsWith(wildcardPackage + ".", comparisonType: StringComparison.OrdinalIgnoreCase);
+            || package.PackageId.StartsWith(
+                wildcardPackage + ".",
+                comparisonType: StringComparison.OrdinalIgnoreCase
+            );
     }
 
     private static void AllowAllDependencies(List<string> config)
@@ -131,7 +209,13 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
         config.AddRange(["  allow:", "  - dependency-type: all"]);
     }
 
-    private void AddBaseConfig(List<string> config, string ecoSystem, string directory, string packageTypeLabel, string reviewer)
+    private void AddBaseConfig(
+        List<string> config,
+        string ecoSystem,
+        string directory,
+        string packageTypeLabel,
+        string reviewer
+    )
     {
         this._logger.LogAddingConfigForEcosystem(ecoSystem: ecoSystem, directory: directory);
 

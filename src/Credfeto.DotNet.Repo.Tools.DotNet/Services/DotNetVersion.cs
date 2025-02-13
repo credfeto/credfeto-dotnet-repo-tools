@@ -12,9 +12,14 @@ namespace Credfeto.DotNet.Repo.Tools.DotNet.Services;
 
 public sealed class DotNetVersion : IDotNetVersion
 {
-    public async ValueTask<IReadOnlyList<Version>> GetInstalledSdksAsync(CancellationToken cancellationToken)
+    public async ValueTask<IReadOnlyList<Version>> GetInstalledSdksAsync(
+        CancellationToken cancellationToken
+    )
     {
-        (string[] output, int exitCode) = await ExecAsync(arguments: "--list-sdks", cancellationToken: cancellationToken);
+        (string[] output, int exitCode) = await ExecAsync(
+            arguments: "--list-sdks",
+            cancellationToken: cancellationToken
+        );
 
         if (exitCode != 0)
         {
@@ -42,7 +47,10 @@ public sealed class DotNetVersion : IDotNetVersion
         return Version.TryParse(parts[0], out Version? version) ? version : null;
     }
 
-    private static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(string arguments, CancellationToken cancellationToken)
+    private static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(
+        string arguments,
+        CancellationToken cancellationToken
+    )
     {
         ProcessStartInfo psi = new()
         {
@@ -83,7 +91,13 @@ public sealed class DotNetVersion : IDotNetVersion
 
             string result = string.Join(separator: Environment.NewLine, output, error);
 
-            return (result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries), process.ExitCode);
+            return (
+                result.Split(
+                    separator: Environment.NewLine,
+                    options: StringSplitOptions.RemoveEmptyEntries
+                ),
+                process.ExitCode
+            );
         }
     }
 }

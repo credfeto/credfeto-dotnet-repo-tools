@@ -24,22 +24,36 @@ public sealed class ReleaseConfigLoader : IReleaseConfigLoader
 
     public ValueTask<ReleaseConfig> LoadAsync(string path, CancellationToken cancellationToken)
     {
-        return Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && IsHttp(uri)
+        return
+            Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && IsHttp(uri)
             ? this.LoadFromHttpAsync(uri: uri, cancellationToken: cancellationToken)
             : LoadFromFileAsync(filename: path, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask<ReleaseConfig> LoadFromHttpAsync(Uri uri, CancellationToken cancellationToken)
+    private async ValueTask<ReleaseConfig> LoadFromHttpAsync(
+        Uri uri,
+        CancellationToken cancellationToken
+    )
     {
-        HttpClient httpClient = this._httpClientFactory.CreateClient(name: nameof(ReleaseConfigLoader));
+        HttpClient httpClient = this._httpClientFactory.CreateClient(
+            name: nameof(ReleaseConfigLoader)
+        );
 
         httpClient.BaseAddress = uri;
 
-        await using (Stream result = await httpClient.GetStreamAsync(requestUri: uri, cancellationToken: cancellationToken))
+        await using (
+            Stream result = await httpClient.GetStreamAsync(
+                requestUri: uri,
+                cancellationToken: cancellationToken
+            )
+        )
         {
             ReleaseConfiguration releaseConfiguration =
-                await JsonSerializer.DeserializeAsync(utf8Json: result, jsonTypeInfo: ReleaseConfigSerializationContext.Default.ReleaseConfiguration, cancellationToken: cancellationToken)
-                ?? InvalidSettings();
+                await JsonSerializer.DeserializeAsync(
+                    utf8Json: result,
+                    jsonTypeInfo: ReleaseConfigSerializationContext.Default.ReleaseConfiguration,
+                    cancellationToken: cancellationToken
+                ) ?? InvalidSettings();
 
             return ToConfig(releaseConfiguration);
         }
@@ -47,14 +61,25 @@ public sealed class ReleaseConfigLoader : IReleaseConfigLoader
 
     private static bool IsHttp(Uri uri)
     {
-        return StringComparer.Ordinal.Equals(x: uri.Scheme, y: "https") || StringComparer.Ordinal.Equals(x: uri.Scheme, y: "http");
+        return StringComparer.Ordinal.Equals(x: uri.Scheme, y: "https")
+            || StringComparer.Ordinal.Equals(x: uri.Scheme, y: "http");
     }
 
-    private static async ValueTask<ReleaseConfig> LoadFromFileAsync(string filename, CancellationToken cancellationToken)
+    private static async ValueTask<ReleaseConfig> LoadFromFileAsync(
+        string filename,
+        CancellationToken cancellationToken
+    )
     {
-        byte[] content = await File.ReadAllBytesAsync(path: filename, cancellationToken: cancellationToken);
+        byte[] content = await File.ReadAllBytesAsync(
+            path: filename,
+            cancellationToken: cancellationToken
+        );
 
-        ReleaseConfiguration releaseConfiguration = JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: ReleaseConfigSerializationContext.Default.ReleaseConfiguration) ?? InvalidSettings();
+        ReleaseConfiguration releaseConfiguration =
+            JsonSerializer.Deserialize(
+                utf8Json: content,
+                jsonTypeInfo: ReleaseConfigSerializationContext.Default.ReleaseConfiguration
+            ) ?? InvalidSettings();
 
         return ToConfig(releaseConfiguration);
     }
@@ -70,7 +95,9 @@ public sealed class ReleaseConfigLoader : IReleaseConfigLoader
         return new(
             AutoReleasePendingPackages: configuration.Settings.AutoReleasePendingPackages,
             MinimumHoursBeforeAutoRelease: configuration.Settings.MinimumHoursBeforeAutoRelease,
-            InactivityHoursBeforeAutoRelease: configuration.Settings.InactivityHoursBeforeAutoRelease,
+            InactivityHoursBeforeAutoRelease: configuration
+                .Settings
+                .InactivityHoursBeforeAutoRelease,
             ToConfig(configuration.NeverRelease),
             ToConfig(configuration.AllowedAutoUpgrade),
             ToConfig(configuration.AlwaysMatch)
@@ -84,7 +111,11 @@ public sealed class ReleaseConfigLoader : IReleaseConfigLoader
 
     private static RepoMatch ToConfig(RepoConfigMatch source)
     {
-        return new(Repo: source.Repository, ExtractMatchType(source.Match), Include: source.Include);
+        return new(
+            Repo: source.Repository,
+            ExtractMatchType(source.Match),
+            Include: source.Include
+        );
     }
 
     private static MatchType ExtractMatchType(string sourceMatch)
@@ -99,6 +130,10 @@ public sealed class ReleaseConfigLoader : IReleaseConfigLoader
             return MatchType.CONTAINS;
         }
 
-        throw new ArgumentOutOfRangeException(nameof(sourceMatch), actualValue: sourceMatch, message: "Invalid match type");
+        throw new ArgumentOutOfRangeException(
+            nameof(sourceMatch),
+            actualValue: sourceMatch,
+            message: "Invalid match type"
+        );
     }
 }

@@ -27,7 +27,10 @@ public sealed class TrackingCache : ITrackingCache
         this._logger = logger;
         this._cache = new(StringComparer.OrdinalIgnoreCase);
 
-        this._typeInfo = TrackingSerializationContext.Default.GetTypeInfo(typeof(TrackingItems)) as JsonTypeInfo<TrackingItems> ?? MissingConverter();
+        this._typeInfo =
+            TrackingSerializationContext.Default.GetTypeInfo(typeof(TrackingItems))
+                as JsonTypeInfo<TrackingItems>
+            ?? MissingConverter();
         this._changed = false;
     }
 
@@ -35,13 +38,24 @@ public sealed class TrackingCache : ITrackingCache
     {
         this._logger.LoadingCache(fileName);
 
-        string content = await File.ReadAllTextAsync(path: fileName, cancellationToken: cancellationToken);
+        string content = await File.ReadAllTextAsync(
+            path: fileName,
+            cancellationToken: cancellationToken
+        );
 
-        TrackingItems? items = JsonSerializer.Deserialize(json: content, jsonTypeInfo: this._typeInfo);
+        TrackingItems? items = JsonSerializer.Deserialize(
+            json: content,
+            jsonTypeInfo: this._typeInfo
+        );
 
         if (items is not null)
         {
-            foreach ((string repoUrl, string value) in items.Cache.OrderBy(keySelector: x => x.Key, comparer: StringComparer.OrdinalIgnoreCase))
+            foreach (
+                (string repoUrl, string value) in items.Cache.OrderBy(
+                    keySelector: x => x.Key,
+                    comparer: StringComparer.OrdinalIgnoreCase
+                )
+            )
             {
                 this._logger.LoadedPackageVersionFromCache(repository: repoUrl, version: value);
                 this._cache.TryAdd(key: repoUrl, value: value);
@@ -58,11 +72,21 @@ public sealed class TrackingCache : ITrackingCache
 
         this._logger.SavingCache(fileName);
 
-        TrackingItems toWrite = new(this._cache.ToDictionary(keySelector: x => x.Key, elementSelector: x => x.Value, comparer: StringComparer.OrdinalIgnoreCase));
+        TrackingItems toWrite = new(
+            this._cache.ToDictionary(
+                keySelector: x => x.Key,
+                elementSelector: x => x.Value,
+                comparer: StringComparer.OrdinalIgnoreCase
+            )
+        );
 
         string content = JsonSerializer.Serialize(value: toWrite, jsonTypeInfo: this._typeInfo);
 
-        await File.WriteAllTextAsync(path: fileName, contents: content, cancellationToken: cancellationToken);
+        await File.WriteAllTextAsync(
+            path: fileName,
+            contents: content,
+            cancellationToken: cancellationToken
+        );
         this._changed = false;
     }
 

@@ -73,7 +73,14 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         // *********************************************************
         // * 2 RELEASE NOTES AND DURATION
-        if (await this.ShouldNeverReleaseTimeAndContentBasedAsync(repoContext: repoContext, releaseConfig: releaseConfig, packages: packages, cancellationToken: cancellationToken))
+        if (
+            await this.ShouldNeverReleaseTimeAndContentBasedAsync(
+                repoContext: repoContext,
+                releaseConfig: releaseConfig,
+                packages: packages,
+                cancellationToken: cancellationToken
+            )
+        )
         {
             return;
         }
@@ -98,7 +105,13 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         // *********************************************************
         // * 4 Dispatch
 
-        if (this.ShouldNeverReleaseFuzzyRules(repoContext: repoContext, buildSettings: buildSettings, releaseConfig: releaseConfig))
+        if (
+            this.ShouldNeverReleaseFuzzyRules(
+                repoContext: repoContext,
+                buildSettings: buildSettings,
+                releaseConfig: releaseConfig
+            )
+        )
         {
             return;
         }
@@ -110,27 +123,54 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     {
         string nextVersion = this.GetNextVersion(repoContext: repoContext);
 
-        await ChangeLogUpdater.CreateReleaseAsync(changeLogFileName: repoContext.ChangeLogFileName, version: nextVersion, pending: false, cancellationToken: cancellationToken);
+        await ChangeLogUpdater.CreateReleaseAsync(
+            changeLogFileName: repoContext.ChangeLogFileName,
+            version: nextVersion,
+            pending: false,
+            cancellationToken: cancellationToken
+        );
 
-        await repoContext.Repository.CommitAsync($"Changelog for {nextVersion}", cancellationToken: cancellationToken);
+        await repoContext.Repository.CommitAsync(
+            $"Changelog for {nextVersion}",
+            cancellationToken: cancellationToken
+        );
         await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
 
         this._logger.LogReleaseCreated(repoContext: repoContext, version: nextVersion);
 
-        this._trackingCache.Set(repoUrl: repoContext.ClonePath, value: repoContext.Repository.HeadRev);
+        this._trackingCache.Set(
+            repoUrl: repoContext.ClonePath,
+            value: repoContext.Repository.HeadRev
+        );
 
         string releaseBranch = $"release/{nextVersion}";
-        await repoContext.Repository.CreateBranchAsync(branchName: releaseBranch, cancellationToken: cancellationToken);
-        await repoContext.Repository.PushOriginAsync(branchName: releaseBranch, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+        await repoContext.Repository.CreateBranchAsync(
+            branchName: releaseBranch,
+            cancellationToken: cancellationToken
+        );
+        await repoContext.Repository.PushOriginAsync(
+            branchName: releaseBranch,
+            upstream: GitConstants.Upstream,
+            cancellationToken: cancellationToken
+        );
 
-        throw new ReleaseCreatedException($"Releases {nextVersion} created for {repoContext.ClonePath}");
+        throw new ReleaseCreatedException(
+            $"Releases {nextVersion} created for {repoContext.ClonePath}"
+        );
     }
 
-    private bool ShouldNeverReleaseFuzzyRules(in RepoContext repoContext, in BuildSettings buildSettings, in ReleaseConfig releaseConfig)
+    private bool ShouldNeverReleaseFuzzyRules(
+        in RepoContext repoContext,
+        in BuildSettings buildSettings,
+        in ReleaseConfig releaseConfig
+    )
     {
         if (HasPendingDependencyUpdateBranches(repoContext))
         {
-            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.FOUND_PENDING_UPDATE_BRANCHES);
+            this._logger.LogReleaseSkipped(
+                repoContext: repoContext,
+                skippingReason: ReleaseSkippingReason.FOUND_PENDING_UPDATE_BRANCHES
+            );
 
             return true;
         }
@@ -147,12 +187,18 @@ public sealed class ReleaseGeneration : IReleaseGeneration
                 return false;
             }
 
-            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.CONTAINS_PUBLISHABLE_EXECUTABLES);
+            this._logger.LogReleaseSkipped(
+                repoContext: repoContext,
+                skippingReason: ReleaseSkippingReason.CONTAINS_PUBLISHABLE_EXECUTABLES
+            );
 
             return true;
         }
 
-        this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.EXPLICITLY_PROHIBITED);
+        this._logger.LogReleaseSkipped(
+            repoContext: repoContext,
+            skippingReason: ReleaseSkippingReason.EXPLICITLY_PROHIBITED
+        );
 
         return true;
     }
@@ -168,11 +214,18 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     {
         try
         {
-            await this._dotNetSolutionCheck.ReleaseCheckAsync(solutions: solutions, repositoryDotNetSettings: dotNetSettings, cancellationToken: cancellationToken);
+            await this._dotNetSolutionCheck.ReleaseCheckAsync(
+                solutions: solutions,
+                repositoryDotNetSettings: dotNetSettings,
+                cancellationToken: cancellationToken
+            );
         }
         catch (SolutionCheckFailedException)
         {
-            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.FAILED_RELEASE_CHECK);
+            this._logger.LogReleaseSkipped(
+                repoContext: repoContext,
+                skippingReason: ReleaseSkippingReason.FAILED_RELEASE_CHECK
+            );
 
             return true;
         }
@@ -181,11 +234,19 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         try
         {
-            await this._dotNetBuild.BuildAsync(basePath: basePath, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+            await this._dotNetBuild.BuildAsync(
+                basePath: basePath,
+                buildSettings: buildSettings,
+                buildOverride: buildOverride,
+                cancellationToken: cancellationToken
+            );
         }
         catch (DotNetBuildErrorException)
         {
-            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.DOES_NOT_BUILD);
+            this._logger.LogReleaseSkipped(
+                repoContext: repoContext,
+                skippingReason: ReleaseSkippingReason.DOES_NOT_BUILD
+            );
 
             return true;
         }
@@ -200,9 +261,17 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         CancellationToken cancellationToken
     )
     {
-        string releaseNotes = await ChangeLogReader.ExtractReleaseNotesFromFileAsync(changeLogFileName: repoContext.ChangeLogFileName, version: "Unreleased", cancellationToken: cancellationToken);
+        string releaseNotes = await ChangeLogReader.ExtractReleaseNotesFromFileAsync(
+            changeLogFileName: repoContext.ChangeLogFileName,
+            version: "Unreleased",
+            cancellationToken: cancellationToken
+        );
 
-        int autoUpdateCount = this.IsAllAutoUpdates(repoContext: repoContext, releaseNotes: releaseNotes, packages: packages);
+        int autoUpdateCount = this.IsAllAutoUpdates(
+            repoContext: repoContext,
+            releaseNotes: releaseNotes,
+            packages: packages
+        );
 
         this._logger.LogChangeLogUpdateScore(autoUpdateCount);
 
@@ -240,7 +309,10 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         if (!shouldCreateRelease)
         {
-            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: skippingReason);
+            this._logger.LogReleaseSkipped(
+                repoContext: repoContext,
+                skippingReason: skippingReason
+            );
 
             return true;
         }
@@ -250,7 +322,9 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
     private static bool HasPendingDependencyUpdateBranches(in RepoContext repoContext)
     {
-        IReadOnlyCollection<string> branches = repoContext.Repository.GetRemoteBranches(upstream: GitConstants.Upstream);
+        IReadOnlyCollection<string> branches = repoContext.Repository.GetRemoteBranches(
+            upstream: GitConstants.Upstream
+        );
 
         return branches.Any(IsDependencyBranch);
 
@@ -277,12 +351,18 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         static bool IsDependabotBranch(string branch)
         {
-            return branch.StartsWith(value: "dependabot/", comparisonType: StringComparison.Ordinal);
+            return branch.StartsWith(
+                value: "dependabot/",
+                comparisonType: StringComparison.Ordinal
+            );
         }
 
         static bool IsDotNetSdkPreviewUpdate(string branch)
         {
-            return branch.StartsWith(value: "depends/sdk/dotnet/", comparisonType: StringComparison.Ordinal) && branch.EndsWith(value: "/preview", comparisonType: StringComparison.Ordinal);
+            return branch.StartsWith(
+                    value: "depends/sdk/dotnet/",
+                    comparisonType: StringComparison.Ordinal
+                ) && branch.EndsWith(value: "/preview", comparisonType: StringComparison.Ordinal);
         }
     }
 
@@ -291,7 +371,11 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         return regex.Matches(releaseNotes).Count * scoreMultiplier;
     }
 
-    private int IsAllAutoUpdates(in RepoContext repoContext, string releaseNotes, IReadOnlyList<PackageUpdate> packages)
+    private int IsAllAutoUpdates(
+        in RepoContext repoContext,
+        string releaseNotes,
+        IReadOnlyList<PackageUpdate> packages
+    )
     {
         if (string.IsNullOrWhiteSpace(releaseNotes))
         {
@@ -300,20 +384,41 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         int updateCount = 0;
 
-        updateCount += ScoreCount(releaseNotes: releaseNotes, ChangeLogParsingRegex.GeoIp(), scoreMultiplier: ScoreMultipliers.GeoIp);
+        updateCount += ScoreCount(
+            releaseNotes: releaseNotes,
+            ChangeLogParsingRegex.GeoIp(),
+            scoreMultiplier: ScoreMultipliers.GeoIp
+        );
 
-        updateCount += ScoreCount(releaseNotes: releaseNotes, ChangeLogParsingRegex.DotNetSdk(), scoreMultiplier: ScoreMultipliers.DotNet);
+        updateCount += ScoreCount(
+            releaseNotes: releaseNotes,
+            ChangeLogParsingRegex.DotNetSdk(),
+            scoreMultiplier: ScoreMultipliers.DotNet
+        );
 
-        foreach (string packageId in ChangeLogParsingRegex.Dependencies().Matches(releaseNotes).Select(packageMatch => packageMatch.Groups["PackageId"].Value))
+        foreach (
+            string packageId in ChangeLogParsingRegex
+                .Dependencies()
+                .Matches(releaseNotes)
+                .Select(packageMatch => packageMatch.Groups["PackageId"].Value)
+        )
         {
             if (IsPackageConsideredForVersionUpdate(packageUpdates: packages, packageId: packageId))
             {
-                this._logger.LogMatchedPackage(repoContext: repoContext, packageId: packageId, score: ScoreMultipliers.MatchedPackage);
+                this._logger.LogMatchedPackage(
+                    repoContext: repoContext,
+                    packageId: packageId,
+                    score: ScoreMultipliers.MatchedPackage
+                );
                 updateCount += ScoreMultipliers.MatchedPackage;
             }
             else
             {
-                this._logger.LogIgnoredPackage(repoContext: repoContext, packageId: packageId, score: ScoreMultipliers.IgnoredPackage);
+                this._logger.LogIgnoredPackage(
+                    repoContext: repoContext,
+                    packageId: packageId,
+                    score: ScoreMultipliers.IgnoredPackage
+                );
                 updateCount += ScoreMultipliers.IgnoredPackage;
             }
         }
@@ -321,25 +426,41 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         return updateCount;
     }
 
-    private static bool IsPackageConsideredForVersionUpdate(IReadOnlyList<PackageUpdate> packageUpdates, string packageId)
+    private static bool IsPackageConsideredForVersionUpdate(
+        IReadOnlyList<PackageUpdate> packageUpdates,
+        string packageId
+    )
     {
         string candidate = packageId.TrimEnd('.');
 
-        return packageUpdates.Where(IsMatch).Select(package => !package.ProhibitVersionBumpWhenReferenced).FirstOrDefault(true);
+        return packageUpdates
+            .Where(IsMatch)
+            .Select(package => !package.ProhibitVersionBumpWhenReferenced)
+            .FirstOrDefault(true);
 
         bool IsMatch(PackageUpdate package)
         {
-            return StringComparer.InvariantCultureIgnoreCase.Equals(x: candidate, (string?)package.PackageId);
+            return StringComparer.InvariantCultureIgnoreCase.Equals(
+                x: candidate,
+                (string?)package.PackageId
+            );
         }
     }
 
     private string GetNextVersion(in RepoContext repoContext)
     {
-        NuGetVersion version = this._versionDetector.FindVersion(repository: repoContext.Repository.Active, buildNumber: DEFAULT_BUILD_NUMBER);
+        NuGetVersion version = this._versionDetector.FindVersion(
+            repository: repoContext.Repository.Active,
+            buildNumber: DEFAULT_BUILD_NUMBER
+        );
 
         this._logger.LogLastRelease(version);
 
-        NuGetVersion nextVersion = new(major: version.Major, minor: version.Minor, patch: version.Patch);
+        NuGetVersion nextVersion = new(
+            major: version.Major,
+            minor: version.Minor,
+            patch: version.Patch
+        );
         this._logger.LogNextRelease(version);
 
         bool exists = repoContext.Repository.DoesBranchExist($"release/{nextVersion}");

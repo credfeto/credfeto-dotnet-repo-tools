@@ -61,7 +61,10 @@ internal static class Program
     {
         CoconaAppBuilder builder = CoconaApp.CreateBuilder(args);
         builder.Services.AddServices();
-        builder.Logging.AddFilter(category: "Microsoft", level: LogLevel.Warning).AddFilter(category: "System.Net.Http.HttpClient", level: LogLevel.Warning).ClearProviders();
+        builder
+            .Logging.AddFilter(category: "Microsoft", level: LogLevel.Warning)
+            .AddFilter(category: "System.Net.Http.HttpClient", level: LogLevel.Warning)
+            .ClearProviders();
 
         return builder.Build();
     }

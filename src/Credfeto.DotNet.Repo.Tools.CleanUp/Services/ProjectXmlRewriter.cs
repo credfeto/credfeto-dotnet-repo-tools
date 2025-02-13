@@ -9,7 +9,11 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
 public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 {
-    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "TODO just comments"
+    )]
     public bool ReOrderPropertyGroups(XmlDocument projectDocument, string filename)
     {
         if (projectDocument.SelectSingleNode("Project") is not XmlElement project)
@@ -28,14 +32,21 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
         MergeProprtiesOfMultipleGroups(propertyGroups: propertyGroups);
 
-        ReOrderPropertyGroupWithAttributesOrComments(filename: filename, propertyGroups: propertyGroups);
+        ReOrderPropertyGroupWithAttributesOrComments(
+            filename: filename,
+            propertyGroups: propertyGroups
+        );
 
         string after = projectDocument.InnerXml;
 
         return !StringComparer.Ordinal.Equals(x: before, y: after);
     }
 
-    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "TODO just comments"
+    )]
     public bool ReOrderIncludes(XmlDocument projectDocument, string filename)
     {
         if (projectDocument.SelectSingleNode("Project") is not XmlElement project)
@@ -55,7 +66,9 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         List<XmlElement> sourceGroups = [];
         Dictionary<string, XmlNode> projectReferences = new(StringComparer.OrdinalIgnoreCase);
         Dictionary<string, XmlNode> packageReferencesNormal = new(StringComparer.OrdinalIgnoreCase);
-        Dictionary<string, XmlNode> packageReferencesPrivateGroup = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, XmlNode> packageReferencesPrivateGroup = new(
+            StringComparer.OrdinalIgnoreCase
+        );
 
         foreach (XmlElement itemGroup in itemGroups)
         {
@@ -122,9 +135,21 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         }
 
         // Add in New item groups at the end of the file for each of the types of reference
-        AppendReferences(projectDocument: projectDocument, source: projectReferences, project: project);
-        AppendReferences(projectDocument: projectDocument, source: packageReferencesNormal, project: project);
-        AppendReferences(projectDocument: projectDocument, source: packageReferencesPrivateGroup, project: project);
+        AppendReferences(
+            projectDocument: projectDocument,
+            source: projectReferences,
+            project: project
+        );
+        AppendReferences(
+            projectDocument: projectDocument,
+            source: packageReferencesNormal,
+            project: project
+        );
+        AppendReferences(
+            projectDocument: projectDocument,
+            source: packageReferencesPrivateGroup,
+            project: project
+        );
 
         RemoveNodes(sourceGroups);
 
@@ -133,7 +158,11 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         return !StringComparer.Ordinal.Equals(x: before, y: after);
     }
 
-    private static void AppendReferences(XmlDocument projectDocument, Dictionary<string, XmlNode> source, XmlElement project)
+    private static void AppendReferences(
+        XmlDocument projectDocument,
+        Dictionary<string, XmlNode> source,
+        XmlElement project
+    )
     {
         if (source.Count == 0)
         {
@@ -142,7 +171,12 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
         XmlElement itemGroup = projectDocument.CreateElement("ItemGroup");
 
-        foreach ((string _, XmlNode node) in source.OrderBy(keySelector: x => x.Key, comparer: StringComparer.OrdinalIgnoreCase))
+        foreach (
+            (string _, XmlNode node) in source.OrderBy(
+                keySelector: x => x.Key,
+                comparer: StringComparer.OrdinalIgnoreCase
+            )
+        )
         {
             itemGroup.AppendChild(node);
         }
@@ -163,7 +197,10 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
     private static void MergeProprtiesOfMultipleGroups(XmlNodeList propertyGroups)
     {
-        IReadOnlyList<XmlElement> combinablePropertyGroups = [.. propertyGroups.OfType<XmlElement>().Where(IsCombinableGroup)];
+        IReadOnlyList<XmlElement> combinablePropertyGroups =
+        [
+            .. propertyGroups.OfType<XmlElement>().Where(IsCombinableGroup),
+        ];
 
         XmlElement? targetPropertyGroup = combinablePropertyGroups.FirstOrDefault();
 
@@ -237,10 +274,20 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         return true;
     }
 
-    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
-    private static void ReOrderPropertyGroupWithAttributesOrComments(string filename, XmlNodeList propertyGroups)
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "TODO just comments"
+    )]
+    private static void ReOrderPropertyGroupWithAttributesOrComments(
+        string filename,
+        XmlNodeList propertyGroups
+    )
     {
-        IReadOnlyList<XmlElement> nonCombinablePropertyGroups = [.. propertyGroups.OfType<XmlElement>().Where(ph => !IsCombinableGroup(ph))];
+        IReadOnlyList<XmlElement> nonCombinablePropertyGroups =
+        [
+            .. propertyGroups.OfType<XmlElement>().Where(ph => !IsCombinableGroup(ph)),
+        ];
 
         foreach (XmlElement propertyGroup in nonCombinablePropertyGroups)
         {
@@ -290,7 +337,9 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
             {
                 propertyGroup.RemoveAll();
 
-                foreach (string entryKey in orderedChildren.Keys.Order(comparer: StringComparer.Ordinal))
+                foreach (
+                    string entryKey in orderedChildren.Keys.Order(comparer: StringComparer.Ordinal)
+                )
                 {
                     XmlNode item = orderedChildren[entryKey];
                     propertyGroup.AppendChild(item);

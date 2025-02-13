@@ -9,7 +9,12 @@ namespace Credfeto.DotNet.Repo.Tools.Git.Helpers;
 
 internal static class GitCommandLine
 {
-    public static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(string clonePath, string repoPath, string arguments, CancellationToken cancellationToken)
+    public static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(
+        string clonePath,
+        string repoPath,
+        string arguments,
+        CancellationToken cancellationToken
+    )
     {
         EnsureNotLocked(repoUrl: clonePath, workingDirectory: repoPath);
 
@@ -45,7 +50,13 @@ internal static class GitCommandLine
 
             string result = string.Join(separator: Environment.NewLine, output, error);
 
-            return (result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries), process.ExitCode);
+            return (
+                result.Split(
+                    separator: Environment.NewLine,
+                    options: StringSplitOptions.RemoveEmptyEntries
+                ),
+                process.ExitCode
+            );
         }
     }
 
@@ -55,7 +66,9 @@ internal static class GitCommandLine
 
         if (File.Exists(lockFile))
         {
-            throw new GitRepositoryLockedException($"Repository {repoUrl} at {workingDirectory} is locked.");
+            throw new GitRepositoryLockedException(
+                $"Repository {repoUrl} at {workingDirectory} is locked."
+            );
         }
     }
 }

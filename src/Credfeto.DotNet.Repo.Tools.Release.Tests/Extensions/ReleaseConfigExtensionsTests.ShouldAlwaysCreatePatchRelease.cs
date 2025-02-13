@@ -12,7 +12,10 @@ public sealed partial class ReleaseConfigExtensionsTests
     public void ShouldAlwaysCreatePatchRelease_ReturnsTrue(string repoUrl)
     {
         bool status = this._releaseConfig.ShouldAlwaysCreatePatchRelease(repoUrl);
-        Assert.True(condition: status, userMessage: "Should always create patch release without further checks");
+        Assert.True(
+            condition: status,
+            userMessage: "Should always create patch release without further checks"
+        );
     }
 
     [Theory]
@@ -23,6 +26,9 @@ public sealed partial class ReleaseConfigExtensionsTests
     public void ShouldAlwaysCreatePatchRelease_ReturnsFalse(string repoUrl)
     {
         bool status = this._releaseConfig.ShouldAlwaysCreatePatchRelease(repoUrl);
-        Assert.False(condition: status, userMessage: "Should not always create patch release without further checks");
+        Assert.False(
+            condition: status,
+            userMessage: "Should not always create patch release without further checks"
+        );
     }
 }

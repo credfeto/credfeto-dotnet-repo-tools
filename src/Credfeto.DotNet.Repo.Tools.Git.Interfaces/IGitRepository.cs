@@ -30,17 +30,30 @@ public interface IGitRepository : IDisposable
 
     ValueTask CommitAsync(string message, CancellationToken cancellationToken);
 
-    ValueTask CommitNamedAsync(string message, IReadOnlyList<string> files, CancellationToken cancellationToken);
+    ValueTask CommitNamedAsync(
+        string message,
+        IReadOnlyList<string> files,
+        CancellationToken cancellationToken
+    );
 
     ValueTask PushAsync(CancellationToken cancellationToken);
 
-    ValueTask PushOriginAsync(string branchName, string upstream, CancellationToken cancellationToken);
+    ValueTask PushOriginAsync(
+        string branchName,
+        string upstream,
+        CancellationToken cancellationToken
+    );
 
     bool DoesBranchExist(string branchName);
 
     ValueTask CreateBranchAsync(string branchName, CancellationToken cancellationToken);
 
-    ValueTask RemoveBranchesForPrefixAsync(string branchForUpdate, string branchPrefix, string upstream, CancellationToken cancellationToken);
+    ValueTask RemoveBranchesForPrefixAsync(
+        string branchForUpdate,
+        string branchPrefix,
+        string upstream,
+        CancellationToken cancellationToken
+    );
 
     DateTimeOffset GetLastCommitDate();
 }

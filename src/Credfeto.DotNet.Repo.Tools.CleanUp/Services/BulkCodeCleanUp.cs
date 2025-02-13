@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -120,9 +121,18 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         CancellationToken cancellationToken
     )
     {
-        await this.LoadTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
+        await this.LoadTrackingCacheAsync(
+            trackingFile: trackingFileName,
+            cancellationToken: cancellationToken
+        );
 
-        using (IGitRepository templateRepo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
+        using (
+            IGitRepository templateRepo = await this._gitRepositoryFactory.OpenOrCloneAsync(
+                workDir: workFolder,
+                repoUrl: templateRepository,
+                cancellationToken: cancellationToken
+            )
+        )
         {
             CleanupUpdateContext updateContext = await this.BuildUpdateContextAsync(
                 templateRepo: templateRepo,
@@ -134,16 +144,27 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
             try
             {
-                await this.UpdateRepositoriesAsync(updateContext: updateContext, repositories: repositories, cancellationToken: cancellationToken);
+                await this.UpdateRepositoriesAsync(
+                    updateContext: updateContext,
+                    repositories: repositories,
+                    cancellationToken: cancellationToken
+                );
             }
             finally
             {
-                await this.SaveTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
+                await this.SaveTrackingCacheAsync(
+                    trackingFile: trackingFileName,
+                    cancellationToken: cancellationToken
+                );
             }
         }
     }
 
-    private async ValueTask UpdateRepositoriesAsync(CleanupUpdateContext updateContext, IReadOnlyList<string> repositories, CancellationToken cancellationToken)
+    private async ValueTask UpdateRepositoriesAsync(
+        CleanupUpdateContext updateContext,
+        IReadOnlyList<string> repositories,
+        CancellationToken cancellationToken
+    )
     {
         try
         {
@@ -151,7 +172,11 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             {
                 try
                 {
-                    await this.UpdateRepositoryAsync(updateContext: updateContext, repo: repo, cancellationToken: cancellationToken);
+                    await this.UpdateRepositoryAsync(
+                        updateContext: updateContext,
+                        repo: repo,
+                        cancellationToken: cancellationToken
+                    );
                 }
                 catch (SolutionCheckFailedException exception)
                 {
@@ -165,7 +190,10 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                 {
                     if (!string.IsNullOrWhiteSpace(updateContext.TrackingFileName))
                     {
-                        await this._trackingCache.SaveAsync(fileName: updateContext.TrackingFileName, cancellationToken: cancellationToken);
+                        await this._trackingCache.SaveAsync(
+                            fileName: updateContext.TrackingFileName,
+                            cancellationToken: cancellationToken
+                        );
                     }
                 }
             }
@@ -177,13 +205,28 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         }
     }
 
-    private async ValueTask UpdateRepositoryAsync(CleanupUpdateContext updateContext, string repo, CancellationToken cancellationToken)
+    private async ValueTask UpdateRepositoryAsync(
+        CleanupUpdateContext updateContext,
+        string repo,
+        CancellationToken cancellationToken
+    )
     {
         this._logger.LogProcessingRepo(repo);
 
-        using (IGitRepository repository = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
+        using (
+            IGitRepository repository = await this._gitRepositoryFactory.OpenOrCloneAsync(
+                workDir: updateContext.WorkFolder,
+                repoUrl: repo,
+                cancellationToken: cancellationToken
+            )
+        )
         {
-            if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
+            if (
+                !ChangeLogDetector.TryFindChangeLog(
+                    repository: repository.Active,
+                    out string? changeLogFileName
+                )
+            )
             {
                 this._logger.LogNoChangelogFound();
                 await this._trackingCache.UpdateTrackingAsync(
@@ -196,30 +239,74 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                 return;
             }
 
-            RepoContext repoContext = new(Repository: repository, ChangeLogFileName: changeLogFileName);
+            RepoContext repoContext = new(
+                Repository: repository,
+                ChangeLogFileName: changeLogFileName
+            );
 
-            await this.ProcessRepoUpdatesAsync(updateContext: updateContext, repoContext: repoContext, cancellationToken: cancellationToken);
+            await this.ProcessRepoUpdatesAsync(
+                updateContext: updateContext,
+                repoContext: repoContext,
+                cancellationToken: cancellationToken
+            );
         }
     }
 
-    private async ValueTask ProcessRepoUpdatesAsync(CleanupUpdateContext updateContext, RepoContext repoContext, CancellationToken cancellationToken)
+    private async ValueTask ProcessRepoUpdatesAsync(
+        CleanupUpdateContext updateContext,
+        RepoContext repoContext,
+        CancellationToken cancellationToken
+    )
     {
-        if (repoContext.HasDotNetSolutions(out string? sourceDirectory, out IReadOnlyList<string>? _))
+        if (
+            repoContext.HasDotNetSolutions(
+                out string? sourceDirectory,
+                out IReadOnlyList<string>? _
+            )
+        )
         {
-            IReadOnlyList<string> projects = Directory.GetFiles(path: sourceDirectory, searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories);
-            BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
+            IReadOnlyList<string> projects = Directory.GetFiles(
+                path: sourceDirectory,
+                searchPattern: "*.csproj",
+                searchOption: SearchOption.AllDirectories
+            );
+            BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(
+                projects: projects,
+                cancellationToken: cancellationToken
+            );
 
-            await this.ReOrderProjectFilesAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, projects: projects, buildSettings: buildSettings, cancellationToken: cancellationToken);
-            await this.RemoveXmlDocCommentsAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
+            await this.ReOrderProjectFilesAsync(
+                repoContext: repoContext,
+                sourceDirectory: sourceDirectory,
+                projects: projects,
+                buildSettings: buildSettings,
+                cancellationToken: cancellationToken
+            );
+            await this.RemoveXmlDocCommentsAsync(
+                repoContext: repoContext,
+                sourceDirectory: sourceDirectory,
+                buildSettings: buildSettings,
+                cancellationToken: cancellationToken
+            );
         }
         else
         {
             this._logger.LogNoDotNetFilesFound();
         }
 
-        await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
+        await this._trackingCache.UpdateTrackingAsync(
+            repoContext: repoContext,
+            updateContext: updateContext,
+            value: repoContext.Repository.HeadRev,
+            cancellationToken: cancellationToken
+        );
     }
 
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Needs Review"
+    )]
     private async ValueTask FileCleanupAsync(
         RepoContext repoContext,
         string sourceDirectory,
@@ -236,7 +323,12 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
         BuildOverride buildOverride = new(PreRelease: true);
 
-        await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+        await this._dotNetBuild.BuildAsync(
+            basePath: sourceDirectory,
+            buildSettings: buildSettings,
+            buildOverride: buildOverride,
+            cancellationToken: cancellationToken
+        );
 
         bool lastBuildFailed = false;
 
@@ -246,12 +338,20 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             {
                 try
                 {
-                    await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+                    await this._dotNetBuild.BuildAsync(
+                        basePath: sourceDirectory,
+                        buildSettings: buildSettings,
+                        buildOverride: buildOverride,
+                        cancellationToken: cancellationToken
+                    );
                     lastBuildFailed = false;
                 }
                 catch (DotNetBuildErrorException)
                 {
-                    await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+                    await repoContext.Repository.ResetToMasterAsync(
+                        upstream: GitConstants.Upstream,
+                        cancellationToken: cancellationToken
+                    );
 
                     throw;
                 }
@@ -272,25 +372,61 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
             string sourceFileName = Path.GetFileName(sourceFile);
 
-            try
-            {
-                await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
-
-                lastBuildFailed = false;
-                await repoContext.Repository.CommitAsync($"Cleanup: {sourceFileName}", cancellationToken: cancellationToken);
-                await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
-            }
-            catch (DotNetBuildErrorException exception)
-            {
-                this._logger.LogBuildFailedOnRepoCheck(exception: exception);
-
-                await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
-                lastBuildFailed = true;
-            }
+            lastBuildFailed = await this.TestBuildAndCommitIfCleanAsync(
+                repoContext: repoContext,
+                sourceDirectory: sourceDirectory,
+                buildSettings: buildSettings,
+                buildOverride: buildOverride,
+                sourceFileName: sourceFileName,
+                cancellationToken: cancellationToken
+            );
         }
     }
 
-    private async ValueTask RemoveXmlDocCommentsAsync(RepoContext repoContext, string sourceDirectory, BuildSettings buildSettings, CancellationToken cancellationToken)
+    private async ValueTask<bool> TestBuildAndCommitIfCleanAsync(
+        RepoContext repoContext,
+        string sourceDirectory,
+        BuildSettings buildSettings,
+        BuildOverride buildOverride,
+        string sourceFileName,
+        CancellationToken cancellationToken
+    )
+    {
+        try
+        {
+            await this._dotNetBuild.BuildAsync(
+                basePath: sourceDirectory,
+                buildSettings: buildSettings,
+                buildOverride: buildOverride,
+                cancellationToken: cancellationToken
+            );
+
+            await repoContext.Repository.CommitAsync(
+                $"Cleanup: {sourceFileName}",
+                cancellationToken: cancellationToken
+            );
+            await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
+
+            return false;
+        }
+        catch (DotNetBuildErrorException exception)
+        {
+            this._logger.LogBuildFailedOnRepoCheck(exception: exception);
+
+            await repoContext.Repository.ResetToMasterAsync(
+                upstream: GitConstants.Upstream,
+                cancellationToken: cancellationToken
+            );
+            return true;
+        }
+    }
+
+    private async ValueTask RemoveXmlDocCommentsAsync(
+        RepoContext repoContext,
+        string sourceDirectory,
+        BuildSettings buildSettings,
+        CancellationToken cancellationToken
+    )
     {
         IReadOnlyList<string> sourceFiles = SourceFilesExcludingGenerated(sourceDirectory);
 
@@ -305,7 +441,11 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
         async ValueTask<bool> DoCleanupAsync(string fileName)
         {
-            string content = await File.ReadAllTextAsync(path: fileName, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
+            string content = await File.ReadAllTextAsync(
+                path: fileName,
+                encoding: Encoding.UTF8,
+                cancellationToken: cancellationToken
+            );
             string cleanedContent = this._xmlDocCommentRemover.RemoveXmlDocComments(content);
 
             if (StringComparer.InvariantCultureIgnoreCase.Equals(x: content, y: cleanedContent))
@@ -314,7 +454,11 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                 return false;
             }
 
-            await File.WriteAllTextAsync(path: fileName, contents: cleanedContent, cancellationToken: cancellationToken);
+            await File.WriteAllTextAsync(
+                path: fileName,
+                contents: cleanedContent,
+                cancellationToken: cancellationToken
+            );
 
             return true;
         }
@@ -322,7 +466,16 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
     private static IReadOnlyList<string> SourceFilesExcludingGenerated(string sourceDirectory)
     {
-        return [.. Directory.GetFiles(path: sourceDirectory, searchPattern: "*.cs", searchOption: SearchOption.AllDirectories).Where(IsNonGenerated)];
+        return
+        [
+            .. Directory
+                .GetFiles(
+                    path: sourceDirectory,
+                    searchPattern: "*.cs",
+                    searchOption: SearchOption.AllDirectories
+                )
+                .Where(IsNonGenerated),
+        ];
 
         bool IsNonGenerated(string filename)
         {
@@ -330,7 +483,13 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         }
     }
 
-    private async ValueTask ReOrderProjectFilesAsync(RepoContext repoContext, string sourceDirectory, IReadOnlyList<string> projects, BuildSettings buildSettings, CancellationToken cancellationToken)
+    private async ValueTask ReOrderProjectFilesAsync(
+        RepoContext repoContext,
+        string sourceDirectory,
+        IReadOnlyList<string> projects,
+        BuildSettings buildSettings,
+        CancellationToken cancellationToken
+    )
     {
         if (projects is [])
         {
@@ -348,7 +507,10 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
         async ValueTask<bool> DoCleanupAsync(string project)
         {
-            (XmlDocument doc, string content) = await LoadProjectAsync(path: project, cancellationToken: cancellationToken);
+            (XmlDocument doc, string content) = await LoadProjectAsync(
+                path: project,
+                cancellationToken: cancellationToken
+            );
 
             string projectName = Path.GetFileName(project);
 
@@ -359,7 +521,10 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
             await SaveProjectAsync(project: project, doc: doc);
 
-            string contentAfter = await LoadProjectTextAsync(path: project, cancellationToken: cancellationToken);
+            string contentAfter = await LoadProjectTextAsync(
+                path: project,
+                cancellationToken: cancellationToken
+            );
 
             return !StringComparer.Ordinal.Equals(x: contentAfter, y: content);
         }
@@ -371,12 +536,22 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
         int changes = 0;
 
-        if (this._projectXmlRewriter.ReOrderPropertyGroups(projectDocument: project, filename: projectFile))
+        if (
+            this._projectXmlRewriter.ReOrderPropertyGroups(
+                projectDocument: project,
+                filename: projectFile
+            )
+        )
         {
             ++changes;
         }
 
-        if (this._projectXmlRewriter.ReOrderIncludes(projectDocument: project, filename: projectFile))
+        if (
+            this._projectXmlRewriter.ReOrderIncludes(
+                projectDocument: project,
+                filename: projectFile
+            )
+        )
         {
             ++changes;
         }
@@ -397,16 +572,24 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             Async = true,
         };
 
-        await using (XmlWriter xmlWriter = XmlWriter.Create(outputFileName: project, settings: settings))
+        await using (
+            XmlWriter xmlWriter = XmlWriter.Create(outputFileName: project, settings: settings)
+        )
         {
             doc.Save(xmlWriter);
             await ValueTask.CompletedTask;
         }
     }
 
-    private static async ValueTask<(XmlDocument doc, string content)> LoadProjectAsync(string path, CancellationToken cancellationToken)
+    private static async ValueTask<(XmlDocument doc, string content)> LoadProjectAsync(
+        string path,
+        CancellationToken cancellationToken
+    )
     {
-        string content = await LoadProjectTextAsync(path: path, cancellationToken: cancellationToken);
+        string content = await LoadProjectTextAsync(
+            path: path,
+            cancellationToken: cancellationToken
+        );
         XmlDocument doc = new();
 
         doc.LoadXml(content);
@@ -414,9 +597,16 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         return (doc, content);
     }
 
-    private static Task<string> LoadProjectTextAsync(string path, in CancellationToken cancellationToken)
+    private static Task<string> LoadProjectTextAsync(
+        string path,
+        in CancellationToken cancellationToken
+    )
     {
-        return File.ReadAllTextAsync(path: path, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
+        return File.ReadAllTextAsync(
+            path: path,
+            encoding: Encoding.UTF8,
+            cancellationToken: cancellationToken
+        );
     }
 
     private async ValueTask<CleanupUpdateContext> BuildUpdateContextAsync(
@@ -427,26 +617,49 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         CancellationToken cancellationToken
     )
     {
-        DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.WorkingDirectory, cancellationToken: cancellationToken);
+        DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(
+            baseFolder: templateRepo.WorkingDirectory,
+            cancellationToken: cancellationToken
+        );
 
-        IReadOnlyList<Version> installedDotNetSdks = await this._dotNetVersion.GetInstalledSdksAsync(cancellationToken);
+        IReadOnlyList<Version> installedDotNetSdks =
+            await this._dotNetVersion.GetInstalledSdksAsync(cancellationToken);
 
-        if (dotNetSettings.SdkVersion is not null && Version.TryParse(input: dotNetSettings.SdkVersion, out Version? sdkVersion))
+        if (
+            dotNetSettings.SdkVersion is not null
+            && Version.TryParse(input: dotNetSettings.SdkVersion, out Version? sdkVersion)
+        )
         {
             if (!installedDotNetSdks.Contains(sdkVersion))
             {
-                this._logger.LogMissingSdk(sdkVersion: sdkVersion, installedSdks: installedDotNetSdks);
+                this._logger.LogMissingSdk(
+                    sdkVersion: sdkVersion,
+                    installedSdks: installedDotNetSdks
+                );
 
-                throw new DotNetBuildErrorException("SDK version specified in global.json is not installed");
+                throw new DotNetBuildErrorException(
+                    "SDK version specified in global.json is not installed"
+                );
             }
         }
 
-        ReleaseConfig releaseConfig = await this._releaseConfigLoader.LoadAsync(path: releaseConfigFileName, cancellationToken: cancellationToken);
+        ReleaseConfig releaseConfig = await this._releaseConfigLoader.LoadAsync(
+            path: releaseConfigFileName,
+            cancellationToken: cancellationToken
+        );
 
-        return new(WorkFolder: workFolder, TrackingFileName: trackingFileName, DotNetSettings: dotNetSettings, ReleaseConfig: releaseConfig);
+        return new(
+            WorkFolder: workFolder,
+            TrackingFileName: trackingFileName,
+            DotNetSettings: dotNetSettings,
+            ReleaseConfig: releaseConfig
+        );
     }
 
-    private ValueTask LoadTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)
+    private ValueTask LoadTrackingCacheAsync(
+        string? trackingFile,
+        in CancellationToken cancellationToken
+    )
     {
         if (string.IsNullOrWhiteSpace(trackingFile))
         {
@@ -458,11 +671,22 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             return ValueTask.CompletedTask;
         }
 
-        return this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: cancellationToken);
+        return this._trackingCache.LoadAsync(
+            fileName: trackingFile,
+            cancellationToken: cancellationToken
+        );
     }
 
-    private ValueTask SaveTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)
+    private ValueTask SaveTrackingCacheAsync(
+        string? trackingFile,
+        in CancellationToken cancellationToken
+    )
     {
-        return string.IsNullOrWhiteSpace(trackingFile) ? ValueTask.CompletedTask : this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
+        return string.IsNullOrWhiteSpace(trackingFile)
+            ? ValueTask.CompletedTask
+            : this._trackingCache.SaveAsync(
+                fileName: trackingFile,
+                cancellationToken: cancellationToken
+            );
     }
 }

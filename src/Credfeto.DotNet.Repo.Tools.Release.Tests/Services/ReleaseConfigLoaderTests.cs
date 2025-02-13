@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
 using System.Threading;
@@ -24,33 +25,88 @@ public sealed class ReleaseConfigLoaderTests : TestBase
     }
 
     [Fact]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Unit Test"
+    )]
     public async Task LoadFromUrlAsync()
     {
         this.MockConfig();
 
-        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(path: "https://www.example.com/release.config", cancellationToken: CancellationToken.None);
+        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(
+            path: "https://www.example.com/release.config",
+            cancellationToken: CancellationToken.None
+        );
 
         Assert.Equal(expected: 1, actual: config.AutoReleasePendingPackages);
         Assert.Equal(expected: 4, actual: config.MinimumHoursBeforeAutoRelease);
         Assert.Equal(expected: 8, actual: config.InactivityHoursBeforeAutoRelease);
 
         Assert.NotEmpty(config.NeverRelease);
-        Assert.Contains(collection: config.NeverRelease, filter: match => IsMatch(match: match, repo: "template", matchType: MatchType.CONTAINS, include: true));
-        Assert.Contains(collection: config.NeverRelease, filter: match => IsMatch(match: match, repo: "git@github.com:example/never-release.git", matchType: MatchType.EXACT, include: true));
+        Assert.Contains(
+            collection: config.NeverRelease,
+            filter: match =>
+                IsMatch(
+                    match: match,
+                    repo: "template",
+                    matchType: MatchType.CONTAINS,
+                    include: true
+                )
+        );
+        Assert.Contains(
+            collection: config.NeverRelease,
+            filter: match =>
+                IsMatch(
+                    match: match,
+                    repo: "git@github.com:example/never-release.git",
+                    matchType: MatchType.EXACT,
+                    include: true
+                )
+        );
 
         Assert.NotEmpty(config.AlwaysMatch);
 
-        Assert.Contains(collection: config.AlwaysMatch, filter: match => IsMatch(match: match, repo: "git@github.com:example/always-match.git", matchType: MatchType.EXACT, include: false));
-        Assert.Contains(collection: config.AlwaysMatch, filter: match => IsMatch(match: match, repo: "code-analysis", matchType: MatchType.CONTAINS, include: true));
+        Assert.Contains(
+            collection: config.AlwaysMatch,
+            filter: match =>
+                IsMatch(
+                    match: match,
+                    repo: "git@github.com:example/always-match.git",
+                    matchType: MatchType.EXACT,
+                    include: false
+                )
+        );
+        Assert.Contains(
+            collection: config.AlwaysMatch,
+            filter: match =>
+                IsMatch(
+                    match: match,
+                    repo: "code-analysis",
+                    matchType: MatchType.CONTAINS,
+                    include: true
+                )
+        );
 
         Assert.NotEmpty(config.AllowedAutoUpgrade);
 
-        Assert.Contains(collection: config.AllowedAutoUpgrade, filter: match => IsMatch(match: match, repo: "template", matchType: MatchType.CONTAINS, include: false));
+        Assert.Contains(
+            collection: config.AllowedAutoUpgrade,
+            filter: match =>
+                IsMatch(
+                    match: match,
+                    repo: "template",
+                    matchType: MatchType.CONTAINS,
+                    include: false
+                )
+        );
     }
 
     private static bool IsMatch(in RepoMatch match, string repo, MatchType matchType, bool include)
     {
-        return StringComparer.Ordinal.Equals(x: match.Repo, y: repo) && match.MatchType == matchType && match.Include == include;
+        return StringComparer.Ordinal.Equals(x: match.Repo, y: repo)
+            && match.MatchType == matchType
+            && match.Include == include;
     }
 
     [Theory]
@@ -59,9 +115,15 @@ public sealed class ReleaseConfigLoaderTests : TestBase
     {
         this.MockConfig();
 
-        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(path: "https://www.example.com/release.config", cancellationToken: CancellationToken.None);
+        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(
+            path: "https://www.example.com/release.config",
+            cancellationToken: CancellationToken.None
+        );
 
-        Assert.True(config.ShouldNeverAutoReleaseRepo(repo), userMessage: "Should never auto release");
+        Assert.True(
+            config.ShouldNeverAutoReleaseRepo(repo),
+            userMessage: "Should never auto release"
+        );
     }
 
     [Theory]
@@ -71,9 +133,15 @@ public sealed class ReleaseConfigLoaderTests : TestBase
     {
         this.MockConfig();
 
-        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(path: "https://www.example.com/release.config", cancellationToken: CancellationToken.None);
+        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(
+            path: "https://www.example.com/release.config",
+            cancellationToken: CancellationToken.None
+        );
 
-        Assert.True(config.ShouldAlwaysCreatePatchRelease(repo), userMessage: "Should never auto release");
+        Assert.True(
+            config.ShouldAlwaysCreatePatchRelease(repo),
+            userMessage: "Should never auto release"
+        );
     }
 
     [Theory]
@@ -115,9 +183,15 @@ public sealed class ReleaseConfigLoaderTests : TestBase
     {
         this.MockConfig();
 
-        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(path: "https://www.example.com/release.config", cancellationToken: CancellationToken.None);
+        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(
+            path: "https://www.example.com/release.config",
+            cancellationToken: CancellationToken.None
+        );
 
-        Assert.True(config.CheckRepoForAllowedAutoUpgrade(repo), userMessage: "Should check repo for allowed auto upgrade");
+        Assert.True(
+            config.CheckRepoForAllowedAutoUpgrade(repo),
+            userMessage: "Should check repo for allowed auto upgrade"
+        );
     }
 
     private void MockConfig()
@@ -173,6 +247,10 @@ public sealed class ReleaseConfigLoaderTests : TestBase
             }
             """;
 
-        this._httpClientFactory.MockCreateClientWithResponse(nameof(ReleaseConfigLoader), httpStatusCode: HttpStatusCode.OK, responseMessage: releaseConfigJson);
+        this._httpClientFactory.MockCreateClientWithResponse(
+            nameof(ReleaseConfigLoader),
+            httpStatusCode: HttpStatusCode.OK,
+            responseMessage: releaseConfigJson
+        );
     }
 }

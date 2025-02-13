@@ -7,7 +7,11 @@ namespace Credfeto.DotNet.Repo.Tools.Cmd.Services;
 
 public sealed class ServiceProviderFactory : IServiceProviderFactory
 {
-    [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "False positive - the interface defines the method")]
+    [SuppressMessage(
+        category: "ReSharper",
+        checkId: "UnusedMember.Global",
+        Justification = "False positive - the interface defines the method"
+    )]
     public IServiceProvider Build(IServiceCollection serviceCollection)
     {
         return serviceCollection.BuildServiceProvider();

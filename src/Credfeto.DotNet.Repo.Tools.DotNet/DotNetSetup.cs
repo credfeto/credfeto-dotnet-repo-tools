@@ -8,6 +8,8 @@ public static class DotNetSetup
 {
     public static IServiceCollection AddDotNet(this IServiceCollection services)
     {
-        return services.AddSingleton<IGlobalJson, GlobalJson>().AddSingleton<IDotNetVersion, DotNetVersion>();
+        return services
+            .AddSingleton<IGlobalJson, GlobalJson>()
+            .AddSingleton<IDotNetVersion, DotNetVersion>();
     }
 }

@@ -19,11 +19,19 @@ public sealed class FileUpdater : IFileUpdater
         this._logger = logger;
     }
 
-    public async ValueTask<bool> UpdateFileAsync(RepoContext repoContext, CopyInstruction copyInstruction, Func<CancellationToken, ValueTask> changelogUpdate, CancellationToken cancellationToken)
+    public async ValueTask<bool> UpdateFileAsync(
+        RepoContext repoContext,
+        CopyInstruction copyInstruction,
+        Func<CancellationToken, ValueTask> changelogUpdate,
+        CancellationToken cancellationToken
+    )
     {
         this._logger.LogCheckingFile(copyInstruction);
 
-        Difference diff = await this.AttemptToUpdateAsync(copyInstruction: copyInstruction, cancellationToken: cancellationToken);
+        Difference diff = await this.AttemptToUpdateAsync(
+            copyInstruction: copyInstruction,
+            cancellationToken: cancellationToken
+        );
 
         return diff switch
         {
@@ -44,23 +52,36 @@ public sealed class FileUpdater : IFileUpdater
         return false;
     }
 
-    private async ValueTask<Difference> AttemptToUpdateAsync(CopyInstruction copyInstruction, CancellationToken cancellationToken)
+    private async ValueTask<Difference> AttemptToUpdateAsync(
+        CopyInstruction copyInstruction,
+        CancellationToken cancellationToken
+    )
     {
         if (!File.Exists(copyInstruction.SourceFileName))
         {
             return this.OnSourceMissing(copyInstruction);
         }
 
-        byte[] sourceBytes = await this.ReadSourceFileAsync(copyInstruction: copyInstruction, cancellationToken: cancellationToken);
+        byte[] sourceBytes = await this.ReadSourceFileAsync(
+            copyInstruction: copyInstruction,
+            cancellationToken: cancellationToken
+        );
 
         EnsureFolderExistsForFile(copyInstruction);
 
         if (!File.Exists(copyInstruction.TargetFileName))
         {
-            return await this.OnTargetMissingAsync(copyInstruction: copyInstruction, sourceBytes: sourceBytes, cancellationToken: cancellationToken);
+            return await this.OnTargetMissingAsync(
+                copyInstruction: copyInstruction,
+                sourceBytes: sourceBytes,
+                cancellationToken: cancellationToken
+            );
         }
 
-        byte[] targetBytes = await ReadTargetFileAsync(copyInstruction: copyInstruction, cancellationToken: cancellationToken);
+        byte[] targetBytes = await ReadTargetFileAsync(
+            copyInstruction: copyInstruction,
+            cancellationToken: cancellationToken
+        );
 
         if (IsSameContent(sourceBytes: sourceBytes, targetBytes: targetBytes))
         {
@@ -72,7 +93,11 @@ public sealed class FileUpdater : IFileUpdater
             return this.OnContentTargetNewer(copyInstruction);
         }
 
-        return await this.OnContentDifferentAsync(copyInstruction: copyInstruction, sourceBytes: sourceBytes, cancellationToken: cancellationToken);
+        return await this.OnContentDifferentAsync(
+            copyInstruction: copyInstruction,
+            sourceBytes: sourceBytes,
+            cancellationToken: cancellationToken
+        );
     }
 
     private static bool IsSameContent(byte[] sourceBytes, byte[] targetBytes)
@@ -90,14 +115,26 @@ public sealed class FileUpdater : IFileUpdater
         }
     }
 
-    private static async ValueTask<byte[]> ReadTargetFileAsync(CopyInstruction copyInstruction, CancellationToken cancellationToken)
+    private static async ValueTask<byte[]> ReadTargetFileAsync(
+        CopyInstruction copyInstruction,
+        CancellationToken cancellationToken
+    )
     {
-        return await File.ReadAllBytesAsync(path: copyInstruction.TargetFileName, cancellationToken: cancellationToken);
+        return await File.ReadAllBytesAsync(
+            path: copyInstruction.TargetFileName,
+            cancellationToken: cancellationToken
+        );
     }
 
-    private async ValueTask<byte[]> ReadSourceFileAsync(CopyInstruction copyInstruction, CancellationToken cancellationToken)
+    private async ValueTask<byte[]> ReadSourceFileAsync(
+        CopyInstruction copyInstruction,
+        CancellationToken cancellationToken
+    )
     {
-        byte[] sourceBytes = await File.ReadAllBytesAsync(path: copyInstruction.SourceFileName, cancellationToken: cancellationToken);
+        byte[] sourceBytes = await File.ReadAllBytesAsync(
+            path: copyInstruction.SourceFileName,
+            cancellationToken: cancellationToken
+        );
         (sourceBytes, bool changed) = copyInstruction.Apply(sourceBytes);
 
         if (changed)
@@ -108,18 +145,34 @@ public sealed class FileUpdater : IFileUpdater
         return sourceBytes;
     }
 
-    private async ValueTask<Difference> OnContentDifferentAsync(CopyInstruction copyInstruction, byte[] sourceBytes, CancellationToken cancellationToken)
+    private async ValueTask<Difference> OnContentDifferentAsync(
+        CopyInstruction copyInstruction,
+        byte[] sourceBytes,
+        CancellationToken cancellationToken
+    )
     {
         this._logger.LogTargetDifferent(copyInstruction);
 
-        await WriteTargetFileAsync(copyInstruction: copyInstruction, sourceBytes: sourceBytes, cancellationToken: cancellationToken);
+        await WriteTargetFileAsync(
+            copyInstruction: copyInstruction,
+            sourceBytes: sourceBytes,
+            cancellationToken: cancellationToken
+        );
 
         return Difference.DIFFERENT;
     }
 
-    private static Task WriteTargetFileAsync(in CopyInstruction copyInstruction, byte[] sourceBytes, in CancellationToken cancellationToken)
+    private static Task WriteTargetFileAsync(
+        in CopyInstruction copyInstruction,
+        byte[] sourceBytes,
+        in CancellationToken cancellationToken
+    )
     {
-        return File.WriteAllBytesAsync(path: copyInstruction.TargetFileName, bytes: sourceBytes, cancellationToken: cancellationToken);
+        return File.WriteAllBytesAsync(
+            path: copyInstruction.TargetFileName,
+            bytes: sourceBytes,
+            cancellationToken: cancellationToken
+        );
     }
 
     private Difference OnContentUnchanged(in CopyInstruction copyInstruction)
@@ -136,11 +189,19 @@ public sealed class FileUpdater : IFileUpdater
         return Difference.TARGET_NEWER;
     }
 
-    private async ValueTask<Difference> OnTargetMissingAsync(CopyInstruction copyInstruction, byte[] sourceBytes, CancellationToken cancellationToken)
+    private async ValueTask<Difference> OnTargetMissingAsync(
+        CopyInstruction copyInstruction,
+        byte[] sourceBytes,
+        CancellationToken cancellationToken
+    )
     {
         this._logger.LogTargetMissing(copyInstruction);
 
-        await WriteTargetFileAsync(copyInstruction: copyInstruction, sourceBytes: sourceBytes, cancellationToken: cancellationToken);
+        await WriteTargetFileAsync(
+            copyInstruction: copyInstruction,
+            sourceBytes: sourceBytes,
+            cancellationToken: cancellationToken
+        );
 
         return Difference.TARGET_MISSING;
     }
@@ -152,12 +213,20 @@ public sealed class FileUpdater : IFileUpdater
         return Difference.SOURCE_MISSING;
     }
 
-    private async ValueTask<bool> CommitFileAsync(RepoContext repoContext, CopyInstruction copyInstruction, Func<CancellationToken, ValueTask> changelogUpdate, CancellationToken cancellationToken)
+    private async ValueTask<bool> CommitFileAsync(
+        RepoContext repoContext,
+        CopyInstruction copyInstruction,
+        Func<CancellationToken, ValueTask> changelogUpdate,
+        CancellationToken cancellationToken
+    )
     {
         this._logger.LogCommitting(copyInstruction);
 
         await changelogUpdate(cancellationToken);
-        await repoContext.Repository.CommitAsync(message: copyInstruction.Message, cancellationToken: cancellationToken);
+        await repoContext.Repository.CommitAsync(
+            message: copyInstruction.Message,
+            cancellationToken: cancellationToken
+        );
 
         return true;
     }

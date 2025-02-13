@@ -9,7 +9,11 @@ namespace Credfeto.DotNet.Repo.Tools.Models;
 
 public static class RepoContextExtensions
 {
-    public static bool HasDotNetSolutions(this in RepoContext repoContext, [NotNullWhen(true)] out string? sourceDirectory, [NotNullWhen(true)] out IReadOnlyList<string>? solutions)
+    public static bool HasDotNetSolutions(
+        this in RepoContext repoContext,
+        [NotNullWhen(true)] out string? sourceDirectory,
+        [NotNullWhen(true)] out IReadOnlyList<string>? solutions
+    )
     {
         string sourceFolder = BuildSourceFolder(repoContext);
 
@@ -21,7 +25,10 @@ public static class RepoContextExtensions
             return false;
         }
 
-        IReadOnlyList<string> foundSolutions = [.. GetFiles(basePath: sourceFolder, searchPattern: "*.sln")];
+        IReadOnlyList<string> foundSolutions =
+        [
+            .. GetFiles(basePath: sourceFolder, searchPattern: "*.sln"),
+        ];
 
         if (foundSolutions is [])
         {
@@ -44,7 +51,12 @@ public static class RepoContextExtensions
         [NotNullWhen(true)] out IReadOnlyList<string>? projects
     )
     {
-        if (!repoContext.HasDotNetSolutions(out string? foundSourceDirectory, out IReadOnlyList<string>? foundSolutions))
+        if (
+            !repoContext.HasDotNetSolutions(
+                out string? foundSourceDirectory,
+                out IReadOnlyList<string>? foundSolutions
+            )
+        )
         {
             sourceDirectory = null;
             solutions = null;
@@ -53,7 +65,10 @@ public static class RepoContextExtensions
             return false;
         }
 
-        IReadOnlyList<string> foundProjects = [.. GetFiles(basePath: foundSourceDirectory, searchPattern: "*.csproj")];
+        IReadOnlyList<string> foundProjects =
+        [
+            .. GetFiles(basePath: foundSourceDirectory, searchPattern: "*.csproj"),
+        ];
 
         if (foundProjects is [])
         {
@@ -96,19 +111,50 @@ public static class RepoContextExtensions
         return repoContext.GetFiles(searchPattern: searchPattern).Any();
     }
 
-    public static bool HasNonStandardGithubActions(this in RepoContext repoContext, string templatePath)
+    public static bool HasNonStandardGithubActions(
+        this in RepoContext repoContext,
+        string templatePath
+    )
     {
-        string templateActionsPath = Path.Combine(path1: templatePath, path2: ".github", path3: "actions");
-        string repoActionsPath = Path.Combine(path1: repoContext.WorkingDirectory, path2: ".github", path3: "actions");
+        string templateActionsPath = Path.Combine(
+            path1: templatePath,
+            path2: ".github",
+            path3: "actions"
+        );
+        string repoActionsPath = Path.Combine(
+            path1: repoContext.WorkingDirectory,
+            path2: ".github",
+            path3: "actions"
+        );
 
-        string templateWorkflowsPath = Path.Combine(path1: repoContext.WorkingDirectory, path2: ".github", path3: "workflows");
-        string repoWorkflowsPath = Path.Combine(path1: repoContext.WorkingDirectory, path2: ".github", path3: "workflows");
+        string templateWorkflowsPath = Path.Combine(
+            path1: repoContext.WorkingDirectory,
+            path2: ".github",
+            path3: "workflows"
+        );
+        string repoWorkflowsPath = Path.Combine(
+            path1: repoContext.WorkingDirectory,
+            path2: ".github",
+            path3: "workflows"
+        );
 
-        return HasAdditionalFiles(templatePath: templateActionsPath, repoPath: repoActionsPath, searchPattern: "*.yml")
-            || HasAdditionalFiles(templatePath: templateWorkflowsPath, repoPath: repoWorkflowsPath, searchPattern: "*.yml");
+        return HasAdditionalFiles(
+                templatePath: templateActionsPath,
+                repoPath: repoActionsPath,
+                searchPattern: "*.yml"
+            )
+            || HasAdditionalFiles(
+                templatePath: templateWorkflowsPath,
+                repoPath: repoWorkflowsPath,
+                searchPattern: "*.yml"
+            );
     }
 
-    private static bool HasAdditionalFiles(string templatePath, string repoPath, string searchPattern)
+    private static bool HasAdditionalFiles(
+        string templatePath,
+        string repoPath,
+        string searchPattern
+    )
     {
         if (!Directory.Exists(repoPath))
         {
@@ -120,20 +166,32 @@ public static class RepoContextExtensions
             return true;
         }
 
-        IEnumerable<string> repoFiles = GetFiles(basePath: repoPath, searchPattern: searchPattern).WithoutPrefix(repoPath.Length);
-        IEnumerable<string> templateFiles = GetFiles(basePath: templatePath, searchPattern: searchPattern).WithoutPrefix(templatePath.Length);
+        IEnumerable<string> repoFiles = GetFiles(basePath: repoPath, searchPattern: searchPattern)
+            .WithoutPrefix(repoPath.Length);
+        IEnumerable<string> templateFiles = GetFiles(
+                basePath: templatePath,
+                searchPattern: searchPattern
+            )
+            .WithoutPrefix(templatePath.Length);
 
         return repoFiles.Except(second: templateFiles, comparer: StringComparer.Ordinal).Any();
     }
 
-    private static IEnumerable<string> GetFiles(this in RepoContext repoContext, string searchPattern)
+    private static IEnumerable<string> GetFiles(
+        this in RepoContext repoContext,
+        string searchPattern
+    )
     {
         return GetFiles(basePath: repoContext.WorkingDirectory, searchPattern: searchPattern);
     }
 
     private static IEnumerable<string> GetFiles(string basePath, string searchPattern)
     {
-        return Directory.EnumerateFiles(path: basePath, searchPattern: searchPattern, searchOption: SearchOption.AllDirectories);
+        return Directory.EnumerateFiles(
+            path: basePath,
+            searchPattern: searchPattern,
+            searchOption: SearchOption.AllDirectories
+        );
     }
 
     private static IEnumerable<string> GetDirectoriesOfFiles(this IEnumerable<string> source)
@@ -146,9 +204,18 @@ public static class RepoContextExtensions
         return source.Select(file => file[prefix..]);
     }
 
-    public static bool HasNpmAndYarn(this in RepoContext repoContext, [NotNullWhen(true)] out IReadOnlyList<string>? directories)
+    public static bool HasNpmAndYarn(
+        this in RepoContext repoContext,
+        [NotNullWhen(true)] out IReadOnlyList<string>? directories
+    )
     {
-        IReadOnlyList<string> dirs = [.. repoContext.GetFiles("package.json").GetDirectoriesOfFiles().WithoutPrefix(repoContext.WorkingDirectory.Length)];
+        IReadOnlyList<string> dirs =
+        [
+            .. repoContext
+                .GetFiles("package.json")
+                .GetDirectoriesOfFiles()
+                .WithoutPrefix(repoContext.WorkingDirectory.Length),
+        ];
 
         if (dirs is [])
         {

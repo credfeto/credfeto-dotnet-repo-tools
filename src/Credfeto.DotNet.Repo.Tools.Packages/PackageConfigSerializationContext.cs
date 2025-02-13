@@ -5,7 +5,11 @@ using Credfeto.DotNet.Repo.Tools.Models.Packages;
 
 namespace Credfeto.DotNet.Repo.Tools.Packages;
 
-[SuppressMessage(category: "ReSharper", checkId: "PartialTypeWithSinglePart", Justification = "Required for JsonSerializerContext")]
+[SuppressMessage(
+    category: "ReSharper",
+    checkId: "PartialTypeWithSinglePart",
+    Justification = "Required for JsonSerializerContext"
+)]
 [JsonSourceGenerationOptions(
     GenerationMode = JsonSourceGenerationMode.Serialization | JsonSourceGenerationMode.Metadata,
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,

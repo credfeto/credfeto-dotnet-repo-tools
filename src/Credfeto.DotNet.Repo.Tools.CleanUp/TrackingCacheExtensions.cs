@@ -19,7 +19,10 @@ public static class TrackingCacheExtensions
 
         if (!string.IsNullOrWhiteSpace(updateContext.TrackingFileName))
         {
-            await trackingCache.SaveAsync(fileName: updateContext.TrackingFileName, cancellationToken: cancellationToken);
+            await trackingCache.SaveAsync(
+                fileName: updateContext.TrackingFileName,
+                cancellationToken: cancellationToken
+            );
         }
     }
 }

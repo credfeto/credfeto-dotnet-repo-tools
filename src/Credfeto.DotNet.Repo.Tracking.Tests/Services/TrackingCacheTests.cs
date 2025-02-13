@@ -55,7 +55,15 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
     {
         string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
 
-        return Assert.ThrowsAsync<FileNotFoundException>(() => this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: CancellationToken.None).AsTask());
+        return Assert.ThrowsAsync<FileNotFoundException>(
+            () =>
+                this
+                    ._trackingCache.LoadAsync(
+                        fileName: trackingFile,
+                        cancellationToken: CancellationToken.None
+                    )
+                    .AsTask()
+        );
     }
 
     [Fact]
@@ -64,9 +72,16 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
         this.Output.WriteLine(trackingFile);
 
-        await File.WriteAllTextAsync(path: trackingFile, contents: "{}", cancellationToken: CancellationToken.None);
+        await File.WriteAllTextAsync(
+            path: trackingFile,
+            contents: "{}",
+            cancellationToken: CancellationToken.None
+        );
 
-        await this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: CancellationToken.None);
+        await this._trackingCache.LoadAsync(
+            fileName: trackingFile,
+            cancellationToken: CancellationToken.None
+        );
 
         string? result = this._trackingCache.Get("Test1");
         Assert.Null(result);
@@ -82,9 +97,16 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
         this.Output.WriteLine(trackingFile);
 
-        await File.WriteAllTextAsync(path: trackingFile, contents: "{\"Test1\":\"Hello World\",\"Test2\":\"Banana\"}", cancellationToken: CancellationToken.None);
+        await File.WriteAllTextAsync(
+            path: trackingFile,
+            contents: "{\"Test1\":\"Hello World\",\"Test2\":\"Banana\"}",
+            cancellationToken: CancellationToken.None
+        );
 
-        await this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: CancellationToken.None);
+        await this._trackingCache.LoadAsync(
+            fileName: trackingFile,
+            cancellationToken: CancellationToken.None
+        );
 
         string? result = this._trackingCache.Get("Test1");
 
@@ -108,9 +130,15 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         this._trackingCache.Set(repoUrl: "Test1", value: "Hello World");
         this._trackingCache.Set(repoUrl: "Test1", value: null);
 
-        await this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: CancellationToken.None);
+        await this._trackingCache.SaveAsync(
+            fileName: trackingFile,
+            cancellationToken: CancellationToken.None
+        );
 
-        string content = await File.ReadAllTextAsync(path: trackingFile, cancellationToken: CancellationToken.None);
+        string content = await File.ReadAllTextAsync(
+            path: trackingFile,
+            cancellationToken: CancellationToken.None
+        );
         this.Output.WriteLine(content);
 
         Assert.Equal(expected: "{}", actual: content);
@@ -125,9 +153,15 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         this._trackingCache.Set(repoUrl: "Test1", value: "Hello World");
         this._trackingCache.Set(repoUrl: "Test2", value: "Banana");
 
-        await this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: CancellationToken.None);
+        await this._trackingCache.SaveAsync(
+            fileName: trackingFile,
+            cancellationToken: CancellationToken.None
+        );
 
-        string content = await File.ReadAllTextAsync(path: trackingFile, cancellationToken: CancellationToken.None);
+        string content = await File.ReadAllTextAsync(
+            path: trackingFile,
+            cancellationToken: CancellationToken.None
+        );
         this.Output.WriteLine(content);
 
         Assert.Equal(expected: "{\"Test1\":\"Hello World\",\"Test2\":\"Banana\"}", actual: content);

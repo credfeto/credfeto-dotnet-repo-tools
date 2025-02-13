@@ -16,13 +16,20 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
 {
     private static readonly IProjectClassifier ProjectClassifier = new ProjectClassifier();
 
-    private static readonly ICheckConfiguration PreReleaseCheckConfiguration = new CheckConfiguration(preReleaseBuild: true, allowPackageVersionMismatch: true);
-    private static readonly ICheckConfiguration ReleaseCheckConfiguration = new CheckConfiguration(preReleaseBuild: false, allowPackageVersionMismatch: false);
+    private static readonly ICheckConfiguration PreReleaseCheckConfiguration =
+        new CheckConfiguration(preReleaseBuild: true, allowPackageVersionMismatch: true);
+    private static readonly ICheckConfiguration ReleaseCheckConfiguration = new CheckConfiguration(
+        preReleaseBuild: false,
+        allowPackageVersionMismatch: false
+    );
     private readonly ILogger<DotNetSolutionCheck> _logger;
 
     private readonly IServiceProviderFactory _serviceProviderFactory;
 
-    public DotNetSolutionCheck(IServiceProviderFactory serviceProviderFactory, ILogger<DotNetSolutionCheck> logger)
+    public DotNetSolutionCheck(
+        IServiceProviderFactory serviceProviderFactory,
+        ILogger<DotNetSolutionCheck> logger
+    )
     {
         this._serviceProviderFactory = serviceProviderFactory;
         this._logger = logger;
@@ -35,7 +42,10 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         CancellationToken cancellationToken
     )
     {
-        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
+        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(
+            repositoryDotNetSettings: repositoryDotNetSettings,
+            templateDotNetSettings: templateDotNetSettings
+        );
 
         bool allOk = true;
 
@@ -64,7 +74,11 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         }
     }
 
-    public async ValueTask ReleaseCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings repositoryDotNetSettings, CancellationToken cancellationToken)
+    public async ValueTask ReleaseCheckAsync(
+        IReadOnlyList<string> solutions,
+        DotNetVersionSettings repositoryDotNetSettings,
+        CancellationToken cancellationToken
+    )
     {
         IFrameworkSettings frameworkSettings = new FrameworkSettings(repositoryDotNetSettings);
         bool allOk = true;
@@ -101,7 +115,10 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         CancellationToken cancellationToken
     )
     {
-        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
+        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(
+            repositoryDotNetSettings: repositoryDotNetSettings,
+            templateDotNetSettings: templateDotNetSettings
+        );
 
         bool allOk = true;
 
@@ -127,9 +144,15 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         return allOk;
     }
 
-    private static IFrameworkSettings DefineFrameworkSettings(in DotNetVersionSettings repositoryDotNetSettings, in DotNetVersionSettings templateDotNetSettings)
+    private static IFrameworkSettings DefineFrameworkSettings(
+        in DotNetVersionSettings repositoryDotNetSettings,
+        in DotNetVersionSettings templateDotNetSettings
+    )
     {
-        if (!string.IsNullOrEmpty(repositoryDotNetSettings.SdkVersion) && !string.IsNullOrEmpty(templateDotNetSettings.SdkVersion))
+        if (
+            !string.IsNullOrEmpty(repositoryDotNetSettings.SdkVersion)
+            && !string.IsNullOrEmpty(templateDotNetSettings.SdkVersion)
+        )
         {
             NuGetVersion standardFramework = new(templateDotNetSettings.SdkVersion);
             NuGetVersion buildFramework = new(repositoryDotNetSettings.SdkVersion);
