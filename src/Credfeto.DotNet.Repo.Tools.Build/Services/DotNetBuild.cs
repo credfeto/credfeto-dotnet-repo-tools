@@ -243,6 +243,28 @@ public sealed class DotNetBuild : IDotNetBuild
             );
     }
 
+    private static string EnvironmentParameter((string name, string value) p)
+    {
+        return EnvironmentParameter(p.name, p.value);
+    }
+
+    private static string EnvironmentParameter(string name, string value)
+    {
+        return "-p:" + name + "=" + value;
+    }
+
+    private static string BuildEnvironmentParameters(
+        params (string name, string value)[] parameters
+    )
+    {
+        if (parameters.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        return string.Join(' ', parameters.Select(EnvironmentParameter));
+    }
+
     private async ValueTask DotNetPublishAsync(
         string basePath,
         BuildOverride buildOverride,
@@ -254,19 +276,42 @@ public sealed class DotNetBuild : IDotNetBuild
 
         if (string.IsNullOrWhiteSpace(framework))
         {
+            string parameters = BuildEnvironmentParameters(
+                ("CSharpier_Check", "true"),
+                ("DisableSwagger", "False"),
+                ("IncludeNativeLibrariesForSelfExtract", "false"),
+                ("PublishReadyToRun", "False"),
+                ("PublishReadyToRunShowWarnings", "True"),
+                ("PublishSingleFile", "true"),
+                ("PublishTrimmed", "False"),
+                ("TreatWarningsAsErrors", "True"),
+                ("Version", BUILD_VERSION)
+            );
+
             this._logger.LogPublishingNoFramework();
             await this.ExecRequireCleanAsync(
                 basePath: basePath,
-                $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --self-contained -p:CSharpier_Check=true -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {noWarn}",
+                $"publish -warnaserror  --configuration:Release -r:linux-x64 --self-contained {parameters} -nodeReuse:False {noWarn}",
                 cancellationToken: cancellationToken
             );
         }
         else
         {
+            string parameters = BuildEnvironmentParameters(
+                ("CSharpier_Check", "true"),
+                ("DisableSwagger", "False"),
+                ("IncludeNativeLibrariesForSelfExtract", "false"),
+                ("PublishReadyToRun", "False"),
+                ("PublishReadyToRunShowWarnings", "True"),
+                ("PublishSingleFile", "true"),
+                ("PublishTrimmed", "False"),
+                ("TreatWarningsAsErrors", "True"),
+                ("Version", BUILD_VERSION)
+            );
             this._logger.LogPublishingWithFramework(framework);
             await this.ExecRequireCleanAsync(
                 basePath: basePath,
-                $"publish -warnaserror -p:PublishSingleFile=true --configuration:Release -r:linux-x64 --framework:{framework} --self-contained -p:CSharpier_Check=true -p:PublishReadyToRun=False -p:PublishReadyToRunShowWarnings=True -p:PublishTrimmed=False -p:DisableSwagger=False -p:TreatWarningsAsErrors=True -p:Version={BUILD_VERSION} -p:IncludeNativeLibrariesForSelfExtract=false -nodeReuse:False {noWarn}",
+                $"publish -warnaserror --configuration:Release -r:linux-x64 --framework:{framework} --self-contained {parameters} -nodeReuse:False {noWarn}",
                 cancellationToken: cancellationToken
             );
         }
@@ -302,11 +347,16 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         string noWarn = BuildNoWarn(buildOverride);
 
+        string parameters = BuildEnvironmentParameters(
+            ("CSharpier_Check", "true"),
+            ("Version", BUILD_VERSION)
+        );
+
         this._logger.LogPacking();
 
         return this.ExecRequireCleanAsync(
             basePath: basePath,
-            $"pack --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} -p:CSharpier_Check=true  {noWarn}",
+            $"pack --no-restore -nodeReuse:False --configuration:Release {parameters} {noWarn}",
             cancellationToken: cancellationToken
         );
     }
@@ -318,12 +368,16 @@ public sealed class DotNetBuild : IDotNetBuild
     )
     {
         string noWarn = BuildNoWarn(buildOverride);
+        string parameters = BuildEnvironmentParameters(
+            ("CSharpier_Check", "true"),
+            ("Version", BUILD_VERSION)
+        );
 
         this._logger.LogTesting();
 
         return this.ExecRequireCleanAsync(
             basePath: basePath,
-            $"test --no-build --no-restore -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} -p:CSharpier_Check=true --filter FullyQualifiedName\\!~Integration {noWarn}",
+            $"test --no-build --no-restore -nodeReuse:False --configuration:Release {parameters} --filter FullyQualifiedName\\!~Integration {noWarn}",
             cancellationToken: cancellationToken
         );
     }
@@ -335,12 +389,16 @@ public sealed class DotNetBuild : IDotNetBuild
     )
     {
         string noWarn = BuildNoWarn(buildOverride);
+        string parameters = BuildEnvironmentParameters(
+            ("CSharpier_Check", "true"),
+            ("Version", BUILD_VERSION)
+        );
 
         this._logger.LogBuilding();
 
         return this.ExecRequireCleanAsync(
             basePath: basePath,
-            $"build --no-restore -warnAsError -nodeReuse:False --configuration:Release -p:Version={BUILD_VERSION} -p:CSharpier_Check=true {noWarn}",
+            $"build --no-restore -warnAsError -nodeReuse:False --configuration:Release {parameters} {noWarn}",
             cancellationToken: cancellationToken
         );
     }
