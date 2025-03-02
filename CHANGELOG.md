@@ -9,17 +9,20 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Roslynator.Analyzers to 4.13.1
-- Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.55.367
-- Dependencies - Updated Credfeto.Package to 1.10.122.1223
-- Dependencies - Updated FunFair.Test.Common to 6.1.260.1166
-- Dependencies - Updated SonarAnalyzer.CSharp to 10.7.0.110445
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.1.5] - 2025-03-02
+### Changed
+- Dependencies - Updated Roslynator.Analyzers to 4.13.1
+- Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.55.367
+- Dependencies - Updated Credfeto.Package to 1.10.122.1223
+- Dependencies - Updated FunFair.Test.Common to 6.1.260.1166
+- Dependencies - Updated SonarAnalyzer.CSharp to 10.7.0.110445
+
 ## [1.1.4] - 2025-02-21
 ### Changed
 - Dependencies - Updated Credfeto.Package to 1.10.121.1209
