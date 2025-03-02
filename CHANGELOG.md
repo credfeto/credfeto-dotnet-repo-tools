@@ -14,6 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.7.0.110445
 - Dependencies - Updated Credfeto.Package to 1.10.123.1229
 - Dependencies - Updated FunFair.Test.Common to 6.1.261.1171
+- Dependencies - Updated NuGet to 6.13.2
 ### Removed
 ### Deployment Changes
 
