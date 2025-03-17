@@ -17,6 +17,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Package to 1.10.125.1239
 - Dependencies - Updated Microsoft.Extensions to 9.0.3
 - Dependencies - Updated Credfeto.Enumeration to 1.2.68.969
+- SDK - Updated DotNet SDK to 9.0.201
 ### Removed
 ### Deployment Changes
 
