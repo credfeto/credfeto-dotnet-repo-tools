@@ -6,7 +6,6 @@ using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.DotNet.Repo.Tracking.Services;
 using FunFair.Test.Common;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Credfeto.DotNet.Repo.Tracking.Tests.Services;
 
@@ -60,7 +59,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
                 this
                     ._trackingCache.LoadAsync(
                         fileName: trackingFile,
-                        cancellationToken: CancellationToken.None
+                        cancellationToken: this.CancellationToken()
                     )
                     .AsTask()
         );
@@ -75,12 +74,12 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         await File.WriteAllTextAsync(
             path: trackingFile,
             contents: "{}",
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
 
         await this._trackingCache.LoadAsync(
             fileName: trackingFile,
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
 
         string? result = this._trackingCache.Get("Test1");
@@ -100,12 +99,12 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         await File.WriteAllTextAsync(
             path: trackingFile,
             contents: "{\"Test1\":\"Hello World\",\"Test2\":\"Banana\"}",
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
 
         await this._trackingCache.LoadAsync(
             fileName: trackingFile,
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
 
         string? result = this._trackingCache.Get("Test1");
@@ -132,12 +131,12 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
 
         await this._trackingCache.SaveAsync(
             fileName: trackingFile,
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
 
         string content = await File.ReadAllTextAsync(
             path: trackingFile,
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
         this.Output.WriteLine(content);
 
@@ -155,12 +154,12 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
 
         await this._trackingCache.SaveAsync(
             fileName: trackingFile,
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
 
         string content = await File.ReadAllTextAsync(
             path: trackingFile,
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
         this.Output.WriteLine(content);
 

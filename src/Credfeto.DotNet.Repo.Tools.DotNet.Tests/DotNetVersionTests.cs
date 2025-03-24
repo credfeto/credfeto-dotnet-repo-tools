@@ -6,7 +6,6 @@ using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.DotNet.Services;
 using FunFair.Test.Common;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Credfeto.DotNet.Repo.Tools.DotNet.Tests;
 
@@ -24,7 +23,7 @@ public sealed class DotNetVersionTests : LoggingTestBase
     public async Task MustReturnVersionsAsync()
     {
         IReadOnlyList<Version> versions = await this._dotNetVersion.GetInstalledSdksAsync(
-            CancellationToken.None
+            this.CancellationToken()
         );
         Assert.NotEmpty(versions);
 

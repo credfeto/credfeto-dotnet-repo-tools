@@ -5,7 +5,6 @@ using System.Xml;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 using FunFair.Test.Common;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests.Services;
 
