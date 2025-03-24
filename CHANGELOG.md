@@ -10,7 +10,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.56.380
-- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.78.751
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.13.61
 - Dependencies - Updated Microsoft.Extensions to 9.0.3
 - Dependencies - Updated Meziantou.Analyzer to 2.0.189
@@ -21,6 +20,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Enumeration to 1.2.71.984
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.88.918
 - Dependencies - Updated Credfeto.Date to 1.1.76.906
+- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.79.780
 ### Removed
 ### Deployment Changes
 
