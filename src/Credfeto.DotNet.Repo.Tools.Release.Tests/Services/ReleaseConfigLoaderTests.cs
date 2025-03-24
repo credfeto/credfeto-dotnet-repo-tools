@@ -36,7 +36,7 @@ public sealed class ReleaseConfigLoaderTests : TestBase
 
         ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(
             path: "https://www.example.com/release.config",
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
 
         Assert.Equal(expected: 1, actual: config.AutoReleasePendingPackages);
@@ -117,7 +117,7 @@ public sealed class ReleaseConfigLoaderTests : TestBase
 
         ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(
             path: "https://www.example.com/release.config",
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
 
         Assert.True(
@@ -135,7 +135,7 @@ public sealed class ReleaseConfigLoaderTests : TestBase
 
         ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(
             path: "https://www.example.com/release.config",
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
 
         Assert.True(
@@ -185,7 +185,7 @@ public sealed class ReleaseConfigLoaderTests : TestBase
 
         ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(
             path: "https://www.example.com/release.config",
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
 
         Assert.True(

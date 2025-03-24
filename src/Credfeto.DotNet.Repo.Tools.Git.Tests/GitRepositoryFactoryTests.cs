@@ -8,7 +8,6 @@ using Credfeto.DotNet.Repo.Tools.Git.Services;
 using FunFair.Test.Common;
 using NSubstitute;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Credfeto.DotNet.Repo.Tools.Git.Tests;
 
@@ -35,14 +34,14 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
     {
         return this.CloneTestCommonAsync(
             uri: Repositories.GitHubSsh,
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
     }
 
     [Fact(Skip = "Requires SSH to be setup")]
     public async Task CreateBranchSshAsync()
     {
-        CancellationToken cancellationToken = CancellationToken.None;
+        CancellationToken cancellationToken = this.CancellationToken();
 
         using (
             IGitRepository repo = await this._gitRepositoryFactory.OpenOrCloneAsync(
@@ -114,7 +113,7 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
     {
         return this.CloneTestCommonAsync(
             uri: Repositories.GitHubHttps,
-            cancellationToken: CancellationToken.None
+            cancellationToken: this.CancellationToken()
         );
     }
 

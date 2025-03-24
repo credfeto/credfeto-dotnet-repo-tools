@@ -2,7 +2,6 @@
 using FunFair.Test.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Credfeto.DotNet.Repo.Tools.DotNet.Tests;
 

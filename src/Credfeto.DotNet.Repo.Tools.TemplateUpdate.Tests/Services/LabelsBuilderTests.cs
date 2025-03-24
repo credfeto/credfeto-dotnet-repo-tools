@@ -1,7 +1,6 @@
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 using FunFair.Test.Common;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests.Services;
 
