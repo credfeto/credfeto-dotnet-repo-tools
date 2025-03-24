@@ -14,12 +14,12 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.78.751
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.13.61
 - Dependencies - Updated Microsoft.Extensions to 9.0.3
-- Dependencies - Updated Credfeto.Enumeration to 1.2.70.976
 - Dependencies - Updated Meziantou.Analyzer to 2.0.189
 - SDK - Updated DotNet SDK to 9.0.202
 - Dependencies - Updated FunFair.CodeAnalysis to 7.0.73.978
 - Dependencies - Updated FunFair.Test.Common to 6.1.264.1201
 - Dependencies - Updated Credfeto.Package to 1.10.128.1267
+- Dependencies - Updated Credfeto.Enumeration to 1.2.71.984
 ### Removed
 ### Deployment Changes
 
