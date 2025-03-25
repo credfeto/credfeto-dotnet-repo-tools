@@ -9,6 +9,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Models;
+using Credfeto.DotNet.Repo.Tools.Release.Services.LoggingExtensions;
+using Microsoft.Extensions.Logging;
 using MatchType = Credfeto.DotNet.Repo.Tools.Release.Interfaces.MatchType;
 
 namespace Credfeto.DotNet.Repo.Tools.Release.Services;
@@ -16,14 +18,21 @@ namespace Credfeto.DotNet.Repo.Tools.Release.Services;
 public sealed class ReleaseConfigLoader : IReleaseConfigLoader
 {
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<ReleaseConfigLoader> _logger;
 
-    public ReleaseConfigLoader(IHttpClientFactory httpClientFactory)
+    public ReleaseConfigLoader(
+        IHttpClientFactory httpClientFactory,
+        ILogger<ReleaseConfigLoader> logger
+    )
     {
         this._httpClientFactory = httpClientFactory;
+        this._logger = logger;
     }
 
     public ValueTask<ReleaseConfig> LoadAsync(string path, CancellationToken cancellationToken)
     {
+        this._logger.LoadingReleaseConfig(path);
+
         return
             Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && IsHttp(uri)
             ? this.LoadFromHttpAsync(uri: uri, cancellationToken: cancellationToken)

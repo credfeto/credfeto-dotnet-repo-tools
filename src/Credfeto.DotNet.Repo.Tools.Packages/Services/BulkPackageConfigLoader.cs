@@ -8,16 +8,23 @@ using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Packages.Services.LoggingExtensions;
+using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Packages.Services;
 
 public sealed class BulkPackageConfigLoader : IBulkPackageConfigLoader
 {
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<BulkPackageConfigLoader> _logger;
 
-    public BulkPackageConfigLoader(IHttpClientFactory httpClientFactory)
+    public BulkPackageConfigLoader(
+        IHttpClientFactory httpClientFactory,
+        ILogger<BulkPackageConfigLoader> logger
+    )
     {
         this._httpClientFactory = httpClientFactory;
+        this._logger = logger;
     }
 
     public ValueTask<IReadOnlyList<PackageUpdate>> LoadAsync(
@@ -25,6 +32,8 @@ public sealed class BulkPackageConfigLoader : IBulkPackageConfigLoader
         in CancellationToken cancellationToken
     )
     {
+        this._logger.LoadingPackageConfig(path);
+
         return
             Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && IsHttp(uri)
             ? this.LoadFromHttpAsyncAsync(uri: uri, cancellationToken: cancellationToken)

@@ -21,7 +21,10 @@ public sealed class ReleaseConfigLoaderTests : TestBase
     public ReleaseConfigLoaderTests()
     {
         this._httpClientFactory = GetSubstitute<IHttpClientFactory>();
-        this._releaseConfigLoader = new ReleaseConfigLoader(this._httpClientFactory);
+        this._releaseConfigLoader = new ReleaseConfigLoader(
+            this._httpClientFactory,
+            this.GetTypedLogger<ReleaseConfigLoader>()
+        );
     }
 
     [Fact]
