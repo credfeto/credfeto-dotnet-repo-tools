@@ -9,6 +9,14 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.1.7] - 2025-03-25
+### Changed
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.13.61
 - Dependencies - Updated Microsoft.Extensions to 9.0.3
 - Dependencies - Updated Meziantou.Analyzer to 2.0.189
@@ -23,12 +31,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.Test.Common to 6.1.265.1215
 - Dependencies - Updated Serilog.Extensions.Logging to 9.0.1
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.89.932
-### Removed
-### Deployment Changes
 
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 ## [1.1.6] - 2025-03-05
 ### Changed
 - Dependencies - Updated Roslynator.Analyzers to 4.13.1
