@@ -15,7 +15,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
-## [1.1.7] - 2025-03-25
+## [1.1.8] - 2025-03-25
 ### Changed
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.13.61
 - Dependencies - Updated Microsoft.Extensions to 9.0.3
@@ -31,6 +31,14 @@ Releases that have at least been deployed to staging, BUT NOT necessarily releas
 - Dependencies - Updated FunFair.Test.Common to 6.1.265.1215
 - Dependencies - Updated Serilog.Extensions.Logging to 9.0.1
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.89.932
+
+## [1.1.7] - 2025-03-17
+### Changed
+Dependencies - Updated Credfeto.Package to 1.10.124.1234
+Dependencies - Updated FunFair.Test.Common to 6.1.262.1177
+Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.56.380
+Dependencies - Updated Credfeto.Date to 1.1.75.877
+Dependencies - Updated Credfeto.Extensions.Linq to 1.0.78.751
 
 ## [1.1.6] - 2025-03-05
 ### Changed
