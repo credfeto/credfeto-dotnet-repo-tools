@@ -22,6 +22,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.80.786
 - Dependencies - Updated FunFair.BuildCheck to 474.1.0.1140
 - Dependencies - Updated FunFair.Test.Common to 6.1.265.1215
+- Dependencies - Updated Serilog.Extensions.Logging to 9.0.1
 ### Removed
 ### Deployment Changes
 
