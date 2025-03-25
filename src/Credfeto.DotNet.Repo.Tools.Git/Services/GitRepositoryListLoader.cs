@@ -6,16 +6,23 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Git.Services.LoggingExtensions;
+using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 
 public sealed class GitRepositoryListLoader : IGitRepositoryListLoader
 {
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<GitRepositoryListLoader> _logger;
 
-    public GitRepositoryListLoader(IHttpClientFactory httpClientFactory)
+    public GitRepositoryListLoader(
+        IHttpClientFactory httpClientFactory,
+        ILogger<GitRepositoryListLoader> logger
+    )
     {
         this._httpClientFactory = httpClientFactory;
+        this._logger = logger;
     }
 
     public ValueTask<IReadOnlyList<string>> LoadAsync(
@@ -23,6 +30,8 @@ public sealed class GitRepositoryListLoader : IGitRepositoryListLoader
         CancellationToken cancellationToken
     )
     {
+        this._logger.LoadingRepos(path);
+
         return
             Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && IsHttp(uri)
             ? this.LoadFromHttpAsync(uri: uri, cancellationToken: cancellationToken)
