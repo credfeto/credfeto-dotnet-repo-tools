@@ -10,7 +10,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 - Special case for publishable
 ### Changed
-- Dependencies - Updated Credfeto.Package to 1.10.130.1287
 - SDK - Updated DotNet SDK to 9.0.203
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.58.459
 - Dependencies - Updated FunFair.CodeAnalysis to 7.0.76.1027
@@ -20,6 +19,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated xunit.v3 to 2.0.1
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.91.972
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.81.829
+- Dependencies - Updated Credfeto.Package to 1.10.132.1328
 ### Removed
 ### Deployment Changes
 
