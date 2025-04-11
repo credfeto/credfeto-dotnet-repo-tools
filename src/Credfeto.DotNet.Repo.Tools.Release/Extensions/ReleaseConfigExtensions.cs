@@ -38,7 +38,16 @@ public static class ReleaseConfigExtensions
     )
     {
         return !releaseConfig.ShouldNeverAutoReleaseRepo(repoClonePath)
-            && releaseConfig.AlwaysMatch.MatchesPolicy(repoClonePath: repoClonePath, policy: false);
+            && releaseConfig.ShouldAlwaysReleasePublishable(repoClonePath: repoClonePath);
+    }
+
+    // ShouldAlwaysReleasePublishable Looks at (ReleaseConfig.AlwaysMatch)
+    public static bool ShouldAlwaysReleasePublishable(
+        in this ReleaseConfig releaseConfig,
+        string repoClonePath
+    )
+    {
+        return releaseConfig.AlwaysMatch.MatchesPolicy(repoClonePath: repoClonePath, policy: false);
     }
 
     private static bool MatchesPolicy(

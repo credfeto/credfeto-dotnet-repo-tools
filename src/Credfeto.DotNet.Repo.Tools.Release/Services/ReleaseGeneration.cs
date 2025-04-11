@@ -184,7 +184,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         {
             if (!buildSettings.Publishable)
             {
-                return false;
+                return releaseConfig.ShouldAlwaysReleasePublishable(repoContext.ClonePath);
             }
 
             this._logger.LogReleaseSkipped(
