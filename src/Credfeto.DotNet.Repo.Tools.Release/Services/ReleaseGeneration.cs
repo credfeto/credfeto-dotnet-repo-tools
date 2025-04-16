@@ -182,9 +182,9 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         if (releaseConfig.CheckRepoForAllowedAutoUpgrade(repoContext.ClonePath))
         {
-            if (!buildSettings.Publishable)
+            if (buildSettings.Publishable)
             {
-                return releaseConfig.ShouldAlwaysReleasePublishable(repoContext.ClonePath);
+                return !releaseConfig.ShouldAlwaysReleasePublishable(repoContext.ClonePath);
             }
 
             this._logger.LogReleaseSkipped(
