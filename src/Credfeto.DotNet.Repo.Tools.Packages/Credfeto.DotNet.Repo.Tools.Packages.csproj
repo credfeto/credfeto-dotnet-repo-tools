@@ -70,7 +70,7 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.93.984" />
+    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.94.990" />
     <PackageReference Include="Credfeto.Package" Version="1.10.135.1343" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.4" />
   </ItemGroup>
