@@ -51,10 +51,7 @@ internal static class GitCommandLine
             string result = string.Join(separator: Environment.NewLine, output, error);
 
             return (
-                result.Split(
-                    separator: Environment.NewLine,
-                    options: StringSplitOptions.RemoveEmptyEntries
-                ),
+                result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries),
                 process.ExitCode
             );
         }
@@ -66,9 +63,7 @@ internal static class GitCommandLine
 
         if (File.Exists(lockFile))
         {
-            throw new GitRepositoryLockedException(
-                $"Repository {repoUrl} at {workingDirectory} is locked."
-            );
+            throw new GitRepositoryLockedException($"Repository {repoUrl} at {workingDirectory} is locked.");
         }
     }
 }
