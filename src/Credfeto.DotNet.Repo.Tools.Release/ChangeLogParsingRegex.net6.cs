@@ -15,11 +15,7 @@ internal static partial class ChangeLogParsingRegex
         );
 
     private static Regex RegexGeoIp { get; } =
-        new(
-            pattern: REGEX_GEOIP,
-            options: REGEX_OPTIONS,
-            TimeSpan.FromMilliseconds(value: REGEX_TIMEOUT_MILLISECONDS)
-        );
+        new(pattern: REGEX_GEOIP, options: REGEX_OPTIONS, TimeSpan.FromMilliseconds(value: REGEX_TIMEOUT_MILLISECONDS));
 
     private static Regex RegexDotNetSdk { get; } =
         new(
