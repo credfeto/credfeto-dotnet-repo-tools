@@ -127,8 +127,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 
         IReadOnlyList<PackageUpdate> packagesToAdd =
         [
-            .. DetermineMinimalDotnetPackages(packages)
-                .OrderBy(p => p.PackageId, StringComparer.OrdinalIgnoreCase),
+            .. DetermineMinimalDotnetPackages(packages).OrderBy(p => p.PackageId, StringComparer.OrdinalIgnoreCase),
         ];
 
         config.AddRange(
@@ -140,9 +139,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
         );
     }
 
-    private static IEnumerable<PackageUpdate> DetermineMinimalDotnetPackages(
-        IReadOnlyList<PackageUpdate> packages
-    )
+    private static IEnumerable<PackageUpdate> DetermineMinimalDotnetPackages(IReadOnlyList<PackageUpdate> packages)
     {
         // Add Wildcard packages
         List<string> wildcardPackages = [];
@@ -152,11 +149,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
                 .OrderBy(package => package.PackageId.Length)
         )
         {
-            if (
-                wildcardPackages.Exists(candidate =>
-                    IsWildcardMatch(package: package, wildcardPackage: candidate)
-                )
-            )
+            if (wildcardPackages.Exists(candidate => IsWildcardMatch(package: package, wildcardPackage: candidate)))
             {
                 continue;
             }
@@ -174,11 +167,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
                 .OrderBy(package => package.PackageId.Length)
         )
         {
-            if (
-                wildcardPackages.Exists(candidate =>
-                    IsWildcardMatch(package: package, wildcardPackage: candidate)
-                )
-            )
+            if (wildcardPackages.Exists(candidate => IsWildcardMatch(package: package, wildcardPackage: candidate)))
             {
                 // Excluded by a wildcard
                 continue;
@@ -197,10 +186,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
     private static bool IsWildcardMatch(PackageUpdate package, string wildcardPackage)
     {
         return StringComparer.OrdinalIgnoreCase.Equals(x: package.PackageId, y: wildcardPackage)
-            || package.PackageId.StartsWith(
-                wildcardPackage + ".",
-                comparisonType: StringComparison.OrdinalIgnoreCase
-            );
+            || package.PackageId.StartsWith(wildcardPackage + ".", comparisonType: StringComparison.OrdinalIgnoreCase);
     }
 
     private static void AllowAllDependencies(List<string> config)
