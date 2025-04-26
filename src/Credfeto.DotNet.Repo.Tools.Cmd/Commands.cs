@@ -53,29 +53,17 @@ internal sealed class Commands
     }
 
     [Command("update-packages", Description = "Update all packages in all repositories")]
-    [SuppressMessage(
-        category: "ReSharper",
-        checkId: "UnusedMember.Global",
-        Justification = "Used by Cocona"
-    )]
+    [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
     public async Task UpdatePackagesAsync(
-        [Option(
-            name: "repositories",
-            ['r'],
-            Description = "repos.lst file containing list of repositories"
-        )]
+        [Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")]
             string repositoriesFileName,
-        [Option(name: "template", ['m'], Description = "Template repository to clone")]
-            string templateRepository,
+        [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
         [Option(name: "cache", ['c'], Description = "package cache file")] string? cacheFileName,
         [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")]
             string trackingFileName,
-        [Option(name: "packages", ['p'], Description = "Packages.json file to load")]
-            string packagesFileName,
-        [Option(name: "work", ['w'], Description = "folder where to clone repositories")]
-            string workFolder,
-        [Option(name: "release", ['l'], Description = "release.config file to load")]
-            string releaseConfigFileName,
+        [Option(name: "packages", ['p'], Description = "Packages.json file to load")] string packagesFileName,
+        [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder,
+        [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName,
         [Option(name: "source", ['s'], Description = "Urls to additional NuGet feeds to load")]
             IEnumerable<string>? source
     )
@@ -110,28 +98,16 @@ internal sealed class Commands
     }
 
     [Command("update-template", Description = "Update repos from template in all repositories")]
-    [SuppressMessage(
-        category: "ReSharper",
-        checkId: "UnusedMember.Global",
-        Justification = "Used by Cocona"
-    )]
+    [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
     public async Task UpdateFromTemplateAsync(
-        [Option(
-            name: "repositories",
-            ['r'],
-            Description = "repos.lst file containing list of repositories"
-        )]
+        [Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")]
             string repositoriesFileName,
-        [Option(name: "template", ['m'], Description = "Template repository to clone")]
-            string templateRepository,
+        [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
         [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")]
             string trackingFileName,
-        [Option(name: "packages", ['p'], Description = "Packages.json file to load")]
-            string packagesFileName,
-        [Option(name: "work", ['w'], Description = "folder where to clone repositories")]
-            string workFolder,
-        [Option(name: "release", ['l'], Description = "release.config file to load")]
-            string releaseConfigFileName
+        [Option(name: "packages", ['p'], Description = "Packages.json file to load")] string packagesFileName,
+        [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder,
+        [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName
     )
     {
         IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
@@ -181,28 +157,16 @@ internal sealed class Commands
     }
 
     [Command("code-cleanup", Description = "Perform code cleanup in all repositories")]
-    [SuppressMessage(
-        category: "ReSharper",
-        checkId: "UnusedMember.Global",
-        Justification = "Used by Cocona"
-    )]
+    [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
     public async Task CodeCleanupAsync(
-        [Option(
-            name: "repositories",
-            ['r'],
-            Description = "repos.lst file containing list of repositories"
-        )]
+        [Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")]
             string repositoriesFileName,
-        [Option(name: "template", ['m'], Description = "Template repository to clone")]
-            string templateRepository,
+        [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
         [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")]
             string trackingFileName,
-        [Option(name: "packages", ['p'], Description = "Packages.json file to load")]
-            string packagesFileName,
-        [Option(name: "work", ['w'], Description = "folder where to clone repositories")]
-            string workFolder,
-        [Option(name: "release", ['l'], Description = "release.config file to load")]
-            string releaseConfigFileName
+        [Option(name: "packages", ['p'], Description = "Packages.json file to load")] string packagesFileName,
+        [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder,
+        [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName
     )
     {
         IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
@@ -242,10 +206,7 @@ internal sealed class Commands
         return
         [
             .. repositories.Where(repositoryUrl =>
-                !StringComparer.InvariantCultureIgnoreCase.Equals(
-                    x: templateRepository,
-                    y: repositoryUrl
-                )
+                !StringComparer.InvariantCultureIgnoreCase.Equals(x: templateRepository, y: repositoryUrl)
             ),
         ];
     }
