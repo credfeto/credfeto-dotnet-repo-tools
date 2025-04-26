@@ -82,14 +82,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         CancellationToken cancellationToken
     )
     {
-        await this.LoadPackageCacheAsync(
-            packageCacheFile: cacheFileName,
-            cancellationToken: cancellationToken
-        );
-        await this.LoadTrackingCacheAsync(
-            trackingFile: trackingFileName,
-            cancellationToken: cancellationToken
-        );
+        await this.LoadPackageCacheAsync(packageCacheFile: cacheFileName, cancellationToken: cancellationToken);
+        await this.LoadTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
 
         IReadOnlyList<PackageUpdate> packages = await this._bulkPackageConfigLoader.LoadAsync(
             path: packagesFileName,
@@ -152,14 +146,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
         finally
         {
-            await this.SavePackageCacheAsync(
-                packageCacheFile: cacheFileName,
-                cancellationToken: cancellationToken
-            );
-            await this.SaveTrackingCacheAsync(
-                trackingFile: trackingFileName,
-                cancellationToken: cancellationToken
-            );
+            await this.SavePackageCacheAsync(packageCacheFile: cacheFileName, cancellationToken: cancellationToken);
+            await this.SaveTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
         }
     }
 
@@ -193,10 +181,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 }
                 catch (ReleaseTooOldException exception)
                 {
-                    this._logger.LogBuildFailedOnCreateRelease(
-                        message: exception.Message,
-                        exception: exception
-                    );
+                    this._logger.LogBuildFailedOnCreateRelease(message: exception.Message, exception: exception);
                 }
                 finally
                 {
@@ -271,19 +256,14 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 cancellationToken: cancellationToken
             );
 
-            this._logger.LogUpdatedCachedPackages(
-                packageId: package.PackageId,
-                count: updated.Count
-            );
+            this._logger.LogUpdatedCachedPackages(packageId: package.PackageId, count: updated.Count);
             updates += updated.Count;
         }
 
         this._logger.LogUpdatedCachedPackagesTotal(updates);
     }
 
-    private static XmlDocument BuildReferencedPackagesXmlDocument(
-        IReadOnlyList<PackageVersion> allPackages
-    )
+    private static XmlDocument BuildReferencedPackagesXmlDocument(IReadOnlyList<PackageVersion> allPackages)
     {
         XmlDocument document = new();
         XmlElement projectElement = document.CreateElement("Project");
@@ -322,12 +302,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             )
         )
         {
-            if (
-                !ChangeLogDetector.TryFindChangeLog(
-                    repository: repository.Active,
-                    out string? changeLogFileName
-                )
-            )
+            if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
             {
                 this._logger.LogNoChangelogFound();
                 await this._trackingCache.UpdateTrackingAsync(
@@ -340,10 +315,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 return;
             }
 
-            RepoContext repoContext = new(
-                Repository: repository,
-                ChangeLogFileName: changeLogFileName
-            );
+            RepoContext repoContext = new(Repository: repository, ChangeLogFileName: changeLogFileName);
 
             await this.ProcessRepoUpdatesAsync(
                 updateContext: updateContext,
@@ -435,10 +407,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         checkId: "MA0051: Method is too long",
         Justification = "Needs Review"
     )]
-    private async ValueTask<(
-        bool updated,
-        string? lastKnownGoodBuild
-    )> ProcessRepoOnePackageUpdateAsync(
+    private async ValueTask<(bool updated, string? lastKnownGoodBuild)> ProcessRepoOnePackageUpdateAsync(
         PackageUpdateContext updateContext,
         RepoContext repoContext,
         IReadOnlyList<string> solutions,
@@ -452,10 +421,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     {
         if (
             lastKnownGoodBuild is null
-            || !StringComparer.OrdinalIgnoreCase.Equals(
-                x: lastKnownGoodBuild,
-                y: repoContext.Repository.HeadRev
-            )
+            || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev)
         )
         {
             BuildOverride buildOverride = new(PreRelease: true);
@@ -617,10 +583,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             }
             else
             {
-                string branchForUpdate = BuildBranchForVersion(
-                    branchPrefix: branchPrefix,
-                    version: version
-                );
+                string branchForUpdate = BuildBranchForVersion(branchPrefix: branchPrefix, version: version);
 
                 await this.CommitToNamedBranchAsync(
                     repoContext: repoContext,
@@ -712,11 +675,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         CancellationToken cancellationToken
     )
     {
-        this._logger.LogCommittingToDefault(
-            repoContext: repoContext,
-            packageId: package.PackageId,
-            version: version
-        );
+        this._logger.LogCommittingToDefault(repoContext: repoContext, packageId: package.PackageId, version: version);
         await CommitChangeWithChangelogAsync(
             repoContext: repoContext,
             package: package,
@@ -836,9 +795,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         PackageMatch packageMatch = new(PackageId: package.PackageId, Prefix: !package.ExactMatch);
         this._logger.LogIncludingPackage(packageMatch);
 
-        IReadOnlyList<PackageMatch> excludedPackages = this.GetExcludedPackages(
-            package.Exclude ?? []
-        );
+        IReadOnlyList<PackageMatch> excludedPackages = this.GetExcludedPackages(package.Exclude ?? []);
 
         return new(PackageMatch: packageMatch, ExcludedPackages: excludedPackages);
     }
@@ -854,10 +811,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         foreach (PackageExclude exclude in excludes)
         {
-            PackageMatch packageMatch = new(
-                PackageId: exclude.PackageId,
-                Prefix: !exclude.ExactMatch
-            );
+            PackageMatch packageMatch = new(PackageId: exclude.PackageId, Prefix: !exclude.ExactMatch);
 
             excludedPackages.Add(packageMatch);
 
@@ -882,8 +836,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             cancellationToken: cancellationToken
         );
 
-        IReadOnlyList<Version> installedDotNetSdks =
-            await this._dotNetVersion.GetInstalledSdksAsync(cancellationToken);
+        IReadOnlyList<Version> installedDotNetSdks = await this._dotNetVersion.GetInstalledSdksAsync(cancellationToken);
 
         if (
             dotNetSettings.SdkVersion is not null
@@ -892,14 +845,9 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         {
             if (!installedDotNetSdks.Contains(sdkVersion))
             {
-                this._logger.LogMissingSdk(
-                    sdkVersion: sdkVersion,
-                    installedSdks: installedDotNetSdks
-                );
+                this._logger.LogMissingSdk(sdkVersion: sdkVersion, installedSdks: installedDotNetSdks);
 
-                throw new DotNetBuildErrorException(
-                    "SDK version specified in global.json is not installed"
-                );
+                throw new DotNetBuildErrorException("SDK version specified in global.json is not installed");
             }
         }
 
@@ -918,39 +866,24 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         );
     }
 
-    private ValueTask SaveTrackingCacheAsync(
-        string? trackingFile,
-        in CancellationToken cancellationToken
-    )
+    private ValueTask SaveTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)
     {
         return string.IsNullOrWhiteSpace(trackingFile)
             ? ValueTask.CompletedTask
-            : this._trackingCache.SaveAsync(
-                fileName: trackingFile,
-                cancellationToken: cancellationToken
-            );
+            : this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask SavePackageCacheAsync(
-        string? packageCacheFile,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask SavePackageCacheAsync(string? packageCacheFile, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(packageCacheFile))
         {
             return;
         }
 
-        await this._packageCache.SaveAsync(
-            fileName: packageCacheFile,
-            cancellationToken: cancellationToken
-        );
+        await this._packageCache.SaveAsync(fileName: packageCacheFile, cancellationToken: cancellationToken);
     }
 
-    private ValueTask LoadTrackingCacheAsync(
-        string? trackingFile,
-        in CancellationToken cancellationToken
-    )
+    private ValueTask LoadTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(trackingFile))
         {
@@ -962,16 +895,10 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             return ValueTask.CompletedTask;
         }
 
-        return this._trackingCache.LoadAsync(
-            fileName: trackingFile,
-            cancellationToken: cancellationToken
-        );
+        return this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask LoadPackageCacheAsync(
-        string? packageCacheFile,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask LoadPackageCacheAsync(string? packageCacheFile, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(packageCacheFile))
         {
@@ -983,9 +910,6 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             return;
         }
 
-        await this._packageCache.LoadAsync(
-            fileName: packageCacheFile,
-            cancellationToken: cancellationToken
-        );
+        await this._packageCache.LoadAsync(fileName: packageCacheFile, cancellationToken: cancellationToken);
     }
 }
