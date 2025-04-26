@@ -5,10 +5,7 @@ namespace Credfeto.DotNet.Repo.Tools.Release;
 internal static partial class ChangeLogParsingRegex
 {
     private const RegexOptions REGEX_OPTIONS =
-        RegexOptions.Multiline
-        | RegexOptions.Compiled
-        | RegexOptions.CultureInvariant
-        | RegexOptions.ExplicitCapture;
+        RegexOptions.Multiline | RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture;
     private const int REGEX_TIMEOUT_MILLISECONDS = 1000;
 
     // "- Dependencies - Updated Microsoft.Extensions.Configuration to 5.0.0"
