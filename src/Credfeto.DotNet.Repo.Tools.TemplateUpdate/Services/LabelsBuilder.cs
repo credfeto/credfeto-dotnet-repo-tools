@@ -12,20 +12,8 @@ public sealed class LabelsBuilder : ILabelsBuilder
 {
     private static readonly IReadOnlyList<LabelConfig> BaseLabels =
     [
-        new(
-            Name: "C#",
-            Description: "C# Source Files",
-            Colour: "db6baa",
-            ["./**/*.cs", "./**/*.csproj"],
-            []
-        ),
-        new(
-            Name: "C# Project",
-            Description: "C# Project Files",
-            Colour: "db6baa",
-            ["./**/*.csproj"],
-            []
-        ),
+        new(Name: "C#", Description: "C# Source Files", Colour: "db6baa", ["./**/*.cs", "./**/*.csproj"], []),
+        new(Name: "C# Project", Description: "C# Project Files", Colour: "db6baa", ["./**/*.csproj"], []),
         new(Name: "C# Solution", Description: "C# Solutions", Colour: "db6baa", ["./**/*.sln"], []),
         new(
             Name: "Powershell",
@@ -34,20 +22,8 @@ public sealed class LabelsBuilder : ILabelsBuilder
             ["./**/*.ps1", "./**/*.psm1"],
             []
         ),
-        new(
-            Name: "SQL",
-            Description: "SQL Source Files",
-            Colour: "413cd1",
-            ["db/**/*", "./**/*.sql"],
-            []
-        ),
-        new(
-            Name: "Solidity",
-            Description: "Solidity Source Files",
-            Colour: "413cd1",
-            ["./**/*.sol"],
-            []
-        ),
+        new(Name: "SQL", Description: "SQL Source Files", Colour: "413cd1", ["db/**/*", "./**/*.sql"], []),
+        new(Name: "Solidity", Description: "Solidity Source Files", Colour: "413cd1", ["./**/*.sol"], []),
         new(
             Name: "unit-tests",
             Description: "Unit test and integration test projects",
@@ -60,13 +36,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
             ],
             []
         ),
-        new(
-            Name: ".NET update",
-            Description: "Update to .net global.json",
-            Colour: "a870c9",
-            ["src/global.json"],
-            []
-        ),
+        new(Name: ".NET update", Description: "Update to .net global.json", Colour: "a870c9", ["src/global.json"], []),
         new(
             Name: "Config Change",
             Description: "Configuration files changes",
@@ -88,27 +58,9 @@ public sealed class LabelsBuilder : ILabelsBuilder
             ["tools/MigrationScripts/**/*"],
             []
         ),
-        new(
-            Name: "Legal Text",
-            Description: "Legal text files",
-            Colour: "facef0",
-            ["tools/LegalText/**/*"],
-            []
-        ),
-        new(
-            Name: "Change Log",
-            Description: "Changelog tracking file",
-            Colour: "53fcd4",
-            ["CHANGELOG.md"],
-            []
-        ),
-        new(
-            Name: "Read Me",
-            Description: "Repository readme file",
-            Colour: "5319e7",
-            ["README.md"],
-            []
-        ),
+        new(Name: "Legal Text", Description: "Legal text files", Colour: "facef0", ["tools/LegalText/**/*"], []),
+        new(Name: "Change Log", Description: "Changelog tracking file", Colour: "53fcd4", ["CHANGELOG.md"], []),
+        new(Name: "Read Me", Description: "Repository readme file", Colour: "5319e7", ["README.md"], []),
         new(Name: "Setup", Description: "Setup instructions", Colour: "5319e7", ["SETUP.md"], []),
         new(Name: "Markdown", Description: "Markdown files", Colour: "5319e7", ["./**/*.md"], []),
         new(
@@ -119,13 +71,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
             []
         ),
         new(Name: "Tech Debt", Description: "Technical debt", Colour: "30027a", [], []),
-        new(
-            Name: "auto-pr",
-            Description: "Pull request created automatically",
-            Colour: "0000aa",
-            [],
-            []
-        ),
+        new(Name: "auto-pr", Description: "Pull request created automatically", Colour: "0000aa", [], []),
         new(
             Name: "no-pr-activity",
             Description: "Pull Request has had no activity for a long time",
@@ -171,13 +117,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
         new(Name: "dependencies", Description: "Updates to dependencies", Colour: "0366d6", [], []),
         new(Name: "dotnet", Description: "Dotnet package updates", Colour: "db6baa", [], []),
         new(Name: "npm", Description: "npm package upate", Colour: "e99695", [], []),
-        new(
-            Name: "DO NOT MERGE",
-            Description: "This pull request should not be merged yet",
-            Colour: "ff0000",
-            [],
-            []
-        ),
+        new(Name: "DO NOT MERGE", Description: "This pull request should not be merged yet", Colour: "ff0000", [], []),
     ];
 
     public LabelContent BuildLabelsConfig(IReadOnlyList<string> projects)
@@ -213,10 +153,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
 
     private static string BuildLabelName(string projectName)
     {
-        return projectName
-            .Replace(oldChar: '.', newChar: '-')
-            .Replace(oldChar: ' ', newChar: '-')
-            .ToLowerInvariant();
+        return projectName.Replace(oldChar: '.', newChar: '-').Replace(oldChar: ' ', newChar: '-').ToLowerInvariant();
     }
 
     private static string GetLabelColour(string name)
@@ -252,10 +189,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
         foreach (LabelConfig labelConfig in sorted)
         {
             labeller = AddLabelMatch(labeller: labeller, labelConfig: labelConfig);
-            labelsWithColour = AddLabelsWithColor(
-                labelsWithColour: labelsWithColour,
-                labelConfig: labelConfig
-            );
+            labelsWithColour = AddLabelsWithColor(labelsWithColour: labelsWithColour, labelConfig: labelConfig);
         }
 
         return new(labelsWithColour.ToString(), labeller.ToString());
@@ -271,22 +205,16 @@ public sealed class LabelsBuilder : ILabelsBuilder
         //Log -message "Adding labelConfig $groupName"
 
         //Log -message " - Adding Group with file match"
-        return labeller
-            .AppendLine($"\"{labelConfig.Name}\":")
-            .AppendLine(BuildAllPathLine(labelConfig));
+        return labeller.AppendLine($"\"{labelConfig.Name}\":").AppendLine(BuildAllPathLine(labelConfig));
     }
 
     private static string BuildAllPathLine(in LabelConfig labelConfig)
     {
-        IEnumerable<PathInfo> paths = BuildIncludePaths(labelConfig)
-            .Concat(BuildExcludePaths(labelConfig));
+        IEnumerable<PathInfo> paths = BuildIncludePaths(labelConfig).Concat(BuildExcludePaths(labelConfig));
 
         string all =
             " - any: [ "
-            + string.Join(
-                separator: ", ",
-                paths.Select(i => i.Include ? $"'{i.Path}'" : $"'!{i.Path}'")
-            )
+            + string.Join(separator: ", ", paths.Select(i => i.Include ? $"'{i.Path}'" : $"'!{i.Path}'"))
             + " ]";
 
         return all;
@@ -304,9 +232,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
 
     private static IEnumerable<PathInfo> BuildExcludePaths(in LabelConfig labelConfig)
     {
-        return labelConfig
-            .PathsExclude.Order(comparer: StringComparer.OrdinalIgnoreCase)
-            .Select(Create);
+        return labelConfig.PathsExclude.Order(comparer: StringComparer.OrdinalIgnoreCase).Select(Create);
 
         static PathInfo Create(string path)
         {
@@ -314,10 +240,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
         }
     }
 
-    private static StringBuilder AddLabelsWithColor(
-        StringBuilder labelsWithColour,
-        in LabelConfig labelConfig
-    )
+    private static StringBuilder AddLabelsWithColor(StringBuilder labelsWithColour, in LabelConfig labelConfig)
     {
         //Log -message " - Adding Colour Group"
         labelsWithColour = labelsWithColour
@@ -326,9 +249,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
 
         if (!string.IsNullOrWhiteSpace(labelConfig.Description))
         {
-            labelsWithColour = labelsWithColour.AppendLine(
-                $"   description: \"{labelConfig.Description}\""
-            );
+            labelsWithColour = labelsWithColour.AppendLine($"   description: \"{labelConfig.Description}\"");
         }
 
         labelsWithColour = labelsWithColour.AppendLine();
