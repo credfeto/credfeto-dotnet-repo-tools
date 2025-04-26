@@ -5,8 +5,5 @@ namespace Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 
 public interface IGlobalJson
 {
-    ValueTask<DotNetVersionSettings> LoadGlobalJsonAsync(
-        string baseFolder,
-        CancellationToken cancellationToken
-    );
+    ValueTask<DotNetVersionSettings> LoadGlobalJsonAsync(string baseFolder, CancellationToken cancellationToken);
 }
