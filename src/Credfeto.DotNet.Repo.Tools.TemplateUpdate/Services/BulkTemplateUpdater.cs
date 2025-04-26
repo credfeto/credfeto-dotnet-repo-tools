@@ -89,10 +89,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         CancellationToken cancellationToken
     )
     {
-        await this.LoadTrackingCacheAsync(
-            trackingFile: trackingFileName,
-            cancellationToken: cancellationToken
-        );
+        await this.LoadTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
 
         IReadOnlyList<PackageUpdate> packages = await this._bulkPackageConfigLoader.LoadAsync(
             path: packagesFileName,
@@ -126,10 +123,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             }
             finally
             {
-                await this.SaveTrackingCacheAsync(
-                    trackingFile: trackingFileName,
-                    cancellationToken: cancellationToken
-                );
+                await this.SaveTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
             }
         }
     }
@@ -164,10 +158,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 }
                 catch (ReleaseTooOldException exception)
                 {
-                    this._logger.LogBuildFailedOnCreateRelease(
-                        message: exception.Message,
-                        exception: exception
-                    );
+                    this._logger.LogBuildFailedOnCreateRelease(message: exception.Message, exception: exception);
                 }
                 finally
                 {
@@ -205,12 +196,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             )
         )
         {
-            if (
-                !ChangeLogDetector.TryFindChangeLog(
-                    repository: repository.Active,
-                    out string? changeLogFileName
-                )
-            )
+            if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
             {
                 this._logger.LogNoChangelogFound();
                 await this._trackingCache.UpdateTrackingAsync(
@@ -223,10 +209,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 return;
             }
 
-            RepoContext repoContext = new(
-                Repository: repository,
-                ChangeLogFileName: changeLogFileName
-            );
+            RepoContext repoContext = new(Repository: repository, ChangeLogFileName: changeLogFileName);
 
             await this.ProcessRepoUpdatesAsync(
                 updateContext: updateContext,
@@ -253,12 +236,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             cancellationToken: cancellationToken
         );
 
-        if (
-            repoContext.HasDotNetSolutions(
-                out string? sourceDirectory,
-                out IReadOnlyList<string>? solutions
-            )
-        )
+        if (repoContext.HasDotNetSolutions(out string? sourceDirectory, out IReadOnlyList<string>? solutions))
         {
             await this.UpdateDotNetAsync(
                 updateContext: updateContext,
@@ -433,25 +411,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             path3: "linters"
         );
 
-        Func<byte[], (byte[] bytes, bool changed)> rewriteRunsOn = ShouldUseGitHubHostedRunners(
-            fileContext
-        );
+        Func<byte[], (byte[] bytes, bool changed)> rewriteRunsOn = ShouldUseGitHubHostedRunners(fileContext);
 
         return GetStandardFilesBaseToUpdate(fileContext)
-            .Concat(
-                IncludeFilesInSource(
-                    fileContext: fileContext,
-                    sourceFolder: issueTemplates,
-                    prefix: "Config"
-                )
-            )
-            .Concat(
-                IncludeFilesInSource(
-                    fileContext: fileContext,
-                    sourceFolder: actions,
-                    prefix: "Actions"
-                )
-            )
+            .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: issueTemplates, prefix: "Config"))
+            .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: actions, prefix: "Actions"))
             .Concat(
                 IncludeFilesInSource(
                     fileContext: fileContext,
@@ -460,30 +424,17 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                     apply: rewriteRunsOn
                 )
             )
-            .Concat(
-                IncludeFilesInSource(
-                    fileContext: fileContext,
-                    sourceFolder: linters,
-                    prefix: "Linters"
-                )
-            );
+            .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: linters, prefix: "Linters"));
     }
 
-    private static Func<byte[], (byte[] bytes, bool changed)> ShouldUseGitHubHostedRunners(
-        in FileContext fileContext
-    )
+    private static Func<byte[], (byte[] bytes, bool changed)> ShouldUseGitHubHostedRunners(in FileContext fileContext)
     {
-        return fileContext.RepoContext.ClonePath.Contains(
-            value: "credfeto",
-            comparisonType: StringComparison.Ordinal
-        )
+        return fileContext.RepoContext.ClonePath.Contains(value: "credfeto", comparisonType: StringComparison.Ordinal)
             ? ConvertFromSelfHostedRunnerToGitHubHostedRunner
             : NoChange;
     }
 
-    private static (byte[] bytes, bool changed) ConvertFromSelfHostedRunnerToGitHubHostedRunner(
-        byte[] source
-    )
+    private static (byte[] bytes, bool changed) ConvertFromSelfHostedRunnerToGitHubHostedRunner(byte[] source)
     {
         StringBuilder stringBuilder = new(Encoding.UTF8.GetString(source));
 
@@ -504,9 +455,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         return (target, true);
     }
 
-    private static IEnumerable<CopyInstruction> GetStandardFilesBaseToUpdate(
-        in FileContext fileContext
-    )
+    private static IEnumerable<CopyInstruction> GetStandardFilesBaseToUpdate(in FileContext fileContext)
     {
         return
         [
@@ -527,11 +476,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 prefix: "Config"
             ),
             fileContext.MakeFile(
-                string.Join(
-                    separator: Path.DirectorySeparatorChar,
-                    DOT_GITHUB_DIR,
-                    "PULL_REQUEST_TEMPLATE.md"
-                ),
+                string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "PULL_REQUEST_TEMPLATE.md"),
                 prefix: "Config"
             ),
             fileContext.MakeFile(
@@ -564,25 +509,16 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         Func<byte[], (byte[] bytes, bool changed)> apply
     )
     {
-        string sourceFolderName = Path.Combine(
-            path1: fileContext.UpdateContext.TemplateFolder,
-            path2: sourceFolder
-        );
+        string sourceFolderName = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: sourceFolder);
 
         int sourceFolderNamePrefixLength = TemplateFolderLength(fileContext);
 
         if (Directory.Exists(sourceFolderName))
         {
             return Directory
-                .EnumerateFiles(
-                    path: sourceFolderName,
-                    searchPattern: "*",
-                    searchOption: SearchOption.AllDirectories
-                )
+                .EnumerateFiles(path: sourceFolderName, searchPattern: "*", searchOption: SearchOption.AllDirectories)
                 .Select(issueSourceFile => issueSourceFile[sourceFolderNamePrefixLength..])
-                .Select(fileName =>
-                    fileContext.MakeFile(fileName: fileName, prefix: prefix, apply: apply)
-                );
+                .Select(fileName => fileContext.MakeFile(fileName: fileName, prefix: prefix, apply: apply));
         }
 
         return [];
@@ -622,21 +558,17 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         if (
             lastKnownGoodBuild is null
-            || !StringComparer.OrdinalIgnoreCase.Equals(
-                x: lastKnownGoodBuild,
-                y: repoContext.Repository.HeadRev
-            )
+            || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev)
         )
         {
             string repoGlobalJson = Path.Combine(path1: sourceDirectory, path2: "global.json");
 
             if (File.Exists(repoGlobalJson))
             {
-                DotNetVersionSettings repoDotNetSettings =
-                    await this._globalJson.LoadGlobalJsonAsync(
-                        baseFolder: repoContext.WorkingDirectory,
-                        cancellationToken: cancellationToken
-                    );
+                DotNetVersionSettings repoDotNetSettings = await this._globalJson.LoadGlobalJsonAsync(
+                    baseFolder: repoContext.WorkingDirectory,
+                    cancellationToken: cancellationToken
+                );
 
                 if (projects is not [])
                 {
@@ -765,10 +697,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         if (File.Exists(labelsFileName))
         {
-            string content = await File.ReadAllTextAsync(
-                path: labelsFileName,
-                cancellationToken: cancellationToken
-            );
+            string content = await File.ReadAllTextAsync(path: labelsFileName, cancellationToken: cancellationToken);
 
             if (!StringComparer.Ordinal.Equals(x: content, y: labels))
             {
@@ -778,10 +707,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         if (!changed && File.Exists(labelersFileName))
         {
-            string content = await File.ReadAllTextAsync(
-                path: labelersFileName,
-                cancellationToken: cancellationToken
-            );
+            string content = await File.ReadAllTextAsync(path: labelersFileName, cancellationToken: cancellationToken);
 
             if (!StringComparer.Ordinal.Equals(x: content, y: labeler))
             {
@@ -791,11 +717,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         if (changed)
         {
-            await File.WriteAllTextAsync(
-                path: labelsFileName,
-                contents: labels,
-                cancellationToken: cancellationToken
-            );
+            await File.WriteAllTextAsync(path: labelsFileName, contents: labels, cancellationToken: cancellationToken);
             await File.WriteAllTextAsync(
                 path: labelersFileName,
                 contents: labeler,
@@ -851,10 +773,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         const string dotSettingsExtension = ".DotSettings";
 
-        string templateSourceDirectory = Path.Combine(
-            path1: updateContext.TemplateFolder,
-            path2: "src"
-        );
+        string templateSourceDirectory = Path.Combine(path1: updateContext.TemplateFolder, path2: "src");
         string? dotSettingsSourceFile = Directory
             .GetFiles(path: templateSourceDirectory, "*.sln" + dotSettingsExtension)
             .FirstOrDefault();
@@ -868,9 +787,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         foreach (string targetSolutionFileName in solutions)
         {
-            string repoRelativeSolutionFileName = targetSolutionFileName[
-                (repoContext.WorkingDirectory.Length + 1)..
-            ];
+            string repoRelativeSolutionFileName = targetSolutionFileName[(repoContext.WorkingDirectory.Length + 1)..];
             string targetFileName = targetSolutionFileName + dotSettingsExtension;
 
             string commitMessage = $"Updated Resharper settings for {repoRelativeSolutionFileName}";
@@ -919,10 +836,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             path2: "src",
             path3: "global.json"
         );
-        string targetGlobalJsonFileName = Path.Combine(
-            path1: sourceDirectory,
-            path2: "global.json"
-        );
+        string targetGlobalJsonFileName = Path.Combine(path1: sourceDirectory, path2: "global.json");
 
         const string messagePrefix = "SDK - Updated DotNet SDK to ";
         string message = messagePrefix + updateContext.DotNetSettings.SdkVersion;
@@ -1085,10 +999,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 targetVersion
             );
 
-            return VersionCheck.IsDotNetSdkTargetNewer(
-                sourceVersion: sourceVersion,
-                targetVersion: targetVersion
-            );
+            return VersionCheck.IsDotNetSdkTargetNewer(sourceVersion: sourceVersion, targetVersion: targetVersion);
         }
     }
 
@@ -1153,8 +1064,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             cancellationToken: cancellationToken
         );
 
-        IReadOnlyList<Version> installedDotNetSdks =
-            await this._dotNetVersion.GetInstalledSdksAsync(cancellationToken);
+        IReadOnlyList<Version> installedDotNetSdks = await this._dotNetVersion.GetInstalledSdksAsync(cancellationToken);
 
         if (
             dotNetSettings.SdkVersion is not null
@@ -1163,14 +1073,9 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         {
             if (!installedDotNetSdks.Contains(sdkVersion))
             {
-                this._logger.LogMissingSdk(
-                    sdkVersion: sdkVersion,
-                    installedSdks: installedDotNetSdks
-                );
+                this._logger.LogMissingSdk(sdkVersion: sdkVersion, installedSdks: installedDotNetSdks);
 
-                throw new DotNetBuildErrorException(
-                    "SDK version specified in global.json is not installed"
-                );
+                throw new DotNetBuildErrorException("SDK version specified in global.json is not installed");
             }
         }
 
@@ -1188,10 +1093,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         );
     }
 
-    private ValueTask LoadTrackingCacheAsync(
-        string? trackingFile,
-        in CancellationToken cancellationToken
-    )
+    private ValueTask LoadTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(trackingFile))
         {
@@ -1203,33 +1105,19 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             return ValueTask.CompletedTask;
         }
 
-        return this._trackingCache.LoadAsync(
-            fileName: trackingFile,
-            cancellationToken: cancellationToken
-        );
+        return this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: cancellationToken);
     }
 
-    private ValueTask SaveTrackingCacheAsync(
-        string? trackingFile,
-        in CancellationToken cancellationToken
-    )
+    private ValueTask SaveTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)
     {
         return string.IsNullOrWhiteSpace(trackingFile)
             ? ValueTask.CompletedTask
-            : this._trackingCache.SaveAsync(
-                fileName: trackingFile,
-                cancellationToken: cancellationToken
-            );
+            : this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
     }
 
-    [DebuggerDisplay(
-        "Template: {UpdateContext.TemplateFolder}, Repo: {RepoContext.WorkingDirectory}"
-    )]
+    [DebuggerDisplay("Template: {UpdateContext.TemplateFolder}, Repo: {RepoContext.WorkingDirectory}")]
     [StructLayout(LayoutKind.Auto)]
-    private readonly record struct FileContext(
-        TemplateUpdateContext UpdateContext,
-        RepoContext RepoContext
-    )
+    private readonly record struct FileContext(TemplateUpdateContext UpdateContext, RepoContext RepoContext)
     {
         public CopyInstruction MakeFile(string fileName, string prefix)
         {
@@ -1242,14 +1130,8 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             Func<byte[], (byte[] bytes, bool changed)> apply
         )
         {
-            string sourceFileName = Path.Combine(
-                path1: this.UpdateContext.TemplateFolder,
-                path2: fileName
-            );
-            string targetFileName = Path.Combine(
-                path1: this.RepoContext.WorkingDirectory,
-                path2: fileName
-            );
+            string sourceFileName = Path.Combine(path1: this.UpdateContext.TemplateFolder, path2: fileName);
+            string targetFileName = Path.Combine(path1: this.RepoContext.WorkingDirectory, path2: fileName);
 
             return new(
                 SourceFileName: sourceFileName,
