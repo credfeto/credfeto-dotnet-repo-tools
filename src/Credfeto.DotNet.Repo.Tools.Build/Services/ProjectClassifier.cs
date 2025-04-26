@@ -19,19 +19,13 @@ internal sealed class ProjectClassifier : IProjectClassifier
 
     public bool MustHaveEnumSourceGeneratorAnalyzerPackage(IReadOnlyList<SolutionProject> projects)
     {
-        return HasNamedProject(
-            projects: projects,
-            projectName: "Credfeto.Enumeration.Source.Generation"
-        );
+        return HasNamedProject(projects: projects, projectName: "Credfeto.Enumeration.Source.Generation");
     }
 
     private static bool HasNamedProject(IReadOnlyList<SolutionProject> projects, string projectName)
     {
         return projects.Any(project =>
-            StringComparer.InvariantCultureIgnoreCase.Equals(
-                (string?)project.DisplayName,
-                y: projectName
-            )
+            StringComparer.InvariantCultureIgnoreCase.Equals((string?)project.DisplayName, y: projectName)
         );
     }
 }
