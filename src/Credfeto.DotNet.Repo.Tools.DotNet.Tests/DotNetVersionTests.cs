@@ -22,9 +22,7 @@ public sealed class DotNetVersionTests : LoggingTestBase
     [Fact]
     public async Task MustReturnVersionsAsync()
     {
-        IReadOnlyList<Version> versions = await this._dotNetVersion.GetInstalledSdksAsync(
-            this.CancellationToken()
-        );
+        IReadOnlyList<Version> versions = await this._dotNetVersion.GetInstalledSdksAsync(this.CancellationToken());
         Assert.NotEmpty(versions);
 
         foreach (Version version in versions)
