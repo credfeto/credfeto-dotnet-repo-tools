@@ -277,7 +277,6 @@ public sealed class DotNetBuild : IDotNetBuild
         if (string.IsNullOrWhiteSpace(framework))
         {
             string parameters = BuildEnvironmentParameters(
-                ("CSharpier_Check", "true"),
                 ("DisableSwagger", "False"),
                 ("IncludeNativeLibrariesForSelfExtract", "false"),
                 ("PublishReadyToRun", "False"),
@@ -298,7 +297,6 @@ public sealed class DotNetBuild : IDotNetBuild
         else
         {
             string parameters = BuildEnvironmentParameters(
-                ("CSharpier_Check", "true"),
                 ("DisableSwagger", "False"),
                 ("IncludeNativeLibrariesForSelfExtract", "false"),
                 ("PublishReadyToRun", "False"),
@@ -348,7 +346,6 @@ public sealed class DotNetBuild : IDotNetBuild
         string noWarn = BuildNoWarn(buildOverride);
 
         string parameters = BuildEnvironmentParameters(
-            ("CSharpier_Check", "true"),
             ("Version", BUILD_VERSION)
         );
 
@@ -369,7 +366,6 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         string noWarn = BuildNoWarn(buildOverride);
         string parameters = BuildEnvironmentParameters(
-            ("CSharpier_Check", "true"),
             ("Version", BUILD_VERSION)
         );
 
@@ -390,7 +386,6 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         string noWarn = BuildNoWarn(buildOverride);
         string parameters = BuildEnvironmentParameters(
-            ("CSharpier_Check", "true"),
             ("Version", BUILD_VERSION)
         );
 
