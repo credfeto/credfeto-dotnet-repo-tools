@@ -9,14 +9,16 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-
-- Dependencies - Updated FunFair.BuildCheck to 474.1.2.1222
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.1.20] - 2025-04-26
+### Changed
+- Dependencies - Updated FunFair.BuildCheck to 474.1.2.1222
+
 ## [1.1.19] - 2025-04-26
 ### Changed
 - Used CSharpier.Core to reformat files under our control
