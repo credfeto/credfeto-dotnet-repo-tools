@@ -9,6 +9,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+- Used CSharpier.Core to reformat files under our control
 ### Removed
 ### Deployment Changes
 
