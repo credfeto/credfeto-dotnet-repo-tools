@@ -26,20 +26,11 @@ public sealed class RepoUrlParserTests : LoggingTestBase
     }
 
     [Theory]
-    [InlineData(
-        "https://github.com/meziantou/Meziantou.Analyzer.git",
-        "github.com",
-        "meziantou/Meziantou.Analyzer"
-    )]
+    [InlineData("https://github.com/meziantou/Meziantou.Analyzer.git", "github.com", "meziantou/Meziantou.Analyzer")]
     [InlineData("https://gitlab.com/dwt1/wallpapers.git", "gitlab.com", "dwt1/wallpapers")]
     public void ShouldBeHttp(string path, string expectedHost, string expectedRepo)
     {
-        bool ok = RepoUrlParser.TryParse(
-            path: path,
-            out GitUrlProtocol protocol,
-            out string? host,
-            out string? repo
-        );
+        bool ok = RepoUrlParser.TryParse(path: path, out GitUrlProtocol protocol, out string? host, out string? repo);
         Assert.True(condition: ok, userMessage: "Should have parsed");
 
         this.ExpectedProtocol(
@@ -53,20 +44,11 @@ public sealed class RepoUrlParserTests : LoggingTestBase
     }
 
     [Theory]
-    [InlineData(
-        "git@github.com:meziantou/Meziantou.Analyzer.git",
-        "github.com",
-        "meziantou/Meziantou.Analyzer"
-    )]
+    [InlineData("git@github.com:meziantou/Meziantou.Analyzer.git", "github.com", "meziantou/Meziantou.Analyzer")]
     [InlineData("git@gitlab.com:dwt1/wallpapers.git", "gitlab.com", "dwt1/wallpapers")]
     public void ShouldBeSsh(string path, string expectedHost, string expectedRepo)
     {
-        bool ok = RepoUrlParser.TryParse(
-            path: path,
-            out GitUrlProtocol protocol,
-            out string? host,
-            out string? repo
-        );
+        bool ok = RepoUrlParser.TryParse(path: path, out GitUrlProtocol protocol, out string? host, out string? repo);
         Assert.True(condition: ok, userMessage: "Should have parsed");
         this.ExpectedProtocol(
             expectedProtocol: GitUrlProtocol.SSH,
