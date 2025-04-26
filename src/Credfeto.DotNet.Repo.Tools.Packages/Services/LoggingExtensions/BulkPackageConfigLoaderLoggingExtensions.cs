@@ -9,8 +9,5 @@ internal static partial class BulkPackageConfigLoaderLoggingExtensions
         Level = LogLevel.Information,
         Message = "Loading package configuration from {source}..."
     )]
-    public static partial void LoadingPackageConfig(
-        this ILogger<BulkPackageConfigLoader> logger,
-        string source
-    );
+    public static partial void LoadingPackageConfig(this ILogger<BulkPackageConfigLoader> logger, string source);
 }
