@@ -106,10 +106,7 @@ public sealed class DotNetBuild : IDotNetBuild
         }
         finally
         {
-            await this.StopBuildServerAsync(
-                basePath: basePath,
-                cancellationToken: cancellationToken
-            );
+            await this.StopBuildServerAsync(basePath: basePath, cancellationToken: cancellationToken);
         }
     }
 
@@ -124,10 +121,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
         foreach (string project in projects)
         {
-            XmlDocument doc = await this._projectLoader.LoadAsync(
-                path: project,
-                cancellationToken: cancellationToken
-            );
+            XmlDocument doc = await this._projectLoader.LoadAsync(path: project, cancellationToken: cancellationToken);
 
             this.CheckProjectSettings(
                 doc: doc,
@@ -140,12 +134,7 @@ public sealed class DotNetBuild : IDotNetBuild
         return new(Publishable: publishable, Packable: packable, Framework: framework);
     }
 
-    private void CheckProjectSettings(
-        XmlDocument doc,
-        ref bool packable,
-        ref bool publishable,
-        ref string? framework
-    )
+    private void CheckProjectSettings(XmlDocument doc, ref bool packable, ref bool publishable, ref string? framework)
     {
         XmlNode? outputTypeNode = doc.SelectSingleNode("/Project/PropertyGroup/OutputType");
 
@@ -156,10 +145,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
         packable |= IsPackable(doc: doc, outputType: outputTypeNode.InnerText);
 
-        string? candidateFramework = GetTargetFrameworks(
-                doc: doc,
-                outputType: outputTypeNode.InnerText
-            )
+        string? candidateFramework = GetTargetFrameworks(doc: doc, outputType: outputTypeNode.InnerText)
             .MaxBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase);
 
         if (candidateFramework is not null)
@@ -173,10 +159,7 @@ public sealed class DotNetBuild : IDotNetBuild
             }
             else
             {
-                if (
-                    StringComparer.OrdinalIgnoreCase.Compare(x: candidateFramework, y: framework)
-                    > 0
-                )
+                if (StringComparer.OrdinalIgnoreCase.Compare(x: candidateFramework, y: framework) > 0)
                 {
                     framework = candidateFramework;
                     this._logger.LogFoundFramework(framework);
@@ -196,24 +179,17 @@ public sealed class DotNetBuild : IDotNetBuild
 
         if (
             publishableNode is not null
-            && StringComparer.InvariantCultureIgnoreCase.Equals(
-                x: publishableNode.InnerText,
-                y: "True"
-            )
+            && StringComparer.InvariantCultureIgnoreCase.Equals(x: publishableNode.InnerText, y: "True")
         )
         {
-            XmlNode? targetFrameworkNode = doc.SelectSingleNode(
-                "/Project/PropertyGroup/TargetFramework"
-            );
+            XmlNode? targetFrameworkNode = doc.SelectSingleNode("/Project/PropertyGroup/TargetFramework");
 
             if (targetFrameworkNode is not null)
             {
                 return [targetFrameworkNode.InnerText];
             }
 
-            XmlNode? targetFrameworksNode = doc.SelectSingleNode(
-                "/Project/PropertyGroup/TargetFrameworks"
-            );
+            XmlNode? targetFrameworksNode = doc.SelectSingleNode("/Project/PropertyGroup/TargetFrameworks");
 
             if (targetFrameworksNode is not null)
             {
@@ -237,10 +213,7 @@ public sealed class DotNetBuild : IDotNetBuild
         XmlNode? packableNode = doc.SelectSingleNode("/Project/PropertyGroup/IsPackable");
 
         return packableNode is not null
-            && StringComparer.InvariantCultureIgnoreCase.Equals(
-                x: packableNode.InnerText,
-                y: "True"
-            );
+            && StringComparer.InvariantCultureIgnoreCase.Equals(x: packableNode.InnerText, y: "True");
     }
 
     private static string EnvironmentParameter((string name, string value) p)
@@ -253,9 +226,7 @@ public sealed class DotNetBuild : IDotNetBuild
         return "-p:" + name + "=" + value;
     }
 
-    private static string BuildEnvironmentParameters(
-        params (string name, string value)[] parameters
-    )
+    private static string BuildEnvironmentParameters(params (string name, string value)[] parameters)
     {
         if (parameters.Length == 0)
         {
@@ -345,9 +316,7 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         string noWarn = BuildNoWarn(buildOverride);
 
-        string parameters = BuildEnvironmentParameters(
-            ("Version", BUILD_VERSION)
-        );
+        string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION));
 
         this._logger.LogPacking();
 
@@ -365,9 +334,7 @@ public sealed class DotNetBuild : IDotNetBuild
     )
     {
         string noWarn = BuildNoWarn(buildOverride);
-        string parameters = BuildEnvironmentParameters(
-            ("Version", BUILD_VERSION)
-        );
+        string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION));
 
         this._logger.LogTesting();
 
@@ -385,9 +352,7 @@ public sealed class DotNetBuild : IDotNetBuild
     )
     {
         string noWarn = BuildNoWarn(buildOverride);
-        string parameters = BuildEnvironmentParameters(
-            ("Version", BUILD_VERSION)
-        );
+        string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION));
 
         this._logger.LogBuilding();
 
@@ -432,17 +397,10 @@ public sealed class DotNetBuild : IDotNetBuild
         );
     }
 
-    private async ValueTask StopBuildServerAsync(
-        string basePath,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask StopBuildServerAsync(string basePath, CancellationToken cancellationToken)
     {
         this._logger.LogStoppingBuildServer();
-        await ExecAsync(
-            basePath: basePath,
-            arguments: "build-server shutdown",
-            cancellationToken: cancellationToken
-        );
+        await ExecAsync(basePath: basePath, arguments: "build-server shutdown", cancellationToken: cancellationToken);
         this._logger.LogStoppedBuildServer();
     }
 
@@ -527,10 +485,7 @@ public sealed class DotNetBuild : IDotNetBuild
             string result = string.Join(separator: Environment.NewLine, output, error);
 
             return (
-                result.Split(
-                    separator: Environment.NewLine,
-                    options: StringSplitOptions.RemoveEmptyEntries
-                ),
+                result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries),
                 process.ExitCode
             );
         }
