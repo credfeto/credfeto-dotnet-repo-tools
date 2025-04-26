@@ -25,10 +25,7 @@ public static class RepoContextExtensions
             return false;
         }
 
-        IReadOnlyList<string> foundSolutions =
-        [
-            .. GetFiles(basePath: sourceFolder, searchPattern: "*.sln"),
-        ];
+        IReadOnlyList<string> foundSolutions = [.. GetFiles(basePath: sourceFolder, searchPattern: "*.sln")];
 
         if (foundSolutions is [])
         {
@@ -52,10 +49,7 @@ public static class RepoContextExtensions
     )
     {
         if (
-            !repoContext.HasDotNetSolutions(
-                out string? foundSourceDirectory,
-                out IReadOnlyList<string>? foundSolutions
-            )
+            !repoContext.HasDotNetSolutions(out string? foundSourceDirectory, out IReadOnlyList<string>? foundSolutions)
         )
         {
             sourceDirectory = null;
@@ -65,10 +59,7 @@ public static class RepoContextExtensions
             return false;
         }
 
-        IReadOnlyList<string> foundProjects =
-        [
-            .. GetFiles(basePath: foundSourceDirectory, searchPattern: "*.csproj"),
-        ];
+        IReadOnlyList<string> foundProjects = [.. GetFiles(basePath: foundSourceDirectory, searchPattern: "*.csproj")];
 
         if (foundProjects is [])
         {
@@ -111,21 +102,10 @@ public static class RepoContextExtensions
         return repoContext.GetFiles(searchPattern: searchPattern).Any();
     }
 
-    public static bool HasNonStandardGithubActions(
-        this in RepoContext repoContext,
-        string templatePath
-    )
+    public static bool HasNonStandardGithubActions(this in RepoContext repoContext, string templatePath)
     {
-        string templateActionsPath = Path.Combine(
-            path1: templatePath,
-            path2: ".github",
-            path3: "actions"
-        );
-        string repoActionsPath = Path.Combine(
-            path1: repoContext.WorkingDirectory,
-            path2: ".github",
-            path3: "actions"
-        );
+        string templateActionsPath = Path.Combine(path1: templatePath, path2: ".github", path3: "actions");
+        string repoActionsPath = Path.Combine(path1: repoContext.WorkingDirectory, path2: ".github", path3: "actions");
 
         string templateWorkflowsPath = Path.Combine(
             path1: repoContext.WorkingDirectory,
@@ -138,11 +118,7 @@ public static class RepoContextExtensions
             path3: "workflows"
         );
 
-        return HasAdditionalFiles(
-                templatePath: templateActionsPath,
-                repoPath: repoActionsPath,
-                searchPattern: "*.yml"
-            )
+        return HasAdditionalFiles(templatePath: templateActionsPath, repoPath: repoActionsPath, searchPattern: "*.yml")
             || HasAdditionalFiles(
                 templatePath: templateWorkflowsPath,
                 repoPath: repoWorkflowsPath,
@@ -150,11 +126,7 @@ public static class RepoContextExtensions
             );
     }
 
-    private static bool HasAdditionalFiles(
-        string templatePath,
-        string repoPath,
-        string searchPattern
-    )
+    private static bool HasAdditionalFiles(string templatePath, string repoPath, string searchPattern)
     {
         if (!Directory.Exists(repoPath))
         {
@@ -168,19 +140,13 @@ public static class RepoContextExtensions
 
         IEnumerable<string> repoFiles = GetFiles(basePath: repoPath, searchPattern: searchPattern)
             .WithoutPrefix(repoPath.Length);
-        IEnumerable<string> templateFiles = GetFiles(
-                basePath: templatePath,
-                searchPattern: searchPattern
-            )
+        IEnumerable<string> templateFiles = GetFiles(basePath: templatePath, searchPattern: searchPattern)
             .WithoutPrefix(templatePath.Length);
 
         return repoFiles.Except(second: templateFiles, comparer: StringComparer.Ordinal).Any();
     }
 
-    private static IEnumerable<string> GetFiles(
-        this in RepoContext repoContext,
-        string searchPattern
-    )
+    private static IEnumerable<string> GetFiles(this in RepoContext repoContext, string searchPattern)
     {
         return GetFiles(basePath: repoContext.WorkingDirectory, searchPattern: searchPattern);
     }
