@@ -21,12 +21,7 @@ internal sealed class GitRepository : IGitRepository
 
     private Repository? _repo;
 
-    internal GitRepository(
-        string clonePath,
-        string workingDirectory,
-        Repository? repo,
-        ILogger logger
-    )
+    internal GitRepository(string clonePath, string workingDirectory, Repository? repo, ILogger logger)
     {
         this.ClonePath = clonePath;
         this.WorkingDirectory = workingDirectory;
@@ -86,9 +81,7 @@ internal sealed class GitRepository : IGitRepository
 
         if (this.HasUncommittedChanges())
         {
-            throw new GitException(
-                "Failed to reset to " + defaultBranch + " - uncommitted changes"
-            );
+            throw new GitException("Failed to reset to " + defaultBranch + " - uncommitted changes");
         }
     }
 
@@ -98,10 +91,7 @@ internal sealed class GitRepository : IGitRepository
 
         Repository repo = this.Active;
         string headCanonicalName = repo.Head.CanonicalName;
-        IReadOnlyList<Branch> branchesToRemove =
-        [
-            .. repo.Branches.Where(b => IsLocalBranch(b) && !IsCurrentBranch(b)),
-        ];
+        IReadOnlyList<Branch> branchesToRemove = [.. repo.Branches.Where(b => IsLocalBranch(b) && !IsCurrentBranch(b))];
 
         foreach (Branch branch in branchesToRemove)
         {
@@ -137,10 +127,7 @@ internal sealed class GitRepository : IGitRepository
                 this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Add (all)");
             }
 
-            await this.CommitWithMessageAsync(
-                message: message,
-                cancellationToken: cancellationToken
-            );
+            await this.CommitWithMessageAsync(message: message, cancellationToken: cancellationToken);
         }
         finally
         {
@@ -174,10 +161,7 @@ internal sealed class GitRepository : IGitRepository
         bool IsHeadBranch(Branch branch)
         {
             return IsRemote(branch: branch, upstream: upstream)
-                && StringComparer.Ordinal.Equals(
-                    x: branch.UpstreamBranchCanonicalName,
-                    y: "refs/heads/HEAD"
-                );
+                && StringComparer.Ordinal.Equals(x: branch.UpstreamBranchCanonicalName, y: "refs/heads/HEAD");
         }
     }
 
@@ -213,10 +197,7 @@ internal sealed class GitRepository : IGitRepository
                 }
             }
 
-            await this.CommitWithMessageAsync(
-                message: message,
-                cancellationToken: cancellationToken
-            );
+            await this.CommitWithMessageAsync(message: message, cancellationToken: cancellationToken);
         }
         finally
         {
@@ -250,11 +231,7 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
-    public async ValueTask PushOriginAsync(
-        string branchName,
-        string upstream,
-        CancellationToken cancellationToken
-    )
+    public async ValueTask PushOriginAsync(string branchName, string upstream, CancellationToken cancellationToken)
     {
         this.ResetActiveRepoLink();
 
@@ -311,11 +288,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this.DumpExitCodeResult(
-                    result: result,
-                    exitCode: exitCode,
-                    $"Create Branch {branchName}"
-                );
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Create Branch {branchName}");
             }
         }
         finally
@@ -340,10 +313,7 @@ internal sealed class GitRepository : IGitRepository
 
         Repository repo = this.Active;
         string headCanonicalName = repo.Head.CanonicalName;
-        string upstreamBranchForUpdate = BuildUpstreamBranch(
-            upstream: upstream,
-            branch: branchForUpdate
-        );
+        string upstreamBranchForUpdate = BuildUpstreamBranch(upstream: upstream, branch: branchForUpdate);
         string upstreamBranchPrefix = BuildUpstreamBranch(upstream: upstream, branch: branchPrefix);
 
         IReadOnlyList<Branch> branchesToRemove = [.. repo.Branches.Where(IsMatchingBranch)];
@@ -352,11 +322,7 @@ internal sealed class GitRepository : IGitRepository
         {
             string branchName = NormaliseBranchName(branch: branch, upstream: upstream);
 
-            await this.DeleteBranchAsync(
-                branch: branchName,
-                upstream: upstream,
-                cancellationToken: cancellationToken
-            );
+            await this.DeleteBranchAsync(branch: branchName, upstream: upstream, cancellationToken: cancellationToken);
         }
 
         bool IsCurrentBranch(Branch branch)
@@ -415,10 +381,7 @@ internal sealed class GitRepository : IGitRepository
             }
 
             return IsRemote(branch: branch, upstream: upstream)
-                && IsAlternateMatchBranchByPrefix(
-                    branch: branch,
-                    branchPrefix: upstreamBranchPrefix
-                );
+                && IsAlternateMatchBranchByPrefix(branch: branch, branchPrefix: upstreamBranchPrefix);
         }
     }
 
@@ -453,11 +416,7 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
-    private async Task ResetUpstreamHardAsync(
-        string upstream,
-        string branch,
-        CancellationToken cancellationToken
-    )
+    private async Task ResetUpstreamHardAsync(string upstream, string branch, CancellationToken cancellationToken)
     {
         string branchName = BuildUpstreamBranch(upstream: upstream, branch: branch);
 
@@ -472,11 +431,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this.DumpExitCodeResult(
-                    result: result,
-                    exitCode: exitCode,
-                    $"Reset {branchName} --hard"
-                );
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Reset {branchName} --hard");
             }
         }
         finally
@@ -498,11 +453,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this.DumpExitCodeResult(
-                    result: result,
-                    exitCode: exitCode,
-                    prefix: "Reset HEAD --hard"
-                );
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Reset HEAD --hard");
             }
         }
         finally
@@ -518,10 +469,7 @@ internal sealed class GitRepository : IGitRepository
 
     private static bool IsAlternateMatchBranchByPrefix(Branch branch, string branchPrefix)
     {
-        return branch.FriendlyName.StartsWith(
-            value: branchPrefix,
-            comparisonType: StringComparison.OrdinalIgnoreCase
-        );
+        return branch.FriendlyName.StartsWith(value: branchPrefix, comparisonType: StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsRemote(Branch branch, string upstream)
@@ -533,10 +481,7 @@ internal sealed class GitRepository : IGitRepository
     {
         return
             IsRemote(branch: branch, upstream: upstream)
-            && branch.FriendlyName.StartsWith(
-                upstream + "/",
-                comparisonType: StringComparison.Ordinal
-            )
+            && branch.FriendlyName.StartsWith(upstream + "/", comparisonType: StringComparison.Ordinal)
             ? branch.FriendlyName[(upstream.Length + 1)..]
             : branch.FriendlyName;
     }
@@ -561,11 +506,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this.DumpExitCodeResult(
-                    result: result,
-                    exitCode: exitCode,
-                    $"Checkout {branchName}"
-                );
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Checkout {branchName}");
             }
         }
         finally
@@ -659,10 +600,7 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
-    private async ValueTask CommitWithMessageAsync(
-        string message,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask CommitWithMessageAsync(string message, CancellationToken cancellationToken)
     {
         (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
             clonePath: this.ClonePath,
@@ -677,26 +615,16 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
-    private async ValueTask DeleteBranchAsync(
-        string branch,
-        string upstream,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask DeleteBranchAsync(string branch, string upstream, CancellationToken cancellationToken)
     {
         try
         {
             if (this.DoesBranchExist(branch))
             {
-                await this.DeleteLocalBranchAsync(
-                    branch: branch,
-                    cancellationToken: cancellationToken
-                );
+                await this.DeleteLocalBranchAsync(branch: branch, cancellationToken: cancellationToken);
             }
 
-            await this.FetchRemoteAsync(
-                this.GetRemote(upstream),
-                cancellationToken: cancellationToken
-            );
+            await this.FetchRemoteAsync(this.GetRemote(upstream), cancellationToken: cancellationToken);
 
             string upstreamBranch = BuildUpstreamBranch(upstream: upstream, branch: branch);
 
@@ -723,12 +651,7 @@ internal sealed class GitRepository : IGitRepository
                     return true;
                 }
 
-                if (
-                    StringComparer.Ordinal.Equals(
-                        x: candidateBranch.FriendlyName,
-                        y: upstreamBranch
-                    )
-                )
+                if (StringComparer.Ordinal.Equals(x: candidateBranch.FriendlyName, y: upstreamBranch))
                 {
                     return true;
                 }
@@ -742,11 +665,7 @@ internal sealed class GitRepository : IGitRepository
         }
     }
 
-    private async Task DeleteRemoteBranchAsync(
-        string branch,
-        string upstream,
-        CancellationToken cancellationToken
-    )
+    private async Task DeleteRemoteBranchAsync(string branch, string upstream, CancellationToken cancellationToken)
     {
         try
         {
@@ -760,11 +679,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this.DumpExitCodeResult(
-                    result: result,
-                    exitCode: exitCode,
-                    prefix: "Delete remote branch"
-                );
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Delete remote branch");
 
                 // TODO: specific exception for branch deletion
                 throw new GitException($"Could not delete remote branch {branch}");
@@ -800,11 +715,7 @@ internal sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this.DumpExitCodeResult(
-                    result: result,
-                    exitCode: exitCode,
-                    $"Delete local branch {branch}"
-                );
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Delete local branch {branch}");
 
                 // TODO: specific exception for branch deletion
                 throw new GitException($"Could not delete local branch {branch}");
