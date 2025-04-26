@@ -16,8 +16,10 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
 {
     private static readonly IProjectClassifier ProjectClassifier = new ProjectClassifier();
 
-    private static readonly ICheckConfiguration PreReleaseCheckConfiguration =
-        new CheckConfiguration(preReleaseBuild: true, allowPackageVersionMismatch: true);
+    private static readonly ICheckConfiguration PreReleaseCheckConfiguration = new CheckConfiguration(
+        preReleaseBuild: true,
+        allowPackageVersionMismatch: true
+    );
     private static readonly ICheckConfiguration ReleaseCheckConfiguration = new CheckConfiguration(
         preReleaseBuild: false,
         allowPackageVersionMismatch: false
@@ -26,10 +28,7 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
 
     private readonly IServiceProviderFactory _serviceProviderFactory;
 
-    public DotNetSolutionCheck(
-        IServiceProviderFactory serviceProviderFactory,
-        ILogger<DotNetSolutionCheck> logger
-    )
+    public DotNetSolutionCheck(IServiceProviderFactory serviceProviderFactory, ILogger<DotNetSolutionCheck> logger)
     {
         this._serviceProviderFactory = serviceProviderFactory;
         this._logger = logger;
