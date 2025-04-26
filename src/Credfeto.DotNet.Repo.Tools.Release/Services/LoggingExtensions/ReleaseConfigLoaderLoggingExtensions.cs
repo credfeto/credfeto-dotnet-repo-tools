@@ -9,8 +9,5 @@ internal static partial class ReleaseConfigLoaderLoggingExtensions
         Level = LogLevel.Information,
         Message = "Loading release configuration from {source}..."
     )]
-    public static partial void LoadingReleaseConfig(
-        this ILogger<ReleaseConfigLoader> logger,
-        string source
-    );
+    public static partial void LoadingReleaseConfig(this ILogger<ReleaseConfigLoader> logger, string source);
 }
