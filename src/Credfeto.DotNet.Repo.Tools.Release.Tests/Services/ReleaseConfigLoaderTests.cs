@@ -49,13 +49,7 @@ public sealed class ReleaseConfigLoaderTests : TestBase
         Assert.NotEmpty(config.NeverRelease);
         Assert.Contains(
             collection: config.NeverRelease,
-            filter: match =>
-                IsMatch(
-                    match: match,
-                    repo: "template",
-                    matchType: MatchType.CONTAINS,
-                    include: true
-                )
+            filter: match => IsMatch(match: match, repo: "template", matchType: MatchType.CONTAINS, include: true)
         );
         Assert.Contains(
             collection: config.NeverRelease,
@@ -82,26 +76,14 @@ public sealed class ReleaseConfigLoaderTests : TestBase
         );
         Assert.Contains(
             collection: config.AlwaysMatch,
-            filter: match =>
-                IsMatch(
-                    match: match,
-                    repo: "code-analysis",
-                    matchType: MatchType.CONTAINS,
-                    include: true
-                )
+            filter: match => IsMatch(match: match, repo: "code-analysis", matchType: MatchType.CONTAINS, include: true)
         );
 
         Assert.NotEmpty(config.AllowedAutoUpgrade);
 
         Assert.Contains(
             collection: config.AllowedAutoUpgrade,
-            filter: match =>
-                IsMatch(
-                    match: match,
-                    repo: "template",
-                    matchType: MatchType.CONTAINS,
-                    include: false
-                )
+            filter: match => IsMatch(match: match, repo: "template", matchType: MatchType.CONTAINS, include: false)
         );
     }
 
@@ -123,10 +105,7 @@ public sealed class ReleaseConfigLoaderTests : TestBase
             cancellationToken: this.CancellationToken()
         );
 
-        Assert.True(
-            config.ShouldNeverAutoReleaseRepo(repo),
-            userMessage: "Should never auto release"
-        );
+        Assert.True(config.ShouldNeverAutoReleaseRepo(repo), userMessage: "Should never auto release");
     }
 
     [Theory]
@@ -141,10 +120,7 @@ public sealed class ReleaseConfigLoaderTests : TestBase
             cancellationToken: this.CancellationToken()
         );
 
-        Assert.True(
-            config.ShouldAlwaysCreatePatchRelease(repo),
-            userMessage: "Should never auto release"
-        );
+        Assert.True(config.ShouldAlwaysCreatePatchRelease(repo), userMessage: "Should never auto release");
     }
 
     [Theory]
