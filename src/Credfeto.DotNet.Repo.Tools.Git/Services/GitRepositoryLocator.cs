@@ -35,9 +35,7 @@ public sealed class GitRepositoryLocator : IGitRepositoryLocator
         return
         [
             .. work.Split(separator: '/', options: StringSplitOptions.RemoveEmptyEntries)
-                .SelectMany(item =>
-                    item.Split(separator: ':', options: StringSplitOptions.RemoveEmptyEntries)
-                ),
+                .SelectMany(item => item.Split(separator: ':', options: StringSplitOptions.RemoveEmptyEntries)),
         ];
     }
 }
