@@ -51,9 +51,7 @@ public static class RepoUrlParser
 
     private static string RemoveDotGit(string path)
     {
-        return path.EndsWith(".git", StringComparison.OrdinalIgnoreCase)
-            ? path[1..^".git".Length]
-            : path[1..];
+        return path.EndsWith(".git", StringComparison.OrdinalIgnoreCase) ? path[1..^".git".Length] : path[1..];
     }
 
     private static bool IsHttp(Uri uri)
