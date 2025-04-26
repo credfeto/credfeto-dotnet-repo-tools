@@ -120,10 +120,7 @@ public sealed class FileUpdater : IFileUpdater
         CancellationToken cancellationToken
     )
     {
-        return await File.ReadAllBytesAsync(
-            path: copyInstruction.TargetFileName,
-            cancellationToken: cancellationToken
-        );
+        return await File.ReadAllBytesAsync(path: copyInstruction.TargetFileName, cancellationToken: cancellationToken);
     }
 
     private async ValueTask<byte[]> ReadSourceFileAsync(
