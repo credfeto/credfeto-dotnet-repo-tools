@@ -4,11 +4,7 @@ using Xunit;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests.Services;
 
-[SuppressMessage(
-    category: "Meziantou.Analyzer",
-    checkId: "MA0051: Method is too long",
-    Justification = "Unit tests"
-)]
+[SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Unit tests")]
 public sealed partial class ProjectXmlRewriterTests
 {
     [Fact]
