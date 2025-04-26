@@ -11,9 +11,7 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase
     public DependaBotConfigBuilderTests(ITestOutputHelper output)
         : base(output)
     {
-        this._dependaBotConfigBuilder = new DependaBotConfigBuilder(
-            this.GetTypedLogger<DependaBotConfigBuilder>()
-        );
+        this._dependaBotConfigBuilder = new DependaBotConfigBuilder(this.GetTypedLogger<DependaBotConfigBuilder>());
     }
 
     [Fact]
