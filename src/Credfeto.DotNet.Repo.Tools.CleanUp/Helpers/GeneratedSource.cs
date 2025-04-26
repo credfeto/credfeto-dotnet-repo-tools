@@ -21,8 +21,6 @@ internal static class GeneratedSource
 
     public static bool IsGenerated(string filename)
     {
-        return Markers.Any(x =>
-            filename.Contains(value: x, comparisonType: StringComparison.Ordinal)
-        );
+        return Markers.Any(x => filename.Contains(value: x, comparisonType: StringComparison.Ordinal));
     }
 }
