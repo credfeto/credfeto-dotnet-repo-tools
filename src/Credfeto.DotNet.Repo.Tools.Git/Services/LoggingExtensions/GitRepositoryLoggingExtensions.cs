@@ -19,11 +19,7 @@ internal static partial class GitRepositoryLoggingExtensions
         string branchName
     );
 
-    [LoggerMessage(
-        EventId = 3,
-        Level = LogLevel.Information,
-        Message = "Deleting branch {branch} from local repo..."
-    )]
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Deleting branch {branch} from local repo...")]
     public static partial void LogDeletingLocalBranch(this ILogger logger, string branch);
 
     [LoggerMessage(
@@ -31,28 +27,16 @@ internal static partial class GitRepositoryLoggingExtensions
         Level = LogLevel.Information,
         Message = "Deleting branch {branch} from upstream {upstream}..."
     )]
-    public static partial void LogDeletingUpstreamBranch(
-        this ILogger logger,
-        string branch,
-        string upstream
-    );
+    public static partial void LogDeletingUpstreamBranch(this ILogger logger, string branch, string upstream);
 
     [LoggerMessage(
         EventId = 5,
         Level = LogLevel.Information,
         Message = "Deleting branch {branch} is not upstream {upstream}..."
     )]
-    public static partial void LogSkippingDeleteOfUpstreamBranch(
-        this ILogger logger,
-        string branch,
-        string upstream
-    );
+    public static partial void LogSkippingDeleteOfUpstreamBranch(this ILogger logger, string branch, string upstream);
 
-    [LoggerMessage(
-        EventId = 6,
-        Level = LogLevel.Information,
-        Message = "{prefix} exit code: {exitCode}"
-    )]
+    [LoggerMessage(EventId = 6, Level = LogLevel.Information, Message = "{prefix} exit code: {exitCode}")]
     public static partial void LogGitExitCode(this ILogger logger, string prefix, int exitCode);
 
     [LoggerMessage(EventId = 7, Level = LogLevel.Warning, Message = "{message}")]
@@ -63,9 +47,5 @@ internal static partial class GitRepositoryLoggingExtensions
         Level = LogLevel.Information,
         Message = "Found default branch {branch} for upstream {upstream}..."
     )]
-    public static partial void DefaultBranchForUpstream(
-        this ILogger logger,
-        string branch,
-        string upstream
-    );
+    public static partial void DefaultBranchForUpstream(this ILogger logger, string branch, string upstream);
 }
