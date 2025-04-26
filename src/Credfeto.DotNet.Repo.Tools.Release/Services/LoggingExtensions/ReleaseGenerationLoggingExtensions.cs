@@ -6,11 +6,7 @@ namespace Credfeto.DotNet.Repo.Tools.Release.Services.LoggingExtensions;
 
 internal static partial class ReleaseGenerationLoggingExtensions
 {
-    [LoggerMessage(
-        EventId = 1,
-        Level = LogLevel.Information,
-        Message = "{clonePath}: RELEASE CREATED: {version}"
-    )]
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{clonePath}: RELEASE CREATED: {version}")]
     private static partial void LogReleaseCreated(
         this ILogger<ReleaseGeneration> logger,
         string clonePath,
@@ -26,15 +22,8 @@ internal static partial class ReleaseGenerationLoggingExtensions
         logger.LogReleaseCreated(clonePath: repoContext.ClonePath, version: version);
     }
 
-    [LoggerMessage(
-        EventId = 2,
-        Level = LogLevel.Information,
-        Message = "Change log update score: {autoUpdateCount}"
-    )]
-    public static partial void LogChangeLogUpdateScore(
-        this ILogger<ReleaseGeneration> logger,
-        int autoUpdateCount
-    );
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Change log update score: {autoUpdateCount}")]
+    public static partial void LogChangeLogUpdateScore(this ILogger<ReleaseGeneration> logger, int autoUpdateCount);
 
     [LoggerMessage(
         EventId = 3,
@@ -75,11 +64,7 @@ internal static partial class ReleaseGenerationLoggingExtensions
         int score
     )
     {
-        logger.LogMatchedPackage(
-            clonePath: repoContext.ClonePath,
-            packageId: packageId,
-            score: score
-        );
+        logger.LogMatchedPackage(clonePath: repoContext.ClonePath, packageId: packageId, score: score);
     }
 
     [LoggerMessage(
@@ -101,37 +86,19 @@ internal static partial class ReleaseGenerationLoggingExtensions
         int score
     )
     {
-        logger.LogIgnoredPackage(
-            clonePath: repoContext.ClonePath,
-            packageId: packageId,
-            score: score
-        );
+        logger.LogIgnoredPackage(clonePath: repoContext.ClonePath, packageId: packageId, score: score);
     }
 
-    [LoggerMessage(
-        EventId = 5,
-        Level = LogLevel.Information,
-        Message = "Last release was: {version}"
-    )]
-    private static partial void LogLastRelease(
-        this ILogger<ReleaseGeneration> logger,
-        string version
-    );
+    [LoggerMessage(EventId = 5, Level = LogLevel.Information, Message = "Last release was: {version}")]
+    private static partial void LogLastRelease(this ILogger<ReleaseGeneration> logger, string version);
 
     public static void LogLastRelease(this ILogger<ReleaseGeneration> logger, NuGetVersion version)
     {
         logger.LogLastRelease(version.ToString());
     }
 
-    [LoggerMessage(
-        EventId = 6,
-        Level = LogLevel.Information,
-        Message = "Next release is: {version}"
-    )]
-    private static partial void LogNextRelease(
-        this ILogger<ReleaseGeneration> logger,
-        string version
-    );
+    [LoggerMessage(EventId = 6, Level = LogLevel.Information, Message = "Next release is: {version}")]
+    private static partial void LogNextRelease(this ILogger<ReleaseGeneration> logger, string version);
 
     public static void LogNextRelease(this ILogger<ReleaseGeneration> logger, NuGetVersion version)
     {
