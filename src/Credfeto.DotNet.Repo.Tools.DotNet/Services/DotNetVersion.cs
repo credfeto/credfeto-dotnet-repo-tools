@@ -12,9 +12,7 @@ namespace Credfeto.DotNet.Repo.Tools.DotNet.Services;
 
 public sealed class DotNetVersion : IDotNetVersion
 {
-    public async ValueTask<IReadOnlyList<Version>> GetInstalledSdksAsync(
-        CancellationToken cancellationToken
-    )
+    public async ValueTask<IReadOnlyList<Version>> GetInstalledSdksAsync(CancellationToken cancellationToken)
     {
         (string[] output, int exitCode) = await ExecAsync(
             arguments: "--list-sdks",
@@ -92,10 +90,7 @@ public sealed class DotNetVersion : IDotNetVersion
             string result = string.Join(separator: Environment.NewLine, output, error);
 
             return (
-                result.Split(
-                    separator: Environment.NewLine,
-                    options: StringSplitOptions.RemoveEmptyEntries
-                ),
+                result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries),
                 process.ExitCode
             );
         }
