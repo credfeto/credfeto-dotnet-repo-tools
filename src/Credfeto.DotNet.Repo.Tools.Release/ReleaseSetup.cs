@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Net.Http;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
@@ -12,9 +12,7 @@ public static class ReleaseSetup
 {
     private const int RETRY_COUNT = 3;
     private static readonly TimeSpan ClientTimeout = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan ClientPolicyTimeout = ClientTimeout.Add(
-        TimeSpan.FromSeconds(1)
-    );
+    private static readonly TimeSpan ClientPolicyTimeout = ClientTimeout.Add(TimeSpan.FromSeconds(1));
 
     private static readonly TimeSpan SleepDuration = TimeSpan.FromMilliseconds(600);
 
@@ -26,9 +24,7 @@ public static class ReleaseSetup
             .AddReleaseConfigLoaderLoaderHttpClient();
     }
 
-    private static IServiceCollection AddReleaseConfigLoaderLoaderHttpClient(
-        this IServiceCollection services
-    )
+    private static IServiceCollection AddReleaseConfigLoaderLoaderHttpClient(this IServiceCollection services)
     {
         return services
             .AddHttpClient(nameof(ReleaseConfigLoader), configureClient: ConfigureClient)
@@ -36,10 +32,7 @@ public static class ReleaseSetup
             .ConfigurePrimaryHttpMessageHandler(configureHandler: CreateHandler)
             .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(ClientPolicyTimeout))
             .AddTransientHttpErrorPolicy(x =>
-                x.WaitAndRetryAsync(
-                    retryCount: RETRY_COUNT,
-                    sleepDurationProvider: _ => SleepDuration
-                )
+                x.WaitAndRetryAsync(retryCount: RETRY_COUNT, sleepDurationProvider: _ => SleepDuration)
             )
             .Services;
     }
