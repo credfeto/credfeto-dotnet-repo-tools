@@ -28,8 +28,7 @@ public sealed class TrackingCache : ITrackingCache
         this._cache = new(StringComparer.OrdinalIgnoreCase);
 
         this._typeInfo =
-            TrackingSerializationContext.Default.GetTypeInfo(typeof(TrackingItems))
-                as JsonTypeInfo<TrackingItems>
+            TrackingSerializationContext.Default.GetTypeInfo(typeof(TrackingItems)) as JsonTypeInfo<TrackingItems>
             ?? MissingConverter();
         this._changed = false;
     }
@@ -38,15 +37,9 @@ public sealed class TrackingCache : ITrackingCache
     {
         this._logger.LoadingCache(fileName);
 
-        string content = await File.ReadAllTextAsync(
-            path: fileName,
-            cancellationToken: cancellationToken
-        );
+        string content = await File.ReadAllTextAsync(path: fileName, cancellationToken: cancellationToken);
 
-        TrackingItems? items = JsonSerializer.Deserialize(
-            json: content,
-            jsonTypeInfo: this._typeInfo
-        );
+        TrackingItems? items = JsonSerializer.Deserialize(json: content, jsonTypeInfo: this._typeInfo);
 
         if (items is not null)
         {
@@ -82,11 +75,7 @@ public sealed class TrackingCache : ITrackingCache
 
         string content = JsonSerializer.Serialize(value: toWrite, jsonTypeInfo: this._typeInfo);
 
-        await File.WriteAllTextAsync(
-            path: fileName,
-            contents: content,
-            cancellationToken: cancellationToken
-        );
+        await File.WriteAllTextAsync(path: fileName, contents: content, cancellationToken: cancellationToken);
         this._changed = false;
     }
 
