@@ -32,10 +32,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
         MergeProprtiesOfMultipleGroups(propertyGroups: propertyGroups);
 
-        ReOrderPropertyGroupWithAttributesOrComments(
-            filename: filename,
-            propertyGroups: propertyGroups
-        );
+        ReOrderPropertyGroupWithAttributesOrComments(filename: filename, propertyGroups: propertyGroups);
 
         string after = projectDocument.InnerXml;
 
@@ -66,9 +63,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         List<XmlElement> sourceGroups = [];
         Dictionary<string, XmlNode> projectReferences = new(StringComparer.OrdinalIgnoreCase);
         Dictionary<string, XmlNode> packageReferencesNormal = new(StringComparer.OrdinalIgnoreCase);
-        Dictionary<string, XmlNode> packageReferencesPrivateGroup = new(
-            StringComparer.OrdinalIgnoreCase
-        );
+        Dictionary<string, XmlNode> packageReferencesPrivateGroup = new(StringComparer.OrdinalIgnoreCase);
 
         foreach (XmlElement itemGroup in itemGroups)
         {
@@ -135,21 +130,9 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         }
 
         // Add in New item groups at the end of the file for each of the types of reference
-        AppendReferences(
-            projectDocument: projectDocument,
-            source: projectReferences,
-            project: project
-        );
-        AppendReferences(
-            projectDocument: projectDocument,
-            source: packageReferencesNormal,
-            project: project
-        );
-        AppendReferences(
-            projectDocument: projectDocument,
-            source: packageReferencesPrivateGroup,
-            project: project
-        );
+        AppendReferences(projectDocument: projectDocument, source: projectReferences, project: project);
+        AppendReferences(projectDocument: projectDocument, source: packageReferencesNormal, project: project);
+        AppendReferences(projectDocument: projectDocument, source: packageReferencesPrivateGroup, project: project);
 
         RemoveNodes(sourceGroups);
 
@@ -279,10 +262,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         checkId: "MA0051: Method is too long",
         Justification = "TODO just comments"
     )]
-    private static void ReOrderPropertyGroupWithAttributesOrComments(
-        string filename,
-        XmlNodeList propertyGroups
-    )
+    private static void ReOrderPropertyGroupWithAttributesOrComments(string filename, XmlNodeList propertyGroups)
     {
         IReadOnlyList<XmlElement> nonCombinablePropertyGroups =
         [
@@ -337,9 +317,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
             {
                 propertyGroup.RemoveAll();
 
-                foreach (
-                    string entryKey in orderedChildren.Keys.Order(comparer: StringComparer.Ordinal)
-                )
+                foreach (string entryKey in orderedChildren.Keys.Order(comparer: StringComparer.Ordinal))
                 {
                     XmlNode item = orderedChildren[entryKey];
                     propertyGroup.AppendChild(item);
