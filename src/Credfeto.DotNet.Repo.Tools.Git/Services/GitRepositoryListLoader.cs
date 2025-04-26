@@ -16,43 +16,28 @@ public sealed class GitRepositoryListLoader : IGitRepositoryListLoader
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<GitRepositoryListLoader> _logger;
 
-    public GitRepositoryListLoader(
-        IHttpClientFactory httpClientFactory,
-        ILogger<GitRepositoryListLoader> logger
-    )
+    public GitRepositoryListLoader(IHttpClientFactory httpClientFactory, ILogger<GitRepositoryListLoader> logger)
     {
         this._httpClientFactory = httpClientFactory;
         this._logger = logger;
     }
 
-    public ValueTask<IReadOnlyList<string>> LoadAsync(
-        string path,
-        CancellationToken cancellationToken
-    )
+    public ValueTask<IReadOnlyList<string>> LoadAsync(string path, CancellationToken cancellationToken)
     {
         this._logger.LoadingRepos(path);
 
-        return
-            Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && IsHttp(uri)
+        return Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && IsHttp(uri)
             ? this.LoadFromHttpAsync(uri: uri, cancellationToken: cancellationToken)
             : LoadFromFileAsync(path: path, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask<IReadOnlyList<string>> LoadFromHttpAsync(
-        Uri uri,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask<IReadOnlyList<string>> LoadFromHttpAsync(Uri uri, CancellationToken cancellationToken)
     {
-        HttpClient httpClient = this._httpClientFactory.CreateClient(
-            name: nameof(GitRepositoryListLoader)
-        );
+        HttpClient httpClient = this._httpClientFactory.CreateClient(name: nameof(GitRepositoryListLoader));
 
         httpClient.BaseAddress = uri;
 
-        string result = await httpClient.GetStringAsync(
-            requestUri: uri,
-            cancellationToken: cancellationToken
-        );
+        string result = await httpClient.GetStringAsync(requestUri: uri, cancellationToken: cancellationToken);
 
         return GetRepos(SplitText(result));
     }
@@ -61,15 +46,9 @@ public sealed class GitRepositoryListLoader : IGitRepositoryListLoader
     {
         return result
             .Split(separator: "\r\n", options: StringSplitOptions.RemoveEmptyEntries)
-            .SelectMany(r =>
-                r.Split(separator: "\n\r", options: StringSplitOptions.RemoveEmptyEntries)
-            )
-            .SelectMany(r =>
-                r.Split(separator: "\n", options: StringSplitOptions.RemoveEmptyEntries)
-            )
-            .SelectMany(r =>
-                r.Split(separator: "\r", options: StringSplitOptions.RemoveEmptyEntries)
-            );
+            .SelectMany(r => r.Split(separator: "\n\r", options: StringSplitOptions.RemoveEmptyEntries))
+            .SelectMany(r => r.Split(separator: "\n", options: StringSplitOptions.RemoveEmptyEntries))
+            .SelectMany(r => r.Split(separator: "\r", options: StringSplitOptions.RemoveEmptyEntries));
     }
 
     private static bool IsHttp(Uri uri)
@@ -83,10 +62,7 @@ public sealed class GitRepositoryListLoader : IGitRepositoryListLoader
         CancellationToken cancellationToken
     )
     {
-        IReadOnlyList<string> lines = await File.ReadAllLinesAsync(
-            path: path,
-            cancellationToken: cancellationToken
-        );
+        IReadOnlyList<string> lines = await File.ReadAllLinesAsync(path: path, cancellationToken: cancellationToken);
 
         return GetRepos(lines);
     }
