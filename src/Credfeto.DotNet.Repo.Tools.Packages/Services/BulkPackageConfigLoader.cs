@@ -18,24 +18,17 @@ public sealed class BulkPackageConfigLoader : IBulkPackageConfigLoader
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<BulkPackageConfigLoader> _logger;
 
-    public BulkPackageConfigLoader(
-        IHttpClientFactory httpClientFactory,
-        ILogger<BulkPackageConfigLoader> logger
-    )
+    public BulkPackageConfigLoader(IHttpClientFactory httpClientFactory, ILogger<BulkPackageConfigLoader> logger)
     {
         this._httpClientFactory = httpClientFactory;
         this._logger = logger;
     }
 
-    public ValueTask<IReadOnlyList<PackageUpdate>> LoadAsync(
-        string path,
-        in CancellationToken cancellationToken
-    )
+    public ValueTask<IReadOnlyList<PackageUpdate>> LoadAsync(string path, in CancellationToken cancellationToken)
     {
         this._logger.LoadingPackageConfig(path);
 
-        return
-            Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && IsHttp(uri)
+        return Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && IsHttp(uri)
             ? this.LoadFromHttpAsyncAsync(uri: uri, cancellationToken: cancellationToken)
             : LoadFromFileAsyncAsync(filename: path, cancellationToken: cancellationToken);
     }
@@ -45,25 +38,18 @@ public sealed class BulkPackageConfigLoader : IBulkPackageConfigLoader
         CancellationToken cancellationToken
     )
     {
-        HttpClient httpClient = this._httpClientFactory.CreateClient(
-            name: nameof(BulkPackageConfigLoader)
-        );
+        HttpClient httpClient = this._httpClientFactory.CreateClient(name: nameof(BulkPackageConfigLoader));
 
         httpClient.BaseAddress = uri;
 
         await using (
-            Stream result = await httpClient.GetStreamAsync(
-                requestUri: uri,
-                cancellationToken: cancellationToken
-            )
+            Stream result = await httpClient.GetStreamAsync(requestUri: uri, cancellationToken: cancellationToken)
         )
         {
             IReadOnlyList<PackageUpdate> packages =
                 await JsonSerializer.DeserializeAsync(
                     utf8Json: result,
-                    jsonTypeInfo: PackageConfigSerializationContext
-                        .Default
-                        .IReadOnlyListPackageUpdate,
+                    jsonTypeInfo: PackageConfigSerializationContext.Default.IReadOnlyListPackageUpdate,
                     cancellationToken: cancellationToken
                 ) ?? [];
 
@@ -87,10 +73,7 @@ public sealed class BulkPackageConfigLoader : IBulkPackageConfigLoader
         CancellationToken cancellationToken
     )
     {
-        byte[] content = await File.ReadAllBytesAsync(
-            path: filename,
-            cancellationToken: cancellationToken
-        );
+        byte[] content = await File.ReadAllBytesAsync(path: filename, cancellationToken: cancellationToken);
 
         IReadOnlyList<PackageUpdate> packages =
             JsonSerializer.Deserialize(
