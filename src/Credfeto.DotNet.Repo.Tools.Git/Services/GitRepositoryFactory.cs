@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -36,18 +36,11 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
         in CancellationToken cancellationToken
     )
     {
-        string workingDirectory = this._locator.GetWorkingDirectory(
-            workDir: workDir,
-            repoUrl: repoUrl
-        );
+        string workingDirectory = this._locator.GetWorkingDirectory(workDir: workDir, repoUrl: repoUrl);
 
         if (Directory.Exists(workingDirectory))
         {
-            string lockFile = Path.Combine(
-                path1: workingDirectory,
-                path2: ".git",
-                path3: "lock.json"
-            );
+            string lockFile = Path.Combine(path1: workingDirectory, path2: ".git", path3: "lock.json");
 
             if (!File.Exists(lockFile))
             {
@@ -90,10 +83,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
                 logger: this._logger
             );
 
-            await repo.ResetToMasterAsync(
-                upstream: GitConstants.Upstream,
-                cancellationToken: cancellationToken
-            );
+            await repo.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
             // Start with a clean slate - branches will be created as needed
             repo.RemoveAllLocalBranches();
@@ -118,11 +108,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
         this._logger.CloningRepo(repoUrl: repoUrl, repoPath: destinationPath);
 
         string? path = IsHttps(repoUrl)
-            ? Repository.Clone(
-                sourceUrl: repoUrl,
-                workdirPath: destinationPath,
-                options: GitCloneOptions
-            )
+            ? Repository.Clone(sourceUrl: repoUrl, workdirPath: destinationPath, options: GitCloneOptions)
             : await CloneSshAsync(
                 sourceUrl: repoUrl,
                 workdirPath: workDir,
@@ -162,9 +148,6 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
 
     private static bool IsHttps(string repoUrl)
     {
-        return repoUrl.StartsWith(
-            value: "https://",
-            comparisonType: StringComparison.OrdinalIgnoreCase
-        );
+        return repoUrl.StartsWith(value: "https://", comparisonType: StringComparison.OrdinalIgnoreCase);
     }
 }
