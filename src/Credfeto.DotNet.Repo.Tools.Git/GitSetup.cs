@@ -12,9 +12,7 @@ public static class GitSetup
 {
     private const int RETRY_COUNT = 3;
     private static readonly TimeSpan ClientTimeout = TimeSpan.FromSeconds(30);
-    private static readonly TimeSpan ClientPolicyTimeout = ClientTimeout.Add(
-        TimeSpan.FromSeconds(1)
-    );
+    private static readonly TimeSpan ClientPolicyTimeout = ClientTimeout.Add(TimeSpan.FromSeconds(1));
 
     private static readonly TimeSpan SleepDuration = TimeSpan.FromMilliseconds(600);
 
@@ -27,9 +25,7 @@ public static class GitSetup
             .AddRepositoryListLoaderHttpClient();
     }
 
-    private static IServiceCollection AddRepositoryListLoaderHttpClient(
-        this IServiceCollection services
-    )
+    private static IServiceCollection AddRepositoryListLoaderHttpClient(this IServiceCollection services)
     {
         return services
             .AddHttpClient(nameof(GitRepositoryListLoader), configureClient: ConfigureClient)
@@ -37,10 +33,7 @@ public static class GitSetup
             .ConfigurePrimaryHttpMessageHandler(configureHandler: CreateHandler)
             .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(ClientPolicyTimeout))
             .AddTransientHttpErrorPolicy(x =>
-                x.WaitAndRetryAsync(
-                    retryCount: RETRY_COUNT,
-                    sleepDurationProvider: _ => SleepDuration
-                )
+                x.WaitAndRetryAsync(retryCount: RETRY_COUNT, sleepDurationProvider: _ => SleepDuration)
             )
             .Services;
     }
