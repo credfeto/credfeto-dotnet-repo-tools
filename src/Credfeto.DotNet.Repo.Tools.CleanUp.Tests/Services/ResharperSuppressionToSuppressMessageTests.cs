@@ -28,7 +28,7 @@ public sealed class ResharperSuppressionToSuppressMessageTests : TestBase
             }
 ";
 
-        const string expected = @"[System.Diagnostics.CodeAnalysis.SuppressMessage(\""ReSharper\"", \""InconsistentNaming\"", Justification=\""TODO: Review\"")]""
+        const string expected = @"[System.Diagnostics.CodeAnalysis.SuppressMessage(""ReSharper"", ""InconsistentNaming"", Justification=""TODO: Review"")]
             public void Example()
             {
                 // Simple
