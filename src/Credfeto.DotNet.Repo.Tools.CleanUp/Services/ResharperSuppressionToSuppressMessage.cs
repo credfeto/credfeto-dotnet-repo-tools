@@ -38,7 +38,7 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
     //
     // private const string removeBlankLines2Regex = "(?ms)" + "(?<Start>(^((\\s+)///\\s+<(.*?)/\\>)))" + linesToRemoveRegex + suppressMessageRegex;
 
-    private const RegexOptions REGEX_OPTIONS = RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking;
+    private const RegexOptions REGEX_OPTIONS = RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking | RegexOptions.ExplicitCapture;
     private static readonly TimeSpan RegexTimeSpan = TimeSpan.FromSeconds(1);
 
     public string Replace(string content)
@@ -47,15 +47,26 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
 
         foreach (string replacement in Replacements)
         {
-            string code = replacement.Replace(oldValue: ".", newValue: "\\.", comparisonType: StringComparison.Ordinal);
+            string regex = BuildRegex(replacement);
 
-            string regex = "//\\s+ReSharper\\s+disable\\s+once\\s+" + code;
-            string replacementText = "[System.Diagnostics.CodeAnalysis.SuppressMessage(\"ReSharper\", \"" + replacement + "\", Justification=\"TODO: Review\")]";
+            string replacementText = BuildReplacementText(replacement);
 
             source = Regex.Replace(input: source, pattern: regex, replacement: replacementText, options: REGEX_OPTIONS, matchTimeout: RegexTimeSpan);
         }
 
         return source;
+    }
+
+    private static string BuildReplacementText(string replacement)
+    {
+        return "[System.Diagnostics.CodeAnalysis.SuppressMessage(\"ReSharper\", \"" + replacement + "\", Justification=\"TODO: Review\")]";
+    }
+
+    private static string BuildRegex(string replacement)
+    {
+        string code = replacement.Replace(oldValue: ".", newValue: "\\.", comparisonType: StringComparison.Ordinal);
+
+        return "(?<Suppression>//\\s+ReSharper\\s+disable\\s+once\\s+" + code + ")";
     }
 
 #if FALSE

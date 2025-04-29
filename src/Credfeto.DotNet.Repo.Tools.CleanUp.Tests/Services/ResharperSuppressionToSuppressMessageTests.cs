@@ -15,20 +15,20 @@ public sealed class ResharperSuppressionToSuppressMessageTests : TestBase
 
     private static string MakeDisable(string item)
     {
-        return "// Resharper disable once " + item;
+        return "// ReSharper disable once " + item;
     }
 
     [Fact]
     public void Replace1()
     {
-        string input = MakeDisable("InconsistentNaming") + @"
+        string input = MakeDisable("RedundantDefaultMemberInitializer") + @"
             public void Example()
             {
                 // Simple
             }
 ";
 
-        const string expected = @"[System.Diagnostics.CodeAnalysis.SuppressMessage(""ReSharper"", ""InconsistentNaming"", Justification=""TODO: Review"")]
+        const string expected = @"[System.Diagnostics.CodeAnalysis.SuppressMessage(""ReSharper"", ""RedundantDefaultMemberInitializer"", Justification=""TODO: Review"")]
             public void Example()
             {
                 // Simple
