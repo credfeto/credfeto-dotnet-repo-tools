@@ -287,10 +287,10 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         Func<byte[], (byte[] bytes, bool changed)> rewriteRunsOn = ShouldUseGitHubHostedRunners(fileContext);
 
         return GetStandardFilesBaseToUpdate(fileContext)
-               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: issueTemplates, search: "*", prefix: "Config"))
-               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: actions, search: "action.yml", prefix: "Actions"))
-               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: workflows, prefix: "Actions", search: "*.yml", apply: rewriteRunsOn))
-               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: linters, search: "*", prefix: "Linters"));
+               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: issueTemplates, prefix: "Config", search: "*"))
+               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: actions, prefix: "Actions", search: "action.yml"))
+               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: workflows, search: "*.yml", prefix: "Actions", apply: rewriteRunsOn))
+               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: linters, prefix: "Linters", search: "*"));
     }
 
     private static Func<byte[], (byte[] bytes, bool changed)> ShouldUseGitHubHostedRunners(in FileContext fileContext)
