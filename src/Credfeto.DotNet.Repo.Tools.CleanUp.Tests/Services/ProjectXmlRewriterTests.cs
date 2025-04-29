@@ -16,10 +16,10 @@ public sealed partial class ProjectXmlRewriterTests : LoggingTestBase
     public ProjectXmlRewriterTests(ITestOutputHelper output)
         : base(output)
     {
-        this._projectXmlRewriter = new ProjectXmlRewriter();
+        this._projectXmlRewriter = new ProjectXmlRewriter(this.GetTypedLogger<ProjectXmlRewriter>());
     }
 
-    private async Task DoReOorderPropertiesAsync(string expectedXml, string originalXml)
+    private async Task DoReOrderPropertiesAsync(string expectedXml, string originalXml)
     {
         string txtExpected = await GetValidatedExpectedDocumentAsync(expectedXml);
 
@@ -69,13 +69,13 @@ public sealed partial class ProjectXmlRewriterTests : LoggingTestBase
     private static async ValueTask<string> SaveDocAsync(XmlDocument doc)
     {
         XmlWriterSettings settings = new()
-        {
-            Indent = true,
-            IndentChars = "  ",
-            NewLineOnAttributes = false,
-            OmitXmlDeclaration = true,
-            Async = true,
-        };
+                                     {
+                                         Indent = true,
+                                         IndentChars = "  ",
+                                         NewLineOnAttributes = false,
+                                         OmitXmlDeclaration = true,
+                                         Async = true
+                                     };
 
         StringWriter sw = new();
 

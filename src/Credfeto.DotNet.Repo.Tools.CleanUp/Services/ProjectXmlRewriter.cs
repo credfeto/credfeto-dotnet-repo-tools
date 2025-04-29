@@ -1,19 +1,23 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Xml;
+using Credfeto.DotNet.Repo.Tools.CleanUp.Services.LoggingExtensions;
+using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
 public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 {
-    [SuppressMessage(
-        category: "Meziantou.Analyzer",
-        checkId: "MA0051: Method is too long",
-        Justification = "TODO just comments"
-    )]
+    private readonly ILogger<ProjectXmlRewriter> _logger;
+
+    public ProjectXmlRewriter(ILogger<ProjectXmlRewriter> logger)
+    {
+        this._logger = logger;
+    }
+
+    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
     public bool ReOrderPropertyGroups(XmlDocument projectDocument, string filename)
     {
         if (projectDocument.SelectSingleNode("Project") is not XmlElement project)
@@ -30,20 +34,16 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
         string before = projectDocument.InnerXml;
 
-        MergeProprtiesOfMultipleGroups(propertyGroups: propertyGroups);
+        this.MergePropertiesOfMultipleGroups(fileName: filename, propertyGroups: propertyGroups);
 
-        ReOrderPropertyGroupWithAttributesOrComments(filename: filename, propertyGroups: propertyGroups);
+        this.ReOrderPropertyGroupWithAttributesOrComments(filename: filename, propertyGroups: propertyGroups);
 
         string after = projectDocument.InnerXml;
 
         return !StringComparer.Ordinal.Equals(x: before, y: after);
     }
 
-    [SuppressMessage(
-        category: "Meziantou.Analyzer",
-        checkId: "MA0051: Method is too long",
-        Justification = "TODO just comments"
-    )]
+    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
     public bool ReOrderIncludes(XmlDocument projectDocument, string filename)
     {
         if (projectDocument.SelectSingleNode("Project") is not XmlElement project)
@@ -69,14 +69,15 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         {
             if (itemGroup.HasAttributes)
             {
-                Log($"SKIPPING GROUP AS Found Attribute : {filename}");
+                this._logger.SkippingGroupWithAttribute(filename);
 
                 continue;
             }
 
-            if (itemGroup.ChildNodes.OfType<XmlNode>().Any(IsComment))
+            if (itemGroup.ChildNodes.OfType<XmlNode>()
+                         .Any(IsComment))
             {
-                Log($"SKIPPING GROUP AS Found Comment : {filename}");
+                this._logger.SkippingGroupWithComment(filename);
 
                 continue;
             }
@@ -94,7 +95,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
                     {
                         if (!packageReferencesNormal.TryAdd(key: packageId, value: reference))
                         {
-                            Log($"SKIPPING GROUP AS Found Duplicate item {packageId} : {filename}");
+                            this._logger.SkippingGroupWithDuplicatePackage(filename: filename, packageId: packageId);
 
                             return false;
                         }
@@ -103,7 +104,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
                     {
                         if (!packageReferencesPrivateGroup.TryAdd(key: packageId, value: reference))
                         {
-                            Log($"SKIPPING GROUP AS Found Duplicate item {packageId} : {filename}");
+                            this._logger.SkippingGroupWithDuplicatePackage(filename: filename, packageId: packageId);
 
                             return false;
                         }
@@ -115,14 +116,14 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
                     if (!projectReferences.TryAdd(key: projectPath, value: reference))
                     {
-                        Log($"SKIPPING GROUP AS Found Duplicate item {projectPath} : {filename}");
+                        this._logger.SkippingGroupWithDuplicateProject(filename: filename, projectPath: projectPath);
 
                         return false;
                     }
                 }
                 else
                 {
-                    Log($"SKIPPING GROUP AS Found Unknown item {reference.Name} : {filename}");
+                    this._logger.SkippingGroupWithUnknownItemType(filename: filename, referenceType: reference.Name);
 
                     return false;
                 }
@@ -141,11 +142,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         return !StringComparer.Ordinal.Equals(x: before, y: after);
     }
 
-    private static void AppendReferences(
-        XmlDocument projectDocument,
-        Dictionary<string, XmlNode> source,
-        XmlElement project
-    )
+    private static void AppendReferences(XmlDocument projectDocument, Dictionary<string, XmlNode> source, XmlElement project)
     {
         if (source.Count == 0)
         {
@@ -154,12 +151,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
         XmlElement itemGroup = projectDocument.CreateElement("ItemGroup");
 
-        foreach (
-            (string _, XmlNode node) in source.OrderBy(
-                keySelector: x => x.Key,
-                comparer: StringComparer.OrdinalIgnoreCase
-            )
-        )
+        foreach ((string _, XmlNode node) in source.OrderBy(keySelector: x => x.Key, comparer: StringComparer.OrdinalIgnoreCase))
         {
             itemGroup.AppendChild(node);
         }
@@ -178,11 +170,12 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         }
     }
 
-    private static void MergeProprtiesOfMultipleGroups(XmlNodeList propertyGroups)
+    public void MergePropertiesOfMultipleGroups(string fileName, XmlNodeList propertyGroups)
     {
         IReadOnlyList<XmlElement> combinablePropertyGroups =
         [
-            .. propertyGroups.OfType<XmlElement>().Where(IsCombinableGroup),
+            .. propertyGroups.OfType<XmlElement>()
+                             .Where(IsCombinableGroup)
         ];
 
         XmlElement? targetPropertyGroup = combinablePropertyGroups.FirstOrDefault();
@@ -201,7 +194,12 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
             foreach (XmlElement child in children)
             {
-                orderedChildren.Add(key: child.Name, value: child);
+                if (!orderedChildren.TryAdd(key: child.Name, value: child))
+                {
+                    this._logger.DuplicateProperty(filename: fileName, propertyName: child.Name);
+
+                    throw new XmlException($"Duplicate property {child.Name} : {fileName}");
+                }
             }
 
             if (targetPropertyGroup != propertyGroup)
@@ -257,16 +255,13 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         return true;
     }
 
-    [SuppressMessage(
-        category: "Meziantou.Analyzer",
-        checkId: "MA0051: Method is too long",
-        Justification = "TODO just comments"
-    )]
-    private static void ReOrderPropertyGroupWithAttributesOrComments(string filename, XmlNodeList propertyGroups)
+    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "TODO just comments")]
+    private void ReOrderPropertyGroupWithAttributesOrComments(string filename, XmlNodeList propertyGroups)
     {
         IReadOnlyList<XmlElement> nonCombinablePropertyGroups =
         [
-            .. propertyGroups.OfType<XmlElement>().Where(ph => !IsCombinableGroup(ph)),
+            .. propertyGroups.OfType<XmlElement>()
+                             .Where(ph => !IsCombinableGroup(ph))
         ];
 
         foreach (XmlElement propertyGroup in nonCombinablePropertyGroups)
@@ -281,9 +276,10 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
             XmlNodeList children = propertyGroup.ChildNodes;
 
-            if (children.OfType<XmlNode>().Any(IsComment))
+            if (children.OfType<XmlNode>()
+                        .Any(IsComment))
             {
-                Log(message: $"{filename} SKIPPING GROUP AS Found Comment");
+                this._logger.SkippingGroupWithComment(filename: filename);
 
                 continue;
             }
@@ -307,7 +303,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
                 {
                     replace = false;
 
-                    Log(message: $"{filename} SKIPPING GROUP AS Found Duplicate item {name}");
+                    this._logger.SkippingGroupWithDuplicate(filename: filename, name: name);
 
                     break;
                 }
@@ -339,10 +335,5 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
     private static bool IsComment(XmlNode node)
     {
         return node.NodeType == XmlNodeType.Comment;
-    }
-
-    private static void Log(string message)
-    {
-        Debug.WriteLine(message);
     }
 }
