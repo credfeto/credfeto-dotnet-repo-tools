@@ -8,8 +8,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
-
-- Unhandled exception in xml rewriter
 ### Changed
 ### Removed
 ### Deployment Changes
@@ -17,6 +15,10 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.1.27] - 2025-04-29
+### Fixed
+- Unhandled exception in xml rewriter
+
 ## [1.1.26] - 2025-04-29
 ### Fixed
 - Unhandled exception from CSharpier
