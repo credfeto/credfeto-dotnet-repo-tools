@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
+- Unhandled exception from CSharpier
 ### Changed
 ### Removed
 ### Deployment Changes
