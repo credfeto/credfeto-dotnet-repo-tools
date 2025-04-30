@@ -13,13 +13,13 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 public sealed class SourceFileReformatter : ISourceFileReformatter
 {
     private static readonly CodeFormatterOptions Options = new()
-                                                           {
-                                                               Width = 120,
-                                                               IndentStyle = IndentStyle.Spaces,
-                                                               EndOfLine = EndOfLine.Auto,
-                                                               IncludeGenerated = false,
-                                                               IndentSize = 4
-                                                           };
+    {
+        Width = 120,
+        IndentStyle = IndentStyle.Spaces,
+        EndOfLine = EndOfLine.Auto,
+        IncludeGenerated = false,
+        IndentSize = 4,
+    };
 
     private readonly ILogger<SourceFileReformatter> _logger;
 
@@ -32,7 +32,11 @@ public sealed class SourceFileReformatter : ISourceFileReformatter
     {
         try
         {
-            CodeFormatterResult formatted = await CSharpFormatter.FormatAsync(code: content, options: Options, cancellationToken: cancellationToken);
+            CodeFormatterResult formatted = await CSharpFormatter.FormatAsync(
+                code: content,
+                options: Options,
+                cancellationToken: cancellationToken
+            );
 
             IReadOnlyList<Diagnostic> errors = [.. formatted.CompilationErrors];
 
