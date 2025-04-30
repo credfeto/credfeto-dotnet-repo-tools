@@ -21,14 +21,17 @@ public sealed class ResharperSuppressionToSuppressMessageTests : TestBase
     [Fact]
     public void Replace1()
     {
-        string input = MakeDisable("RedundantDefaultMemberInitializer") + @"
+        string input =
+            MakeDisable("RedundantDefaultMemberInitializer")
+            + @"
             public void Example()
             {
                 // Simple
             }
 ";
 
-        const string expected = @"[System.Diagnostics.CodeAnalysis.SuppressMessage(""ReSharper"", ""RedundantDefaultMemberInitializer"", Justification=""TODO: Review"")]
+        const string expected =
+            @"[System.Diagnostics.CodeAnalysis.SuppressMessage(""ReSharper"", ""RedundantDefaultMemberInitializer"", Justification=""TODO: Review"")]
             public void Example()
             {
                 // Simple
