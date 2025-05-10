@@ -24,6 +24,8 @@ internal sealed class ProjectClassifier : IProjectClassifier
 
     private static bool HasNamedProject(IReadOnlyList<SolutionProject> projects, string projectName)
     {
-        return projects.Any(project => StringComparer.OrdinalIgnoreCase.Equals((string?)project.DisplayName, y: projectName));
+        return projects.Any(project =>
+            StringComparer.OrdinalIgnoreCase.Equals((string?)project.DisplayName, y: projectName)
+        );
     }
 }
