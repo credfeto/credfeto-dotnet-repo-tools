@@ -9,13 +9,14 @@ internal sealed class FrameworkSettings : IFrameworkSettings
     public FrameworkSettings(in DotNetVersionSettings dotNetSettings)
     {
         this.DotNetSdkVersion = dotNetSettings.SdkVersion;
-        this.DotNetAllowPreReleaseSdk = dotNetSettings.AllowPreRelease ? "true" : "false";
+        this.DotNetAllowPreReleaseSdk = dotNetSettings.AllowPreRelease
+            ? "true"
+            : "false";
     }
 
     public bool IsNullableGloballyEnforced => true;
 
-    public string ProjectImport =>
-        Environment.GetEnvironmentVariable("DOTNET_PACK_PROJECT_METADATA_IMPORT") ?? string.Empty;
+    public string ProjectImport => Environment.GetEnvironmentVariable("DOTNET_PACK_PROJECT_METADATA_IMPORT") ?? string.Empty;
 
     public string? DotnetPackable => Environment.GetEnvironmentVariable(variable: "DOTNET_PACKABLE");
 
@@ -27,6 +28,5 @@ internal sealed class FrameworkSettings : IFrameworkSettings
 
     public string DotNetAllowPreReleaseSdk { get; }
 
-    public bool XmlDocumentationRequired =>
-        StringComparer.InvariantCulture.Equals(Environment.GetEnvironmentVariable("XML_DOCUMENTATION"), y: "true");
+    public bool XmlDocumentationRequired => StringComparer.Ordinal.Equals(Environment.GetEnvironmentVariable("XML_DOCUMENTATION"), y: "true");
 }
