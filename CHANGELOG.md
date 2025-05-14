@@ -10,6 +10,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated Credfeto.Date to 1.1.89.1028
+- Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.14.15
 ### Removed
 ### Deployment Changes
 
