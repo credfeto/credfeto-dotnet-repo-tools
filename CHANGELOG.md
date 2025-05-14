@@ -9,10 +9,10 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Credfeto.Date to 1.1.89.1028
 - SDK - Updated DotNet SDK to 9.0.300
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.14.15
 - Dependencies - Updated Credfeto.Enumeration to 1.2.82.1120
+- Dependencies - Updated Credfeto.Date to 1.1.90.1034
 ### Removed
 ### Deployment Changes
 
