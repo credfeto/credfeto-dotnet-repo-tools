@@ -9,6 +9,14 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.1.29] - 2025-05-15
+### Changed
 - SDK - Updated DotNet SDK to 9.0.300
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.14.15
 - Dependencies - Updated Credfeto.Enumeration to 1.2.82.1120
@@ -16,12 +24,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.70.545
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.106.1079
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.91.911
-### Removed
-### Deployment Changes
 
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 ## [1.1.28] - 2025-05-14
 ### Changed
 - Dependencies - Updated Nullable.Extended.Analyzer to 1.15.6581
