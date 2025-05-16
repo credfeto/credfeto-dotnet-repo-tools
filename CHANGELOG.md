@@ -9,15 +9,18 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Credfeto.ChangeLog to 1.10.108.1084
-- Dependencies - Updated Credfeto.Date to 1.1.92.1039
-- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.92.914
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.1.31] - 2025-05-16
+### Changed
+- Dependencies - Updated Credfeto.ChangeLog to 1.10.108.1084
+- Dependencies - Updated Credfeto.Date to 1.1.92.1039
+- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.92.914
+
 ## [1.1.30] - 2025-05-15
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.83.1123
