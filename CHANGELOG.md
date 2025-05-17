@@ -9,17 +9,20 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Microsoft.Sbom.Targets to 4.0.3
-- Dependencies - Updated Credfeto.ChangeLog to 1.10.110.1089
-- Dependencies - Updated Credfeto.Date to 1.1.93.1042
-- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.93.917
-- Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.72.553
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.1.34] - 2025-05-17
+### Changed
+- Dependencies - Updated Microsoft.Sbom.Targets to 4.0.3
+- Dependencies - Updated Credfeto.ChangeLog to 1.10.110.1089
+- Dependencies - Updated Credfeto.Date to 1.1.93.1042
+- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.93.917
+- Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.72.553
+
 ## [1.1.33] - 2025-05-16
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.84.1127
