@@ -10,6 +10,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated Microsoft.Sbom.Targets to 4.0.3
+- Dependencies - Updated Credfeto.ChangeLog to 1.10.110.1089
 ### Removed
 ### Deployment Changes
 
