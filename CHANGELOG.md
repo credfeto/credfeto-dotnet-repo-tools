@@ -10,6 +10,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.10.0.116381
+- Removed reviewers from dependabot as deprecated by github
 ### Removed
 ### Deployment Changes
 
