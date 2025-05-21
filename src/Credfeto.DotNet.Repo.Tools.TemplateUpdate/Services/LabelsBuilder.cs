@@ -48,7 +48,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
         new(Name: "!!! WAITING FOR ETHEREUM PR", Description: "Pull request needs a server ethereum pull request to be merged at the same time", Colour: "ffff00", [], []),
         new(Name: "dependencies", Description: "Updates to dependencies", Colour: "0366d6", [], []),
         new(Name: "dotnet", Description: "Dotnet package updates", Colour: "db6baa", [], []),
-        new(Name: "npm", Description: "npm package uppate", Colour: "e99695", [], []),
+        new(Name: "npm", Description: "npm package update", Colour: "e99695", [], []),
         new(Name: "DO NOT MERGE", Description: "This pull request should not be merged yet", Colour: "ff0000", [], []),
     ];
 
