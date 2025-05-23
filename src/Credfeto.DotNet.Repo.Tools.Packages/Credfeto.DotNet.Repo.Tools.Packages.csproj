@@ -60,6 +60,8 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-x5qj-9vmx-7g6g" />
     <!-- error NU1903: Warning As Error: Package 'System.Private.Uri' 4.3.0 has a known high severity vulnerability -->
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-xhfc-gr8f-ffwc" />
+    <!-- Error NU1903 : Warning As Error: Package 'System.Formats.Asn1' 6.0.0 has a known high severity vulnerability -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-447r-wph3-92pm"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Packages.Interfaces\Credfeto.DotNet.Repo.Tools.Packages.Interfaces.csproj" />
