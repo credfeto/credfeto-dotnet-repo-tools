@@ -11,6 +11,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.137.1162
 - Dependencies - Updated Credfeto.Date to 1.1.108.1089
+- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.107.967
 ### Removed
 ### Deployment Changes
 
