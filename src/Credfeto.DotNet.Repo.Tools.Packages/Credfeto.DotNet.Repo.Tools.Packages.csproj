@@ -70,7 +70,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Credfeto.ChangeLog" Version="1.10.139.1166" />
-    <PackageReference Include="Credfeto.Package" Version="1.10.167.1553" />
+    <PackageReference Include="Credfeto.Package" Version="1.10.168.1555" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.5" />
   </ItemGroup>
   <ItemGroup>
