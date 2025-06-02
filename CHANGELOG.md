@@ -11,6 +11,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.101.1187
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.142.1176
+- Dependencies - Updated FunFair.BuildVersion to 6.2.17.1375
 ### Removed
 ### Deployment Changes
 
