@@ -9,12 +9,12 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Credfeto.ChangeLog to 1.10.143.1179
 - Dependencies - Updated Credfeto.Date to 1.1.111.1100
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.110.978
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.89.610
 - Dependencies - Updated Credfeto.Package to 1.10.173.1573
 - Dependencies - Updated Microsoft.NET.Test.Sdk to 17.14.1
+- Dependencies - Updated Credfeto.ChangeLog to 1.10.144.1181
 ### Removed
 ### Deployment Changes
 
