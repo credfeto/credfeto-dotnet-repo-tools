@@ -21,7 +21,7 @@ public sealed class DotNetBuild : IDotNetBuild
     [
         // MSB3243 - two assemblies of the same name, but different version
         // NU1802 - restoring from HTTP source
-        "NU1802",
+        "NU1802"
     ];
 
     private static readonly IReadOnlyList<string> NoWarnPreRelease =
@@ -36,7 +36,7 @@ public sealed class DotNetBuild : IDotNetBuild
         "NU1903",
 
         // NU1904 - Package with critical severity detected
-        "NU1904",
+        "NU1904"
     ];
 
     private readonly ILogger<DotNetBuild> _logger;
@@ -112,23 +112,17 @@ public sealed class DotNetBuild : IDotNetBuild
         string? candidateFramework = GetTargetFrameworks(doc: doc, outputType: outputTypeNode.InnerText)
             .MaxBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase);
 
-        if (candidateFramework is not null)
+        if (candidateFramework is null)
         {
-            publishable = true;
+            return;
+        }
 
-            if (framework is null)
-            {
-                framework = candidateFramework;
-                this._logger.LogFoundFramework(framework);
-            }
-            else
-            {
-                if (StringComparer.OrdinalIgnoreCase.Compare(x: candidateFramework, y: framework) > 0)
-                {
-                    framework = candidateFramework;
-                    this._logger.LogFoundFramework(framework);
-                }
-            }
+        publishable = IsPublishable(doc: doc, outputType: outputTypeNode.InnerText);
+
+        if (framework is null || StringComparer.OrdinalIgnoreCase.Compare(x: candidateFramework, y: framework) > 0)
+        {
+            framework = candidateFramework;
+            this._logger.LogFoundFramework(framework);
         }
     }
 
@@ -163,19 +157,47 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private static bool IsPackable(XmlDocument doc, string outputType)
     {
-        if (!StringComparer.OrdinalIgnoreCase.Equals(x: outputType, y: "Library"))
+        if (!IsLibrary(outputType))
         {
-            return false;
+            if (!IsDotNetTool(doc))
+            {
+                return false;
+            }
         }
 
-        XmlNode? packableNode = doc.SelectSingleNode("/Project/PropertyGroup/IsPackable");
+        return IsBooleanDocPropertyTrue(doc: doc, path: "/Project/PropertyGroup/IsPackable");
+    }
+
+    private static bool IsBooleanDocPropertyTrue(XmlDocument doc, string path)
+    {
+        XmlNode? packableNode = doc.SelectSingleNode(path);
 
         return packableNode is not null && StringComparer.OrdinalIgnoreCase.Equals(x: packableNode.InnerText, y: "True");
     }
 
+    private static bool IsDotNetTool(XmlDocument doc)
+    {
+        return IsBooleanDocPropertyTrue(doc: doc, path: "/Project/PropertyGroup/PackAsTool");
+    }
+
+    private static bool IsLibrary(string outputType)
+    {
+        return StringComparer.OrdinalIgnoreCase.Equals(x: outputType, y: "Library");
+    }
+
+    private static bool IsPublishable(XmlDocument doc, string outputType)
+    {
+        if (IsLibrary(outputType))
+        {
+            return false;
+        }
+
+        return IsBooleanDocPropertyTrue(doc: doc, path: "/Project/PropertyGroup/IsPublishable");
+    }
+
     private static string EnvironmentParameter((string name, string value) p)
     {
-        return EnvironmentParameter(p.name, p.value);
+        return EnvironmentParameter(name: p.name, value: p.value);
     }
 
     private static string EnvironmentParameter(string name, string value)
@@ -190,7 +212,7 @@ public sealed class DotNetBuild : IDotNetBuild
             return string.Empty;
         }
 
-        return string.Join(' ', parameters.Select(EnvironmentParameter));
+        return string.Join(separator: ' ', parameters.Select(EnvironmentParameter));
     }
 
     private async ValueTask DotNetPublishAsync(string basePath, BuildOverride buildOverride, string? framework, CancellationToken cancellationToken)
