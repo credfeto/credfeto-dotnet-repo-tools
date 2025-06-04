@@ -32,7 +32,10 @@ public sealed class DotNetBuildTests : TestBase
     {
         this.MockLoadProject(path: project);
 
-        BuildSettings result = await this._dotNetBuild.LoadBuildSettingsAsync([project], cancellationToken: System.Threading.CancellationToken.None);
+        BuildSettings result = await this._dotNetBuild.LoadBuildSettingsAsync(
+            [project],
+            cancellationToken: System.Threading.CancellationToken.None
+        );
 
         Assert.Equal(expected: packable, actual: result.Packable);
         Assert.Equal(expected: publishable, actual: result.Publishable);
@@ -49,8 +52,7 @@ public sealed class DotNetBuildTests : TestBase
 
     private void MockLoadProject(string path)
     {
-        this._projectXmlLoader.LoadAsync(path: path, Arg.Any<CancellationToken>())
-            .Returns(LoadDoc());
+        this._projectXmlLoader.LoadAsync(path: path, Arg.Any<CancellationToken>()).Returns(LoadDoc());
 
         XmlDocument LoadDoc()
         {
@@ -72,7 +74,7 @@ public sealed class DotNetBuildTests : TestBase
             nameof(Projects.PublishableExe) => Projects.PublishableExe,
             nameof(Projects.NonPackableLibrary) => Projects.NonPackableLibrary,
             nameof(Projects.NonPublishableExe) => Projects.NonPublishableExe,
-            _ => throw new FileNotFoundException(message: "No such file", fileName: path)
+            _ => throw new FileNotFoundException(message: "No such file", fileName: path),
         };
 
         return content;
