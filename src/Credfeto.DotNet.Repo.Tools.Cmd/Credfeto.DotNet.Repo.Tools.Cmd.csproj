@@ -79,7 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Cocona" Version="2.2.0" />
-    <PackageReference Include="Credfeto.Date" Version="1.1.112.1102" />
+    <PackageReference Include="Credfeto.Date" Version="1.1.113.1105" />
     <PackageReference Include="Credfeto.Enumeration.Source.Generation.Attributes" Version="1.2.103.1193" />
     <PackageReference Include="Serilog.Enrichers.Demystifier" Version="1.0.3" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
