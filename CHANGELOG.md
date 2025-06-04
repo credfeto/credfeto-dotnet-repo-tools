@@ -8,16 +8,20 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
-- Fixing project properties detection
 ### Changed
-- Dependencies - Updated Credfeto.Enumeration to 1.2.103.1193
-- Dependencies - Updated Credfeto.ChangeLog to 1.10.146.1186
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.1.71] - 2025-06-04
+### Fixed
+- Fixing project properties detection
+### Changed
+- Dependencies - Updated Credfeto.Enumeration to 1.2.103.1193
+- Dependencies - Updated Credfeto.ChangeLog to 1.10.146.1186
+
 ## [1.1.70] - 2025-06-04
 ### Changed
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.145.1183
