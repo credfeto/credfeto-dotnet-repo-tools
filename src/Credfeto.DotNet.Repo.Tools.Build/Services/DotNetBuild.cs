@@ -133,23 +133,18 @@ public sealed class DotNetBuild : IDotNetBuild
             return [];
         }
 
-        XmlNode? publishableNode = doc.SelectSingleNode("/Project/PropertyGroup/IsPublishable");
+        XmlNode? targetFrameworkNode = doc.SelectSingleNode("/Project/PropertyGroup/TargetFramework");
 
-        if (publishableNode is not null && StringComparer.OrdinalIgnoreCase.Equals(x: publishableNode.InnerText, y: "True"))
+        if (targetFrameworkNode is not null)
         {
-            XmlNode? targetFrameworkNode = doc.SelectSingleNode("/Project/PropertyGroup/TargetFramework");
+            return [targetFrameworkNode.InnerText];
+        }
 
-            if (targetFrameworkNode is not null)
-            {
-                return [targetFrameworkNode.InnerText];
-            }
+        XmlNode? targetFrameworksNode = doc.SelectSingleNode("/Project/PropertyGroup/TargetFrameworks");
 
-            XmlNode? targetFrameworksNode = doc.SelectSingleNode("/Project/PropertyGroup/TargetFrameworks");
-
-            if (targetFrameworksNode is not null)
-            {
-                return targetFrameworksNode.InnerText.Split(separator: ';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-            }
+        if (targetFrameworksNode is not null)
+        {
+            return targetFrameworksNode.InnerText.Split(separator: ';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         }
 
         return [];

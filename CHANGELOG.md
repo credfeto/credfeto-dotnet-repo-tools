@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
+- Fixing project properties detection
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.103.1193
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.146.1186
