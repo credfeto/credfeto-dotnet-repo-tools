@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.DotNet.Repo.Tracking.Services;
@@ -24,24 +23,29 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         }
     }
 
-    private static string NewId => Guid.NewGuid().ToString();
+    private static string NewId =>
+        Guid.NewGuid()
+            .ToString();
 
     [Fact]
     public void GetNonExistent()
     {
-        string? value = this._trackingCache.Get(Guid.NewGuid().ToString());
+        string? value = this._trackingCache.Get(Guid.NewGuid()
+                                                    .ToString());
         Assert.Null(value);
     }
 
     [Fact]
     public void SetAndGet()
     {
-        string repoUrl = Guid.NewGuid().ToString();
+        string repoUrl = Guid.NewGuid()
+                             .ToString();
 
         string? value = this._trackingCache.Get(repoUrl);
         Assert.Null(value);
 
-        string expected = Guid.NewGuid().ToString();
+        string expected = Guid.NewGuid()
+                              .ToString();
 
         this._trackingCache.Set(repoUrl: repoUrl, value: expected);
 
@@ -54,9 +58,8 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
     {
         string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
 
-        return Assert.ThrowsAsync<FileNotFoundException>(() =>
-            this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: this.CancellationToken()).AsTask()
-        );
+        return Assert.ThrowsAsync<FileNotFoundException>(() => this._trackingCache.LoadAsync(fileName: trackingFile, this.CancellationToken())
+                                                                   .AsTask());
     }
 
     [Fact]
@@ -83,11 +86,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
         this.Output.WriteLine(trackingFile);
 
-        await File.WriteAllTextAsync(
-            path: trackingFile,
-            contents: "{\"Test1\":\"Hello World\",\"Test2\":\"Banana\"}",
-            cancellationToken: this.CancellationToken()
-        );
+        await File.WriteAllTextAsync(path: trackingFile, contents: "{\"Test1\":\"Hello World\",\"Test2\":\"Banana\"}", this.CancellationToken());
 
         await this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: this.CancellationToken());
 

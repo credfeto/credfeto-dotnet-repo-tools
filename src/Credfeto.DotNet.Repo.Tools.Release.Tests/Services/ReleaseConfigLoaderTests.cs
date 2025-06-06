@@ -2,7 +2,6 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Release.Extensions;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
@@ -21,77 +20,38 @@ public sealed class ReleaseConfigLoaderTests : TestBase
     public ReleaseConfigLoaderTests()
     {
         this._httpClientFactory = GetSubstitute<IHttpClientFactory>();
-        this._releaseConfigLoader = new ReleaseConfigLoader(
-            this._httpClientFactory,
-            this.GetTypedLogger<ReleaseConfigLoader>()
-        );
+        this._releaseConfigLoader = new ReleaseConfigLoader(httpClientFactory: this._httpClientFactory, this.GetTypedLogger<ReleaseConfigLoader>());
     }
 
     [Fact]
-    [SuppressMessage(
-        category: "Meziantou.Analyzer",
-        checkId: "MA0051: Method is too long",
-        Justification = "Unit Test"
-    )]
+    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Unit Test")]
     public async Task LoadFromUrlAsync()
     {
         this.MockConfig();
 
-        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(
-            path: "https://www.example.com/release.config",
-            cancellationToken: this.CancellationToken()
-        );
+        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(path: "https://www.example.com/release.config", this.CancellationToken());
 
         Assert.Equal(expected: 1, actual: config.AutoReleasePendingPackages);
         Assert.Equal(expected: 4, actual: config.MinimumHoursBeforeAutoRelease);
         Assert.Equal(expected: 8, actual: config.InactivityHoursBeforeAutoRelease);
 
         Assert.NotEmpty(config.NeverRelease);
-        Assert.Contains(
-            collection: config.NeverRelease,
-            filter: match => IsMatch(match: match, repo: "template", matchType: MatchType.CONTAINS, include: true)
-        );
-        Assert.Contains(
-            collection: config.NeverRelease,
-            filter: match =>
-                IsMatch(
-                    match: match,
-                    repo: "git@github.com:example/never-release.git",
-                    matchType: MatchType.EXACT,
-                    include: true
-                )
-        );
+        Assert.Contains(collection: config.NeverRelease, filter: match => IsMatch(match: match, repo: "template", matchType: MatchType.CONTAINS, include: true));
+        Assert.Contains(collection: config.NeverRelease, filter: match => IsMatch(match: match, repo: "git@github.com:example/never-release.git", matchType: MatchType.EXACT, include: true));
 
         Assert.NotEmpty(config.AlwaysMatch);
 
-        Assert.Contains(
-            collection: config.AlwaysMatch,
-            filter: match =>
-                IsMatch(
-                    match: match,
-                    repo: "git@github.com:example/always-match.git",
-                    matchType: MatchType.EXACT,
-                    include: false
-                )
-        );
-        Assert.Contains(
-            collection: config.AlwaysMatch,
-            filter: match => IsMatch(match: match, repo: "code-analysis", matchType: MatchType.CONTAINS, include: true)
-        );
+        Assert.Contains(collection: config.AlwaysMatch, filter: match => IsMatch(match: match, repo: "git@github.com:example/always-match.git", matchType: MatchType.EXACT, include: false));
+        Assert.Contains(collection: config.AlwaysMatch, filter: match => IsMatch(match: match, repo: "code-analysis", matchType: MatchType.CONTAINS, include: true));
 
         Assert.NotEmpty(config.AllowedAutoUpgrade);
 
-        Assert.Contains(
-            collection: config.AllowedAutoUpgrade,
-            filter: match => IsMatch(match: match, repo: "template", matchType: MatchType.CONTAINS, include: false)
-        );
+        Assert.Contains(collection: config.AllowedAutoUpgrade, filter: match => IsMatch(match: match, repo: "template", matchType: MatchType.CONTAINS, include: false));
     }
 
     private static bool IsMatch(in RepoMatch match, string repo, MatchType matchType, bool include)
     {
-        return StringComparer.Ordinal.Equals(x: match.Repo, y: repo)
-            && match.MatchType == matchType
-            && match.Include == include;
+        return StringComparer.Ordinal.Equals(x: match.Repo, y: repo) && match.MatchType == matchType && match.Include == include;
     }
 
     [Theory]
@@ -100,10 +60,7 @@ public sealed class ReleaseConfigLoaderTests : TestBase
     {
         this.MockConfig();
 
-        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(
-            path: "https://www.example.com/release.config",
-            cancellationToken: this.CancellationToken()
-        );
+        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(path: "https://www.example.com/release.config", this.CancellationToken());
 
         Assert.True(config.ShouldNeverAutoReleaseRepo(repo), userMessage: "Should never auto release");
     }
@@ -115,10 +72,7 @@ public sealed class ReleaseConfigLoaderTests : TestBase
     {
         this.MockConfig();
 
-        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(
-            path: "https://www.example.com/release.config",
-            cancellationToken: this.CancellationToken()
-        );
+        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(path: "https://www.example.com/release.config", this.CancellationToken());
 
         Assert.True(config.ShouldAlwaysCreatePatchRelease(repo), userMessage: "Should never auto release");
     }
@@ -162,74 +116,64 @@ public sealed class ReleaseConfigLoaderTests : TestBase
     {
         this.MockConfig();
 
-        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(
-            path: "https://www.example.com/release.config",
-            cancellationToken: this.CancellationToken()
-        );
+        ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(path: "https://www.example.com/release.config", this.CancellationToken());
 
-        Assert.True(
-            config.CheckRepoForAllowedAutoUpgrade(repo),
-            userMessage: "Should check repo for allowed auto upgrade"
-        );
+        Assert.True(config.CheckRepoForAllowedAutoUpgrade(repo), userMessage: "Should check repo for allowed auto upgrade");
     }
 
     private void MockConfig()
     {
         const string releaseConfigJson = """
-            {
-                "settings": {
-                    "autoReleasePendingPackages": 1,
-                    "minimumHoursBeforeAutoRelease": 4,
-                    "inactivityHoursBeforeAutoRelease": 8
-                },
-                "neverRelease": [
-                    {
-                        "repo": "template",
-                        "match": "contains",
-                        "include": true
-                    },
-                    {
-                        "repo": "git@github.com:example/never-release.git",
-                        "match": "exact",
-                        "include": true
-                    }
-                ],
-                "allowedAutoUpgrade": [
-                    {
-                        "repo": "template",
-                        "match": "contains",
-                        "include": false
-                    },
-                    {
-                        "repo": "credfeto",
-                        "match": "contains",
-                        "include": true
-                    }
-                ],
-                "alwaysMatch": [
-                    {
-                        "repo": "git@github.com:example/always-match.git",
-                        "match": "exact",
-                        "include": false
-                    },
-                    {
-                        "repo": "code-analysis",
-                        "match": "contains",
-                        "include": true
-                    },
-                    {
-                        "repo": "credfeto",
-                        "match": "contains",
-                        "include": true
-                    }
-                ]
-            }
-            """;
+                                         {
+                                             "settings": {
+                                                 "autoReleasePendingPackages": 1,
+                                                 "minimumHoursBeforeAutoRelease": 4,
+                                                 "inactivityHoursBeforeAutoRelease": 8
+                                             },
+                                             "neverRelease": [
+                                                 {
+                                                     "repo": "template",
+                                                     "match": "contains",
+                                                     "include": true
+                                                 },
+                                                 {
+                                                     "repo": "git@github.com:example/never-release.git",
+                                                     "match": "exact",
+                                                     "include": true
+                                                 }
+                                             ],
+                                             "allowedAutoUpgrade": [
+                                                 {
+                                                     "repo": "template",
+                                                     "match": "contains",
+                                                     "include": false
+                                                 },
+                                                 {
+                                                     "repo": "credfeto",
+                                                     "match": "contains",
+                                                     "include": true
+                                                 }
+                                             ],
+                                             "alwaysMatch": [
+                                                 {
+                                                     "repo": "git@github.com:example/always-match.git",
+                                                     "match": "exact",
+                                                     "include": false
+                                                 },
+                                                 {
+                                                     "repo": "code-analysis",
+                                                     "match": "contains",
+                                                     "include": true
+                                                 },
+                                                 {
+                                                     "repo": "credfeto",
+                                                     "match": "contains",
+                                                     "include": true
+                                                 }
+                                             ]
+                                         }
+                                         """;
 
-        this._httpClientFactory.MockCreateClientWithResponse(
-            nameof(ReleaseConfigLoader),
-            httpStatusCode: HttpStatusCode.OK,
-            responseMessage: releaseConfigJson
-        );
+        this._httpClientFactory.MockCreateClientWithResponse(nameof(ReleaseConfigLoader), httpStatusCode: HttpStatusCode.OK, responseMessage: releaseConfigJson);
     }
 }
