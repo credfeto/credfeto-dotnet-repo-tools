@@ -36,4 +36,7 @@ internal static partial class DotNetBuildLoggingExtensions
 
     [LoggerMessage(EventId = 11, Level = LogLevel.Information, Message = "Stopped build server")]
     public static partial void LogStoppedBuildServer(this ILogger<DotNetBuild> logger);
+
+    [LoggerMessage(EventId = 12, Level = LogLevel.Error, Message = "{message}")]
+    public static partial void LogBuildError(this ILogger<DotNetBuild> logger, string message);
 }
