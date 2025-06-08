@@ -8,10 +8,10 @@ public static class TemplateUpdateSetup
 {
     public static IServiceCollection AddTemplateUpdate(this IServiceCollection services)
     {
-        return services
-            .AddSingleton<IBulkTemplateUpdater, BulkTemplateUpdater>()
-            .AddSingleton<IFileUpdater, FileUpdater>()
-            .AddSingleton<IDependaBotConfigBuilder, DependaBotConfigBuilder>()
-            .AddSingleton<ILabelsBuilder, LabelsBuilder>();
+        return services.AddSingleton<ITemplateConfigLoader, TemplateConfigLoader>()
+                       .AddSingleton<IBulkTemplateUpdater, BulkTemplateUpdater>()
+                       .AddSingleton<IFileUpdater, FileUpdater>()
+                       .AddSingleton<IDependaBotConfigBuilder, DependaBotConfigBuilder>()
+                       .AddSingleton<ILabelsBuilder, LabelsBuilder>();
     }
 }
