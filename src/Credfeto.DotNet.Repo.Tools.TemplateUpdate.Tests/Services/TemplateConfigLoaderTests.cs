@@ -34,39 +34,35 @@ public sealed class TemplateConfigLoaderTests : TestBase
         const string releaseConfigJson = """
                                          {
                                            "general": {
-                                             ".editorconfig": "Config",
-                                             ".csharpierrc": "Config",
-                                             ".csharpierrc.json": "Config",
-                                             ".csharpierrc.yaml": "Config",
-                                             ".gitleaks.toml": "Config",
-                                             ".gitignore": "Config",
-                                             ".gitattributes": "Config",
-                                             ".tsqllintrc": "Linters",
-                                             "CONTRIBUTING.md": "Documentation",
-                                             "SECURITY.md": "Documentation",
-                                             ".github/pr-lint.yml": "Linters",
-                                             ".github/CODEOWNERS": "Config",
-                                             ".github/PULL_REQUEST_TEMPLATE.md": "Config",
-                                             ".github/FUNDING.yml": "Config"
-                                           },
-                                           "dependabot": {
-                                             "rebuild": true
+                                             "files": {
+                                               ".editorconfig": "Config",
+                                               ".gitignore": "Config",
+                                               ".gitattributes": "Config"
+                                             }
                                            },
                                            "dotnet": {
-                                             "global-json": "update"
+                                             "global-json": "update",
+                                             "resharper-dotsettings": bool,
+                                             "files": {}
                                            },
-                                           "labels": {
-                                             "rebuild": true
-                                           },
-                                           "github": {
-                                             "linters": true,
-                                             "actions": true,
+                                           "gitHub": {
+                                             "dependabot": {
+                                               "generate": true
+                                             },
+                                             "labels": {
+                                               "generate": true
+                                             },
                                              "issue-templates": true,
                                              "pr-template": true
+                                             "actions": true
+                                             "linters": true
+                                             "files": {}
                                            },
-                                           "remove": {
-                                             ".github/actions/nuget-push-integrated-symbol-feed/actions.yml": "Obsolete action",
-                                             ".github/actions/nuget-push-separate-symbol-feed/actions.yml": "Obsolete action"
+                                           "cleanup": {
+                                             "files": {
+                                               ".github/actions/nuget-push-integrated-symbol-feed/actions.yml": "Obsolete action",
+                                               ".github/actions/nuget-push-separate-symbol-feed/actions.yml": "Obsolete action"
+                                             }
                                            }
                                          }
                                          """;
