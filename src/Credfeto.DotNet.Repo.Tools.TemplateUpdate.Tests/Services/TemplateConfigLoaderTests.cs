@@ -25,8 +25,8 @@ public sealed class TemplateConfigLoaderTests : TestBase
     {
         this.MockConfig();
 
-        TemplateConfig config = await this._templateConfigLoader.LoadConfigAsync(templatePath: "https://example.com/templates.json", this.CancellationToken());
-        Assert.Equal(expected: "Test", actual: config.TemplateName);
+        TemplateConfig config = await this._templateConfigLoader.LoadConfigAsync(path: "https://example.com/templates.json", this.CancellationToken());
+        Assert.NotEmpty(config.General.Files);
     }
 
     private void MockConfig()
