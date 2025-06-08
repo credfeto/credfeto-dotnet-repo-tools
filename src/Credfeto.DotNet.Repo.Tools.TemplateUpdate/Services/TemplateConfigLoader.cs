@@ -1,14 +1,61 @@
 using System;
+using System.IO;
+using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
+using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 
 public sealed class TemplateConfigLoader : ITemplateConfigLoader
 {
-    public ValueTask<TemplateConfig> LoadConfigAsync(string templatePath, CancellationToken cancellationToken)
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<TemplateConfigLoader> _logger;
+
+    public TemplateConfigLoader(IHttpClientFactory httpClientFactory, ILogger<TemplateConfigLoader> logger)
     {
-        throw new NotImplementedException();
+        this._httpClientFactory = httpClientFactory;
+        this._logger = logger;
+    }
+
+    public ValueTask<TemplateConfig> LoadConfigAsync(string path, CancellationToken cancellationToken)
+    {
+        this._logger.LoadingTemplateConfig(path);
+
+        return Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && IsHttp(uri)
+            ? this.LoadFromHttpAsync(uri: uri, cancellationToken: cancellationToken)
+            : LoadFromFileAsync(filename: path, cancellationToken: cancellationToken);
+    }
+
+    private async ValueTask<TemplateConfig> LoadFromHttpAsync(Uri uri, CancellationToken cancellationToken)
+    {
+        HttpClient httpClient = this._httpClientFactory.CreateClient(name: nameof(TemplateConfigLoader));
+
+        httpClient.BaseAddress = uri;
+
+        await using (Stream result = await httpClient.GetStreamAsync(requestUri: uri, cancellationToken: cancellationToken))
+        {
+            TemplateConfig templateConfiguration =
+                await JsonSerializer.DeserializeAsync(utf8Json: result, jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig, cancellationToken: cancellationToken) ??
+                InvalidSettings();
+
+            return templateConfiguration;
+        }
+    }
+
+    private static async ValueTask<TemplateConfig> LoadFromFileAsync(string filename, CancellationToken cancellationToken)
+    {
+        byte[] content = await File.ReadAllBytesAsync(path: filename, cancellationToken: cancellationToken);
+
+        TemplateConfig templateConfig = JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig) ?? InvalidSettings();
+
+        return templateConfig;
+    }
+
+    private static bool IsHttp(Uri uri)
+    {
+        return StringComparer.Ordinal.Equals(x: uri.Scheme, y: "https") || StringComparer.Ordinal.Equals(x: uri.Scheme, y: "http");
     }
 }

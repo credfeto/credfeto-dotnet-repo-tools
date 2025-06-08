@@ -17,7 +17,7 @@ public sealed class TemplateConfigLoaderTests : TestBase
     public TemplateConfigLoaderTests()
     {
         this._httpClientFactory = GetSubstitute<IHttpClientFactory>();
-        this._templateConfigLoader = new TemplateConfigLoader();
+        this._templateConfigLoader = new TemplateConfigLoader(httpClientFactory: this._httpClientFactory, this.GetTypedLogger<TemplateConfigLoader>());
     }
 
     [Fact]

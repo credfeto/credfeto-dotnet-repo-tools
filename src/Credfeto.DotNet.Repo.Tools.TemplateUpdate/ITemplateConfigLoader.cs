@@ -6,5 +6,5 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate;
 
 public interface ITemplateConfigLoader
 {
-    ValueTask<TemplateConfig> LoadConfigAsync(string templatePath, CancellationToken cancellationToken);
+    ValueTask<TemplateConfig> LoadConfigAsync(string path, CancellationToken cancellationToken);
 }
