@@ -9,5 +9,10 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
                              DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
                              WriteIndented = false,
                              IncludeFields = false)]
+[JsonSerializable(typeof(CleanupTemplateConfig))]
+[JsonSerializable(typeof(DependabotTemplateConfig))]
+[JsonSerializable(typeof(GitHubTemplateConfig))]
+[JsonSerializable(typeof(LabelsTemplateConfig))]
+[JsonSerializable(typeof(LabelsTemplateConfig))]
 [JsonSerializable(typeof(TemplateConfig))]
 internal sealed partial class TemplateConfigSerializationContext : JsonSerializerContext;
