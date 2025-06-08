@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
+using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services.LoggingExtensions;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
@@ -49,9 +50,12 @@ public sealed class TemplateConfigLoader : ITemplateConfigLoader
     {
         byte[] content = await File.ReadAllBytesAsync(path: filename, cancellationToken: cancellationToken);
 
-        TemplateConfig templateConfig = JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig) ?? InvalidSettings();
+        return JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig) ?? InvalidSettings();
+    }
 
-        return templateConfig;
+    private static TemplateConfig InvalidSettings()
+    {
+        throw new InvalidOperationException("Invalid template settings");
     }
 
     private static bool IsHttp(Uri uri)
