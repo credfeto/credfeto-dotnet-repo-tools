@@ -9,7 +9,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.113.985
 - Dependencies - Updated Credfeto.Package to 1.10.179.1589
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.11.0.117924
 - SDK - Updated DotNet SDK to 9.0.301
@@ -21,6 +20,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated xunit.v3 to 2.0.3
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.166.1244
 - Dependencies - Updated Credfeto.Date to 1.1.124.1144
+- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.123.1022
 ### Removed
 ### Deployment Changes
 
