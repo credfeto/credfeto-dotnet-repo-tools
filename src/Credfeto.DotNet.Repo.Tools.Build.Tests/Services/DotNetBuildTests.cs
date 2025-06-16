@@ -32,10 +32,7 @@ public sealed class DotNetBuildTests : TestBase
     {
         this.MockLoadProject(path: project);
 
-        BuildSettings result = await this._dotNetBuild.LoadBuildSettingsAsync(
-            [project],
-            cancellationToken: System.Threading.CancellationToken.None
-        );
+        BuildSettings result = await this._dotNetBuild.LoadBuildSettingsAsync([project], cancellationToken: System.Threading.CancellationToken.None);
 
         Assert.Equal(expected: packable, actual: result.Packable);
         Assert.Equal(expected: publishable, actual: result.Publishable);
@@ -50,9 +47,20 @@ public sealed class DotNetBuildTests : TestBase
         }
     }
 
+    [Fact]
+    public async Task NoProjectsAsync()
+    {
+        BuildSettings result = await this._dotNetBuild.LoadBuildSettingsAsync([], cancellationToken: System.Threading.CancellationToken.None);
+
+        Assert.False(condition: result.Packable, userMessage: "Empty solutions should not be packable");
+        Assert.False(condition: result.Publishable, userMessage: "Empty solutions should not be publishable");
+        Assert.Null(result.Framework);
+    }
+
     private void MockLoadProject(string path)
     {
-        this._projectXmlLoader.LoadAsync(path: path, Arg.Any<CancellationToken>()).Returns(LoadDoc());
+        this._projectXmlLoader.LoadAsync(path: path, Arg.Any<CancellationToken>())
+            .Returns(LoadDoc());
 
         XmlDocument LoadDoc()
         {
