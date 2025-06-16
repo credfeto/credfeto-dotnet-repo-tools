@@ -19,6 +19,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.101.652
 - Dependencies - Updated Meziantou.Analyzer to 2.0.202
 - Dependencies - Updated xunit.analyzers to 1.22.0
+- Dependencies - Updated xunit.runner.visualstudio to 3.1.1
 ### Removed
 ### Deployment Changes
 
