@@ -27,7 +27,7 @@ public sealed class DotNetBuildTests : TestBase
     [InlineData(nameof(Projects.PublishableExe), false, true, "net9.0")]
     [InlineData(nameof(Projects.PackablePublishableDotNetTool), true, true, "net9.0")]
     [InlineData(nameof(Projects.NonPackableLibrary), false, false, null)]
-    [InlineData(nameof(Projects.NonPublishableExe), false, false, "net9.0")]
+    [InlineData(nameof(Projects.NonPublishableExe), false, false, null)]
     public async Task LoadBuildSettingsAsync(string project, bool packable, bool publishable, string? framework)
     {
         this.MockLoadProject(path: project);

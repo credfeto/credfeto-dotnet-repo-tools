@@ -39,4 +39,13 @@ internal static partial class DotNetBuildLoggingExtensions
 
     [LoggerMessage(EventId = 12, Level = LogLevel.Error, Message = "{message}")]
     public static partial void LogBuildError(this ILogger<DotNetBuild> logger, string message);
+
+    [LoggerMessage(EventId = 13, Level = LogLevel.Error, Message = "{project} has no output type")]
+    public static partial void LogProjectHasNoOutputType(this ILogger<DotNetBuild> logger, string project);
+
+    [LoggerMessage(EventId = 14, Level = LogLevel.Warning, Message = "{project} is packable")]
+    public static partial void LogProjectIsPackable(this ILogger<DotNetBuild> logger, string project);
+
+    [LoggerMessage(EventId = 15, Level = LogLevel.Warning, Message = "{project} is publishable")]
+    public static partial void LogProjectIsPublishable(this ILogger<DotNetBuild> logger, string project);
 }

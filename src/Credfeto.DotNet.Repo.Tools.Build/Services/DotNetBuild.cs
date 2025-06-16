@@ -92,47 +92,52 @@ public sealed class DotNetBuild : IDotNetBuild
         {
             XmlDocument doc = await this._projectLoader.LoadAsync(path: project, cancellationToken: cancellationToken);
 
-            this.CheckProjectSettings(doc: doc, packable: ref packable, publishable: ref publishable, framework: ref framework);
+            this.CheckProjectSettings(project: project, doc: doc, packable: ref packable, publishable: ref publishable, framework: ref framework);
         }
 
         return new(Publishable: publishable, Packable: packable, Framework: framework);
     }
 
-    private void CheckProjectSettings(XmlDocument doc, ref bool packable, ref bool publishable, ref string? framework)
+    private void CheckProjectSettings(string project, XmlDocument doc, ref bool packable, ref bool publishable, ref string? framework)
     {
         XmlNode? outputTypeNode = doc.SelectSingleNode("/Project/PropertyGroup/OutputType");
 
         if (outputTypeNode is null)
         {
+            this._logger.LogProjectHasNoOutputType(project);
+
             return;
         }
 
-        packable |= IsPackable(doc: doc, outputType: outputTypeNode.InnerText);
-
-        string? candidateFramework = GetTargetFrameworks(doc: doc, outputType: outputTypeNode.InnerText)
-            .MaxBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase);
-
-        if (candidateFramework is null)
+        if (IsPackable(doc: doc, outputType: outputTypeNode.InnerText))
         {
-            return;
+            this._logger.LogProjectIsPackable(project);
+            packable = true;
         }
 
-        publishable = IsPublishable(doc: doc, outputType: outputTypeNode.InnerText);
-
-        if (framework is null || StringComparer.OrdinalIgnoreCase.Compare(x: candidateFramework, y: framework) > 0)
+        if (IsPublishable(doc: doc, outputType: outputTypeNode.InnerText))
         {
-            framework = candidateFramework;
-            this._logger.LogFoundFramework(framework);
+            this._logger.LogProjectIsPublishable(project);
+            publishable = true;
+
+            string? candidateFramework = GetTargetFrameworks(doc: doc)
+                .MaxBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase);
+
+            if (candidateFramework is null)
+            {
+                return;
+            }
+
+            if (framework is null || StringComparer.OrdinalIgnoreCase.Compare(x: candidateFramework, y: framework) > 0)
+            {
+                framework = candidateFramework;
+                this._logger.LogFoundFramework(framework);
+            }
         }
     }
 
-    private static IReadOnlyList<string> GetTargetFrameworks(XmlDocument doc, string outputType)
+    private static IReadOnlyList<string> GetTargetFrameworks(XmlDocument doc)
     {
-        if (!StringComparer.OrdinalIgnoreCase.Equals(x: outputType, y: "Exe"))
-        {
-            return [];
-        }
-
         XmlNode? targetFrameworkNode = doc.SelectSingleNode("/Project/PropertyGroup/TargetFramework");
 
         if (targetFrameworkNode is not null)
@@ -142,12 +147,9 @@ public sealed class DotNetBuild : IDotNetBuild
 
         XmlNode? targetFrameworksNode = doc.SelectSingleNode("/Project/PropertyGroup/TargetFrameworks");
 
-        if (targetFrameworksNode is not null)
-        {
-            return targetFrameworksNode.InnerText.Split(separator: ';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-        }
-
-        return [];
+        return targetFrameworksNode is not null
+            ? targetFrameworksNode.InnerText.Split(separator: ';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            : [];
     }
 
     private static bool IsPackable(XmlDocument doc, string outputType)
@@ -182,12 +184,17 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private static bool IsPublishable(XmlDocument doc, string outputType)
     {
-        if (IsLibrary(outputType))
+        if (IsExe(outputType))
         {
-            return false;
+            return IsBooleanDocPropertyTrue(doc: doc, path: "/Project/PropertyGroup/IsPublishable");
         }
 
-        return IsBooleanDocPropertyTrue(doc: doc, path: "/Project/PropertyGroup/IsPublishable");
+        return false;
+    }
+
+    private static bool IsExe(string outputType)
+    {
+        return StringComparer.OrdinalIgnoreCase.Equals(x: outputType, y: "Exe");
     }
 
     private static string EnvironmentParameter((string name, string value) p)
