@@ -147,6 +147,7 @@ internal sealed class Commands
         this.Done();
     }
 
+    [SuppressMessage("codecracker.CSharp", "CC0091: Make Static", Justification = "Needed For Logging")]
     private void Dump(IReadOnlyList<string> repositories)
     {
         foreach (string repo in repositories)
