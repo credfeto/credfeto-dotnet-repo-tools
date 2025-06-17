@@ -134,19 +134,22 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         if (releaseConfig.CheckRepoForAllowedAutoUpgrade(repoContext.ClonePath))
         {
-            if (buildSettings.Publishable)
+            if (!buildSettings.Publishable)
             {
-                if (releaseConfig.ShouldAlwaysReleasePublishable(repoContext.ClonePath))
-                {
-                    return false;
-                }
-
-                this._logger.LogSkippingReleaseAsPublishableProjects(buildSettings);
-
-                this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.CONTAINS_PUBLISHABLE_EXECUTABLES);
-
-                return true;
+                // not publishable so just upgrade
+                return false;
             }
+
+            if (releaseConfig.ShouldAlwaysReleasePublishable(repoContext.ClonePath))
+            {
+                return false;
+            }
+
+            this._logger.LogSkippingReleaseAsPublishableProjects(buildSettings);
+
+            this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.CONTAINS_PUBLISHABLE_EXECUTABLES);
+
+            return true;
         }
 
         this._logger.LogReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.EXPLICITLY_PROHIBITED);
