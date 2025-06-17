@@ -84,21 +84,21 @@ public sealed class DotNetBuild : IDotNetBuild
 
     public async ValueTask<BuildSettings> LoadBuildSettingsAsync(IReadOnlyList<string> projects, CancellationToken cancellationToken)
     {
-        bool packable = false;
-        bool publishable = false;
+        List<string> packable = [];
+        List<string> publishable = [];
         string? framework = null;
 
         foreach (string project in projects)
         {
             XmlDocument doc = await this._projectLoader.LoadAsync(path: project, cancellationToken: cancellationToken);
 
-            this.CheckProjectSettings(project: project, doc: doc, packable: ref packable, publishable: ref publishable, framework: ref framework);
+            this.CheckProjectSettings(project: project, doc: doc, packable: packable, publishable: publishable, framework: ref framework);
         }
 
-        return new(Publishable: publishable, Packable: packable, Framework: framework);
+        return new([..publishable], [..packable], Framework: framework);
     }
 
-    private void CheckProjectSettings(string project, XmlDocument doc, ref bool packable, ref bool publishable, ref string? framework)
+    private void CheckProjectSettings(string project, XmlDocument doc, List<string> packable, List<string> publishable, ref string? framework)
     {
         XmlNode? outputTypeNode = doc.SelectSingleNode("/Project/PropertyGroup/OutputType");
 
@@ -112,13 +112,13 @@ public sealed class DotNetBuild : IDotNetBuild
         if (IsPackable(doc: doc, outputType: outputTypeNode.InnerText))
         {
             this._logger.LogProjectIsPackable(project);
-            packable = true;
+            packable.Add(project);
         }
 
         if (IsPublishable(doc: doc, outputType: outputTypeNode.InnerText))
         {
             this._logger.LogProjectIsPublishable(project);
-            publishable = true;
+            publishable.Add(project);
 
             string? candidateFramework = GetTargetFrameworks(doc: doc)
                 .MaxBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase);
