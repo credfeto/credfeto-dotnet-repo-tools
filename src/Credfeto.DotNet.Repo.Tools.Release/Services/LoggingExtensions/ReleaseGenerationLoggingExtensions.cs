@@ -1,3 +1,4 @@
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Microsoft.Extensions.Logging;
 using NuGet.Versioning;
@@ -7,17 +8,9 @@ namespace Credfeto.DotNet.Repo.Tools.Release.Services.LoggingExtensions;
 internal static partial class ReleaseGenerationLoggingExtensions
 {
     [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "{clonePath}: RELEASE CREATED: {version}")]
-    private static partial void LogReleaseCreated(
-        this ILogger<ReleaseGeneration> logger,
-        string clonePath,
-        string version
-    );
+    private static partial void LogReleaseCreated(this ILogger<ReleaseGeneration> logger, string clonePath, string version);
 
-    public static void LogReleaseCreated(
-        this ILogger<ReleaseGeneration> logger,
-        in RepoContext repoContext,
-        string version
-    )
+    public static void LogReleaseCreated(this ILogger<ReleaseGeneration> logger, in RepoContext repoContext, string version)
     {
         logger.LogReleaseCreated(clonePath: repoContext.ClonePath, version: version);
     }
@@ -25,66 +18,26 @@ internal static partial class ReleaseGenerationLoggingExtensions
     [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Change log update score: {autoUpdateCount}")]
     public static partial void LogChangeLogUpdateScore(this ILogger<ReleaseGeneration> logger, int autoUpdateCount);
 
-    [LoggerMessage(
-        EventId = 3,
-        Level = LogLevel.Information,
-        Message = "{clonePath}: RELEASE SKIPPED: {skippingReason}"
-    )]
-    private static partial void LogReleaseSkipped(
-        this ILogger<ReleaseGeneration> logger,
-        string clonePath,
-        string skippingReason
-    );
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "{clonePath}: RELEASE SKIPPED: {skippingReason}")]
+    private static partial void LogReleaseSkipped(this ILogger<ReleaseGeneration> logger, string clonePath, string skippingReason);
 
-    public static void LogReleaseSkipped(
-        this ILogger<ReleaseGeneration> logger,
-        in RepoContext repoContext,
-        ReleaseSkippingReason skippingReason
-    )
+    public static void LogReleaseSkipped(this ILogger<ReleaseGeneration> logger, in RepoContext repoContext, ReleaseSkippingReason skippingReason)
     {
         logger.LogReleaseSkipped(clonePath: repoContext.ClonePath, skippingReason.GetDescription());
     }
 
-    [LoggerMessage(
-        EventId = 3,
-        Level = LogLevel.Information,
-        Message = "{clonePath}: Found Matching Update: {packageId} for score {score}"
-    )]
-    private static partial void LogMatchedPackage(
-        this ILogger<ReleaseGeneration> logger,
-        string clonePath,
-        string packageId,
-        int score
-    );
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "{clonePath}: Found Matching Update: {packageId} for score {score}")]
+    private static partial void LogMatchedPackage(this ILogger<ReleaseGeneration> logger, string clonePath, string packageId, int score);
 
-    public static void LogMatchedPackage(
-        this ILogger<ReleaseGeneration> logger,
-        in RepoContext repoContext,
-        string packageId,
-        int score
-    )
+    public static void LogMatchedPackage(this ILogger<ReleaseGeneration> logger, in RepoContext repoContext, string packageId, int score)
     {
         logger.LogMatchedPackage(clonePath: repoContext.ClonePath, packageId: packageId, score: score);
     }
 
-    [LoggerMessage(
-        EventId = 4,
-        Level = LogLevel.Information,
-        Message = "{clonePath}: Skipping Ignored Update: {packageId} for score {score}"
-    )]
-    private static partial void LogIgnoredPackage(
-        this ILogger<ReleaseGeneration> logger,
-        string clonePath,
-        string packageId,
-        int score
-    );
+    [LoggerMessage(EventId = 4, Level = LogLevel.Information, Message = "{clonePath}: Skipping Ignored Update: {packageId} for score {score}")]
+    private static partial void LogIgnoredPackage(this ILogger<ReleaseGeneration> logger, string clonePath, string packageId, int score);
 
-    public static void LogIgnoredPackage(
-        this ILogger<ReleaseGeneration> logger,
-        in RepoContext repoContext,
-        string packageId,
-        int score
-    )
+    public static void LogIgnoredPackage(this ILogger<ReleaseGeneration> logger, in RepoContext repoContext, string packageId, int score)
     {
         logger.LogIgnoredPackage(clonePath: repoContext.ClonePath, packageId: packageId, score: score);
     }
@@ -103,5 +56,16 @@ internal static partial class ReleaseGenerationLoggingExtensions
     public static void LogNextRelease(this ILogger<ReleaseGeneration> logger, NuGetVersion version)
     {
         logger.LogNextRelease(version.ToString());
+    }
+
+    [LoggerMessage(EventId = 6, Level = LogLevel.Warning, Message = "Skipping release as project is publishable: {project}")]
+    private static partial void LogSkippingReleaseAsPublishableProject(this ILogger<ReleaseGeneration> logger, string project);
+
+    public static void LogSkippingReleaseAsPublishableProjects(this ILogger<ReleaseGeneration> logger, in BuildSettings buildSettings)
+    {
+        foreach (string project in buildSettings.PublishableProjects)
+        {
+            logger.LogSkippingReleaseAsPublishableProject(project);
+        }
     }
 }

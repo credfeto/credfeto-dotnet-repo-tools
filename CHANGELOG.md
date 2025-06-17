@@ -9,6 +9,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+- Additional logging to diagnose why some things with no publishable exes are prohibited from release
 ### Removed
 ### Deployment Changes
 
