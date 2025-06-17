@@ -9,16 +9,19 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Credfeto.ChangeLog to 1.10.168.1250
-- Dependencies - Updated Credfeto.Date to 1.1.125.1148
-- Dependencies - Updated Credfeto.Package to 1.10.197.1658
-- Release Path
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.1.75] - 2025-06-17
+### Changed
+- Dependencies - Updated Credfeto.ChangeLog to 1.10.168.1250
+- Dependencies - Updated Credfeto.Date to 1.1.125.1148
+- Dependencies - Updated Credfeto.Package to 1.10.197.1658
+- Release Path
+
 ## [1.1.74] - 2025-06-17
 ### Changed
 - Additional logging to diagnose why some things with no publishable exes are prohibited from release
