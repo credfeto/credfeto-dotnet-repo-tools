@@ -10,6 +10,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated FunFair.CodeAnalysis to 7.1.1.1215
+- Dependencies - Updated SonarAnalyzer.CSharp to 10.12.0.118525
 ### Removed
 ### Deployment Changes
 
