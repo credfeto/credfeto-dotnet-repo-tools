@@ -32,7 +32,6 @@ public sealed class LabelsBuilder : ILabelsBuilder
         new(Name: "Config Change", Description: "Configuration files changes", Colour: "d8bb50", ["src/**/*.json"], ["src/global.json"]),
         new(Name: "Static Code Analysis Rules", Description: "Ruleset for static code analysis files", Colour: "00dead", ["src/CodeAnalysis.ruleset"], []),
         new(Name: "Migration Script", Description: "SQL Migration scripts", Colour: "b680e5", ["tools/MigrationScripts/**/*"], []),
-        new(Name: "Legal Text", Description: "Legal text files", Colour: "facef0", ["tools/LegalText/**/*"], []),
         new(Name: "Change Log", Description: "Changelog tracking file", Colour: "53fcd4", ["CHANGELOG.md"], []),
         new(Name: "Read Me", Description: "Repository readme file", Colour: "5319e7", ["README.md"], []),
         new(Name: "Setup", Description: "Setup instructions", Colour: "5319e7", ["SETUP.md"], []),
