@@ -207,11 +207,6 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         changes += await this.MakeCopyInstructionChangesAsync(repoContext: repoContext, filesToUpdate: filesToUpdate, cancellationToken: cancellationToken);
 
-        // TODO: Implement
-        /*
-        -- Remove Obsolete Workflows(from config)
-        -- Remove Obsolete Actions(from config)
-         */
         if (await this.UpdateDependabotConfigAsync(updateContext: updateContext, repoContext: repoContext, packages: packages, cancellationToken: cancellationToken))
         {
             ++changes;
@@ -243,6 +238,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
     private async ValueTask<bool> UpdateDependabotConfigAsync(TemplateUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
+        if (!updateContext.TemplateConfig.GitHub.Dependabot.Generate)
+        {
+            return false;
+        }
+
         string dependabotConfig = Path.Combine(path1: repoContext.WorkingDirectory, path2: DOT_GITHUB_DIR, path3: "dependabot.yml");
 
         string newConfig = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(repoContext: repoContext,
@@ -291,11 +291,42 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         Func<byte[], (byte[] bytes, bool changed)> rewriteRunsOn = ShouldUseGitHubHostedRunners(fileContext);
 
-        return GetStandardFilesBaseToUpdate(fileContext)
-               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: issueTemplates, prefix: "Config", search: "*"))
-               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: actions, prefix: "Actions", search: "action.yml"))
-               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: workflows, search: "*.yml", prefix: "Actions", apply: rewriteRunsOn))
-               .Concat(IncludeFilesInSource(fileContext: fileContext, sourceFolder: linters, prefix: "Linters", search: "*"));
+        TemplateConfig templateConfig = fileContext.UpdateContext.TemplateConfig;
+
+        List<CopyInstruction> copyInstructions = [];
+
+        foreach ((string fileName, string context) in templateConfig.General.Files)
+        {
+            copyInstructions.Add(fileContext.MakeFile(fileName, prefix: context));
+        }
+
+        if (templateConfig.GitHub.IssueTemplates)
+        {
+            copyInstructions.AddRange(IncludeFilesInSource(fileContext: fileContext, sourceFolder: issueTemplates, prefix: "Config", search: "*"));
+        }
+
+        if (templateConfig.GitHub.PullRequestTemplates)
+        {
+            copyInstructions.Add(fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "PULL_REQUEST_TEMPLATE.md"), "Config"));
+        }
+
+        if (templateConfig.GitHub.Actions)
+        {
+            copyInstructions.AddRange(IncludeFilesInSource(fileContext: fileContext, sourceFolder: actions, prefix: "Actions", search: "action.yml"));
+            copyInstructions.AddRange(IncludeFilesInSource(fileContext: fileContext, sourceFolder: workflows, search: "*.yml", prefix: "Actions", apply: rewriteRunsOn));
+        }
+
+        if (templateConfig.GitHub.Linters)
+        {
+            copyInstructions.AddRange(IncludeFilesInSource(fileContext: fileContext, sourceFolder: linters, prefix: "Linters", search: "*"));
+        }
+
+        foreach ((string fileName, string context) in templateConfig.GitHub.Files)
+        {
+            copyInstructions.Add(fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, fileName), prefix: context));
+        }
+
+        return copyInstructions;
     }
 
     private static Func<byte[], (byte[] bytes, bool changed)> ShouldUseGitHubHostedRunners(in FileContext fileContext)
@@ -323,27 +354,6 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         }
 
         return (target, true);
-    }
-
-    private static IEnumerable<CopyInstruction> GetStandardFilesBaseToUpdate(in FileContext fileContext)
-    {
-        return
-        [
-            fileContext.MakeFile(fileName: ".editorconfig", prefix: "Config"),
-            fileContext.MakeFile(fileName: ".csharpierrc", prefix: "Config"),
-            fileContext.MakeFile(fileName: ".csharpierrc.json", prefix: "Config"),
-            fileContext.MakeFile(fileName: ".csharpierrc.yaml", prefix: "Config"),
-            fileContext.MakeFile(fileName: ".gitleaks.toml", prefix: "Config"),
-            fileContext.MakeFile(fileName: ".gitignore", prefix: "Config"),
-            fileContext.MakeFile(fileName: ".gitattributes", prefix: "Config"),
-            fileContext.MakeFile(fileName: ".tsqllintrc", prefix: "Linters"),
-            fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "pr-lint.yml"), prefix: "Linters"),
-            fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "CODEOWNERS"), prefix: "Config"),
-            fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "PULL_REQUEST_TEMPLATE.md"), prefix: "Config"),
-            fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "FUNDING.yml"), prefix: "Config"),
-            fileContext.MakeFile(fileName: "CONTRIBUTING.md", prefix: "Documentation"),
-            fileContext.MakeFile(fileName: "SECURITY.md", prefix: "Documentation"),
-        ];
     }
 
     private static IEnumerable<CopyInstruction> IncludeFilesInSource(in FileContext fileContext, string sourceFolder, string prefix, string search)
@@ -433,7 +443,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         totalUpdates += await this.MakeCopyInstructionChangesAsync(repoContext: repoContext, filesToUpdate: filesToUpdate, cancellationToken: cancellationToken);
 
-        if (await this.UpdateLabelAsync(repoContext: repoContext, projects: projects, cancellationToken: cancellationToken))
+        if (await this.UpdateLabelAsync(updateContext: updateContext, repoContext: repoContext, projects: projects, cancellationToken: cancellationToken))
         {
             ++totalUpdates;
         }
@@ -458,8 +468,13 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     }
 
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Needs Review")]
-    private async ValueTask<bool> UpdateLabelAsync(RepoContext repoContext, IReadOnlyList<string> projects, CancellationToken cancellationToken)
+    private async ValueTask<bool> UpdateLabelAsync(TemplateUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<string> projects, CancellationToken cancellationToken)
     {
+        if (!updateContext.TemplateConfig.GitHub.Labels.Generate)
+        {
+            return false;
+        }
+
         string labelsFileName = Path.Combine(path1: repoContext.WorkingDirectory, path2: DOT_GITHUB_DIR, path3: "labels.yml");
         string labelersFileName = Path.Combine(path1: repoContext.WorkingDirectory, path2: DOT_GITHUB_DIR, path3: "labeler.yml");
 
@@ -502,18 +517,19 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
     private static IEnumerable<CopyInstruction> GetDotNetFilesToUpdate(FileContext fileContext)
     {
-        yield return fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, "src", "Directory.Build.props"), prefix: "Build Props");
-        yield return fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, "src", "CodeAnalysis.ruleset"), prefix: "Build Props");
-
-        if (fileContext.RepoContext.ClonePath.Contains(value: "funfair", comparisonType: StringComparison.OrdinalIgnoreCase))
+        foreach ((string fileName, string context) in fileContext.UpdateContext.TemplateConfig.DotNet.Files)
         {
-            yield return fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, "src", "FunFair.props"), prefix: "Build Props");
-            yield return fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, "src", "packageicon.png"), prefix: "Package Icon");
+            yield return fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, "src", fileName), prefix: context);
         }
     }
 
     private async Task<int> UpdateResharperSettingsAsync(RepoContext repoContext, TemplateUpdateContext updateContext, IReadOnlyList<string> solutions, CancellationToken cancellationToken)
     {
+        if (!updateContext.TemplateConfig.DotNet.JetBrainsDotSettings)
+        {
+            return 0;
+        }
+
         const string dotSettingsExtension = ".DotSettings";
 
         string templateSourceDirectory = Path.Combine(path1: updateContext.TemplateFolder, path2: "src");
@@ -559,6 +575,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                                         BuildSettings buildSettings,
                                                         CancellationToken cancellationToken)
     {
+        if (!updateContext.TemplateConfig.DotNet.GlobalJson)
+        {
+            return false;
+        }
+
         string templateGlobalJsonFileName = Path.Combine(path1: updateContext.TemplateFolder, path2: "src", path3: "global.json");
         string targetGlobalJsonFileName = Path.Combine(path1: sourceDirectory, path2: "global.json");
 
