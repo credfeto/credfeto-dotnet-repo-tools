@@ -7,6 +7,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
+- template-config parameter and external template config
 ### Fixed
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.119.1263
