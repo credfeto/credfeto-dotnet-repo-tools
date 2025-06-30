@@ -6,8 +6,10 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 public sealed class DotnetTemplateConfig
 {
     [JsonConstructor]
-    public DotnetTemplateConfig(bool globalJson, Dictionary<string, string> files)
+    public DotnetTemplateConfig(bool globalJson, bool jetBrainsDotSettings, Dictionary<string, string> files)
     {
+        this.GlobalJson = globalJson;
+        this.JetBrainsDotSettings = jetBrainsDotSettings;
         this.Files = files;
     }
 
@@ -17,5 +19,5 @@ public sealed class DotnetTemplateConfig
     public bool GlobalJson { get; }
 
     [JsonPropertyName("resharper-dotsettings")]
-    public bool JetBrainsDotDettings { get; }
+    public bool JetBrainsDotSettings { get; }
 }

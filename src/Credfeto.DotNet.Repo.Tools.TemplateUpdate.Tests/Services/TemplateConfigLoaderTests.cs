@@ -40,9 +40,9 @@ public sealed class TemplateConfigLoaderTests : TestBase
                                                ".gitattributes": "Config"
                                              }
                                            },
-                                           "dotnet": {
-                                             "global-json": "update",
-                                             "resharper-dotsettings": bool,
+                                           "dotNet": {
+                                             "global-json": true,
+                                             "resharper-dotsettings": true,
                                              "files": {}
                                            },
                                            "gitHub": {
@@ -53,9 +53,9 @@ public sealed class TemplateConfigLoaderTests : TestBase
                                                "generate": true
                                              },
                                              "issue-templates": true,
-                                             "pr-template": true
-                                             "actions": true
-                                             "linters": true
+                                             "pr-template": true,
+                                             "actions": true,
+                                             "linters": true,
                                              "files": {}
                                            },
                                            "cleanup": {

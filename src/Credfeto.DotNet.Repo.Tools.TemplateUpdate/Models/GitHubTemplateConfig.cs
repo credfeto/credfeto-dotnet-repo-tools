@@ -14,6 +14,10 @@ public sealed class GitHubTemplateConfig
                                 DependabotTemplateConfig dependabot,
                                 LabelsTemplateConfig labels)
     {
+        this.IssueTemplates = issueTemplates;
+        this.PullRequestTemplates = pullRequestTemplates;
+        this.Actions = actions;
+        this.Linters = linters;
         this.Files = files;
         this.Dependabot = dependabot;
         this.Labels = labels;

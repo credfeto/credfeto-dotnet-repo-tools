@@ -38,11 +38,8 @@ public sealed class TemplateConfigLoader : ITemplateConfigLoader
 
         await using (Stream result = await httpClient.GetStreamAsync(requestUri: uri, cancellationToken: cancellationToken))
         {
-            TemplateConfig templateConfiguration =
-                await JsonSerializer.DeserializeAsync(utf8Json: result, jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig, cancellationToken: cancellationToken) ??
-                InvalidSettings();
-
-            return templateConfiguration;
+            return await JsonSerializer.DeserializeAsync(utf8Json: result, jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig, cancellationToken: cancellationToken) ??
+                   InvalidSettings();
         }
     }
 
