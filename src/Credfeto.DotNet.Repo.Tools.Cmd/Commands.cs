@@ -80,6 +80,7 @@ internal sealed class Commands
     [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
     public async Task UpdateFromTemplateAsync([Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")] string repositoriesFileName,
                                               [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
+                                              [Option(name: "template-config", ['c'], Description = "template.config file to load")] string templateConfigFileName,
                                               [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")] string trackingFileName,
                                               [Option(name: "packages", ['p'], Description = "Packages.json file to load")] string packagesFileName,
                                               [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder,
@@ -96,6 +97,7 @@ internal sealed class Commands
                                                         trackingFileName: trackingFileName,
                                                         packagesFileName: packagesFileName,
                                                         workFolder: workFolder,
+                                                        templateConfigFileName: templateConfigFileName,
                                                         releaseConfigFileName: releaseConfigFileName,
                                                         repositories: repositories,
                                                         cancellationToken: this._cancellationToken);
