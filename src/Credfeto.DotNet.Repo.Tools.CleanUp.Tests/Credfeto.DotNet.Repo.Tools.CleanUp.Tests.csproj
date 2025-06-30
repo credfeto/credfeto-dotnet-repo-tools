@@ -63,7 +63,7 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.CleanUp\Credfeto.DotNet.Repo.Tools.CleanUp.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FunFair.Test.Common" Version="6.1.269.1462" />
+    <PackageReference Include="FunFair.Test.Common" Version="6.1.274.1486" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="NSubstitute" Version="5.3.0" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.1" />
