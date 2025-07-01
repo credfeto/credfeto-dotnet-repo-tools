@@ -7,8 +7,17 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
-- template-config parameter and external template config
 ### Fixed
+### Changed
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.1.79] - 2025-07-01
+### Added
+- template-config parameter and external template config
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.119.1263
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.107.685
@@ -21,12 +30,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.129.1055
 - Dependencies - Updated Credfeto.Package to 1.10.200.1684
 - Dependencies - Updated FunFair.Test.Common to 6.1.274.1486
-### Removed
-### Deployment Changes
 
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 ## [1.1.78] - 2025-06-25
 ### Changed
 - Dependencies - Updated FunFair.CodeAnalysis to 7.1.2.1228
