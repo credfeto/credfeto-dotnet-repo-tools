@@ -81,6 +81,7 @@
     <PackageReference Include="Cocona" Version="2.2.0" />
     <PackageReference Include="Credfeto.Date" Version="1.1.130.1175" />
     <PackageReference Include="Credfeto.Enumeration.Source.Generation.Attributes" Version="1.2.119.1263" />
+    <PackageReference Include="FunFair.BuildVersion.Detection" Version="6.2.17.1375"/>
     <PackageReference Include="Serilog.Enrichers.Demystifier" Version="1.0.3" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
     <PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
