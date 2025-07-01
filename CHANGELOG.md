@@ -9,13 +9,16 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Ability to remove old workflows
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.1.80] - 2025-07-01
+### Changed
+- Ability to remove old workflows
+
 ## [1.1.79] - 2025-07-01
 ### Added
 - template-config parameter and external template config
