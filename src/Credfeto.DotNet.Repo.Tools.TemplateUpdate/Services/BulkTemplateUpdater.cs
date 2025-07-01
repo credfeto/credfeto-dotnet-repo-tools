@@ -196,6 +196,24 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             this._logger.LogNoDotNetFilesFound();
             await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
         }
+
+        await RemoveOldFilesAsync(updateContext: updateContext, repoContext: repoContext, cancellationToken: cancellationToken);
+    }
+
+    private static async ValueTask RemoveOldFilesAsync(TemplateUpdateContext updateContext, RepoContext repoContext, CancellationToken cancellationToken)
+    {
+        foreach ((string fileName, string prefix) in updateContext.TemplateConfig.Cleanup.Files)
+        {
+            string repoFile = Path.Combine(repoContext.WorkingDirectory, fileName);
+
+            if (File.Exists(repoFile))
+            {
+                File.Delete(repoFile);
+                await repoContext.Repository.CommitAsync(message: $"Removed: {prefix}", cancellationToken: cancellationToken);
+                await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
+                await repoContext.Repository.ResetToMasterAsync(GitConstants.Upstream, cancellationToken: cancellationToken);
+            }
+        }
     }
 
     private async ValueTask<int> UpdateStandardFilesAsync(TemplateUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
