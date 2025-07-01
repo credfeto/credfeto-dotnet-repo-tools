@@ -1,23 +1,3 @@
- - name: "!!! WAITING FOR CLIENT PR"
-   color: "ffff00"
-   description: "Pull request needs a client pull request to be merged at the same time"
-
- - name: "!!! WAITING FOR ETHEREUM PR"
-   color: "ffff00"
-   description: "Pull request needs a server ethereum pull request to be merged at the same time"
-
- - name: "!!! WAITING FOR QA SIGNOFF"
-   color: "ffff00"
-   description: "Pull request needs a QA Signoff before it can be merged"
-
- - name: "!!! WAITING FOR SERVER PR"
-   color: "ffff00"
-   description: "Pull request needs a server pull request to be merged at the same time"
-
- - name: "!!! WAITING FOR WALLET PR"
-   color: "ffff00"
-   description: "Pull request needs a wallet pull request to be merged at the same time"
-
  - name: ".NET update"
    color: "a870c9"
    description: "Update to .net global.json"
@@ -48,107 +28,107 @@
 
  - name: "credfeto-dotnet-repo-tools-build"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Build project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Build project"
 
  - name: "credfeto-dotnet-repo-tools-build-interfaces"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Build.Interfaces project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Build.Interfaces project"
 
  - name: "credfeto-dotnet-repo-tools-build-tests"
    color: "0e8a16"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Build.Tests project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Build.Tests project"
 
  - name: "credfeto-dotnet-repo-tools-cleanup"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.CleanUp project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.CleanUp project"
 
  - name: "credfeto-dotnet-repo-tools-cleanup-interfaces"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces project"
 
  - name: "credfeto-dotnet-repo-tools-cleanup-tests"
    color: "0e8a16"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.CleanUp.Tests project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.CleanUp.Tests project"
 
  - name: "credfeto-dotnet-repo-tools-cmd"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Cmd project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Cmd project"
 
  - name: "credfeto-dotnet-repo-tools-dotnet"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.DotNet project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.DotNet project"
 
  - name: "credfeto-dotnet-repo-tools-dotnet-interfaces"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.DotNet.Interfaces project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.DotNet.Interfaces project"
 
  - name: "credfeto-dotnet-repo-tools-dotnet-tests"
    color: "0e8a16"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.DotNet.Tests project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.DotNet.Tests project"
 
  - name: "credfeto-dotnet-repo-tools-git"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Git project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Git project"
 
  - name: "credfeto-dotnet-repo-tools-git-interfaces"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Git.Interfaces project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Git.Interfaces project"
 
  - name: "credfeto-dotnet-repo-tools-git-tests"
    color: "0e8a16"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Git.Tests project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Git.Tests project"
 
  - name: "credfeto-dotnet-repo-tools-models"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Models project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Models project"
 
  - name: "credfeto-dotnet-repo-tools-packages"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Packages project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Packages project"
 
  - name: "credfeto-dotnet-repo-tools-packages-interfaces"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Packages.Interfaces project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Packages.Interfaces project"
 
  - name: "credfeto-dotnet-repo-tools-packages-tests"
    color: "0e8a16"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Packages.Tests project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Packages.Tests project"
 
  - name: "credfeto-dotnet-repo-tools-release"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Release project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Release project"
 
  - name: "credfeto-dotnet-repo-tools-release-interfaces"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Release.Interfaces project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Release.Interfaces project"
 
  - name: "credfeto-dotnet-repo-tools-release-tests"
    color: "0e8a16"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.Release.Tests project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Release.Tests project"
 
  - name: "credfeto-dotnet-repo-tools-templateupdate"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.TemplateUpdate project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.TemplateUpdate project"
 
  - name: "credfeto-dotnet-repo-tools-templateupdate-interfaces"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces project"
 
  - name: "credfeto-dotnet-repo-tools-templateupdate-tests"
    color: "0e8a16"
-   description: "Changes in $Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests project"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests project"
 
  - name: "credfeto-dotnet-repo-tracking"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tracking project"
+   description: "Changes in Credfeto.DotNet.Repo.Tracking project"
 
  - name: "credfeto-dotnet-repo-tracking-interfaces"
    color: "96f7d2"
-   description: "Changes in $Credfeto.DotNet.Repo.Tracking.Interfaces project"
+   description: "Changes in Credfeto.DotNet.Repo.Tracking.Interfaces project"
 
  - name: "credfeto-dotnet-repo-tracking-tests"
    color: "0e8a16"
-   description: "Changes in $Credfeto.DotNet.Repo.Tracking.Tests project"
+   description: "Changes in Credfeto.DotNet.Repo.Tracking.Tests project"
 
  - name: "dependencies"
    color: "0366d6"
@@ -165,10 +145,6 @@
  - name: "github-actions"
    color: "e09cf4"
    description: "Github actions workflow files"
-
- - name: "Legal Text"
-   color: "facef0"
-   description: "Legal text files"
 
  - name: "Markdown"
    color: "5319e7"
@@ -214,7 +190,7 @@
    color: "30027a"
    description: "Technical debt"
 
- - name: "unit-tests"
+ - name: "Unit Tests"
    color: "0e8a16"
    description: "Unit test and integration test projects"
 
