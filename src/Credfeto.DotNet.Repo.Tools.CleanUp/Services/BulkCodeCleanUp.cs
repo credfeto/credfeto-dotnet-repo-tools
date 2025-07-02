@@ -19,7 +19,9 @@ using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
+using Credfeto.Tsql.Formatter;
 using Microsoft.Extensions.Logging;
+using Microsoft.SqlServer.TransactSql.ScriptDom;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
@@ -35,6 +37,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     private readonly IResharperSuppressionToSuppressMessage _resharperSuppressionToSuppressMessage;
     private readonly ISourceFileReformatter _sourceFileReformatter;
     private readonly ITrackingCache _trackingCache;
+    private readonly ITransactSqlFormatter _tsqlFormatter;
 
     private readonly IXmlDocCommentRemover _xmlDocCommentRemover;
 
@@ -47,6 +50,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                            ISourceFileReformatter sourceFileReformatter,
                            IXmlDocCommentRemover xmlDocCommentRemover,
                            IResharperSuppressionToSuppressMessage resharperSuppressionToSuppressMessage,
+                           ITransactSqlFormatter tsqlFormatter,
                            IDotNetBuild dotNetBuild,
                            ILogger<BulkCodeCleanUp> logger)
     {
@@ -61,6 +65,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         this._resharperSuppressionToSuppressMessage = resharperSuppressionToSuppressMessage;
         this._dotNetBuild = dotNetBuild;
         this._logger = logger;
+        this._tsqlFormatter = tsqlFormatter;
     }
 
     /*
@@ -210,6 +215,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
             await this.ReOrderProjectFilesAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, projects: projects, buildSettings: buildSettings, cancellationToken: cancellationToken);
             await this.CleanupSourceAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
+            await this.CleanupTransactSqlAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, cancellationToken: cancellationToken);
         }
         else
         {
@@ -316,6 +322,39 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                                                                                cancellationToken: cancellationToken);
         await this.RemoveXmlDocCommentsAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, sourceFiles: sourceFiles, buildSettings: buildSettings, cancellationToken: cancellationToken);
         await this.ReformatCSharpAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, sourceFiles: sourceFiles, buildSettings: buildSettings, cancellationToken: cancellationToken);
+    }
+
+    private async ValueTask CleanupTransactSqlAsync(RepoContext repoContext, string sourceDirectory, CancellationToken cancellationToken)
+    {
+        // TODO load options from editorconfig
+        SqlScriptGeneratorOptions options = TSqlOptions.DefaultOptions;
+
+        IReadOnlyList<string> sourceFiles = Directory.GetFiles(path: sourceDirectory, searchPattern: "*.sql", searchOption: SearchOption.AllDirectories);
+
+        foreach (string sourceFile in sourceFiles)
+        {
+            string original = await File.ReadAllTextAsync(path: sourceFile, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
+
+            string formatted = await this._tsqlFormatter.FormatAsync(source: original, options: options, cancellationToken: cancellationToken);
+
+            this._logger.CleaningFile(sourceFile);
+
+            bool changed = StringComparer.Ordinal.Equals(x: original, y: formatted);
+
+            if (!changed)
+            {
+                this._logger.CleaningFileUnchanged(sourceFile);
+
+                continue;
+            }
+
+            await File.WriteAllTextAsync(path: sourceFile, contents: formatted, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
+
+            this._logger.CleaningFileDifferent(sourceFile);
+            string sourceFileName = Path.GetFileName(sourceFile);
+            await repoContext.Repository.CommitAsync($"Cleanup: {sourceFileName}", cancellationToken: cancellationToken);
+            await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
+        }
     }
 
     private ValueTask RemoveXmlDocCommentsAsync(in RepoContext repoContext,
