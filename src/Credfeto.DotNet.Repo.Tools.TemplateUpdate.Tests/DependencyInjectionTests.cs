@@ -14,26 +14,51 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests;
 public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 {
     public DependencyInjectionTests(ITestOutputHelper output)
-        : base(output: output, dependencyInjectionRegistration: Configure) { }
+        : base(output: output, dependencyInjectionRegistration: Configure)
+    {
+    }
 
     [Fact]
-    public void CleanUpBuildMustBeRegistered()
+    public void BulkTemplateUpdaterMustBeRegistered()
     {
         this.RequireService<IBulkTemplateUpdater>();
     }
 
+    [Fact]
+    public void TemplateConfigLoaderMustBeRegistered()
+    {
+        this.RequireService<ITemplateConfigLoader>();
+    }
+
+    [Fact]
+    public void FileUpdaterLoaderMustBeRegistered()
+    {
+        this.RequireService<IFileUpdater>();
+    }
+
+    [Fact]
+    public void LabelsBuilderMustBeRegistered()
+    {
+        this.RequireService<ILabelsBuilder>();
+    }
+
+    [Fact]
+    public void DependaBotConfigBuilderMustBeRegistered()
+    {
+        this.RequireService<IDependaBotConfigBuilder>();
+    }
+
     private static IServiceCollection Configure(IServiceCollection services)
     {
-        return services
-            .AddMockedService<IBulkPackageConfigLoader>()
-            .AddMockedService<IDotNetBuild>()
-            .AddMockedService<IDotNetSolutionCheck>()
-            .AddMockedService<IDotNetVersion>()
-            .AddMockedService<IGitRepositoryFactory>()
-            .AddMockedService<IGlobalJson>()
-            .AddMockedService<IReleaseConfigLoader>()
-            .AddMockedService<IReleaseGeneration>()
-            .AddMockedService<ITrackingCache>()
-            .AddTemplateUpdate();
+        return services.AddMockedService<IBulkPackageConfigLoader>()
+                       .AddMockedService<IDotNetBuild>()
+                       .AddMockedService<IDotNetSolutionCheck>()
+                       .AddMockedService<IDotNetVersion>()
+                       .AddMockedService<IGitRepositoryFactory>()
+                       .AddMockedService<IGlobalJson>()
+                       .AddMockedService<IReleaseConfigLoader>()
+                       .AddMockedService<IReleaseGeneration>()
+                       .AddMockedService<ITrackingCache>()
+                       .AddTemplateUpdate();
     }
 }
