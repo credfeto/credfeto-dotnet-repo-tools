@@ -7,18 +7,20 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
-- TSQL Cleanup
 ### Fixed
 ### Changed
-
-- Dependencies - Updated Credfeto.Tsql.Formatter to 0.1.0.9
-
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.1.81] - 2025-07-03
+### Added
+- TSQL Cleanup
+### Changed
+- Dependencies - Updated Credfeto.Tsql.Formatter to 0.1.0.9
+
 ## [1.1.80] - 2025-07-01
 ### Changed
 - Ability to remove old workflows
