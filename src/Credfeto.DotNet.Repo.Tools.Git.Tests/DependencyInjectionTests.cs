@@ -8,7 +8,9 @@ namespace Credfeto.DotNet.Repo.Tools.Git.Tests;
 public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 {
     public DependencyInjectionTests(ITestOutputHelper output)
-        : base(output: output, dependencyInjectionRegistration: Configure) { }
+        : base(output: output, dependencyInjectionRegistration: Configure)
+    {
+    }
 
     [Fact]
     public void GitRepositoryLocatorMustBeRegistered()
@@ -20,6 +22,12 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
     public void GitRepositoryFactoryMustBeRegistered()
     {
         this.RequireService<IGitRepositoryFactory>();
+    }
+
+    [Fact]
+    public void GitRepositoryListLoaderMustBeRegistered()
+    {
+        this.RequireService<IGitRepositoryListLoader>();
     }
 
     private static IServiceCollection Configure(IServiceCollection services)
