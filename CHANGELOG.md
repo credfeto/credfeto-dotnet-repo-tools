@@ -10,6 +10,9 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - TSQL Cleanup
 ### Fixed
 ### Changed
+
+- Dependencies - Updated Credfeto.Tsql.Formatter to 0.1.0.9
+
 ### Removed
 ### Deployment Changes
 
