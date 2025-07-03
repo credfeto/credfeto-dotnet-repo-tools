@@ -30,13 +30,35 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
         this.RequireService<ITransactSqlFormatter>();
     }
 
+    [Fact]
+    public void ProjectXmlRewriterMustBeRegistered()
+    {
+        this.RequireService<IProjectXmlRewriter>();
+    }
+
+    [Fact]
+    public void SourceFileReformatterMustBeRegistered()
+    {
+        this.RequireService<ISourceFileReformatter>();
+    }
+
+    [Fact]
+    public void XmlDocCommentRemoverMustBeRegistered()
+    {
+        this.RequireService<IXmlDocCommentRemover>();
+    }
+
+    [Fact]
+    public void ResharperSuppressionToSuppressMessageMustBeRegistered()
+    {
+        this.RequireService<IResharperSuppressionToSuppressMessage>();
+    }
+
     private static IServiceCollection Configure(IServiceCollection services)
     {
         return services.AddMockedService<ITrackingCache>()
                        .AddMockedService<IGitRepositoryFactory>()
                        .AddMockedService<IGlobalJson>()
-                       .AddMockedService<IProjectXmlRewriter>()
-                       .AddMockedService<IXmlDocCommentRemover>()
                        .AddMockedService<IReleaseConfigLoader>()
                        .AddMockedService<IDotNetVersion>()
                        .AddMockedService<IDotNetBuild>()
