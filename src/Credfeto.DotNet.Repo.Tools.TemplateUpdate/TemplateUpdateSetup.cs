@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net;
 using System.Net.Http;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces;
@@ -18,22 +18,26 @@ public static class TemplateUpdateSetup
 
     public static IServiceCollection AddTemplateUpdate(this IServiceCollection services)
     {
-        return services.AddSingleton<ITemplateConfigLoader, TemplateConfigLoader>()
-                       .AddSingleton<IBulkTemplateUpdater, BulkTemplateUpdater>()
-                       .AddSingleton<IFileUpdater, FileUpdater>()
-                       .AddSingleton<IDependaBotConfigBuilder, DependaBotConfigBuilder>()
-                       .AddSingleton<ILabelsBuilder, LabelsBuilder>()
-                       .AddTemplateConfigLoaderLoaderHttpClient();
+        return services
+            .AddSingleton<ITemplateConfigLoader, TemplateConfigLoader>()
+            .AddSingleton<IBulkTemplateUpdater, BulkTemplateUpdater>()
+            .AddSingleton<IFileUpdater, FileUpdater>()
+            .AddSingleton<IDependaBotConfigBuilder, DependaBotConfigBuilder>()
+            .AddSingleton<ILabelsBuilder, LabelsBuilder>()
+            .AddTemplateConfigLoaderLoaderHttpClient();
     }
 
     private static IServiceCollection AddTemplateConfigLoaderLoaderHttpClient(this IServiceCollection services)
     {
-        return services.AddHttpClient(nameof(TemplateConfigLoader), configureClient: ConfigureClient)
-                       .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                       .ConfigurePrimaryHttpMessageHandler(configureHandler: CreateHandler)
-                       .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(ClientPolicyTimeout))
-                       .AddTransientHttpErrorPolicy(x => x.WaitAndRetryAsync(retryCount: RETRY_COUNT, sleepDurationProvider: _ => SleepDuration))
-                       .Services;
+        return services
+            .AddHttpClient(nameof(TemplateConfigLoader), configureClient: ConfigureClient)
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+            .ConfigurePrimaryHttpMessageHandler(configureHandler: CreateHandler)
+            .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(ClientPolicyTimeout))
+            .AddTransientHttpErrorPolicy(x =>
+                x.WaitAndRetryAsync(retryCount: RETRY_COUNT, sleepDurationProvider: _ => SleepDuration)
+            )
+            .Services;
     }
 
     private static HttpClientHandler CreateHandler(IServiceProvider serviceProvider)
