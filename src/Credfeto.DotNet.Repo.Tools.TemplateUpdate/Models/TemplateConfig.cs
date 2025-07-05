@@ -7,7 +7,12 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 public sealed class TemplateConfig
 {
     [JsonConstructor]
-    public TemplateConfig(GeneralTemplateConfig general, GitHubTemplateConfig gitHub, DotnetTemplateConfig dotNet, CleanupTemplateConfig cleanup)
+    public TemplateConfig(
+        GeneralTemplateConfig general,
+        GitHubTemplateConfig gitHub,
+        DotnetTemplateConfig dotNet,
+        CleanupTemplateConfig cleanup
+    )
     {
         this.General = general;
         this.GitHub = gitHub;
