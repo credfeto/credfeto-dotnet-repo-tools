@@ -6,13 +6,15 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 public sealed class GitHubTemplateConfig
 {
     [JsonConstructor]
-    public GitHubTemplateConfig(bool issueTemplates,
-                                bool pullRequestTemplates,
-                                bool actions,
-                                bool linters,
-                                Dictionary<string, string> files,
-                                DependabotTemplateConfig dependabot,
-                                LabelsTemplateConfig labels)
+    public GitHubTemplateConfig(
+        bool issueTemplates,
+        bool pullRequestTemplates,
+        bool actions,
+        bool linters,
+        Dictionary<string, string> files,
+        DependabotTemplateConfig dependabot,
+        LabelsTemplateConfig labels
+    )
     {
         this.IssueTemplates = issueTemplates;
         this.PullRequestTemplates = pullRequestTemplates;
