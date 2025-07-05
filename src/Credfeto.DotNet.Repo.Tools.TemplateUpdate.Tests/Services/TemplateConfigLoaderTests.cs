@@ -17,7 +17,10 @@ public sealed class TemplateConfigLoaderTests : TestBase
     public TemplateConfigLoaderTests()
     {
         this._httpClientFactory = GetSubstitute<IHttpClientFactory>();
-        this._templateConfigLoader = new TemplateConfigLoader(httpClientFactory: this._httpClientFactory, this.GetTypedLogger<TemplateConfigLoader>());
+        this._templateConfigLoader = new TemplateConfigLoader(
+            httpClientFactory: this._httpClientFactory,
+            this.GetTypedLogger<TemplateConfigLoader>()
+        );
     }
 
     [Fact]
@@ -25,48 +28,55 @@ public sealed class TemplateConfigLoaderTests : TestBase
     {
         this.MockConfig();
 
-        TemplateConfig config = await this._templateConfigLoader.LoadConfigAsync(path: "https://example.com/templates.json", this.CancellationToken());
+        TemplateConfig config = await this._templateConfigLoader.LoadConfigAsync(
+            path: "https://example.com/templates.json",
+            this.CancellationToken()
+        );
         Assert.NotEmpty(config.General.Files);
     }
 
     private void MockConfig()
     {
         const string releaseConfigJson = """
-                                         {
-                                           "general": {
-                                             "files": {
-                                               ".editorconfig": "Config",
-                                               ".gitignore": "Config",
-                                               ".gitattributes": "Config"
-                                             }
-                                           },
-                                           "dotNet": {
-                                             "global-json": true,
-                                             "resharper-dotsettings": true,
-                                             "files": {}
-                                           },
-                                           "gitHub": {
-                                             "dependabot": {
-                                               "generate": true
-                                             },
-                                             "labels": {
-                                               "generate": true
-                                             },
-                                             "issue-templates": true,
-                                             "pr-template": true,
-                                             "actions": true,
-                                             "linters": true,
-                                             "files": {}
-                                           },
-                                           "cleanup": {
-                                             "files": {
-                                               ".github/actions/nuget-push-integrated-symbol-feed/actions.yml": "Obsolete action",
-                                               ".github/actions/nuget-push-separate-symbol-feed/actions.yml": "Obsolete action"
-                                             }
-                                           }
-                                         }
-                                         """;
+            {
+              "general": {
+                "files": {
+                  ".editorconfig": "Config",
+                  ".gitignore": "Config",
+                  ".gitattributes": "Config"
+                }
+              },
+              "dotNet": {
+                "global-json": true,
+                "resharper-dotsettings": true,
+                "files": {}
+              },
+              "gitHub": {
+                "dependabot": {
+                  "generate": true
+                },
+                "labels": {
+                  "generate": true
+                },
+                "issue-templates": true,
+                "pr-template": true,
+                "actions": true,
+                "linters": true,
+                "files": {}
+              },
+              "cleanup": {
+                "files": {
+                  ".github/actions/nuget-push-integrated-symbol-feed/actions.yml": "Obsolete action",
+                  ".github/actions/nuget-push-separate-symbol-feed/actions.yml": "Obsolete action"
+                }
+              }
+            }
+            """;
 
-        this._httpClientFactory.MockCreateClientWithResponse(nameof(TemplateConfigLoader), httpStatusCode: HttpStatusCode.OK, responseMessage: releaseConfigJson);
+        this._httpClientFactory.MockCreateClientWithResponse(
+            nameof(TemplateConfigLoader),
+            httpStatusCode: HttpStatusCode.OK,
+            responseMessage: releaseConfigJson
+        );
     }
 }
