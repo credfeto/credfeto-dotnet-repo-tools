@@ -12,4 +12,5 @@ public readonly record struct TemplateUpdateContext(
     string TrackingFileName,
     TemplateConfig TemplateConfig,
     DotNetVersionSettings DotNetSettings,
-    ReleaseConfig ReleaseConfig);
+    ReleaseConfig ReleaseConfig
+);
