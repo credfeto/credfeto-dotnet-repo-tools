@@ -9,7 +9,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Meziantou.Analyzer to 2.0.204
+- Dependencies - Updated Meziantou.Analyzer to 2.0.205
 ### Removed
 ### Deployment Changes
 
