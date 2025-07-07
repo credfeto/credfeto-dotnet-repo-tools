@@ -37,18 +37,29 @@ public sealed class TemplateConfigLoader : ITemplateConfigLoader
 
         httpClient.BaseAddress = uri;
 
-        await using (Stream result = await httpClient.GetStreamAsync(requestUri: uri, cancellationToken: cancellationToken))
+        await using (
+            Stream result = await httpClient.GetStreamAsync(requestUri: uri, cancellationToken: cancellationToken)
+        )
         {
-            return await JsonSerializer.DeserializeAsync(utf8Json: result, jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig, cancellationToken: cancellationToken) ??
-                   InvalidSettings();
+            return await JsonSerializer.DeserializeAsync(
+                    utf8Json: result,
+                    jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig,
+                    cancellationToken: cancellationToken
+                ) ?? InvalidSettings();
         }
     }
 
-    private static async ValueTask<TemplateConfig> LoadFromFileAsync(string filename, CancellationToken cancellationToken)
+    private static async ValueTask<TemplateConfig> LoadFromFileAsync(
+        string filename,
+        CancellationToken cancellationToken
+    )
     {
         byte[] content = await File.ReadAllBytesAsync(path: filename, cancellationToken: cancellationToken);
 
-        return JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig) ?? InvalidSettings();
+        return JsonSerializer.Deserialize(
+                utf8Json: content,
+                jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig
+            ) ?? InvalidSettings();
     }
 
     private static TemplateConfig InvalidSettings()
