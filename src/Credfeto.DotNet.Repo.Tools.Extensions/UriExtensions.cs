@@ -1,4 +1,4 @@
-﻿namespace Credfeto.DotNet.Repo.Tools.Extensions;
+namespace Credfeto.DotNet.Repo.Tools.Extensions;
 
 public static partial class UriExtensions
 {
