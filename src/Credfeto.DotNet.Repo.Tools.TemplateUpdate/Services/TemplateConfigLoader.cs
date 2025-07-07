@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.DotNet.Repo.Tools.Extensions;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services.LoggingExtensions;
 using Microsoft.Extensions.Logging;
@@ -25,7 +26,7 @@ public sealed class TemplateConfigLoader : ITemplateConfigLoader
     {
         this._logger.LoadingTemplateConfig(path);
 
-        return Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && IsHttp(uri)
+        return Uri.TryCreate(uriString: path, uriKind: UriKind.Absolute, out Uri? uri) && uri.IsHttp()
             ? this.LoadFromHttpAsync(uri: uri, cancellationToken: cancellationToken)
             : LoadFromFileAsync(filename: path, cancellationToken: cancellationToken);
     }
@@ -36,39 +37,22 @@ public sealed class TemplateConfigLoader : ITemplateConfigLoader
 
         httpClient.BaseAddress = uri;
 
-        await using (
-            Stream result = await httpClient.GetStreamAsync(requestUri: uri, cancellationToken: cancellationToken)
-        )
+        await using (Stream result = await httpClient.GetStreamAsync(requestUri: uri, cancellationToken: cancellationToken))
         {
-            return await JsonSerializer.DeserializeAsync(
-                    utf8Json: result,
-                    jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig,
-                    cancellationToken: cancellationToken
-                ) ?? InvalidSettings();
+            return await JsonSerializer.DeserializeAsync(utf8Json: result, jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig, cancellationToken: cancellationToken) ??
+                   InvalidSettings();
         }
     }
 
-    private static async ValueTask<TemplateConfig> LoadFromFileAsync(
-        string filename,
-        CancellationToken cancellationToken
-    )
+    private static async ValueTask<TemplateConfig> LoadFromFileAsync(string filename, CancellationToken cancellationToken)
     {
         byte[] content = await File.ReadAllBytesAsync(path: filename, cancellationToken: cancellationToken);
 
-        return JsonSerializer.Deserialize(
-                utf8Json: content,
-                jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig
-            ) ?? InvalidSettings();
+        return JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: TemplateConfigSerializationContext.Default.TemplateConfig) ?? InvalidSettings();
     }
 
     private static TemplateConfig InvalidSettings()
     {
         throw new InvalidOperationException("Invalid template settings");
-    }
-
-    private static bool IsHttp(Uri uri)
-    {
-        return StringComparer.Ordinal.Equals(x: uri.Scheme, y: "https")
-            || StringComparer.Ordinal.Equals(x: uri.Scheme, y: "http");
     }
 }

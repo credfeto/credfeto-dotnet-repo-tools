@@ -64,6 +64,7 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-447r-wph3-92pm" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Extensions\Credfeto.DotNet.Repo.Tools.Extensions.csproj"/>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Packages.Interfaces\Credfeto.DotNet.Repo.Tools.Packages.Interfaces.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Release.Interfaces\Credfeto.DotNet.Repo.Tools.Release.Interfaces.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj" />
