@@ -66,6 +66,10 @@
    color: "0e8a16"
    description: "Changes in Credfeto.DotNet.Repo.Tools.DotNet.Tests project"
 
+ - name: "credfeto-dotnet-repo-tools-extensions"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Extensions project"
+
  - name: "credfeto-dotnet-repo-tools-git"
    color: "96f7d2"
    description: "Changes in Credfeto.DotNet.Repo.Tools.Git project"

@@ -30,6 +30,8 @@
  - any: [ 'src/$Credfeto.DotNet.Repo.Tools.DotNet.Interfaces/**/*' ]
 "credfeto-dotnet-repo-tools-dotnet-tests":
  - any: [ 'src/$Credfeto.DotNet.Repo.Tools.DotNet.Tests/**/*' ]
+"credfeto-dotnet-repo-tools-extensions":
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Extensions/**/*' ]
 "credfeto-dotnet-repo-tools-git":
  - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Git/**/*' ]
 "credfeto-dotnet-repo-tools-git-interfaces":
