@@ -42,21 +42,33 @@ public sealed class ReleaseConfigLoader : IReleaseConfigLoader
 
         httpClient.BaseAddress = uri;
 
-        await using (Stream result = await httpClient.GetStreamAsync(requestUri: uri, cancellationToken: cancellationToken))
+        await using (
+            Stream result = await httpClient.GetStreamAsync(requestUri: uri, cancellationToken: cancellationToken)
+        )
         {
             ReleaseConfiguration releaseConfiguration =
-                await JsonSerializer.DeserializeAsync(utf8Json: result, jsonTypeInfo: ReleaseConfigSerializationContext.Default.ReleaseConfiguration, cancellationToken: cancellationToken) ??
-                InvalidSettings();
+                await JsonSerializer.DeserializeAsync(
+                    utf8Json: result,
+                    jsonTypeInfo: ReleaseConfigSerializationContext.Default.ReleaseConfiguration,
+                    cancellationToken: cancellationToken
+                ) ?? InvalidSettings();
 
             return ToConfig(releaseConfiguration);
         }
     }
 
-    private static async ValueTask<ReleaseConfig> LoadFromFileAsync(string filename, CancellationToken cancellationToken)
+    private static async ValueTask<ReleaseConfig> LoadFromFileAsync(
+        string filename,
+        CancellationToken cancellationToken
+    )
     {
         byte[] content = await File.ReadAllBytesAsync(path: filename, cancellationToken: cancellationToken);
 
-        ReleaseConfiguration releaseConfiguration = JsonSerializer.Deserialize(utf8Json: content, jsonTypeInfo: ReleaseConfigSerializationContext.Default.ReleaseConfiguration) ?? InvalidSettings();
+        ReleaseConfiguration releaseConfiguration =
+            JsonSerializer.Deserialize(
+                utf8Json: content,
+                jsonTypeInfo: ReleaseConfigSerializationContext.Default.ReleaseConfiguration
+            ) ?? InvalidSettings();
 
         return ToConfig(releaseConfiguration);
     }
@@ -69,12 +81,14 @@ public sealed class ReleaseConfigLoader : IReleaseConfigLoader
 
     private static ReleaseConfig ToConfig(ReleaseConfiguration configuration)
     {
-        return new(AutoReleasePendingPackages: configuration.Settings.AutoReleasePendingPackages,
-                   MinimumHoursBeforeAutoRelease: configuration.Settings.MinimumHoursBeforeAutoRelease,
-                   InactivityHoursBeforeAutoRelease: configuration.Settings.InactivityHoursBeforeAutoRelease,
-                   ToConfig(configuration.NeverRelease),
-                   ToConfig(configuration.AllowedAutoUpgrade),
-                   ToConfig(configuration.AlwaysMatch));
+        return new(
+            AutoReleasePendingPackages: configuration.Settings.AutoReleasePendingPackages,
+            MinimumHoursBeforeAutoRelease: configuration.Settings.MinimumHoursBeforeAutoRelease,
+            InactivityHoursBeforeAutoRelease: configuration.Settings.InactivityHoursBeforeAutoRelease,
+            ToConfig(configuration.NeverRelease),
+            ToConfig(configuration.AllowedAutoUpgrade),
+            ToConfig(configuration.AlwaysMatch)
+        );
     }
 
     private static IReadOnlyList<RepoMatch> ToConfig(IReadOnlyList<RepoConfigMatch> source)
@@ -99,6 +113,10 @@ public sealed class ReleaseConfigLoader : IReleaseConfigLoader
             return MatchType.CONTAINS;
         }
 
-        throw new ArgumentOutOfRangeException(nameof(sourceMatch), actualValue: sourceMatch, message: "Invalid match type");
+        throw new ArgumentOutOfRangeException(
+            nameof(sourceMatch),
+            actualValue: sourceMatch,
+            message: "Invalid match type"
+        );
     }
 }
