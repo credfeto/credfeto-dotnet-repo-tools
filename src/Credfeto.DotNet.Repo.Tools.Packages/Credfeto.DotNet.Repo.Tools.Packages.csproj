@@ -64,7 +64,7 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-447r-wph3-92pm" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Extensions\Credfeto.DotNet.Repo.Tools.Extensions.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Extensions\Credfeto.DotNet.Repo.Tools.Extensions.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Packages.Interfaces\Credfeto.DotNet.Repo.Tools.Packages.Interfaces.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Release.Interfaces\Credfeto.DotNet.Repo.Tools.Release.Interfaces.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj" />
@@ -85,7 +85,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Nullable.Extended.Analyzer" Version="1.15.6581" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Philips.CodeAnalysis.DuplicateCodeAnalyzer" Version="1.1.7" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Philips.CodeAnalysis.MaintainabilityAnalyzers" Version="1.6.2" PrivateAssets="All" ExcludeAssets="runtime" />
+    <PackageReference Include="Philips.CodeAnalysis.MaintainabilityAnalyzers" Version="1.6.3" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Roslynator.Analyzers" Version="4.13.1" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="SecurityCodeScan.VS2019" Version="5.6.7" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="SmartAnalyzers.CSharpExtensions.Annotations" Version="4.2.11" PrivateAssets="All" ExcludeAssets="runtime" />
