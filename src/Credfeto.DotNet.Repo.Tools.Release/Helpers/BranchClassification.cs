@@ -9,6 +9,7 @@ internal static partial class BranchClassification
 
     private static bool IsDotNetSdkPreviewUpdate(string branch)
     {
-        return branch.StartsWith(value: "depends/sdk/dotnet/", comparisonType: StringComparison.Ordinal) && branch.EndsWith(value: "/preview", comparisonType: StringComparison.Ordinal);
+        return branch.StartsWith(value: "depends/sdk/dotnet/", comparisonType: StringComparison.Ordinal)
+            && branch.EndsWith(value: "/preview", comparisonType: StringComparison.Ordinal);
     }
 }
