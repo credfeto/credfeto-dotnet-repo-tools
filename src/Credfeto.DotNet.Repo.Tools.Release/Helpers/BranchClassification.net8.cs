@@ -13,7 +13,8 @@ internal static partial class BranchClassification
 
     private static bool IsPackageUpdaterBranch(string branch)
     {
-        return branch.StartsWith(value: PACKAGE_UPDATER_BRANCH_PREFIX, comparisonType: StringComparison.Ordinal) && !IsDotNetSdkPreviewUpdate(branch);
+        return branch.StartsWith(value: PACKAGE_UPDATER_BRANCH_PREFIX, comparisonType: StringComparison.Ordinal)
+            && !IsDotNetSdkPreviewUpdate(branch);
     }
 
     private static bool IsDependabotBranch(string branch)
