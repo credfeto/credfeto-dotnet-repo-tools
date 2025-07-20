@@ -87,8 +87,14 @@
   <ItemGroup>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj"/>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces\Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git.Interfaces\Credfeto.DotNet.Repo.Tools.Git.Interfaces.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Models\Credfeto.DotNet.Repo.Tools.Models.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj"/>
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Credfeto.ChangeLog">
+      <HintPath>..\..\..\..\..\.cache\NuGetPackages\credfeto.changelog\1.10.178.1288\lib\net8.0\Credfeto.ChangeLog.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.Extensions.DependencyInjection.Abstractions">
       <HintPath>..\..\..\..\..\.cache\NuGetPackages\microsoft.extensions.dependencyinjection.abstractions\9.0.6\lib\net8.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll</HintPath>
     </Reference>
