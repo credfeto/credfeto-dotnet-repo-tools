@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Credfeto.DotNet.Repo.Tools.Dependencies.Services;
 
-internal sealed class ReferenceConfig
+public sealed class ReferenceConfig
 {
     private readonly IReadOnlyList<string> _doNotRemovePackages;
     private readonly IReadOnlyList<string> _ignoreProjects;
