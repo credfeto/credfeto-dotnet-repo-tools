@@ -6,7 +6,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using System.Xml.Linq;
 using System.Xml.XPath;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Models;
@@ -157,7 +156,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
                     if (!string.IsNullOrEmpty(includeAttr))
                     {
                         string childPath = Path.Combine(path1: baseDir, path2: includeAttr);
-                        List<PackageReference> childReferences = GetPackageReferences(fileName: childPath, includeReferences: true, includeChildReferences: true);
+                        List<PackageReference> childReferences = GetPackageReferences(fileName: childPath, includeReferences: true, includeChildReferences: true, config);
                         references.AddRange(childReferences);
                     }
                 }
@@ -335,16 +334,15 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
         public static async ValueTask<int> CheckReferencesAsync(string sourceDirectory, ReferenceConfig config, CancellationToken cancellationToken)
         {
-            List<FileInfo> files = GetProjects(sourceDirectory: sourceDirectory, config: config);
+            List<FileInfo> files = GetProjects(sourceDirectory, config);
             Console.WriteLine($"Number of projects to check: {files.Count}");
 
             WriteSectionStart("Checking Projects");
 
-            Stopwatch stopWatch = Stopwatch.StartNew();
-
-            List<ReferenceCheckResult> obsoletes = [];
-            List<ReferenceCheckResult> reduceReferences = [];
-            List<ReferenceCheckResult> changeSdk = [];
+            Stopwatch stopwatch = Stopwatch.StartNew();
+            List<ReferenceCheckResult> obsoletes = new();
+            List<ReferenceCheckResult> reduceReferences = new();
+            List<ReferenceCheckResult> changeSdk = new();
 
             int projectCount = files.Count;
             int projectInstance = 0;
@@ -353,9 +351,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             {
                 projectInstance++;
 
-                bool ignoreProject = config.IsIgnoreProject(file.Name);
-
-                if (ignoreProject)
+                if (config.IsIgnoreProject(file.Name))
                 {
                     WriteProgress($"Ignoring {file.Name}");
 
@@ -364,55 +360,46 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
                 WriteSectionStart($"({projectInstance}/{projectCount}): Testing project: {file.Name}");
 
-                byte[] rawFileContent = await File.ReadAllBytesAsync(path: file.FullName, cancellationToken: cancellationToken);
+                byte[] rawFileContent = await File.ReadAllBytesAsync(file.FullName, cancellationToken);
 
-                bool buildOk = BuildProject(fileName: file.FullName, fullError: true);
-                Console.WriteLine($"Build OK: {buildOk}");
-
-                if (!buildOk)
+                if (!BuildProject(fileName: file.FullName, fullError: true))
                 {
                     WriteProgress("* Does not build without changes");
 
                     throw new("Failed to build a project");
                 }
 
-                List<PackageReference> childPackageReferences = GetPackageReferences(fileName: file.FullName, includeReferences: false, includeChildReferences: true, config: config);
-                List<ProjectReference> childProjectReferences = GetProjectReferences(fileName: file.FullName, includeReferences: false, includeChildReferences: true, config);
+                List<PackageReference> childPackageReferences = GetPackageReferences(fileName: file.FullName, includeReferences: false, includeChildReferences: true, config);
+                List<ProjectReference> childProjectReferences = GetProjectReferences(fileName: file.FullName, includeReferences: false, includeChildReferences: true);
 
-                XDocument xml = XDocument.Load(file.FullName);
-                XElement? projectElement = xml.Root; // Assumes root is <Project>
+                XmlDocument xml = new();
+                xml.Load(file.FullName);
 
-                if (projectElement is not null)
+                XmlNode? projectNode = xml.SelectSingleNode("/Project");
+
+                if (projectNode?.Attributes is not null)
                 {
-                    WriteProgress("SDK");
-                    XAttribute? sdkAttribute = projectElement.Attribute("Sdk");
+                    XmlAttribute? sdkAttr = projectNode.Attributes["Sdk"];
 
-                    if (sdkAttribute is not null)
+                    if (sdkAttr is not null)
                     {
-                        string sdk = sdkAttribute.Value;
+                        string sdk = sdkAttr?.Value;
 
-                        bool shouldReplaceSdk = ShouldCheckSdk(sdk: sdk, projectFolder: file.DirectoryName, xml: xml);
-
-                        if (shouldReplaceSdk)
+                        if (ShouldCheckSdk(sdk: sdk, projectFolder: file.DirectoryName, xml: xml))
                         {
-                            sdkAttribute.Value = MinimalSdk;
+                            sdkAttr.Value = MinimalSdk;
                             xml.Save(file.FullName);
 
                             WriteProgress($"* Building {file.Name} using {MinimalSdk} instead of {sdk}...");
-                            buildOk = BuildProject(fileName: file.FullName, fullError: false);
-                            Console.WriteLine($"Build OK: {buildOk}");
-
+                            bool buildOk = BuildProject(fileName: file.FullName, fullError: false);
                             bool restore = true;
 
                             if (buildOk)
                             {
                                 WriteProgress("  - Building succeeded.");
-                                WriteProgress($"{file.Name} references SDK {sdk} that could be reduced to {MinimalSdk}.");
-                                changeSdk.Add(new(File: file, Type: ReferenceType.Sdk, Name: sdk, Version: null));
+                                changeSdk.Add(new(File: file, Type: ReferenceType.Sdk, Name: sdk));
 
-                                buildOk = BuildSolution();
-
-                                if (buildOk)
+                                if (BuildSolution())
                                 {
                                     restore = false;
                                 }
@@ -424,12 +411,12 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
                             if (restore)
                             {
-                                sdkAttribute.Value = sdk;
+                                sdkAttr.Value = sdk;
                                 xml.Save(file.FullName);
                             }
                             else
                             {
-                                rawFileContent = File.ReadAllBytes(file.FullName);
+                                rawFileContent = await File.ReadAllBytesAsync(path: file.FullName, cancellationToken: cancellationToken);
                             }
                         }
                         else
@@ -439,124 +426,114 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
                     }
                 }
 
-                List<string> allPackageIds = [];
+                List<string> allPackageIds = new();
+                XmlNodeList packageReferences = xml.SelectNodes("/Project/ItemGroup/PackageReference");
+                XmlNodeList projectReferences = xml.SelectNodes("/Project/ItemGroup/ProjectReference");
 
-                List<XElement> packageReferences = projectElement.Descendants("PackageReference")
-                                                                 .ToList();
-
-                List<XElement> projectReferences = projectElement.Descendants("ProjectReference")
-                                                                 .ToList();
-
-                foreach (XElement node in packageReferences)
+                foreach (XmlNode node in packageReferences)
                 {
-                    XAttribute? includeAttr = node.Attribute("Include");
-
-                    if (includeAttr != null)
+                    if (node.Attributes?["Include"] != null)
                     {
-                        allPackageIds.Add(includeAttr.Value);
+                        allPackageIds.Add(node.Attributes["Include"].Value);
                     }
                 }
 
-                List<XElement> nodes = packageReferences.Concat(projectReferences)
-                                                        .ToList();
+                List<XmlNode> allNodes = new();
 
-                foreach (XElement node in nodes)
+                foreach (XmlNode node in packageReferences)
                 {
-                    XAttribute? includeAttr = node.Attribute("Include");
+                    allNodes.Add(node);
+                }
 
-                    if (includeAttr is null)
+                foreach (XmlNode node in projectReferences)
+                {
+                    allNodes.Add(node);
+                }
+
+                foreach (XmlNode node in allNodes)
+                {
+                    if (node.Attributes?["Include"] == null)
                     {
                         WriteProgress("= Skipping malformed include");
 
                         continue;
                     }
 
-                    if (config.IsDoNotRemovePackage(packageId: includeAttr.Value, allPackageIds: allPackageIds))
+                    string includeName = node.Attributes["Include"].Value;
+
+                    if (config.IsDoNotRemovePackage(packageId: includeName, allPackageIds: allPackageIds))
                     {
-                        WriteProgress($"= Skipping {includeAttr.Value} as it is marked as do not remove");
+                        WriteProgress($"= Skipping {includeName} as it is marked as do not remove");
 
                         continue;
                     }
 
-                    XElement? privateAssets = node.Element("PrivateAssets");
-
-                    if (privateAssets is not null)
+                    if (node["PrivateAssets"] != null)
                     {
-                        WriteProgress($"= Skipping {includeAttr.Value} as it uses private assets");
+                        WriteProgress($"= Skipping {includeName} as it uses private assets");
 
                         continue;
                     }
 
-                    string includeName = includeAttr.Value;
                     WriteProgress($"Checking: {includeName}");
 
-                    XNode? previousNode = node.PreviousNode;
-                    XElement? parentNode = node.Parent;
-
-                    node.Remove();
+                    XmlNode previousNode = node.PreviousSibling;
+                    XmlNode parentNode = node.ParentNode;
+                    parentNode?.RemoveChild(node);
 
                     bool needToBuild = true;
-
                     xml.Save(file.FullName);
 
-                    XElement? versionElement = node.Element("Version");
+                    XmlNode versionNode = node["Version"];
 
-                    if (versionElement is not null)
+                    if (versionNode != null)
                     {
-                        PackageReference? existingChildInclude = childPackageReferences.FirstOrDefault(p => p.Name == includeAttr.Value && p.Version == versionElement.Value);
+                        PackageReference? existingChildInclude = childPackageReferences.FirstOrDefault(p => p.Name == includeName && p.Version == versionNode.InnerText);
 
-                        if (existingChildInclude is not null)
+                        if (existingChildInclude != null)
                         {
-                            WriteProgress($"= {file.Name} references package {includeAttr.Value} ({versionElement.Value}) that is also referenced in child project {existingChildInclude.File}.");
+                            WriteProgress($"= {file.Name} references package {includeName} ({versionNode.InnerText}) also in child project {existingChildInclude.File}");
                             needToBuild = false;
                         }
                         else
                         {
-                            WriteProgress($"* Building {file.Name} without package {includeAttr.Value} ({versionElement.Value})... ");
+                            WriteProgress($"* Building {file.Name} without package {includeName} ({versionNode.InnerText})...");
                         }
                     }
                     else
                     {
-                        ProjectReference? existingChildInclude = childProjectReferences.FirstOrDefault(p => p.Name == includeAttr.Value);
+                        ProjectReference? existingChildInclude = childProjectReferences.FirstOrDefault(p => p.Name == includeName);
 
                         if (existingChildInclude is not null)
                         {
-                            WriteProgress($"= {file.Name} references project {includeAttr.Value} that is also referenced in child project {existingChildInclude.File}.");
+                            WriteProgress($"= {file.Name} references project {includeName} also in child project {existingChildInclude.File}");
                             needToBuild = false;
                         }
                         else
                         {
-                            WriteProgress($"* Building {file.Name} without project {includeAttr.Value}... ");
+                            WriteProgress($"* Building {file.Name} without project {includeName}...");
                         }
                     }
 
-                    if (needToBuild)
-                    {
-                        buildOk = BuildProject(fileName: file.FullName, fullError: false);
-                    }
-                    else
-                    {
-                        buildOk = true;
-                    }
-
+                    bool buildOk = needToBuild
+                        ? BuildProject(fileName: file.FullName, fullError: false)
+                        : true;
                     bool restore = true;
 
                     if (buildOk)
                     {
                         WriteProgress("  - Building succeeded.");
 
-                        if (versionElement is not null)
+                        if (versionNode != null)
                         {
-                            obsoletes.Add(new(File: file, Type: ReferenceType.Package, Name: includeAttr.Value, Version: versionElement.Value));
+                            obsoletes.Add(new(File: file, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText));
                         }
                         else
                         {
-                            obsoletes.Add(new(File: file, Type: ReferenceType.Project, Name: includeAttr.Value, Version: null));
+                            obsoletes.Add(new(File: file, Type: ReferenceType.Project, Name: includeName));
                         }
 
-                        buildOk = BuildSolution();
-
-                        if (buildOk)
+                        if (BuildSolution())
                         {
                             restore = false;
                         }
@@ -565,57 +542,48 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
                     {
                         WriteProgress("  = Building failed.");
 
-                        if (versionElement is not null)
+                        if (versionNode != null)
                         {
-                            bool narrower = ShouldHaveNarrowerPackageReference(projectFolder: file.DirectoryName, packageId: includeAttr.Value);
-
-                            if (narrower)
+                            if (ShouldHaveNarrowerPackageReference(projectFolder: file.DirectoryName, packageId: includeName))
                             {
-                                reduceReferences.Add(new(File: file, Type: ReferenceType.Package, Name: includeAttr.Value, Version: versionElement.Value));
+                                reduceReferences.Add(new(File: file, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText));
                             }
                         }
                         else
                         {
-                            string? packageId = ExtractProjectFromReference(includeAttr.Value);
+                            string? packageId = ExtractProjectFromReference(includeName);
 
-                            if (!string.IsNullOrEmpty(packageId))
+                            if (!string.IsNullOrEmpty(packageId) && ShouldHaveNarrowerPackageReference(projectFolder: file.DirectoryName, packageId: packageId))
                             {
-                                bool narrower = ShouldHaveNarrowerPackageReference(file.DirectoryName!, packageId: packageId);
-
-                                if (narrower)
-                                {
-                                    reduceReferences.Add(new(File: file, Type: ReferenceType.Project, Name: includeAttr.Value, Version: null));
-                                }
+                                reduceReferences.Add(new(File: file, Type: ReferenceType.Project, Name: includeName));
                             }
                         }
                     }
 
                     if (restore)
                     {
-                        if (previousNode is null)
+                        if (previousNode == null)
                         {
-                            parentNode.AddFirst(node);
+                            parentNode?.PrependChild(node);
                         }
                         else
                         {
-                            previousNode.AddAfterSelf(node);
+                            parentNode?.InsertAfter(newChild: node, refChild: previousNode);
                         }
 
                         xml.Save(file.FullName);
                     }
                     else
                     {
-                        rawFileContent = File.ReadAllBytes(file.FullName);
+                        rawFileContent = await File.ReadAllBytesAsync(path: file.FullName, cancellationToken: cancellationToken);
                     }
                 }
 
-                File.WriteAllBytes(path: file.FullName, bytes: rawFileContent);
+                await File.WriteAllBytesAsync(path: file.FullName, bytes: rawFileContent, cancellationToken: cancellationToken);
 
-                buildOk = BuildProject(fileName: file.FullName, fullError: true);
-
-                if (!buildOk)
+                if (!BuildProject(fileName: file.FullName, fullError: true))
                 {
-                    Console.Error.WriteLine($"### Failed to build {file.FullName} after project file restore. Project built successfully before.");
+                    Console.Error.WriteLine($"### Failed to build {file.FullName} after restore.");
 
                     throw new("Failed to build project after restore");
                 }
@@ -627,83 +595,46 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
             WriteProgress("");
             WriteProgress("-------------------------------------------------------------------------");
-            WriteProgress($"Analyse completed in {stopWatch.Elapsed.TotalSeconds} seconds");
+            WriteProgress($"Analyse completed in {stopwatch.Elapsed.TotalSeconds} seconds");
             WriteProgress($"{changeSdk.Count} SDK reference(s) could potentially be narrowed.");
             WriteProgress($"{obsoletes.Count} reference(s) could potentially be removed.");
-            WriteProgress($"{reduceReferences.Count} reference(s) could potentially be switched to different packages.");
+            WriteProgress($"{reduceReferences.Count} reference(s) could potentially be switched.");
+
+            PrintResults(header: "SDK:", items: changeSdk);
+            PrintResults(header: "Obsolete:", items: obsoletes);
+            PrintResults(header: "Reduce Scope:", items: reduceReferences);
 
             WriteStatistics(section: "SDK", value: changeSdk.Count);
             WriteStatistics(section: "Obsolete", value: obsoletes.Count);
             WriteStatistics(section: "Reduce", value: reduceReferences.Count);
 
-            WriteProgress("SDK:");
-            FileInfo? previousFile = null;
-
-            foreach (ReferenceCheckResult sdkRef in changeSdk)
-            {
-                if (!Equals(objA: previousFile, objB: sdkRef.File))
-                {
-                    WriteProgress("");
-                    WriteProgress($"Project: {sdkRef.File.Name}");
-                }
-
-                WriteProgress($"* Project reference: {sdkRef.Name}");
-                previousFile = sdkRef.File;
-            }
-
-            WriteProgress("Obsolete:");
-            previousFile = null;
-
-            foreach (ReferenceCheckResult obsolete in obsoletes)
-            {
-                if (!Equals(objA: previousFile, objB: obsolete.File))
-                {
-                    WriteProgress("");
-                    WriteProgress($"Project: {obsolete.File.Name}");
-                }
-
-                if (StringComparer.Ordinal.Equals(x: obsolete.Type, y: "Package"))
-                {
-                    WriteProgress($"* Package reference: {obsolete.Name} ({obsolete.Version})");
-                }
-                else
-                {
-                    WriteProgress($"* Project reference: {obsolete.Name}");
-                }
-
-                previousFile = obsolete.File;
-            }
-
-            WriteProgress("");
-            WriteProgress("Reduce Scope:");
-            previousFile = null;
-
-            foreach (ReferenceCheckResult reduce in reduceReferences)
-            {
-                if (!Equals(objA: previousFile, objB: reduce.File))
-                {
-                    WriteProgress("");
-                    WriteProgress($"Project: {reduce.File.Name}");
-                }
-
-                if (reduce.Type == ReferenceType.Package)
-                {
-                    WriteProgress($"* Package reference: {reduce.Name} ({reduce.Version})");
-                }
-                else
-                {
-                    WriteProgress($"* Project reference: {reduce.Name}");
-                }
-
-                previousFile = reduce.File;
-            }
-
-            int totalOptimisations = obsoletes.Count + changeSdk.Count + reduceReferences.Count;
-
-            return totalOptimisations;
+            return obsoletes.Count + changeSdk.Count + reduceReferences.Count;
         }
 
-        // Placeholder for helper methods, you will need to implement these yourself
+        private static void PrintResults(string header, List<ReferenceCheckResult> items)
+        {
+            Console.WriteLine($"\n{header}");
+            FileInfo? previousFile = null;
+
+            foreach (ReferenceCheckResult item in items)
+            {
+                if (previousFile != item.File)
+                {
+                    Console.WriteLine($"\nProject: {item.File.Name}");
+                }
+
+                if (item.Type == ReferenceType.Package)
+                {
+                    Console.WriteLine($"* Package reference: {item.Name} ({item.Version})");
+                }
+                else
+                {
+                    Console.WriteLine($"* Project reference: {item.Name}");
+                }
+
+                previousFile = item.File;
+            }
+        }
 
         private static bool BuildProject(string fileName, bool fullError)
         {
