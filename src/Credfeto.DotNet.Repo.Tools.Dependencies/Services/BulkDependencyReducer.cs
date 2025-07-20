@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.XPath;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Models;
 
@@ -31,7 +32,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
     private static class StaticMethods
     {
-        private const string MinimalSdk = "Microsoft.NET.Sdk";
+        private const string MINIMAL_SDK = "Microsoft.NET.Sdk";
 
         public static string? ExtractProjectFromReference(string reference)
         {
@@ -92,7 +93,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
                     if (!string.IsNullOrEmpty(includeAttr))
                     {
-                        if (!allPackageIds.Contains(includeAttr))
+                        if (!allPackageIds.Contains(value: includeAttr, comparer: StringComparer.OrdinalIgnoreCase))
                         {
                             allPackageIds.Add(includeAttr);
                         }
@@ -156,7 +157,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
                     if (!string.IsNullOrEmpty(includeAttr))
                     {
                         string childPath = Path.Combine(path1: baseDir, path2: includeAttr);
-                        List<PackageReference> childReferences = GetPackageReferences(fileName: childPath, includeReferences: true, includeChildReferences: true, config);
+                        List<PackageReference> childReferences = GetPackageReferences(fileName: childPath, includeReferences: true, includeChildReferences: true, config: config);
                         references.AddRange(childReferences);
                     }
                 }
@@ -234,7 +235,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             return references;
         }
 
-        public static bool ShouldHaveNarrowerPackageReference(string projectFolder, string packageId)
+        public static async ValueTask<bool> ShouldHaveNarrowerPackageReferenceAsync(string projectFolder, string packageId, CancellationToken cancellationToken)
         {
             if (!packageId.StartsWith(value: "FunFair.", comparisonType: StringComparison.Ordinal))
             {
@@ -255,7 +256,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
             foreach (string file in sourceFiles)
             {
-                string content = File.ReadAllText(file);
+                string content = await File.ReadAllTextAsync(path: file, cancellationToken: cancellationToken);
 
                 if (content.Contains(value: searchUsing, comparisonType: StringComparison.Ordinal))
                 {
@@ -312,7 +313,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
         public static List<FileInfo> GetProjects(string sourceDirectory, ReferenceConfig config)
         {
-            List<FileInfo> projects = new();
+            List<FileInfo> projects = [];
 
             FileInfo[] files = new DirectoryInfo(sourceDirectory).GetFiles(searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories);
 
@@ -334,15 +335,15 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
         public static async ValueTask<int> CheckReferencesAsync(string sourceDirectory, ReferenceConfig config, CancellationToken cancellationToken)
         {
-            List<FileInfo> files = GetProjects(sourceDirectory, config);
+            List<FileInfo> files = GetProjects(sourceDirectory: sourceDirectory, config: config);
             Console.WriteLine($"Number of projects to check: {files.Count}");
 
             WriteSectionStart("Checking Projects");
 
             Stopwatch stopwatch = Stopwatch.StartNew();
-            List<ReferenceCheckResult> obsoletes = new();
-            List<ReferenceCheckResult> reduceReferences = new();
-            List<ReferenceCheckResult> changeSdk = new();
+            List<ReferenceCheckResult> obsoletes = [];
+            List<ReferenceCheckResult> reduceReferences = [];
+            List<ReferenceCheckResult> changeSdk = [];
 
             int projectCount = files.Count;
             int projectInstance = 0;
@@ -358,18 +359,27 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
                     continue;
                 }
 
+                string? projectDirectory = file.DirectoryName;
+
+                if (string.IsNullOrEmpty(projectDirectory))
+                {
+                    WriteProgress($"Ignoring {file.Name} as directory could not be found");
+
+                    continue;
+                }
+
                 WriteSectionStart($"({projectInstance}/{projectCount}): Testing project: {file.Name}");
 
-                byte[] rawFileContent = await File.ReadAllBytesAsync(file.FullName, cancellationToken);
+                byte[] rawFileContent = await File.ReadAllBytesAsync(path: file.FullName, cancellationToken: cancellationToken);
 
                 if (!BuildProject(fileName: file.FullName, fullError: true))
                 {
-                    WriteProgress("* Does not build without changes");
+                    WriteError("* Does not build without changes");
 
-                    throw new("Failed to build a project");
+                    throw new DotNetBuildErrorException("Failed to build a project");
                 }
 
-                List<PackageReference> childPackageReferences = GetPackageReferences(fileName: file.FullName, includeReferences: false, includeChildReferences: true, config);
+                List<PackageReference> childPackageReferences = GetPackageReferences(fileName: file.FullName, includeReferences: false, includeChildReferences: true, config: config);
                 List<ProjectReference> childProjectReferences = GetProjectReferences(fileName: file.FullName, includeReferences: false, includeChildReferences: true);
 
                 XmlDocument xml = new();
@@ -383,14 +393,14 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
                     if (sdkAttr is not null)
                     {
-                        string sdk = sdkAttr?.Value;
+                        string sdk = sdkAttr.Value;
 
-                        if (ShouldCheckSdk(sdk: sdk, projectFolder: file.DirectoryName, xml: xml))
+                        if (ShouldCheckSdk(sdk: sdk, projectFolder: projectDirectory, xml: xml))
                         {
-                            sdkAttr.Value = MinimalSdk;
+                            sdkAttr.Value = MINIMAL_SDK;
                             xml.Save(file.FullName);
 
-                            WriteProgress($"* Building {file.Name} using {MinimalSdk} instead of {sdk}...");
+                            WriteProgress($"* Building {file.Name} using {MINIMAL_SDK} instead of {sdk}...");
                             bool buildOk = BuildProject(fileName: file.FullName, fullError: false);
                             bool restore = true;
 
@@ -421,45 +431,28 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
                         }
                         else
                         {
-                            WriteProgress($"= SDK does not need changing. Currently {MinimalSdk}.");
+                            WriteProgress($"= SDK does not need changing. Currently {MINIMAL_SDK}.");
                         }
                     }
                 }
 
-                List<string> allPackageIds = new();
-                XmlNodeList packageReferences = xml.SelectNodes("/Project/ItemGroup/PackageReference");
-                XmlNodeList projectReferences = xml.SelectNodes("/Project/ItemGroup/ProjectReference");
+                IReadOnlyList<XmlNode> packageReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/PackageReference");
+                IReadOnlyList<XmlNode> projectReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/ProjectReference");
 
-                foreach (XmlNode node in packageReferences)
+                List<string> allPackageIds = ExtractPackageIds(packageReferences);
+
+                List<XmlNode> allNodes = [.. packageReferences, .. projectReferences];
+
+                foreach (XmlElement node in allNodes.OfType<XmlElement>())
                 {
-                    if (node.Attributes?["Include"] != null)
-                    {
-                        allPackageIds.Add(node.Attributes["Include"].Value);
-                    }
-                }
+                    string includeName = node.GetAttribute("Include");
 
-                List<XmlNode> allNodes = new();
-
-                foreach (XmlNode node in packageReferences)
-                {
-                    allNodes.Add(node);
-                }
-
-                foreach (XmlNode node in projectReferences)
-                {
-                    allNodes.Add(node);
-                }
-
-                foreach (XmlNode node in allNodes)
-                {
-                    if (node.Attributes?["Include"] == null)
+                    if (string.IsNullOrEmpty(includeName))
                     {
                         WriteProgress("= Skipping malformed include");
 
                         continue;
                     }
-
-                    string includeName = node.Attributes["Include"].Value;
 
                     if (config.IsDoNotRemovePackage(packageId: includeName, allPackageIds: allPackageIds))
                     {
@@ -468,7 +461,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
                         continue;
                     }
 
-                    if (node["PrivateAssets"] != null)
+                    if (node["PrivateAssets"] is not null)
                     {
                         WriteProgress($"= Skipping {includeName} as it uses private assets");
 
@@ -477,20 +470,20 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
                     WriteProgress($"Checking: {includeName}");
 
-                    XmlNode previousNode = node.PreviousSibling;
-                    XmlNode parentNode = node.ParentNode;
+                    XmlNode? previousNode = node.PreviousSibling;
+                    XmlNode? parentNode = node.ParentNode;
                     parentNode?.RemoveChild(node);
 
                     bool needToBuild = true;
                     xml.Save(file.FullName);
 
-                    XmlNode versionNode = node["Version"];
+                    XmlNode? versionNode = node["Version"];
 
-                    if (versionNode != null)
+                    if (versionNode is not null)
                     {
-                        PackageReference? existingChildInclude = childPackageReferences.FirstOrDefault(p => p.Name == includeName && p.Version == versionNode.InnerText);
+                        PackageReference? existingChildInclude = FindChildPackage(childPackageReferences: childPackageReferences, includeName: includeName, version: versionNode.InnerText);
 
-                        if (existingChildInclude != null)
+                        if (existingChildInclude is not null)
                         {
                             WriteProgress($"= {file.Name} references package {includeName} ({versionNode.InnerText}) also in child project {existingChildInclude.File}");
                             needToBuild = false;
@@ -502,7 +495,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
                     }
                     else
                     {
-                        ProjectReference? existingChildInclude = childProjectReferences.FirstOrDefault(p => p.Name == includeName);
+                        ProjectReference? existingChildInclude = childProjectReferences.FirstOrDefault(p => IsMatchingProjectName(p: p, includeName: includeName));
 
                         if (existingChildInclude is not null)
                         {
@@ -524,7 +517,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
                     {
                         WriteProgress("  - Building succeeded.");
 
-                        if (versionNode != null)
+                        if (versionNode is not null)
                         {
                             obsoletes.Add(new(File: file, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText));
                         }
@@ -542,9 +535,9 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
                     {
                         WriteProgress("  = Building failed.");
 
-                        if (versionNode != null)
+                        if (versionNode is not null)
                         {
-                            if (ShouldHaveNarrowerPackageReference(projectFolder: file.DirectoryName, packageId: includeName))
+                            if (await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectDirectory, packageId: includeName, cancellationToken: cancellationToken))
                             {
                                 reduceReferences.Add(new(File: file, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText));
                             }
@@ -553,7 +546,8 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
                         {
                             string? packageId = ExtractProjectFromReference(includeName);
 
-                            if (!string.IsNullOrEmpty(packageId) && ShouldHaveNarrowerPackageReference(projectFolder: file.DirectoryName, packageId: packageId))
+                            if (!string.IsNullOrEmpty(packageId) &&
+                                await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectDirectory, packageId: packageId, cancellationToken: cancellationToken))
                             {
                                 reduceReferences.Add(new(File: file, Type: ReferenceType.Project, Name: includeName));
                             }
@@ -562,7 +556,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
                     if (restore)
                     {
-                        if (previousNode == null)
+                        if (previousNode is null)
                         {
                             parentNode?.PrependChild(node);
                         }
@@ -583,9 +577,9 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
                 if (!BuildProject(fileName: file.FullName, fullError: true))
                 {
-                    Console.Error.WriteLine($"### Failed to build {file.FullName} after restore.");
+                    WriteError($"### Failed to build {file.FullName} after restore.");
 
-                    throw new("Failed to build project after restore");
+                    throw new DotNetBuildErrorException("Failed to build project after restore");
                 }
 
                 WriteSectionEnd($"({projectInstance}/{projectCount}): Testing project: {file.Name}");
@@ -609,6 +603,60 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             WriteStatistics(section: "Reduce", value: reduceReferences.Count);
 
             return obsoletes.Count + changeSdk.Count + reduceReferences.Count;
+        }
+
+        private static PackageReference? FindChildPackage(List<PackageReference> childPackageReferences, string includeName, string version)
+        {
+            return childPackageReferences.Find(packageReference => IsMatching(p: packageReference, includeName: includeName, version: version));
+
+            static bool IsMatching(PackageReference p, string includeName, string version)
+            {
+                return IsMatchingPackageName(p: p, includeName: includeName) && IsMatchingPackageVersion(p: p, version: version);
+            }
+        }
+
+        private static bool IsMatchingPackageVersion(PackageReference p, string version)
+        {
+            return StringComparer.Ordinal.Equals(x: p.Version, y: version);
+        }
+
+        private static bool IsMatchingPackageName(PackageReference p, string includeName)
+        {
+            return StringComparer.Ordinal.Equals(x: p.Name, y: includeName);
+        }
+
+        private static bool IsMatchingProjectName(ProjectReference p, string includeName)
+        {
+            return StringComparer.Ordinal.Equals(x: p.Name, y: includeName);
+        }
+
+        private static List<string> ExtractPackageIds(IReadOnlyList<XmlNode> packageReferences)
+        {
+            List<string> allPackageIds = [];
+
+            foreach (XmlElement node in packageReferences.OfType<XmlElement>())
+            {
+                string include = node.GetAttribute("Include");
+
+                if (!string.IsNullOrEmpty(include))
+                {
+                    allPackageIds.Add(include);
+                }
+            }
+
+            return allPackageIds;
+        }
+
+        private static IReadOnlyList<XmlNode> GetNodes(XmlDocument xml, string xpath)
+        {
+            XmlNodeList? nodes = xml.SelectNodes(xpath);
+
+            if (nodes is null)
+            {
+                return [];
+            }
+
+            return [..nodes.Cast<XmlNode>()];
         }
 
         private static void PrintResults(string header, List<ReferenceCheckResult> items)
@@ -646,6 +694,11 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         {
             // Implement solution build logic
             throw new NotImplementedException();
+        }
+
+        private static void WriteError(string message)
+        {
+            Console.Error.WriteLine(message);
         }
 
         private static void WriteProgress(string message)
