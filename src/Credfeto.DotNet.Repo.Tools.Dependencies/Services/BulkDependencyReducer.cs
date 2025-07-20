@@ -9,6 +9,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Dependencies.Models;
 
 namespace Credfeto.DotNet.Repo.Tools.Dependencies.Services;
 
@@ -458,7 +459,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
                         {
                             WriteProgress("  - Building succeeded.");
                             WriteProgress($"{file.Name} references SDK {sdk} that could be reduced to {MinimalSdk}.");
-                            changeSdk.Add(new(File: file, Type: ReferenceType.Sdk, Name: sdk, Version: null ));
+                            changeSdk.Add(new(File: file, Type: ReferenceType.Sdk, Name: sdk, Version: null));
 
                             buildOk = BuildSolution();
 
@@ -596,11 +597,11 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
                         if (versionElement is not null)
                         {
-                            obsoletes.Add(new(File: file, Type: ReferenceType.Package, Name: includeAttr.Value, Version: versionElement.Value ));
+                            obsoletes.Add(new(File: file, Type: ReferenceType.Package, Name: includeAttr.Value, Version: versionElement.Value));
                         }
                         else
                         {
-                            obsoletes.Add(new(File: file, Type: ReferenceType.Project, Name: includeAttr.Value, Version: null ));
+                            obsoletes.Add(new(File: file, Type: ReferenceType.Project, Name: includeAttr.Value, Version: null));
                         }
 
                         buildOk = BuildSolution();
@@ -620,7 +621,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
                             if (narrower)
                             {
-                                reduceReferences.Add(new(File: file, Type: ReferenceType.Package, Name: includeAttr.Value, Version: versionElement.Value ));
+                                reduceReferences.Add(new(File: file, Type: ReferenceType.Package, Name: includeAttr.Value, Version: versionElement.Value));
                             }
                         }
                         else
@@ -633,7 +634,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
                                 if (narrower)
                                 {
-                                    reduceReferences.Add(new( File: file, Type: ReferenceType.Project, Name: includeAttr.Value,Version: null ));
+                                    reduceReferences.Add(new(File: file, Type: ReferenceType.Project, Name: includeAttr.Value, Version: null));
                                 }
                             }
                         }
@@ -791,20 +792,4 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             Console.WriteLine($"{section}: {value}");
         }
     }
-
-    [DebuggerDisplay("File: {File}, Name {Name} Version {Version}")]
-    public sealed record  PackageReference(string File, string Name, string Version);
-
-    [DebuggerDisplay("File: {File}, Name {Name}")]
-    public sealed record  ProjectReference(string File, string Name);
-
-
-    public enum ReferenceType
-    {
-        Sdk, Package, Project
-    }
-
-
-    [DebuggerDisplay("File: {File.FullName}, Type: {Type} Name {Name} Version: {Version}")]
-    public sealed record ReferenceCheckResult(FileInfo File, ReferenceType Type, string Name, string? Version);
 }
