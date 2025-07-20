@@ -88,6 +88,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.Dependencies", "Credfeto.DotNet.Repo.Tools.Dependencies\Credfeto.DotNet.Repo.Tools.Dependencies.csproj", "{FBFEBFAF-A6F3-4A16-9C7F-7946B806E4B0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Credfeto.DotNet.Repo.Tools.Dependencies.Tests", "Credfeto.DotNet.Repo.Tools.Dependencies.Tests\Credfeto.DotNet.Repo.Tools.Dependencies.Tests.csproj", "{039D55E3-22FA-4628-9567-F52C66B84A92}"
+EndProject
 Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{2483BF4F-3827-4366-8FE0-A0D81592FCBC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -206,6 +208,10 @@ Global
 		{FBFEBFAF-A6F3-4A16-9C7F-7946B806E4B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FBFEBFAF-A6F3-4A16-9C7F-7946B806E4B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FBFEBFAF-A6F3-4A16-9C7F-7946B806E4B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{039D55E3-22FA-4628-9567-F52C66B84A92}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{039D55E3-22FA-4628-9567-F52C66B84A92}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{039D55E3-22FA-4628-9567-F52C66B84A92}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{039D55E3-22FA-4628-9567-F52C66B84A92}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -238,5 +244,6 @@ Global
 		{4F7EA82D-5C2F-4DD5-9002-F1D76F2EAFF3} = {CC43FBAC-2B8E-44C2-8B2E-EAAD5FE40403}
 		{C947D3DA-7428-4950-B78D-349B93F1EE8B} = {6D092B7A-F1A1-4042-8957-66B1EC5B5982}
 		{FBFEBFAF-A6F3-4A16-9C7F-7946B806E4B0} = {6D092B7A-F1A1-4042-8957-66B1EC5B5982}
+		{039D55E3-22FA-4628-9567-F52C66B84A92} = {6D092B7A-F1A1-4042-8957-66B1EC5B5982}
 	EndGlobalSection
 EndGlobal
