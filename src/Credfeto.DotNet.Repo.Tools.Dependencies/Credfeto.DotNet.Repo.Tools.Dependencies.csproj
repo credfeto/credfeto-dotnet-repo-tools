@@ -87,5 +87,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj"/>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces\Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git.Interfaces\Credfeto.DotNet.Repo.Tools.Git.Interfaces.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Models\Credfeto.DotNet.Repo.Tools.Models.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj"/>
   </ItemGroup>
 </Project>

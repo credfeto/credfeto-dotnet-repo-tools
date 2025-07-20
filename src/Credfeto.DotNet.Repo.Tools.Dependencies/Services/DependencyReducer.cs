@@ -292,7 +292,7 @@ public sealed class DependencyReducer : IDependencyReducer
         WriteStatistics(section: "Obsolete", value: obsoletes.Count);
         WriteStatistics(section: "Reduce", value: reduceReferences.Count);
 
-        return obsoletes.Count + changeSdk.Count + reduceReferences.Count;
+        return obsoletes.Count + changeSdk.Count + reduceReferences.Count > 0;
     }
 
     private static List<FileInfo> GetProjects(string sourceDirectory, ReferenceConfig config)
