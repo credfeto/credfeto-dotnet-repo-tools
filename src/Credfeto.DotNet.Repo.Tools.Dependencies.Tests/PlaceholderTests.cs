@@ -1,4 +1,4 @@
-﻿using FunFair.Test.Common;
+using FunFair.Test.Common;
 using Xunit;
 
 namespace Credfeto.DotNet.Repo.Tools.Dependencies.Tests;
