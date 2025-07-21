@@ -11,6 +11,7 @@ public interface IBulkDependencyReducer
                               string packagesFileName,
                               string workFolder,
                               string releaseConfigFileName,
+                              IReadOnlyList<string> additionalNugetSources,
                               IReadOnlyList<string> repositories,
                               CancellationToken cancellationToken);
 }
