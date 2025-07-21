@@ -8,6 +8,6 @@ public sealed class PlaceholderTests : TestBase
     [Fact]
     public void Test1()
     {
-        Assert.Skip("Placeholder");
+        Assert.True(condition: true, userMessage: "Placeholder");
     }
 }
