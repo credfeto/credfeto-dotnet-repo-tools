@@ -478,91 +478,65 @@ public sealed class DependencyReducer : IDependencyReducer
 
         XmlDocument doc = new();
         doc.Load(fileName);
-        XPathNavigator navigator = doc.CreateNavigator() ?? throw new InvalidDataException("Could not create navigator");
 
         if (includeReferences)
         {
-            XPathNodeIterator packageReferenceNodes = navigator.Select("//Project/ItemGroup/PackageReference");
+            XmlNodeList? packageReferenceNodes = doc.SelectNodes("//Project/ItemGroup/PackageReference");
 
-            while (packageReferenceNodes.MoveNext())
+            if (packageReferenceNodes is not null)
             {
-                XPathNavigator? node = packageReferenceNodes.Current;
+                allPackageIds.AddRange(packageReferenceNodes.OfType<XmlElement>()
+                                                            .Select(node => node.GetAttribute("Include"))
+                                                            .Where(include => !string.IsNullOrEmpty(include) && !allPackageIds.Contains(value: include, comparer: StringComparer.OrdinalIgnoreCase)));
 
-                if (node is null)
+                foreach (XmlElement node in packageReferenceNodes.OfType<XmlElement>())
                 {
-                    continue;
-                }
+                    string includeAttr = node.GetAttribute(localName: "Include", namespaceURI: "");
 
-                string includeAttr = node.GetAttribute(localName: "Include", namespaceURI: "");
-
-                if (!string.IsNullOrEmpty(includeAttr))
-                {
-                    if (!allPackageIds.Contains(value: includeAttr, comparer: StringComparer.OrdinalIgnoreCase))
+                    if (string.IsNullOrEmpty(includeAttr))
                     {
-                        allPackageIds.Add(includeAttr);
+                        continue;
                     }
-                }
-            }
 
-            packageReferenceNodes = navigator.Select("//Project/ItemGroup/PackageReference");
+                    XmlNode? privateAssetsNode = node.SelectSingleNode("PrivateAssets");
 
-            while (packageReferenceNodes.MoveNext())
-            {
-                XPathNavigator? node = packageReferenceNodes.Current;
+                    if (privateAssetsNode is not null)
+                    {
+                        continue;
+                    }
 
-                if (node is null)
-                {
-                    continue;
-                }
+                    if (config.IsDoNotRemovePackage(packageId: includeAttr, allPackageIds: allPackageIds))
+                    {
+                        continue;
+                    }
 
-                string includeAttr = node.GetAttribute(localName: "Include", namespaceURI: "");
+                    XmlNode? versionNode = node.SelectSingleNode("Version");
 
-                if (string.IsNullOrEmpty(includeAttr))
-                {
-                    continue;
-                }
-
-                XPathNavigator? privateAssetsNode = node.SelectSingleNode("PrivateAssets");
-
-                if (privateAssetsNode is not null)
-                {
-                    continue;
-                }
-
-                if (config.IsDoNotRemovePackage(packageId: includeAttr, allPackageIds: allPackageIds))
-                {
-                    continue;
-                }
-
-                XPathNavigator? versionNode = node.SelectSingleNode("Version");
-
-                if (versionNode is not null)
-                {
-                    references.Add(new(File: baseDir, Name: includeAttr, Version: versionNode.Value));
+                    if (versionNode is not null)
+                    {
+                        references.Add(new(File: baseDir, Name: includeAttr, Version: versionNode.InnerText));
+                    }
                 }
             }
         }
 
         if (includeChildReferences)
         {
-            XPathNodeIterator projectReferenceNodes = navigator.Select("//Project/ItemGroup/ProjectReference");
+            XmlNodeList? projectReferenceNodes = doc.SelectNodes("//Project/ItemGroup/ProjectReference");
 
-            while (projectReferenceNodes.MoveNext())
+            if (projectReferenceNodes is not null)
             {
-                XPathNavigator? node = projectReferenceNodes.Current;
-
-                if (node is null)
+                foreach (XmlElement node in projectReferenceNodes.OfType<XmlElement>())
                 {
-                    continue;
-                }
+                    string includeAttr = node.GetAttribute("Include");
 
-                string includeAttr = node.GetAttribute(localName: "Include", namespaceURI: "");
+                    if (string.IsNullOrEmpty(includeAttr))
+                    {
+                        continue;
+                    }
 
-                if (!string.IsNullOrEmpty(includeAttr))
-                {
                     string childPath = Path.Combine(path1: baseDir, path2: includeAttr);
-                    List<PackageReference> childReferences = GetPackageReferences(fileName: childPath, includeReferences: true, includeChildReferences: true, config: config);
-                    references.AddRange(childReferences);
+                    references.AddRange(GetPackageReferences(fileName: childPath, includeReferences: true, includeChildReferences: true, config: config));
                 }
             }
         }
