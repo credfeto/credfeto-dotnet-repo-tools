@@ -9,6 +9,7 @@ using Credfeto.ChangeLog;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Models;
+using Credfeto.DotNet.Repo.Tools.Dependencies.Services.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Models;
