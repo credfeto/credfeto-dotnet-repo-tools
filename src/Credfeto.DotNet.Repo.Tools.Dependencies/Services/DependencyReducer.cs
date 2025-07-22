@@ -485,13 +485,11 @@ public sealed class DependencyReducer : IDependencyReducer
 
             if (packageReferenceNodes is not null)
             {
-                allPackageIds.AddRange(packageReferenceNodes.OfType<XmlElement>()
-                                                            .Select(node => node.GetAttribute("Include"))
-                                                            .Where(include => !string.IsNullOrEmpty(include) && !allPackageIds.Contains(value: include, comparer: StringComparer.OrdinalIgnoreCase)));
+                IncludeReferencedPackages(allPackageIds: allPackageIds, packageReferenceNodes: packageReferenceNodes);
 
                 foreach (XmlElement node in packageReferenceNodes.OfType<XmlElement>())
                 {
-                    string includeAttr = node.GetAttribute(localName: "Include", namespaceURI: "");
+                    string includeAttr = node.GetAttribute("Include");
 
                     if (string.IsNullOrEmpty(includeAttr))
                     {
@@ -544,6 +542,13 @@ public sealed class DependencyReducer : IDependencyReducer
         return references;
     }
 
+    private static void IncludeReferencedPackages(List<string> allPackageIds, XmlNodeList packageReferenceNodes)
+    {
+        allPackageIds.AddRange(packageReferenceNodes.OfType<XmlElement>()
+                                                    .Select(node => node.GetAttribute("Include"))
+                                                    .Where(include => !string.IsNullOrEmpty(include) && !allPackageIds.Contains(value: include, comparer: StringComparer.OrdinalIgnoreCase)));
+    }
+
     private static List<ProjectReference> GetProjectReferences(string fileName, bool includeReferences, bool includeChildReferences)
     {
         string? baseDir = Path.GetDirectoryName(fileName);
@@ -555,57 +560,43 @@ public sealed class DependencyReducer : IDependencyReducer
 
         List<ProjectReference> references = [];
 
-        XmlDocument xml = new();
-        xml.Load(fileName);
-
-        XmlNamespaceManager namespaceManager = new(xml.NameTable);
-        namespaceManager.AddNamespace(prefix: "msb", uri: "http://schemas.microsoft.com/developer/msbuild/2003");
-
-        XPathNavigator navigator = xml.CreateNavigator() ?? throw new InvalidDataException("Could not create navigator");
+        XmlDocument doc = new();
+        doc.Load(fileName);
 
         if (includeReferences)
         {
-            XPathNodeIterator nodes = navigator.Select(xpath: "//msb:Project/msb:ItemGroup/msb:ProjectReference", resolver: namespaceManager);
+            XmlNodeList? nodes = doc.SelectNodes("//Project/ItemGroup/ProjectReference");
 
-            while (nodes.MoveNext())
+            if (nodes is not null)
             {
-                XPathNavigator? node = nodes.Current;
-
-                if (node is null)
+                foreach (XmlElement node in nodes.OfType<XmlElement>())
                 {
-                    continue;
-                }
+                    string includeAttr = node.GetAttribute(localName: "Include", namespaceURI: "");
 
-                string includeAttr = node.GetAttribute(localName: "Include", namespaceURI: "");
-
-                if (!string.IsNullOrEmpty(includeAttr))
-                {
-                    references.Add(new(File: baseDir, Name: includeAttr));
+                    if (!string.IsNullOrEmpty(includeAttr))
+                    {
+                        references.Add(new(File: baseDir, Name: includeAttr));
+                    }
                 }
             }
         }
 
         if (includeChildReferences)
         {
-            XPathNodeIterator nodes = navigator.Select(xpath: "//msb:Project/msb:ItemGroup/msb:ProjectReference", resolver: namespaceManager);
+            XmlNodeList? nodes = doc.SelectNodes("//Project/ItemGroup/ProjectReference");
 
-            while (nodes.MoveNext())
+            if (nodes is not null)
             {
-                XPathNavigator? node = nodes.Current;
-
-                if (node is null)
+                foreach (XmlElement node in nodes.OfType<XmlElement>())
                 {
-                    continue;
-                }
+                    string includeAttr = node.GetAttribute("Include");
 
-                string includeAttr = node.GetAttribute(localName: "Include", namespaceURI: "");
+                    if (!string.IsNullOrEmpty(includeAttr))
+                    {
+                        string childPath = Path.Combine(path1: baseDir, path2: includeAttr);
 
-                if (!string.IsNullOrEmpty(includeAttr))
-                {
-                    string childPath = Path.Combine(path1: baseDir, path2: includeAttr);
-
-                    List<ProjectReference> childReferences = GetProjectReferences(fileName: childPath, includeReferences: true, includeChildReferences: true);
-                    references.AddRange(childReferences);
+                        references.AddRange(GetProjectReferences(fileName: childPath, includeReferences: true, includeChildReferences: true));
+                    }
                 }
             }
         }
