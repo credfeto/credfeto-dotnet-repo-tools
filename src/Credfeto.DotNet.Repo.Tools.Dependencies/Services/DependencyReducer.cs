@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.XPath;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Models;
 using Microsoft.Extensions.Logging;
@@ -16,17 +17,22 @@ namespace Credfeto.DotNet.Repo.Tools.Dependencies.Services;
 public sealed class DependencyReducer : IDependencyReducer
 {
     private const string MINIMAL_SDK = "Microsoft.NET.Sdk";
+    private readonly IDotNetBuild _dotNetBuild;
     private readonly ILogger<DependencyReducer> _logger;
 
-    public DependencyReducer(ILogger<DependencyReducer> logger)
+    public DependencyReducer(IDotNetBuild dotNetBuild, ILogger<DependencyReducer> logger)
     {
+        this._dotNetBuild = dotNetBuild;
         this._logger = logger;
     }
 
     public async ValueTask<bool> CheckReferencesAsync(string sourceDirectory, ReferenceConfig config, CancellationToken cancellationToken)
     {
-        List<FileInfo> files = GetProjects(sourceDirectory: sourceDirectory, config: config);
-        Console.WriteLine($"Number of projects to check: {files.Count}");
+        IReadOnlyList<string> projects = GetProjects(sourceDirectory: sourceDirectory, config: config);
+        Console.WriteLine($"Number of projects to check: {projects.Count}");
+
+        BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
+        BuildOverride buildOverride = new(PreRelease: true);
 
         WriteSectionStart("Checking Projects");
 
@@ -35,10 +41,10 @@ public sealed class DependencyReducer : IDependencyReducer
         List<ReferenceCheckResult> reduceReferences = [];
         List<ReferenceCheckResult> changeSdk = [];
 
-        int projectCount = files.Count;
+        int projectCount = projects.Count;
         int projectInstance = 0;
 
-        foreach (FileInfo file in files)
+        foreach (FileInfo file in projects)
         {
             projectInstance++;
 
@@ -99,7 +105,7 @@ public sealed class DependencyReducer : IDependencyReducer
                             WriteProgress("  - Building succeeded.");
                             changeSdk.Add(new(File: file, Type: ReferenceType.Sdk, Name: sdk));
 
-                            if (BuildSolution())
+                            if (this.BuildSolutionAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
                             {
                                 restore = false;
                             }
@@ -216,7 +222,7 @@ public sealed class DependencyReducer : IDependencyReducer
                         obsoletes.Add(new(File: file, Type: ReferenceType.Project, Name: includeName));
                     }
 
-                    if (BuildSolution())
+                    if (BuildSolutionAsync())
                     {
                         restore = false;
                     }
@@ -295,26 +301,13 @@ public sealed class DependencyReducer : IDependencyReducer
         return obsoletes.Count + changeSdk.Count + reduceReferences.Count > 0;
     }
 
-    private static List<FileInfo> GetProjects(string sourceDirectory, ReferenceConfig config)
+    private static IReadOnlyList<string> GetProjects(string sourceDirectory, ReferenceConfig config)
     {
-        List<FileInfo> projects = [];
-
-        FileInfo[] files = new DirectoryInfo(sourceDirectory).GetFiles(searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories);
-
-        Console.WriteLine($"Number of projects: {files.Length}");
-
-        foreach (FileInfo file in files)
-        {
-            bool ignoreProject = config.IsIgnoreProject(file.Name);
-            Console.WriteLine($"Found * {file.FullName} (Ignore: {ignoreProject})");
-
-            if (!ignoreProject)
-            {
-                projects.Add(file);
-            }
-        }
-
-        return projects;
+        return
+        [
+            ..Directory.GetFiles(path: sourceDirectory, searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories)
+                       .Where(config.IsIgnoreProject)
+        ];
     }
 
     private static ProjectReference? FindChildProject(List<ProjectReference> childProjectReferences, string includeName)
@@ -407,8 +400,18 @@ public sealed class DependencyReducer : IDependencyReducer
         throw new NotImplementedException();
     }
 
-    private static bool BuildSolution()
+    private async ValueTask<bool> BuildSolutionAsync(string basePath, BuildSettings buildSettings, BuildOverride buildOverride, CancellationToken cancellationToken)
     {
+        try
+        {
+            ;
+            await this._dotNetBuild.BuildAsync(basePath: basePath, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+        }
+        catch (DotNetBuildErrorException)
+        {
+            return false;
+        }
+
         // Implement solution build logic
         throw new NotImplementedException();
     }
