@@ -44,42 +44,42 @@ public sealed class DependencyReducer : IDependencyReducer
         int projectCount = projects.Count;
         int projectInstance = 0;
 
-        foreach (FileInfo file in projects)
+        foreach (string project in projects)
         {
             projectInstance++;
 
-            if (config.IsIgnoreProject(file.Name))
+            if (config.IsIgnoreProject(project))
             {
-                WriteProgress($"Ignoring {file.Name}");
+                WriteProgress($"Ignoring {project}");
 
                 continue;
             }
 
-            string? projectDirectory = file.DirectoryName;
+            string? projectDirectory = Path.GetDirectoryName(project);
 
             if (string.IsNullOrEmpty(projectDirectory))
             {
-                WriteProgress($"Ignoring {file.Name} as directory could not be found");
+                WriteProgress($"Ignoring {project} as directory could not be found");
 
                 continue;
             }
 
-            WriteSectionStart($"({projectInstance}/{projectCount}): Testing project: {file.Name}");
+            WriteSectionStart($"({projectInstance}/{projectCount}): Testing project: {project}");
 
-            byte[] rawFileContent = await File.ReadAllBytesAsync(path: file.FullName, cancellationToken: cancellationToken);
+            byte[] rawFileContent = await File.ReadAllBytesAsync(path: project, cancellationToken: cancellationToken);
 
-            if (!BuildProject(fileName: file.FullName, fullError: true))
+            if (!await this.BuildProjectAsync(projectFileName: project, basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
             {
                 WriteError("* Does not build without changes");
 
                 throw new DotNetBuildErrorException("Failed to build a project");
             }
 
-            List<PackageReference> childPackageReferences = GetPackageReferences(fileName: file.FullName, includeReferences: false, includeChildReferences: true, config: config);
-            List<ProjectReference> childProjectReferences = GetProjectReferences(fileName: file.FullName, includeReferences: false, includeChildReferences: true);
+            List<PackageReference> childPackageReferences = GetPackageReferences(fileName: project, includeReferences: false, includeChildReferences: true, config: config);
+            List<ProjectReference> childProjectReferences = GetProjectReferences(fileName: project, includeReferences: false, includeChildReferences: true);
 
             XmlDocument xml = new();
-            xml.Load(file.FullName);
+            xml.Load(project);
 
             XmlNode? projectNode = xml.SelectSingleNode("/Project");
 
@@ -94,18 +94,22 @@ public sealed class DependencyReducer : IDependencyReducer
                     if (ShouldCheckSdk(sdk: sdk, projectFolder: projectDirectory, xml: xml))
                     {
                         sdkAttr.Value = MINIMAL_SDK;
-                        xml.Save(file.FullName);
+                        xml.Save(project);
 
-                        WriteProgress($"* Building {file.Name} using {MINIMAL_SDK} instead of {sdk}...");
-                        bool buildOk = BuildProject(fileName: file.FullName, fullError: false);
+                        WriteProgress($"* Building {project} using {MINIMAL_SDK} instead of {sdk}...");
+                        bool buildOk = await this.BuildProjectAsync(projectFileName: project,
+                                                                    basePath: sourceDirectory,
+                                                                    buildSettings: buildSettings,
+                                                                    buildOverride: buildOverride,
+                                                                    cancellationToken: cancellationToken);
                         bool restore = true;
 
                         if (buildOk)
                         {
                             WriteProgress("  - Building succeeded.");
-                            changeSdk.Add(new(File: file, Type: ReferenceType.Sdk, Name: sdk));
+                            changeSdk.Add(new(ProjectFileName: project, Type: ReferenceType.Sdk, Name: sdk));
 
-                            if (this.BuildSolutionAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
+                            if (await this.BuildSolutionAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
                             {
                                 restore = false;
                             }
@@ -118,11 +122,11 @@ public sealed class DependencyReducer : IDependencyReducer
                         if (restore)
                         {
                             sdkAttr.Value = sdk;
-                            xml.Save(file.FullName);
+                            xml.Save(project);
                         }
                         else
                         {
-                            rawFileContent = await File.ReadAllBytesAsync(path: file.FullName, cancellationToken: cancellationToken);
+                            rawFileContent = await File.ReadAllBytesAsync(path: project, cancellationToken: cancellationToken);
                         }
                     }
                     else
@@ -171,7 +175,7 @@ public sealed class DependencyReducer : IDependencyReducer
                 parentNode?.RemoveChild(node);
 
                 bool needToBuild = true;
-                xml.Save(file.FullName);
+                xml.Save(project);
 
                 XmlNode? versionNode = node["Version"];
 
@@ -181,12 +185,12 @@ public sealed class DependencyReducer : IDependencyReducer
 
                     if (existingChildInclude is not null)
                     {
-                        WriteProgress($"= {file.Name} references package {includeName} ({versionNode.InnerText}) also in child project {existingChildInclude.File}");
+                        WriteProgress($"= {project} references package {includeName} ({versionNode.InnerText}) also in child project {existingChildInclude.File}");
                         needToBuild = false;
                     }
                     else
                     {
-                        WriteProgress($"* Building {file.Name} without package {includeName} ({versionNode.InnerText})...");
+                        WriteProgress($"* Building {project} without package {includeName} ({versionNode.InnerText})...");
                     }
                 }
                 else
@@ -195,18 +199,20 @@ public sealed class DependencyReducer : IDependencyReducer
 
                     if (existingChildInclude is not null)
                     {
-                        WriteProgress($"= {file.Name} references project {includeName} also in child project {existingChildInclude.File}");
+                        WriteProgress($"= {project} references project {includeName} also in child project {existingChildInclude.File}");
                         needToBuild = false;
                     }
                     else
                     {
-                        WriteProgress($"* Building {file.Name} without project {includeName}...");
+                        WriteProgress($"* Building {project} without project {includeName}...");
                     }
                 }
 
-                bool buildOk = needToBuild
-                    ? BuildProject(fileName: file.FullName, fullError: false)
-                    : true;
+                bool buildOk = !needToBuild || await this.BuildProjectAsync(projectFileName: project,
+                                                                            basePath: sourceDirectory,
+                                                                            buildSettings: buildSettings,
+                                                                            buildOverride: buildOverride,
+                                                                            cancellationToken: cancellationToken);
                 bool restore = true;
 
                 if (buildOk)
@@ -215,14 +221,14 @@ public sealed class DependencyReducer : IDependencyReducer
 
                     if (versionNode is not null)
                     {
-                        obsoletes.Add(new(File: file, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText));
+                        obsoletes.Add(new(ProjectFileName: project, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText));
                     }
                     else
                     {
-                        obsoletes.Add(new(File: file, Type: ReferenceType.Project, Name: includeName));
+                        obsoletes.Add(new(ProjectFileName: project, Type: ReferenceType.Project, Name: includeName));
                     }
 
-                    if (BuildSolutionAsync())
+                    if (await this.BuildSolutionAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
                     {
                         restore = false;
                     }
@@ -235,7 +241,7 @@ public sealed class DependencyReducer : IDependencyReducer
                     {
                         if (await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectDirectory, packageId: includeName, cancellationToken: cancellationToken))
                         {
-                            reduceReferences.Add(new(File: file, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText));
+                            reduceReferences.Add(new(ProjectFileName: project, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText));
                         }
                     }
                     else
@@ -245,7 +251,7 @@ public sealed class DependencyReducer : IDependencyReducer
                         if (!string.IsNullOrEmpty(packageId) &&
                             await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectDirectory, packageId: packageId, cancellationToken: cancellationToken))
                         {
-                            reduceReferences.Add(new(File: file, Type: ReferenceType.Project, Name: includeName));
+                            reduceReferences.Add(new(ProjectFileName: project, Type: ReferenceType.Project, Name: includeName));
                         }
                     }
                 }
@@ -261,24 +267,24 @@ public sealed class DependencyReducer : IDependencyReducer
                         parentNode?.InsertAfter(newChild: node, refChild: previousNode);
                     }
 
-                    xml.Save(file.FullName);
+                    xml.Save(project);
                 }
                 else
                 {
-                    rawFileContent = await File.ReadAllBytesAsync(path: file.FullName, cancellationToken: cancellationToken);
+                    rawFileContent = await File.ReadAllBytesAsync(path: project, cancellationToken: cancellationToken);
                 }
             }
 
-            await File.WriteAllBytesAsync(path: file.FullName, bytes: rawFileContent, cancellationToken: cancellationToken);
+            await File.WriteAllBytesAsync(path: project, bytes: rawFileContent, cancellationToken: cancellationToken);
 
-            if (!BuildProject(fileName: file.FullName, fullError: true))
+            if (!await this.BuildProjectAsync(projectFileName: project, basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
             {
-                WriteError($"### Failed to build {file.FullName} after restore.");
+                WriteError($"### Failed to build {project} after restore.");
 
                 throw new DotNetBuildErrorException("Failed to build project after restore");
             }
 
-            WriteSectionEnd($"({projectInstance}/{projectCount}): Testing project: {file.Name}");
+            WriteSectionEnd($"({projectInstance}/{projectCount}): Testing project: {project}");
         }
 
         WriteSectionEnd("Checking Projects");
@@ -372,13 +378,13 @@ public sealed class DependencyReducer : IDependencyReducer
     private static void PrintResults(string header, List<ReferenceCheckResult> items)
     {
         Console.WriteLine($"\n{header}");
-        FileInfo? previousFile = null;
+        string? previousFile = null;
 
         foreach (ReferenceCheckResult item in items)
         {
-            if (previousFile != item.File)
+            if (!StringComparer.Ordinal.Equals(x: previousFile, y: item.ProjectFileName))
             {
-                Console.WriteLine($"\nProject: {item.File.Name}");
+                Console.WriteLine($"\nProject: {item.ProjectFileName}");
             }
 
             if (item.Type == ReferenceType.Package)
@@ -390,30 +396,37 @@ public sealed class DependencyReducer : IDependencyReducer
                 Console.WriteLine($"* Project reference: {item.Name}");
             }
 
-            previousFile = item.File;
+            previousFile = item.ProjectFileName;
         }
     }
 
-    private static bool BuildProject(string fileName, bool fullError)
+    private async ValueTask<bool> BuildProjectAsync(string projectFileName, string basePath, BuildSettings buildSettings, BuildOverride buildOverride, CancellationToken cancellationToken)
     {
-        // Implement your build logic, e.g., invoking MSBuild or dotnet CLI
-        throw new NotImplementedException();
+        try
+        {
+            // $results = dotnet build $FileName -warnAsError -nodeReuse:False /p:SolutionDir=$solutionDirectory
+            await this._dotNetBuild.BuildAsync(projectFileName: projectFileName, basePath: basePath, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+
+            return true;
+        }
+        catch (DotNetBuildErrorException)
+        {
+            return false;
+        }
     }
 
     private async ValueTask<bool> BuildSolutionAsync(string basePath, BuildSettings buildSettings, BuildOverride buildOverride, CancellationToken cancellationToken)
     {
         try
         {
-            ;
             await this._dotNetBuild.BuildAsync(basePath: basePath, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+
+            return true;
         }
         catch (DotNetBuildErrorException)
         {
             return false;
         }
-
-        // Implement solution build logic
-        throw new NotImplementedException();
     }
 
     private static void WriteError(string message)
