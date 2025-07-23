@@ -21,15 +21,18 @@ public sealed class DependencyReducer : IDependencyReducer
     private readonly IDotNetBuild _dotNetBuild;
     private readonly ILogger<DependencyReducer> _logger;
 
-    public DependencyReducer(IDotNetBuild dotNetBuild, ILogger<DependencyReducer> logger)
+    private readonly IProjectFinder _projectFinder;
+
+    public DependencyReducer(IProjectFinder projectFinder, IDotNetBuild dotNetBuild, ILogger<DependencyReducer> logger)
     {
+        this._projectFinder = projectFinder;
         this._dotNetBuild = dotNetBuild;
         this._logger = logger;
     }
 
     public async ValueTask<bool> CheckReferencesAsync(string sourceDirectory, ReferenceConfig config, CancellationToken cancellationToken)
     {
-        IReadOnlyList<string> projects = GetProjects(sourceDirectory: sourceDirectory, config: config);
+        IReadOnlyList<string> projects = await this.GetProjectsAsync(sourceDirectory: sourceDirectory, config: config, cancellationToken: cancellationToken);
         this._logger.ProjectsToCheck(projects.Count);
 
         BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
@@ -308,12 +311,13 @@ public sealed class DependencyReducer : IDependencyReducer
         return obsoletes.Count + changeSdk.Count + reduceReferences.Count > 0;
     }
 
-    private static IReadOnlyList<string> GetProjects(string sourceDirectory, ReferenceConfig config)
+    private async ValueTask<IReadOnlyList<string>> GetProjectsAsync(string sourceDirectory, ReferenceConfig config, CancellationToken cancellationToken)
     {
+        IReadOnlyList<string> projects = await this._projectFinder.FindProjectsAsync(basePath: sourceDirectory, cancellationToken: cancellationToken);
+
         return
         [
-            ..Directory.GetFiles(path: sourceDirectory, searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories)
-                       .Where(config.IsIgnoreProject)
+            ..projects.Where(config.IsIgnoreProject)
         ];
     }
 
