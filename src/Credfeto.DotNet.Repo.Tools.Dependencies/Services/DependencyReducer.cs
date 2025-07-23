@@ -10,6 +10,7 @@ using System.Xml.XPath;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Models;
+using Credfeto.DotNet.Repo.Tools.Dependencies.Services.LoggingExtensions;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Dependencies.Services;
@@ -29,7 +30,7 @@ public sealed class DependencyReducer : IDependencyReducer
     public async ValueTask<bool> CheckReferencesAsync(string sourceDirectory, ReferenceConfig config, CancellationToken cancellationToken)
     {
         IReadOnlyList<string> projects = GetProjects(sourceDirectory: sourceDirectory, config: config);
-        Console.WriteLine($"Number of projects to check: {projects.Count}");
+        this._logger.ProjectsToCheck(projects.Count);
 
         BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
         BuildOverride buildOverride = new(PreRelease: true);
