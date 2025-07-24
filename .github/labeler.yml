@@ -24,6 +24,12 @@
  - any: [ 'src/$Credfeto.DotNet.Repo.Tools.CleanUp.Tests/**/*' ]
 "credfeto-dotnet-repo-tools-cmd":
  - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Cmd/**/*' ]
+"credfeto-dotnet-repo-tools-dependencies":
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Dependencies/**/*' ]
+"credfeto-dotnet-repo-tools-dependencies-interfaces":
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces/**/*' ]
+"credfeto-dotnet-repo-tools-dependencies-tests":
+ - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Dependencies.Tests/**/*' ]
 "credfeto-dotnet-repo-tools-dotnet":
  - any: [ 'src/$Credfeto.DotNet.Repo.Tools.DotNet/**/*' ]
 "credfeto-dotnet-repo-tools-dotnet-interfaces":

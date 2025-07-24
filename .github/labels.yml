@@ -22,6 +22,10 @@
    color: "53fcd4"
    description: "Changelog tracking file"
 
+ - name: "Changelog Not Required"
+   color: "08f5f8"
+   description: "Changelog Not Required"
+
  - name: "Config Change"
    color: "d8bb50"
    description: "Configuration files changes"
@@ -53,6 +57,18 @@
  - name: "credfeto-dotnet-repo-tools-cmd"
    color: "96f7d2"
    description: "Changes in Credfeto.DotNet.Repo.Tools.Cmd project"
+
+ - name: "credfeto-dotnet-repo-tools-dependencies"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Dependencies project"
+
+ - name: "credfeto-dotnet-repo-tools-dependencies-interfaces"
+   color: "96f7d2"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces project"
+
+ - name: "credfeto-dotnet-repo-tools-dependencies-tests"
+   color: "0e8a16"
+   description: "Changes in Credfeto.DotNet.Repo.Tools.Dependencies.Tests project"
 
  - name: "credfeto-dotnet-repo-tools-dotnet"
    color: "96f7d2"
