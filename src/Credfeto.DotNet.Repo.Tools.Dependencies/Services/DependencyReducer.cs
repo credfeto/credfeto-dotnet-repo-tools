@@ -11,6 +11,7 @@ using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Models;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Services.LoggingExtensions;
+using Credfeto.Extensions.Linq;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Dependencies.Services;
@@ -38,43 +39,28 @@ public sealed class DependencyReducer : IDependencyReducer
         BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
         BuildOverride buildOverride = new(PreRelease: true);
 
-        WriteSectionStart("Checking Projects");
+        this._logger.CheckingProjects();
 
         Stopwatch stopwatch = Stopwatch.StartNew();
-        List<ReferenceCheckResult> obsoletes = [];
-        List<ReferenceCheckResult> reduceReferences = [];
-        List<ReferenceCheckResult> changeSdk = [];
+        DependencyTracking tracking = new();
 
         int projectCount = projects.Count;
         int projectInstance = 0;
 
-        foreach (string project in projects)
+        foreach (string project in projects.Where(project => !config.IsIgnoreProject(project)))
         {
             projectInstance++;
 
-            if (config.IsIgnoreProject(project))
-            {
-                WriteProgress($"Ignoring {project}");
+            // ! Project directory guaranteed not to be null here
+            string projectDirectory = Path.GetDirectoryName(project)!;
 
-                continue;
-            }
-
-            string? projectDirectory = Path.GetDirectoryName(project);
-
-            if (string.IsNullOrEmpty(projectDirectory))
-            {
-                WriteProgress($"Ignoring {project} as directory could not be found");
-
-                continue;
-            }
-
-            WriteSectionStart($"({projectInstance}/{projectCount}): Testing project: {project}");
+            this._logger.StartTestingProject(projectInstance: projectInstance, projectCount: projectCount, project: project);
 
             byte[] rawFileContent = await File.ReadAllBytesAsync(path: project, cancellationToken: cancellationToken);
 
             if (!await this.BuildProjectAsync(projectFileName: project, basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
             {
-                WriteError("* Does not build without changes");
+                this._logger.DoesNotBuildWithoutChanges();
 
                 throw new DotNetBuildErrorException("Failed to build a project");
             }
@@ -82,8 +68,7 @@ public sealed class DependencyReducer : IDependencyReducer
             List<PackageReference> childPackageReferences = GetPackageReferences(fileName: project, includeReferences: false, includeChildReferences: true, config: config);
             List<ProjectReference> childProjectReferences = GetProjectReferences(fileName: project, includeReferences: false, includeChildReferences: true);
 
-            XmlDocument xml = new();
-            xml.Load(project);
+            XmlDocument xml = await LoadProjectXmlAsync(rawFileContent: rawFileContent, cancellationToken: cancellationToken);
 
             XmlNode? projectNode = xml.SelectSingleNode("/Project");
 
@@ -111,7 +96,7 @@ public sealed class DependencyReducer : IDependencyReducer
                         if (buildOk)
                         {
                             WriteProgress("  - Building succeeded.");
-                            changeSdk.Add(new(ProjectFileName: project, Type: ReferenceType.Sdk, Name: sdk));
+                            tracking.AddChangeSdk(new(ProjectFileName: project, Type: ReferenceType.Sdk, Name: sdk));
 
                             if (await this.BuildSolutionAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
                             {
@@ -223,14 +208,9 @@ public sealed class DependencyReducer : IDependencyReducer
                 {
                     WriteProgress("  - Building succeeded.");
 
-                    if (versionNode is not null)
-                    {
-                        obsoletes.Add(new(ProjectFileName: project, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText));
-                    }
-                    else
-                    {
-                        obsoletes.Add(new(ProjectFileName: project, Type: ReferenceType.Project, Name: includeName));
-                    }
+                    tracking.AddObsolete(versionNode is not null
+                                             ? new(ProjectFileName: project, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText)
+                                             : new(ProjectFileName: project, Type: ReferenceType.Project, Name: includeName));
 
                     if (await this.BuildSolutionAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
                     {
@@ -245,7 +225,7 @@ public sealed class DependencyReducer : IDependencyReducer
                     {
                         if (await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectDirectory, packageId: includeName, cancellationToken: cancellationToken))
                         {
-                            reduceReferences.Add(new(ProjectFileName: project, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText));
+                            tracking.AddReduceReferences(new(ProjectFileName: project, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText));
                         }
                     }
                     else
@@ -255,7 +235,7 @@ public sealed class DependencyReducer : IDependencyReducer
                         if (!string.IsNullOrEmpty(packageId) &&
                             await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectDirectory, packageId: packageId, cancellationToken: cancellationToken))
                         {
-                            reduceReferences.Add(new(ProjectFileName: project, Type: ReferenceType.Project, Name: includeName));
+                            tracking.AddReduceReferences(new(ProjectFileName: project, Type: ReferenceType.Project, Name: includeName));
                         }
                     }
                 }
@@ -296,19 +276,34 @@ public sealed class DependencyReducer : IDependencyReducer
         WriteProgress("");
         WriteProgress("-------------------------------------------------------------------------");
         WriteProgress($"Analyse completed in {stopwatch.Elapsed.TotalSeconds} seconds");
-        WriteProgress($"{changeSdk.Count} SDK reference(s) could potentially be narrowed.");
-        WriteProgress($"{obsoletes.Count} reference(s) could potentially be removed.");
-        WriteProgress($"{reduceReferences.Count} reference(s) could potentially be switched.");
+        WriteProgress($"{tracking.ChangeSdk.Count} SDK reference(s) could potentially be narrowed.");
+        WriteProgress($"{tracking.Obsolete.Count} reference(s) could potentially be removed.");
+        WriteProgress($"{tracking.ReduceReferences.Count} reference(s) could potentially be switched.");
 
-        PrintResults(header: "SDK:", items: changeSdk);
-        PrintResults(header: "Obsolete:", items: obsoletes);
-        PrintResults(header: "Reduce Scope:", items: reduceReferences);
+        PrintResults(header: "SDK:", items: tracking.ChangeSdk);
+        PrintResults(header: "Obsolete:", items: tracking.Obsolete);
+        PrintResults(header: "Reduce Scope:", items: tracking.ReduceReferences);
 
-        WriteStatistics(section: "SDK", value: changeSdk.Count);
-        WriteStatistics(section: "Obsolete", value: obsoletes.Count);
-        WriteStatistics(section: "Reduce", value: reduceReferences.Count);
+        WriteStatistics(section: "SDK", value: tracking.ChangeSdk.Count);
+        WriteStatistics(section: "Obsolete", value: tracking.Obsolete.Count);
+        WriteStatistics(section: "Reduce", value: tracking.ReduceReferences.Count);
 
-        return obsoletes.Count + changeSdk.Count + reduceReferences.Count > 0;
+        return tracking.Obsolete.Count + tracking.ChangeSdk.Count + tracking.ReduceReferences.Count > 0;
+    }
+
+    private static async ValueTask<XmlDocument> LoadProjectXmlAsync(byte[] rawFileContent, CancellationToken cancellationToken)
+    {
+        XmlDocument xml = new();
+
+        await using (MemoryStream memoryStream = new(buffer: rawFileContent, writable: false))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            xml.Load(memoryStream);
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return xml;
     }
 
     private async ValueTask<IReadOnlyList<string>> GetProjectsAsync(string sourceDirectory, ReferenceConfig config, CancellationToken cancellationToken)
@@ -380,7 +375,7 @@ public sealed class DependencyReducer : IDependencyReducer
         return [..nodes.Cast<XmlNode>()];
     }
 
-    private static void PrintResults(string header, List<ReferenceCheckResult> items)
+    private static void PrintResults(string header, IReadOnlyList<ReferenceCheckResult> items)
     {
         Console.WriteLine($"\n{header}");
         string? previousFile = null;
@@ -444,11 +439,6 @@ public sealed class DependencyReducer : IDependencyReducer
         Console.WriteLine(message);
     }
 
-    private static void WriteSectionStart(string message)
-    {
-        Console.WriteLine("=== " + message + " ===");
-    }
-
     private static void WriteSectionEnd(string message)
     {
         Console.WriteLine("=== End " + message + " ===");
@@ -508,34 +498,9 @@ public sealed class DependencyReducer : IDependencyReducer
             {
                 IncludeReferencedPackages(allPackageIds: allPackageIds, packageReferenceNodes: packageReferenceNodes);
 
-                foreach (XmlElement node in packageReferenceNodes.OfType<XmlElement>())
-                {
-                    string includeAttr = node.GetAttribute("Include");
-
-                    if (string.IsNullOrEmpty(includeAttr))
-                    {
-                        continue;
-                    }
-
-                    XmlNode? privateAssetsNode = node.SelectSingleNode("PrivateAssets");
-
-                    if (privateAssetsNode is not null)
-                    {
-                        continue;
-                    }
-
-                    if (config.IsDoNotRemovePackage(packageId: includeAttr, allPackageIds: allPackageIds))
-                    {
-                        continue;
-                    }
-
-                    XmlNode? versionNode = node.SelectSingleNode("Version");
-
-                    if (versionNode is not null)
-                    {
-                        references.Add(new(File: baseDir, Name: includeAttr, Version: versionNode.InnerText));
-                    }
-                }
+                references.AddRange(packageReferenceNodes.OfType<XmlElement>()
+                                                         .Select(node => ExtractPackageReference(config: config, node: node, allPackageIds: allPackageIds, baseDir: baseDir))
+                                                         .RemoveNulls());
             }
         }
 
@@ -561,6 +526,39 @@ public sealed class DependencyReducer : IDependencyReducer
         }
 
         return references;
+    }
+
+    private static PackageReference? ExtractPackageReference(ReferenceConfig config, XmlElement node, List<string> allPackageIds, string baseDir)
+    {
+        string includeAttr = node.GetAttribute("Include");
+
+        if (string.IsNullOrEmpty(includeAttr))
+        {
+            return null;
+        }
+
+        XmlNode? privateAssetsNode = node.SelectSingleNode("PrivateAssets");
+
+        if (privateAssetsNode is not null)
+        {
+            return null;
+        }
+
+        if (config.IsDoNotRemovePackage(packageId: includeAttr, allPackageIds: allPackageIds))
+        {
+            return null;
+        }
+
+        XmlNode? versionNode = node.SelectSingleNode("Version");
+
+        if (versionNode is null)
+        {
+            return null;
+        }
+
+        PackageReference packageReference = new(File: baseDir, Name: includeAttr, Version: versionNode.InnerText);
+
+        return packageReference;
     }
 
     private static void IncludeReferencedPackages(List<string> allPackageIds, XmlNodeList packageReferenceNodes)
@@ -699,5 +697,40 @@ public sealed class DependencyReducer : IDependencyReducer
         }
 
         return true;
+    }
+
+    private sealed class DependencyTracking
+    {
+        private readonly List<ReferenceCheckResult> _changeSdk;
+        private readonly List<ReferenceCheckResult> _obsoletes;
+        private readonly List<ReferenceCheckResult> _reduceReferences;
+
+        public DependencyTracking()
+        {
+            this._obsoletes = [];
+            this._reduceReferences = [];
+            this._changeSdk = [];
+        }
+
+        public IReadOnlyList<ReferenceCheckResult> Obsolete => this._obsoletes;
+
+        public IReadOnlyList<ReferenceCheckResult> ReduceReferences => this._reduceReferences;
+
+        public IReadOnlyList<ReferenceCheckResult> ChangeSdk => this._changeSdk;
+
+        public void AddObsolete(ReferenceCheckResult referenceCheckResult)
+        {
+            this._obsoletes.Add(referenceCheckResult);
+        }
+
+        public void AddReduceReferences(ReferenceCheckResult referenceCheckResult)
+        {
+            this._reduceReferences.Add(referenceCheckResult);
+        }
+
+        public void AddChangeSdk(ReferenceCheckResult referenceCheckResult)
+        {
+            this._changeSdk.Add(referenceCheckResult);
+        }
     }
 }
