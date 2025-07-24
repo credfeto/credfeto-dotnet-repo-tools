@@ -487,8 +487,7 @@ public sealed class DependencyReducer : IDependencyReducer
         List<PackageReference> references = [];
         List<string> allPackageIds = [];
 
-        XmlDocument doc = new();
-        doc.Load(fileName);
+        XmlDocument doc = LoadProjectXmlFromFile(fileName);
 
         if (includeReferences)
         {
@@ -526,6 +525,14 @@ public sealed class DependencyReducer : IDependencyReducer
         }
 
         return references;
+    }
+
+    private static XmlDocument LoadProjectXmlFromFile(string fileName)
+    {
+        XmlDocument doc = new();
+        doc.Load(fileName);
+
+        return doc;
     }
 
     private static PackageReference? ExtractPackageReference(ReferenceConfig config, XmlElement node, List<string> allPackageIds, string baseDir)
