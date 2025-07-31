@@ -15,4 +15,10 @@ internal static partial class DependencyReducerLoggingExtensions
 
     [LoggerMessage(EventId = 4, Level = LogLevel.Error, Message = "* Does not build without changes")]
     public static partial void DoesNotBuildWithoutChanges(this ILogger<DependencyReducer> logger);
+
+    [LoggerMessage(EventId = 5, Level = LogLevel.Information, Message = "Finished Cheching Projects")]
+    public static partial void FinishedCheckingProjects(this ILogger<DependencyReducer> logger);
+
+    [LoggerMessage(EventId = 6, Level = LogLevel.Information, Message = "* Building {project} using {minimalSdk} instead of {currentSdk}...")]
+    public static partial void BuildingProjectWithMinimalSdk(this ILogger<DependencyReducer> logger, string project, string minimalSdk, string currentSdk);
 }
