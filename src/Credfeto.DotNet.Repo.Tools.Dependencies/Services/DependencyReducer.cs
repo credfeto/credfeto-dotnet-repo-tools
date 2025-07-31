@@ -109,10 +109,9 @@ public sealed class DependencyReducer : IDependencyReducer
             GetPackageReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true, config: projectUpdateContext.Config);
         List<ProjectReference> childProjectReferences = GetProjectReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true);
 
-        XmlDocument xml = await LoadProjectXmlAsync(rawFileContent: fileContent, cancellationToken: cancellationToken);
+        await this.CheckProjectSdkAsync(projectUpdateContext: projectUpdateContext, fileContent: fileContent, cancellationToken: cancellationToken);
 
-        await this.CheckProjectSdkAsync(projectUpdateContext: projectUpdateContext, xml: xml, fileContent: fileContent, cancellationToken: cancellationToken);
-
+        XmlDocument xml = fileContent.Xml;
         IReadOnlyList<XmlNode> packageReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/PackageReference");
         IReadOnlyList<XmlNode> projectReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/ProjectReference");
 
@@ -258,9 +257,9 @@ public sealed class DependencyReducer : IDependencyReducer
         WriteSectionEnd($"({projectUpdateContext.ProjectInstance}/{projectUpdateContext.ProjectCount}): Testing project: {projectUpdateContext.Project}");
     }
 
-    private async ValueTask CheckProjectSdkAsync(ProjectUpdateContext projectUpdateContext, XmlDocument xml, FileContent fileContent, CancellationToken cancellationToken)
+    private async ValueTask CheckProjectSdkAsync(ProjectUpdateContext projectUpdateContext, FileContent fileContent, CancellationToken cancellationToken)
     {
-        XmlNode? projectNode = xml.SelectSingleNode("/Project");
+        XmlNode? projectNode = fileContent.Xml.SelectSingleNode("/Project");
 
         if (projectNode?.Attributes is not null)
         {
@@ -270,10 +269,10 @@ public sealed class DependencyReducer : IDependencyReducer
             {
                 string sdk = sdkAttr.Value;
 
-                if (ShouldCheckSdk(sdk: sdk, projectFolder: projectUpdateContext.ProjectDirectory, xml: xml))
+                if (ShouldCheckSdk(sdk: sdk, projectFolder: projectUpdateContext.ProjectDirectory, xml: fileContent.Xml))
                 {
                     sdkAttr.Value = MINIMAL_SDK;
-                    xml.Save(projectUpdateContext.Project);
+                    fileContent.Xml.Save(projectUpdateContext.Project);
 
                     this._logger.BuildingProjectWithMinimalSdk(project: projectUpdateContext.Project, minimalSdk: MINIMAL_SDK, currentSdk: sdk);
                     bool buildOk = await this.BuildProjectAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken);
@@ -299,7 +298,7 @@ public sealed class DependencyReducer : IDependencyReducer
                     if (restore)
                     {
                         sdkAttr.Value = sdk;
-                        xml.Save(projectUpdateContext.Project);
+                        fileContent.Xml.Save(projectUpdateContext.Project);
                     }
                     else
                     {
@@ -312,21 +311,6 @@ public sealed class DependencyReducer : IDependencyReducer
                 }
             }
         }
-    }
-
-    private static async ValueTask<XmlDocument> LoadProjectXmlAsync(FileContent rawFileContent, CancellationToken cancellationToken)
-    {
-        XmlDocument xml = new();
-
-        await using (MemoryStream memoryStream = new(buffer: rawFileContent.Source, writable: false))
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            xml.Load(memoryStream);
-        }
-
-        cancellationToken.ThrowIfCancellationRequested();
-
-        return xml;
     }
 
     private async ValueTask<IReadOnlyList<string>> GetProjectsAsync(string sourceDirectory, ReferenceConfig config, CancellationToken cancellationToken)
@@ -752,17 +736,21 @@ public sealed class DependencyReducer : IDependencyReducer
     {
         private readonly string _fileName;
 
-        private FileContent(string fileName, byte[] source)
+        private FileContent(string fileName, byte[] source, XmlDocument xml)
         {
             this._fileName = fileName;
             this.Source = source;
+            this.Xml = xml;
         }
 
         public byte[] Source { get; private set; }
 
+        public XmlDocument Xml { get; private set; }
+
         public async ValueTask ReloadAsync(CancellationToken cancellationToken)
         {
             this.Source = await File.ReadAllBytesAsync(path: this._fileName, cancellationToken: cancellationToken);
+            this.Xml = await LoadProjectXmlAsync(source: this.Source, cancellationToken: cancellationToken);
         }
 
         public async ValueTask SaveAsync(CancellationToken cancellationToken)
@@ -773,8 +761,24 @@ public sealed class DependencyReducer : IDependencyReducer
         public static async ValueTask<FileContent> LoadAsync(string fileName, CancellationToken cancellationToken)
         {
             byte[] data = await File.ReadAllBytesAsync(path: fileName, cancellationToken: cancellationToken);
+            XmlDocument xml = await LoadProjectXmlAsync(source: data, cancellationToken: cancellationToken);
 
-            return new(fileName: fileName, source: data);
+            return new(fileName: fileName, source: data, xml: xml);
+        }
+
+        private static async ValueTask<XmlDocument> LoadProjectXmlAsync(byte[] source, CancellationToken cancellationToken)
+        {
+            XmlDocument xml = new();
+
+            await using (MemoryStream memoryStream = new(buffer: source, writable: false))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                xml.Load(memoryStream);
+            }
+
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return xml;
         }
     }
 
