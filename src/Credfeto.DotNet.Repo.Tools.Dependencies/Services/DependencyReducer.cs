@@ -54,225 +54,27 @@ public sealed class DependencyReducer : IDependencyReducer
             // ! Project directory guaranteed not to be null here
             string projectDirectory = Path.GetDirectoryName(project)!;
 
-            this._logger.StartTestingProject(projectInstance: projectInstance, projectCount: projectCount, project: project);
-
-            byte[] rawFileContent = await File.ReadAllBytesAsync(path: project, cancellationToken: cancellationToken);
-
-            if (!await this.BuildProjectAsync(projectFileName: project, basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
-            {
-                this._logger.DoesNotBuildWithoutChanges();
-
-                throw new DotNetBuildErrorException("Failed to build a project");
-            }
-
-            List<PackageReference> childPackageReferences = GetPackageReferences(fileName: project, includeReferences: false, includeChildReferences: true, config: config);
-            List<ProjectReference> childProjectReferences = GetProjectReferences(fileName: project, includeReferences: false, includeChildReferences: true);
-
-            XmlDocument xml = await LoadProjectXmlAsync(rawFileContent: rawFileContent, cancellationToken: cancellationToken);
-
-            XmlNode? projectNode = xml.SelectSingleNode("/Project");
-
-            if (projectNode?.Attributes is not null)
-            {
-                XmlAttribute? sdkAttr = projectNode.Attributes["Sdk"];
-
-                if (sdkAttr is not null)
-                {
-                    string sdk = sdkAttr.Value;
-
-                    if (ShouldCheckSdk(sdk: sdk, projectFolder: projectDirectory, xml: xml))
-                    {
-                        sdkAttr.Value = MINIMAL_SDK;
-                        xml.Save(project);
-
-                        WriteProgress($"* Building {project} using {MINIMAL_SDK} instead of {sdk}...");
-                        bool buildOk = await this.BuildProjectAsync(projectFileName: project,
-                                                                    basePath: sourceDirectory,
-                                                                    buildSettings: buildSettings,
-                                                                    buildOverride: buildOverride,
-                                                                    cancellationToken: cancellationToken);
-                        bool restore = true;
-
-                        if (buildOk)
-                        {
-                            WriteProgress("  - Building succeeded.");
-                            tracking.AddChangeSdk(new(ProjectFileName: project, Type: ReferenceType.Sdk, Name: sdk));
-
-                            if (await this.BuildSolutionAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
-                            {
-                                restore = false;
-                            }
-                        }
-                        else
-                        {
-                            WriteProgress("  = Building failed.");
-                        }
-
-                        if (restore)
-                        {
-                            sdkAttr.Value = sdk;
-                            xml.Save(project);
-                        }
-                        else
-                        {
-                            rawFileContent = await File.ReadAllBytesAsync(path: project, cancellationToken: cancellationToken);
-                        }
-                    }
-                    else
-                    {
-                        WriteProgress($"= SDK does not need changing. Currently {MINIMAL_SDK}.");
-                    }
-                }
-            }
-
-            IReadOnlyList<XmlNode> packageReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/PackageReference");
-            IReadOnlyList<XmlNode> projectReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/ProjectReference");
-
-            List<string> allPackageIds = ExtractPackageIds(packageReferences);
-
-            List<XmlNode> allNodes = [.. packageReferences, .. projectReferences];
-
-            foreach (XmlElement node in allNodes.OfType<XmlElement>())
-            {
-                string includeName = node.GetAttribute("Include");
-
-                if (string.IsNullOrEmpty(includeName))
-                {
-                    WriteProgress("= Skipping malformed include");
-
-                    continue;
-                }
-
-                if (config.IsDoNotRemovePackage(packageId: includeName, allPackageIds: allPackageIds))
-                {
-                    WriteProgress($"= Skipping {includeName} as it is marked as do not remove");
-
-                    continue;
-                }
-
-                if (node["PrivateAssets"] is not null)
-                {
-                    WriteProgress($"= Skipping {includeName} as it uses private assets");
-
-                    continue;
-                }
-
-                WriteProgress($"Checking: {includeName}");
-
-                XmlNode? previousNode = node.PreviousSibling;
-                XmlNode? parentNode = node.ParentNode;
-                parentNode?.RemoveChild(node);
-
-                bool needToBuild = true;
-                xml.Save(project);
-
-                XmlNode? versionNode = node["Version"];
-
-                if (versionNode is not null)
-                {
-                    PackageReference? existingChildInclude = FindChildPackage(childPackageReferences: childPackageReferences, includeName: includeName, version: versionNode.InnerText);
-
-                    if (existingChildInclude is not null)
-                    {
-                        WriteProgress($"= {project} references package {includeName} ({versionNode.InnerText}) also in child project {existingChildInclude.File}");
-                        needToBuild = false;
-                    }
-                    else
-                    {
-                        WriteProgress($"* Building {project} without package {includeName} ({versionNode.InnerText})...");
-                    }
-                }
-                else
-                {
-                    ProjectReference? existingChildInclude = FindChildProject(childProjectReferences: childProjectReferences, includeName: includeName);
-
-                    if (existingChildInclude is not null)
-                    {
-                        WriteProgress($"= {project} references project {includeName} also in child project {existingChildInclude.File}");
-                        needToBuild = false;
-                    }
-                    else
-                    {
-                        WriteProgress($"* Building {project} without project {includeName}...");
-                    }
-                }
-
-                bool buildOk = !needToBuild || await this.BuildProjectAsync(projectFileName: project,
-                                                                            basePath: sourceDirectory,
-                                                                            buildSettings: buildSettings,
-                                                                            buildOverride: buildOverride,
-                                                                            cancellationToken: cancellationToken);
-                bool restore = true;
-
-                if (buildOk)
-                {
-                    WriteProgress("  - Building succeeded.");
-
-                    tracking.AddObsolete(versionNode is not null
-                                             ? new(ProjectFileName: project, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText)
-                                             : new(ProjectFileName: project, Type: ReferenceType.Project, Name: includeName));
-
-                    if (await this.BuildSolutionAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
-                    {
-                        restore = false;
-                    }
-                }
-                else
-                {
-                    WriteProgress("  = Building failed.");
-
-                    if (versionNode is not null)
-                    {
-                        if (await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectDirectory, packageId: includeName, cancellationToken: cancellationToken))
-                        {
-                            tracking.AddReduceReferences(new(ProjectFileName: project, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText));
-                        }
-                    }
-                    else
-                    {
-                        string? packageId = ExtractProjectFromReference(includeName);
-
-                        if (!string.IsNullOrEmpty(packageId) &&
-                            await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectDirectory, packageId: packageId, cancellationToken: cancellationToken))
-                        {
-                            tracking.AddReduceReferences(new(ProjectFileName: project, Type: ReferenceType.Project, Name: includeName));
-                        }
-                    }
-                }
-
-                if (restore)
-                {
-                    if (previousNode is null)
-                    {
-                        parentNode?.PrependChild(node);
-                    }
-                    else
-                    {
-                        parentNode?.InsertAfter(newChild: node, refChild: previousNode);
-                    }
-
-                    xml.Save(project);
-                }
-                else
-                {
-                    rawFileContent = await File.ReadAllBytesAsync(path: project, cancellationToken: cancellationToken);
-                }
-            }
-
-            await File.WriteAllBytesAsync(path: project, bytes: rawFileContent, cancellationToken: cancellationToken);
-
-            if (!await this.BuildProjectAsync(projectFileName: project, basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
-            {
-                WriteError($"### Failed to build {project} after restore.");
-
-                throw new DotNetBuildErrorException("Failed to build project after restore");
-            }
-
-            WriteSectionEnd($"({projectInstance}/{projectCount}): Testing project: {project}");
+            await this.CheckProjectDependenciesAsync(sourceDirectory: sourceDirectory,
+                                                     projectDirectory: projectDirectory,
+                                                     config: config,
+                                                     projectInstance: projectInstance,
+                                                     projectCount: projectCount,
+                                                     project: project,
+                                                     buildSettings: buildSettings,
+                                                     buildOverride: buildOverride,
+                                                     tracking: tracking,
+                                                     cancellationToken: cancellationToken);
         }
 
-        WriteSectionEnd("Checking Projects");
+        this._logger.FinishedCheckingProjects();
 
+        OutputSummary(stopwatch: stopwatch, tracking: tracking);
+
+        return tracking.Obsolete.Count + tracking.ChangeSdk.Count + tracking.ReduceReferences.Count > 0;
+    }
+
+    private static void OutputSummary(Stopwatch stopwatch, DependencyTracking tracking)
+    {
         WriteProgress("");
         WriteProgress("-------------------------------------------------------------------------");
         WriteProgress($"Analyse completed in {stopwatch.Elapsed.TotalSeconds} seconds");
@@ -287,8 +89,258 @@ public sealed class DependencyReducer : IDependencyReducer
         WriteStatistics(section: "SDK", value: tracking.ChangeSdk.Count);
         WriteStatistics(section: "Obsolete", value: tracking.Obsolete.Count);
         WriteStatistics(section: "Reduce", value: tracking.ReduceReferences.Count);
+    }
 
-        return tracking.Obsolete.Count + tracking.ChangeSdk.Count + tracking.ReduceReferences.Count > 0;
+    private async ValueTask CheckProjectDependenciesAsync(string sourceDirectory,
+                                                          string projectDirectory,
+                                                          ReferenceConfig config,
+                                                          int projectInstance,
+                                                          int projectCount,
+                                                          string project,
+                                                          BuildSettings buildSettings,
+                                                          BuildOverride buildOverride,
+                                                          DependencyTracking tracking,
+                                                          CancellationToken cancellationToken)
+    {
+        this._logger.StartTestingProject(projectInstance: projectInstance, projectCount: projectCount, project: project);
+
+        byte[] rawFileContent = await File.ReadAllBytesAsync(path: project, cancellationToken: cancellationToken);
+
+        if (!await this.BuildProjectAsync(projectFileName: project, basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
+        {
+            this._logger.DoesNotBuildWithoutChanges();
+
+            throw new DotNetBuildErrorException("Failed to build a project");
+        }
+
+        List<PackageReference> childPackageReferences = GetPackageReferences(fileName: project, includeReferences: false, includeChildReferences: true, config: config);
+        List<ProjectReference> childProjectReferences = GetProjectReferences(fileName: project, includeReferences: false, includeChildReferences: true);
+
+        XmlDocument xml = await LoadProjectXmlAsync(rawFileContent: rawFileContent, cancellationToken: cancellationToken);
+
+        await this.CheckProjectSdkAsync(sourceDirectory: sourceDirectory,
+                                        projectDirectory: projectDirectory,
+                                        project: project,
+                                        buildSettings: buildSettings,
+                                        buildOverride: buildOverride,
+                                        tracking: tracking,
+                                        xml: xml,
+                                        rawFileContent: rawFileContent,
+                                        cancellationToken: cancellationToken);
+
+        IReadOnlyList<XmlNode> packageReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/PackageReference");
+        IReadOnlyList<XmlNode> projectReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/ProjectReference");
+
+        List<string> allPackageIds = ExtractPackageIds(packageReferences);
+
+        List<XmlNode> allNodes = [.. packageReferences, .. projectReferences];
+
+        foreach (XmlElement node in allNodes.OfType<XmlElement>())
+        {
+            string includeName = node.GetAttribute("Include");
+
+            if (string.IsNullOrEmpty(includeName))
+            {
+                WriteProgress("= Skipping malformed include");
+
+                continue;
+            }
+
+            if (config.IsDoNotRemovePackage(packageId: includeName, allPackageIds: allPackageIds))
+            {
+                WriteProgress($"= Skipping {includeName} as it is marked as do not remove");
+
+                continue;
+            }
+
+            if (node["PrivateAssets"] is not null)
+            {
+                WriteProgress($"= Skipping {includeName} as it uses private assets");
+
+                continue;
+            }
+
+            WriteProgress($"Checking: {includeName}");
+
+            XmlNode? previousNode = node.PreviousSibling;
+            XmlNode? parentNode = node.ParentNode;
+            parentNode?.RemoveChild(node);
+
+            bool needToBuild = true;
+            xml.Save(project);
+
+            XmlNode? versionNode = node["Version"];
+
+            if (versionNode is not null)
+            {
+                PackageReference? existingChildInclude = FindChildPackage(childPackageReferences: childPackageReferences, includeName: includeName, version: versionNode.InnerText);
+
+                if (existingChildInclude is not null)
+                {
+                    WriteProgress($"= {project} references package {includeName} ({versionNode.InnerText}) also in child project {existingChildInclude.File}");
+                    needToBuild = false;
+                }
+                else
+                {
+                    WriteProgress($"* Building {project} without package {includeName} ({versionNode.InnerText})...");
+                }
+            }
+            else
+            {
+                ProjectReference? existingChildInclude = FindChildProject(childProjectReferences: childProjectReferences, includeName: includeName);
+
+                if (existingChildInclude is not null)
+                {
+                    WriteProgress($"= {project} references project {includeName} also in child project {existingChildInclude.File}");
+                    needToBuild = false;
+                }
+                else
+                {
+                    WriteProgress($"* Building {project} without project {includeName}...");
+                }
+            }
+
+            bool buildOk = !needToBuild || await this.BuildProjectAsync(projectFileName: project,
+                                                                        basePath: sourceDirectory,
+                                                                        buildSettings: buildSettings,
+                                                                        buildOverride: buildOverride,
+                                                                        cancellationToken: cancellationToken);
+            bool restore = true;
+
+            if (buildOk)
+            {
+                WriteProgress("  - Building succeeded.");
+
+                tracking.AddObsolete(versionNode is not null
+                                         ? new(ProjectFileName: project, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText)
+                                         : new(ProjectFileName: project, Type: ReferenceType.Project, Name: includeName));
+
+                if (await this.BuildSolutionAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
+                {
+                    restore = false;
+                }
+            }
+            else
+            {
+                WriteProgress("  = Building failed.");
+
+                if (versionNode is not null)
+                {
+                    if (await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectDirectory, packageId: includeName, cancellationToken: cancellationToken))
+                    {
+                        tracking.AddReduceReferences(new(ProjectFileName: project, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText));
+                    }
+                }
+                else
+                {
+                    string? packageId = ExtractProjectFromReference(includeName);
+
+                    if (!string.IsNullOrEmpty(packageId) && await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectDirectory, packageId: packageId, cancellationToken: cancellationToken))
+                    {
+                        tracking.AddReduceReferences(new(ProjectFileName: project, Type: ReferenceType.Project, Name: includeName));
+                    }
+                }
+            }
+
+            if (restore)
+            {
+                if (previousNode is null)
+                {
+                    parentNode?.PrependChild(node);
+                }
+                else
+                {
+                    parentNode?.InsertAfter(newChild: node, refChild: previousNode);
+                }
+
+                xml.Save(project);
+            }
+            else
+            {
+                rawFileContent = await File.ReadAllBytesAsync(path: project, cancellationToken: cancellationToken);
+            }
+        }
+
+        await File.WriteAllBytesAsync(path: project, bytes: rawFileContent, cancellationToken: cancellationToken);
+
+        if (!await this.BuildProjectAsync(projectFileName: project, basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
+        {
+            WriteError($"### Failed to build {project} after restore.");
+
+            throw new DotNetBuildErrorException("Failed to build project after restore");
+        }
+
+        WriteSectionEnd($"({projectInstance}/{projectCount}): Testing project: {project}");
+    }
+
+    private async ValueTask<byte[]> CheckProjectSdkAsync(string sourceDirectory,
+                                                         string projectDirectory,
+                                                         string project,
+                                                         BuildSettings buildSettings,
+                                                         BuildOverride buildOverride,
+                                                         DependencyTracking tracking,
+                                                         XmlDocument xml,
+                                                         byte[] rawFileContent,
+                                                         CancellationToken cancellationToken)
+    {
+        XmlNode? projectNode = xml.SelectSingleNode("/Project");
+
+        if (projectNode?.Attributes is not null)
+        {
+            XmlAttribute? sdkAttr = projectNode.Attributes["Sdk"];
+
+            if (sdkAttr is not null)
+            {
+                string sdk = sdkAttr.Value;
+
+                if (ShouldCheckSdk(sdk: sdk, projectFolder: projectDirectory, xml: xml))
+                {
+                    sdkAttr.Value = MINIMAL_SDK;
+                    xml.Save(project);
+
+                    this._logger.BuildingProjectWithMinimalSdk(project: project, minimalSdk: MINIMAL_SDK, currentSdk: sdk);
+                    bool buildOk = await this.BuildProjectAsync(projectFileName: project,
+                                                                basePath: sourceDirectory,
+                                                                buildSettings: buildSettings,
+                                                                buildOverride: buildOverride,
+                                                                cancellationToken: cancellationToken);
+                    bool restore1 = true;
+
+                    if (buildOk)
+                    {
+                        WriteProgress("  - Building succeeded.");
+                        tracking.AddChangeSdk(new(ProjectFileName: project, Type: ReferenceType.Sdk, Name: sdk));
+
+                        if (await this.BuildSolutionAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken))
+                        {
+                            restore1 = false;
+                        }
+                    }
+                    else
+                    {
+                        WriteProgress("  = Building failed.");
+                    }
+
+                    bool restore = restore1;
+
+                    if (restore)
+                    {
+                        sdkAttr.Value = sdk;
+                        xml.Save(project);
+                    }
+                    else
+                    {
+                        return await File.ReadAllBytesAsync(path: project, cancellationToken: cancellationToken);
+                    }
+                }
+                else
+                {
+                    WriteProgress($"= SDK does not need changing. Currently {MINIMAL_SDK}.");
+                }
+            }
+        }
+
+        return rawFileContent;
     }
 
     private static async ValueTask<XmlDocument> LoadProjectXmlAsync(byte[] rawFileContent, CancellationToken cancellationToken)
