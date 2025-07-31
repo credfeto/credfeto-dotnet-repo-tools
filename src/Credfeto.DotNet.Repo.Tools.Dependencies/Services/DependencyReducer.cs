@@ -96,13 +96,9 @@ public sealed class DependencyReducer : IDependencyReducer
     {
         this._logger.StartTestingProject(projectInstance: projectUpdateContext.ProjectInstance, projectCount: projectUpdateContext.ProjectCount, project: projectUpdateContext.Project);
 
-        byte[] rawFileContent = await File.ReadAllBytesAsync(path: projectUpdateContext.Project, cancellationToken: cancellationToken);
+        FileContent fileContent = await FileContent.LoadAsync(fileName: projectUpdateContext.Project, cancellationToken: cancellationToken);
 
-        if (!await this.BuildProjectAsync(projectFileName: projectUpdateContext.Project,
-                                          basePath: projectUpdateContext.SourceDirectory,
-                                          buildSettings: projectUpdateContext.BuildSettings,
-                                          buildOverride: projectUpdateContext.BuildOverride,
-                                          cancellationToken: cancellationToken))
+        if (!await this.BuildProjectAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken))
         {
             this._logger.DoesNotBuildWithoutChanges();
 
@@ -113,9 +109,9 @@ public sealed class DependencyReducer : IDependencyReducer
             GetPackageReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true, config: projectUpdateContext.Config);
         List<ProjectReference> childProjectReferences = GetProjectReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true);
 
-        XmlDocument xml = await LoadProjectXmlAsync(rawFileContent: rawFileContent, cancellationToken: cancellationToken);
+        XmlDocument xml = await LoadProjectXmlAsync(rawFileContent: fileContent, cancellationToken: cancellationToken);
 
-        await this.CheckProjectSdkAsync(projectUpdateContext: projectUpdateContext, xml: xml, rawFileContent: rawFileContent, cancellationToken: cancellationToken);
+        await this.CheckProjectSdkAsync(projectUpdateContext: projectUpdateContext, xml: xml, fileContent: fileContent, cancellationToken: cancellationToken);
 
         IReadOnlyList<XmlNode> packageReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/PackageReference");
         IReadOnlyList<XmlNode> projectReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/ProjectReference");
@@ -189,11 +185,7 @@ public sealed class DependencyReducer : IDependencyReducer
                 }
             }
 
-            bool buildOk = !needToBuild || await this.BuildProjectAsync(projectFileName: projectUpdateContext.Project,
-                                                                        basePath: projectUpdateContext.SourceDirectory,
-                                                                        buildSettings: projectUpdateContext.BuildSettings,
-                                                                        buildOverride: projectUpdateContext.BuildOverride,
-                                                                        cancellationToken: cancellationToken);
+            bool buildOk = !needToBuild || await this.BuildProjectAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken);
             bool restore = true;
 
             if (buildOk)
@@ -204,10 +196,7 @@ public sealed class DependencyReducer : IDependencyReducer
                                                               ? new(ProjectFileName: projectUpdateContext.Project, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText)
                                                               : new(ProjectFileName: projectUpdateContext.Project, Type: ReferenceType.Project, Name: includeName));
 
-                if (await this.BuildSolutionAsync(basePath: projectUpdateContext.SourceDirectory,
-                                                  buildSettings: projectUpdateContext.BuildSettings,
-                                                  buildOverride: projectUpdateContext.BuildOverride,
-                                                  cancellationToken: cancellationToken))
+                if (await this.BuildSolutionAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken))
                 {
                     restore = false;
                 }
@@ -253,17 +242,13 @@ public sealed class DependencyReducer : IDependencyReducer
             }
             else
             {
-                rawFileContent = await File.ReadAllBytesAsync(path: projectUpdateContext.Project, cancellationToken: cancellationToken);
+                await fileContent.ReloadAsync(cancellationToken: cancellationToken);
             }
         }
 
-        await File.WriteAllBytesAsync(path: projectUpdateContext.Project, bytes: rawFileContent, cancellationToken: cancellationToken);
+        await fileContent.SaveAsync(cancellationToken: cancellationToken);
 
-        if (!await this.BuildProjectAsync(projectFileName: projectUpdateContext.Project,
-                                          basePath: projectUpdateContext.SourceDirectory,
-                                          buildSettings: projectUpdateContext.BuildSettings,
-                                          buildOverride: projectUpdateContext.BuildOverride,
-                                          cancellationToken: cancellationToken))
+        if (!await this.BuildProjectAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken))
         {
             WriteError($"### Failed to build {projectUpdateContext.Project} after restore.");
 
@@ -273,7 +258,7 @@ public sealed class DependencyReducer : IDependencyReducer
         WriteSectionEnd($"({projectUpdateContext.ProjectInstance}/{projectUpdateContext.ProjectCount}): Testing project: {projectUpdateContext.Project}");
     }
 
-    private async ValueTask<byte[]> CheckProjectSdkAsync(ProjectUpdateContext projectUpdateContext, XmlDocument xml, byte[] rawFileContent, CancellationToken cancellationToken)
+    private async ValueTask CheckProjectSdkAsync(ProjectUpdateContext projectUpdateContext, XmlDocument xml, FileContent fileContent, CancellationToken cancellationToken)
     {
         XmlNode? projectNode = xml.SelectSingleNode("/Project");
 
@@ -291,11 +276,7 @@ public sealed class DependencyReducer : IDependencyReducer
                     xml.Save(projectUpdateContext.Project);
 
                     this._logger.BuildingProjectWithMinimalSdk(project: projectUpdateContext.Project, minimalSdk: MINIMAL_SDK, currentSdk: sdk);
-                    bool buildOk = await this.BuildProjectAsync(projectFileName: projectUpdateContext.Project,
-                                                                basePath: projectUpdateContext.SourceDirectory,
-                                                                buildSettings: projectUpdateContext.BuildSettings,
-                                                                buildOverride: projectUpdateContext.BuildOverride,
-                                                                cancellationToken: cancellationToken);
+                    bool buildOk = await this.BuildProjectAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken);
                     bool restore1 = true;
 
                     if (buildOk)
@@ -303,10 +284,7 @@ public sealed class DependencyReducer : IDependencyReducer
                         WriteProgress("  - Building succeeded.");
                         projectUpdateContext.Tracking.AddChangeSdk(new(ProjectFileName: projectUpdateContext.Project, Type: ReferenceType.Sdk, Name: sdk));
 
-                        if (await this.BuildSolutionAsync(basePath: projectUpdateContext.SourceDirectory,
-                                                          buildSettings: projectUpdateContext.BuildSettings,
-                                                          buildOverride: projectUpdateContext.BuildOverride,
-                                                          cancellationToken: cancellationToken))
+                        if (await this.BuildSolutionAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken))
                         {
                             restore1 = false;
                         }
@@ -325,7 +303,7 @@ public sealed class DependencyReducer : IDependencyReducer
                     }
                     else
                     {
-                        return await File.ReadAllBytesAsync(path: projectUpdateContext.Project, cancellationToken: cancellationToken);
+                        await fileContent.ReloadAsync(cancellationToken);
                     }
                 }
                 else
@@ -334,15 +312,13 @@ public sealed class DependencyReducer : IDependencyReducer
                 }
             }
         }
-
-        return rawFileContent;
     }
 
-    private static async ValueTask<XmlDocument> LoadProjectXmlAsync(byte[] rawFileContent, CancellationToken cancellationToken)
+    private static async ValueTask<XmlDocument> LoadProjectXmlAsync(FileContent rawFileContent, CancellationToken cancellationToken)
     {
         XmlDocument xml = new();
 
-        await using (MemoryStream memoryStream = new(buffer: rawFileContent, writable: false))
+        await using (MemoryStream memoryStream = new(buffer: rawFileContent.Source, writable: false))
         {
             cancellationToken.ThrowIfCancellationRequested();
             xml.Load(memoryStream);
@@ -447,12 +423,16 @@ public sealed class DependencyReducer : IDependencyReducer
         }
     }
 
-    private async ValueTask<bool> BuildProjectAsync(string projectFileName, string basePath, BuildSettings buildSettings, BuildOverride buildOverride, CancellationToken cancellationToken)
+    private async ValueTask<bool> BuildProjectAsync(ProjectUpdateContext projectUpdateContext, CancellationToken cancellationToken)
     {
         try
         {
             // $results = dotnet build $FileName -warnAsError -nodeReuse:False /p:SolutionDir=$solutionDirectory
-            await this._dotNetBuild.BuildAsync(projectFileName: projectFileName, basePath: basePath, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+            await this._dotNetBuild.BuildAsync(projectFileName: projectUpdateContext.Project,
+                                               basePath: projectUpdateContext.SourceDirectory,
+                                               buildSettings: projectUpdateContext.BuildSettings,
+                                               buildOverride: projectUpdateContext.BuildOverride,
+                                               cancellationToken: cancellationToken);
 
             return true;
         }
@@ -462,11 +442,14 @@ public sealed class DependencyReducer : IDependencyReducer
         }
     }
 
-    private async ValueTask<bool> BuildSolutionAsync(string basePath, BuildSettings buildSettings, BuildOverride buildOverride, CancellationToken cancellationToken)
+    private async ValueTask<bool> BuildSolutionAsync(ProjectUpdateContext projectUpdateContext, CancellationToken cancellationToken)
     {
         try
         {
-            await this._dotNetBuild.BuildAsync(basePath: basePath, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+            await this._dotNetBuild.BuildAsync(basePath: projectUpdateContext.SourceDirectory,
+                                               buildSettings: projectUpdateContext.BuildSettings,
+                                               buildOverride: projectUpdateContext.BuildOverride,
+                                               cancellationToken: cancellationToken);
 
             return true;
         }
@@ -764,6 +747,36 @@ public sealed class DependencyReducer : IDependencyReducer
         BuildSettings BuildSettings,
         BuildOverride BuildOverride,
         DependencyTracking Tracking);
+
+    private sealed class FileContent
+    {
+        private readonly string _fileName;
+
+        private FileContent(string fileName, byte[] source)
+        {
+            this._fileName = fileName;
+            this.Source = source;
+        }
+
+        public byte[] Source { get; private set; }
+
+        public async ValueTask ReloadAsync(CancellationToken cancellationToken)
+        {
+            this.Source = await File.ReadAllBytesAsync(path: this._fileName, cancellationToken: cancellationToken);
+        }
+
+        public async ValueTask SaveAsync(CancellationToken cancellationToken)
+        {
+            await File.WriteAllBytesAsync(path: this._fileName, bytes: this.Source, cancellationToken: cancellationToken);
+        }
+
+        public static async ValueTask<FileContent> LoadAsync(string fileName, CancellationToken cancellationToken)
+        {
+            byte[] data = await File.ReadAllBytesAsync(path: fileName, cancellationToken: cancellationToken);
+
+            return new(fileName: fileName, source: data);
+        }
+    }
 
     private sealed class DependencyTracking
     {
