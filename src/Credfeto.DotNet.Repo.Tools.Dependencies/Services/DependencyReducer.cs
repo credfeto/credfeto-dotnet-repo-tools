@@ -385,35 +385,34 @@ public sealed class DependencyReducer : IDependencyReducer
     {
         XmlNode? projectNode = fileContent.Xml.SelectSingleNode("/Project");
 
-        if (projectNode?.Attributes is not null)
+        XmlAttribute? sdkAttr = projectNode?.Attributes?["Sdk"];
+
+        if (sdkAttr is null)
         {
-            XmlAttribute? sdkAttr = projectNode.Attributes["Sdk"];
+            return;
+        }
 
-            if (sdkAttr is not null)
+        string sdk = sdkAttr.Value;
+
+        if (ShouldCheckSdk(sdk: sdk, projectFolder: projectUpdateContext.ProjectDirectory, xml: fileContent.Xml))
+        {
+            sdkAttr.Value = MINIMAL_SDK;
+            fileContent.Xml.Save(projectUpdateContext.Project);
+
+            bool restore = await this.TestProjectMinimalSdkChangeAsync(projectUpdateContext: projectUpdateContext, sdk: sdk, cancellationToken: cancellationToken);
+
+            if (restore)
             {
-                string sdk = sdkAttr.Value;
-
-                if (ShouldCheckSdk(sdk: sdk, projectFolder: projectUpdateContext.ProjectDirectory, xml: fileContent.Xml))
-                {
-                    sdkAttr.Value = MINIMAL_SDK;
-                    fileContent.Xml.Save(projectUpdateContext.Project);
-
-                    bool restore = await this.TestProjectMinimalSdkChangeAsync(projectUpdateContext: projectUpdateContext, sdk: sdk, cancellationToken: cancellationToken);
-
-                    if (restore)
-                    {
-                        await fileContent.ResetAsync(cancellationToken);
-                    }
-                    else
-                    {
-                        await fileContent.ReloadAsync(cancellationToken);
-                    }
-                }
-                else
-                {
-                    WriteProgress($"= SDK does not need changing. Currently {MINIMAL_SDK}.");
-                }
+                await fileContent.ResetAsync(cancellationToken);
             }
+            else
+            {
+                await fileContent.ReloadAsync(cancellationToken);
+            }
+        }
+        else
+        {
+            WriteProgress($"= SDK does not need changing. Currently {MINIMAL_SDK}.");
         }
     }
 
