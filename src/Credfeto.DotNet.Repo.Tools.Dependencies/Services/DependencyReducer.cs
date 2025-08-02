@@ -608,10 +608,15 @@ public sealed class DependencyReducer : IDependencyReducer
             throw new FileNotFoundException(message: "Unable to find project file.", fileName: fileName);
         }
 
+        XmlDocument doc = LoadProjectXmlFromFile(fileName);
+
+        if (!includeReferences && !includeChildReferences)
+        {
+            return [];
+        }
+
         List<FilePackageReference> references = [];
         List<string> allPackageIds = [];
-
-        XmlDocument doc = LoadProjectXmlFromFile(fileName);
 
         if (includeReferences)
         {
@@ -627,25 +632,25 @@ public sealed class DependencyReducer : IDependencyReducer
             }
         }
 
-        if (includeChildReferences)
+        if (!includeChildReferences)
         {
-            XmlNodeList? projectReferenceNodes = doc.SelectNodes(PROJECT_REFERENCES_PATH);
+            return references;
+        }
 
-            if (projectReferenceNodes is not null)
-            {
-                foreach (XmlElement node in projectReferenceNodes.OfType<XmlElement>())
-                {
-                    string includeAttr = node.GetAttribute("Include");
+        XmlNodeList? projectReferenceNodes = doc.SelectNodes(PROJECT_REFERENCES_PATH);
 
-                    if (string.IsNullOrEmpty(includeAttr))
-                    {
-                        continue;
-                    }
+        if (projectReferenceNodes is null)
+        {
+            return references;
+        }
 
-                    string childPath = Path.Combine(path1: baseDir, path2: includeAttr);
-                    references.AddRange(GetPackageReferences(fileName: childPath, includeReferences: true, includeChildReferences: true, config: config));
-                }
-            }
+        foreach (string childPath in projectReferenceNodes.OfType<XmlElement>()
+                                                          .Select(ExtractProjectReference)
+                                                          .RemoveNulls()
+                                                          .Select(projectReference => projectReference.RelativeInclude)
+                                                          .Select(relativeInclude => Path.Combine(path1: baseDir, path2: relativeInclude)))
+        {
+            references.AddRange(GetPackageReferences(fileName: childPath, includeReferences: true, includeChildReferences: true, config: config));
         }
 
         return references;
@@ -734,8 +739,7 @@ public sealed class DependencyReducer : IDependencyReducer
             throw new FileNotFoundException(message: "Unable to find project file.", fileName: fileName);
         }
 
-        XmlDocument doc = new();
-        doc.Load(fileName);
+        XmlDocument doc = LoadProjectXmlFromFile(fileName);
 
         if (!includeReferences && !includeChildReferences)
         {
