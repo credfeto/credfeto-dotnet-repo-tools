@@ -21,4 +21,7 @@ internal static partial class DependencyReducerLoggingExtensions
 
     [LoggerMessage(EventId = 6, Level = LogLevel.Information, Message = "* Building {project} using {minimalSdk} instead of {currentSdk}...")]
     public static partial void BuildingProjectWithMinimalSdk(this ILogger<DependencyReducer> logger, string project, string minimalSdk, string currentSdk);
+
+    [LoggerMessage(EventId = 7, Level = LogLevel.Information, Message = "### Failed to build {project} after restore.")]
+    public static partial void FailedToBuildProjectAfterRestore(this ILogger<DependencyReducer> logger, string project);
 }
