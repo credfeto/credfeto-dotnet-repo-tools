@@ -363,7 +363,7 @@ public sealed class DependencyReducer : IDependencyReducer
         return projectReferences.OfType<XmlElement>()
                                 .FirstOrDefault(element =>
                                                 {
-                                                    ProjectReference? pr = ExtractProjectReference(element);
+                                                    ProjectReference? pr = ProjectExtractor.ExtractProjectReference(element);
 
                                                     return pr == projectReference;
                                                 });
@@ -376,7 +376,7 @@ public sealed class DependencyReducer : IDependencyReducer
         return
         [
             .. projectReferences.OfType<XmlElement>()
-                                .Select(ExtractProjectReference)
+                                .Select(ProjectExtractor.ExtractProjectReference)
                                 .RemoveNulls()
         ];
     }
@@ -646,7 +646,7 @@ public sealed class DependencyReducer : IDependencyReducer
         }
 
         foreach (string childPath in projectReferenceNodes.OfType<XmlElement>()
-                                                          .Select(ExtractProjectReference)
+                                                          .Select(ProjectExtractor.ExtractProjectReference)
                                                           .RemoveNulls()
                                                           .Select(projectReference => projectReference.RelativeInclude)
                                                           .Select(relativeInclude => Path.Combine(path1: baseDir, path2: relativeInclude)))
@@ -663,25 +663,6 @@ public sealed class DependencyReducer : IDependencyReducer
         doc.Load(fileName);
 
         return doc;
-    }
-
-    private static ProjectReference? ExtractProjectReference(XmlElement node)
-    {
-        string relativeFileName = node.GetAttribute("Include");
-
-        if (string.IsNullOrEmpty(relativeFileName))
-        {
-            return null;
-        }
-
-        return new(relativeFileName);
-    }
-
-    private static FileProjectReference? ExtractProjectReference(string fileName, XmlElement node)
-    {
-        ProjectReference? projectReference = ExtractProjectReference(node);
-
-        return projectReference?.ToFileProjectReference(fileName);
     }
 
     private static void IncludeReferencedPackages(List<string> allPackageIds, XmlNodeList packageReferenceNodes)
@@ -717,7 +698,7 @@ public sealed class DependencyReducer : IDependencyReducer
         IReadOnlyList<FileProjectReference> baseReferences =
         [
             .. nodes.OfType<XmlElement>()
-                    .Select(node => ExtractProjectReference(fileName: baseDir, node: node))
+                    .Select(node => ProjectExtractor.ExtractProjectReference(fileName: baseDir, node: node))
                     .RemoveNulls()
         ];
 
