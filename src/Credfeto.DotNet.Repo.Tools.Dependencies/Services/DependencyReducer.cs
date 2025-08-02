@@ -138,9 +138,7 @@ public sealed class DependencyReducer : IDependencyReducer
                                                        FileContent fileContent,
                                                        CancellationToken cancellationToken)
     {
-        XmlDocument xml = fileContent.Xml;
-
-        IReadOnlyList<XmlNode> packageReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/PackageReference");
+        IReadOnlyList<XmlNode> packageReferences = GetNodes(xml: fileContent.Xml, xpath: "/Project/ItemGroup/PackageReference");
 
         List<string> allPackageIds = ExtractPackageIds(packageReferences);
 
@@ -176,7 +174,7 @@ public sealed class DependencyReducer : IDependencyReducer
             parentNode?.RemoveChild(node);
 
             bool needToBuild = true;
-            xml.Save(projectUpdateContext.Project);
+            fileContent.Xml.Save(projectUpdateContext.Project);
 
             XmlNode? versionNode = node["Version"];
 
@@ -262,7 +260,7 @@ public sealed class DependencyReducer : IDependencyReducer
                     parentNode?.InsertAfter(newChild: node, refChild: previousNode);
                 }
 
-                xml.Save(projectUpdateContext.Project);
+                fileContent.Xml.Save(projectUpdateContext.Project);
             }
             else
             {
@@ -276,9 +274,7 @@ public sealed class DependencyReducer : IDependencyReducer
                                                        FileContent fileContent,
                                                        CancellationToken cancellationToken)
     {
-        XmlDocument xml = fileContent.Xml;
-
-        IReadOnlyList<XmlNode> projectReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/ProjectReference");
+        IReadOnlyList<XmlNode> projectReferences = GetNodes(xml: fileContent.Xml, xpath: "/Project/ItemGroup/ProjectReference");
 
         foreach (XmlElement node in projectReferences.OfType<XmlElement>())
         {
@@ -298,7 +294,7 @@ public sealed class DependencyReducer : IDependencyReducer
             parentNode?.RemoveChild(node);
 
             bool needToBuild = true;
-            xml.Save(projectUpdateContext.Project);
+            fileContent.Xml.Save(projectUpdateContext.Project);
 
             XmlNode? versionNode = node["Version"];
 
@@ -367,7 +363,7 @@ public sealed class DependencyReducer : IDependencyReducer
                     parentNode?.InsertAfter(newChild: node, refChild: previousNode);
                 }
 
-                xml.Save(projectUpdateContext.Project);
+                fileContent.Xml.Save(projectUpdateContext.Project);
             }
             else
             {
