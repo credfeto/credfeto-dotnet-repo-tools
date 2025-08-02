@@ -36,4 +36,13 @@ internal static partial class DependencyReducerLoggingExtensions
 
     [LoggerMessage(EventId = 11, Level = LogLevel.Information, Message = "* Building {project} without package {packageId} ({version})...")]
     public static partial void BuildingProjectWithoutPackage(this ILogger<DependencyReducer> logger, string project, string packageId, string version);
+
+    [LoggerMessage(EventId = 12, Level = LogLevel.Information, Message = "Checking {relativeInclude}")]
+    public static partial void CheckingProjectReference(this ILogger<DependencyReducer> logger, string relativeInclude);
+
+    [LoggerMessage(EventId = 13, Level = LogLevel.Information, Message = "= {project} references package {relativeInclude} also in child project {childProject}")]
+    public static partial void ChildProjectReferencesProject(this ILogger<DependencyReducer> logger, string project, string relativeInclude, string childProject);
+
+    [LoggerMessage(EventId = 14, Level = LogLevel.Information, Message = "* Building {project} without project reference {relativeInclude}...")]
+    public static partial void BuildingProjectWithoutProject(this ILogger<DependencyReducer> logger, string project, string relativeInclude);
 }
