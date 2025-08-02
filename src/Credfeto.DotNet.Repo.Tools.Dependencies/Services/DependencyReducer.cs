@@ -815,26 +815,26 @@ public sealed class DependencyReducer : IDependencyReducer
     {
         private readonly string _fileName;
 
+        private byte[] _source;
+
         private FileContent(string fileName, byte[] source, XmlDocument xml)
         {
             this._fileName = fileName;
-            this.Source = source;
+            this._source = source;
             this.Xml = xml;
         }
-
-        public byte[] Source { get; private set; }
 
         public XmlDocument Xml { get; private set; }
 
         public async ValueTask ReloadAsync(CancellationToken cancellationToken)
         {
-            this.Source = await File.ReadAllBytesAsync(path: this._fileName, cancellationToken: cancellationToken);
-            this.Xml = await LoadProjectXmlAsync(source: this.Source, cancellationToken: cancellationToken);
+            this._source = await File.ReadAllBytesAsync(path: this._fileName, cancellationToken: cancellationToken);
+            this.Xml = await LoadProjectXmlAsync(source: this._source, cancellationToken: cancellationToken);
         }
 
         public async ValueTask SaveAsync(CancellationToken cancellationToken)
         {
-            await File.WriteAllBytesAsync(path: this._fileName, bytes: this.Source, cancellationToken: cancellationToken);
+            await File.WriteAllBytesAsync(path: this._fileName, bytes: this._source, cancellationToken: cancellationToken);
         }
 
         public static async ValueTask<FileContent> LoadAsync(string fileName, CancellationToken cancellationToken)
@@ -862,8 +862,8 @@ public sealed class DependencyReducer : IDependencyReducer
 
         public async ValueTask ResetAsync(CancellationToken cancellationToken)
         {
-            this.Xml = await LoadProjectXmlAsync(source: this.Source, cancellationToken: cancellationToken);
-            await File.WriteAllBytesAsync(path: this._fileName, bytes: this.Source, cancellationToken: cancellationToken);
+            this.Xml = await LoadProjectXmlAsync(source: this._source, cancellationToken: cancellationToken);
+            await File.WriteAllBytesAsync(path: this._fileName, bytes: this._source, cancellationToken: cancellationToken);
         }
     }
 
