@@ -105,9 +105,9 @@ public sealed class DependencyReducer : IDependencyReducer
             throw new DotNetBuildErrorException("Failed to build a project");
         }
 
-        IReadOnlyList<PackageReference> childPackageReferences =
+        IReadOnlyList<FilePackageReference> childPackageReferences =
             GetPackageReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true, config: projectUpdateContext.Config);
-        IReadOnlyList<ProjectReference> childProjectReferences = GetProjectReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true);
+        IReadOnlyList<FileProjectReference> childProjectReferences = GetProjectReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true);
 
         await this.CheckProjectSdkAsync(projectUpdateContext: projectUpdateContext, fileContent: fileContent, cancellationToken: cancellationToken);
         await this.CheckPackageReferenceAsync(projectUpdateContext: projectUpdateContext,
@@ -133,8 +133,8 @@ public sealed class DependencyReducer : IDependencyReducer
     }
 
     private async ValueTask CheckPackageReferenceAsync(ProjectUpdateContext projectUpdateContext,
-                                                       IReadOnlyList<PackageReference> childPackageReferences,
-                                                       IReadOnlyList<ProjectReference> childProjectReferences,
+                                                       IReadOnlyList<FilePackageReference> childPackageReferences,
+                                                       IReadOnlyList<FileProjectReference> childProjectReferences,
                                                        FileContent fileContent,
                                                        CancellationToken cancellationToken)
     {
@@ -180,7 +180,7 @@ public sealed class DependencyReducer : IDependencyReducer
 
             if (versionNode is not null)
             {
-                PackageReference? existingChildInclude = FindChildPackage(childPackageReferences: childPackageReferences, includeName: includeName, version: versionNode.InnerText);
+                FilePackageReference? existingChildInclude = FindChildPackage(childPackageReferences: childPackageReferences, includeName: includeName, version: versionNode.InnerText);
 
                 if (existingChildInclude is not null)
                 {
@@ -194,7 +194,7 @@ public sealed class DependencyReducer : IDependencyReducer
             }
             else
             {
-                ProjectReference? existingChildInclude = FindChildProject(childProjectReferences: childProjectReferences, includeName: includeName);
+                FileProjectReference? existingChildInclude = FindChildProject(childProjectReferences: childProjectReferences, includeName: includeName);
 
                 if (existingChildInclude is not null)
                 {
@@ -270,7 +270,7 @@ public sealed class DependencyReducer : IDependencyReducer
     }
 
     private async ValueTask CheckProjectReferenceAsync(ProjectUpdateContext projectUpdateContext,
-                                                       IReadOnlyList<ProjectReference> childProjectReferences,
+                                                       IReadOnlyList<FileProjectReference> childProjectReferences,
                                                        FileContent fileContent,
                                                        CancellationToken cancellationToken)
     {
@@ -298,7 +298,7 @@ public sealed class DependencyReducer : IDependencyReducer
 
             XmlNode? versionNode = node["Version"];
 
-            ProjectReference? existingChildInclude = FindChildProject(childProjectReferences: childProjectReferences, includeName: includeName);
+            FileProjectReference? existingChildInclude = FindChildProject(childProjectReferences: childProjectReferences, includeName: includeName);
 
             if (existingChildInclude is not null)
             {
@@ -438,32 +438,32 @@ public sealed class DependencyReducer : IDependencyReducer
         ];
     }
 
-    private static ProjectReference? FindChildProject(IReadOnlyList<ProjectReference> childProjectReferences, string includeName)
+    private static FileProjectReference? FindChildProject(IReadOnlyList<FileProjectReference> childProjectReferences, string includeName)
     {
         return childProjectReferences.FirstOrDefault(p => IsMatchingProjectName(p: p, includeName: includeName));
     }
 
-    private static PackageReference? FindChildPackage(IReadOnlyList<PackageReference> childPackageReferences, string includeName, string version)
+    private static FilePackageReference? FindChildPackage(IReadOnlyList<FilePackageReference> childPackageReferences, string includeName, string version)
     {
         return childPackageReferences.FirstOrDefault(packageReference => IsMatching(p: packageReference, includeName: includeName, version: version));
 
-        static bool IsMatching(PackageReference p, string includeName, string version)
+        static bool IsMatching(FilePackageReference p, string includeName, string version)
         {
             return IsMatchingPackageName(p: p, includeName: includeName) && IsMatchingPackageVersion(p: p, version: version);
         }
     }
 
-    private static bool IsMatchingPackageVersion(PackageReference p, string version)
+    private static bool IsMatchingPackageVersion(FilePackageReference p, string version)
     {
         return StringComparer.Ordinal.Equals(x: p.Version, y: version);
     }
 
-    private static bool IsMatchingPackageName(PackageReference p, string includeName)
+    private static bool IsMatchingPackageName(FilePackageReference p, string includeName)
     {
-        return StringComparer.Ordinal.Equals(x: p.Name, y: includeName);
+        return StringComparer.Ordinal.Equals(x: p.PackageId, y: includeName);
     }
 
-    private static bool IsMatchingProjectName(ProjectReference p, string includeName)
+    private static bool IsMatchingProjectName(FileProjectReference p, string includeName)
     {
         return StringComparer.Ordinal.Equals(x: p.Name, y: includeName);
     }
@@ -599,7 +599,7 @@ public sealed class DependencyReducer : IDependencyReducer
         return null;
     }
 
-    private static IReadOnlyList<PackageReference> GetPackageReferences(string fileName, bool includeReferences, bool includeChildReferences, ReferenceConfig config)
+    private static IReadOnlyList<FilePackageReference> GetPackageReferences(string fileName, bool includeReferences, bool includeChildReferences, ReferenceConfig config)
     {
         string? baseDir = Path.GetDirectoryName(fileName);
 
@@ -608,7 +608,7 @@ public sealed class DependencyReducer : IDependencyReducer
             throw new FileNotFoundException(message: "Unable to find project file.", fileName: fileName);
         }
 
-        List<PackageReference> references = [];
+        List<FilePackageReference> references = [];
         List<string> allPackageIds = [];
 
         XmlDocument doc = LoadProjectXmlFromFile(fileName);
@@ -659,11 +659,11 @@ public sealed class DependencyReducer : IDependencyReducer
         return doc;
     }
 
-    private static PackageReference? ExtractPackageReference(ReferenceConfig config, XmlElement node, List<string> allPackageIds, string baseDir)
+    private static FilePackageReference? ExtractPackageReference(ReferenceConfig config, XmlElement node, List<string> allPackageIds, string baseDir)
     {
-        string includeAttr = node.GetAttribute("Include");
+        string packageId = node.GetAttribute("Include");
 
-        if (string.IsNullOrEmpty(includeAttr))
+        if (string.IsNullOrEmpty(packageId))
         {
             return null;
         }
@@ -675,11 +675,6 @@ public sealed class DependencyReducer : IDependencyReducer
             return null;
         }
 
-        if (config.IsDoNotRemovePackage(packageId: includeAttr, allPackageIds: allPackageIds))
-        {
-            return null;
-        }
-
         XmlNode? versionNode = node.SelectSingleNode("Version");
 
         if (versionNode is null)
@@ -687,9 +682,14 @@ public sealed class DependencyReducer : IDependencyReducer
             return null;
         }
 
-        PackageReference packageReference = new(File: baseDir, Name: includeAttr, Version: versionNode.InnerText);
+        FilePackageReference filePackageReference = new(File: baseDir, PackageId: packageId, Version: versionNode.InnerText);
 
-        return packageReference;
+        if (config.IsDoNotRemovePackage(packageId: filePackageReference.PackageId, allPackageIds: allPackageIds))
+        {
+            return null;
+        }
+
+        return filePackageReference;
     }
 
     private static void IncludeReferencedPackages(List<string> allPackageIds, XmlNodeList packageReferenceNodes)
@@ -699,7 +699,7 @@ public sealed class DependencyReducer : IDependencyReducer
                                                     .Where(include => !string.IsNullOrEmpty(include) && !allPackageIds.Contains(value: include, comparer: StringComparer.OrdinalIgnoreCase)));
     }
 
-    private static IReadOnlyList<ProjectReference> GetProjectReferences(string fileName, bool includeReferences, bool includeChildReferences)
+    private static IReadOnlyList<FileProjectReference> GetProjectReferences(string fileName, bool includeReferences, bool includeChildReferences)
     {
         string? baseDir = Path.GetDirectoryName(fileName);
 
@@ -708,7 +708,7 @@ public sealed class DependencyReducer : IDependencyReducer
             throw new FileNotFoundException(message: "Unable to find project file.", fileName: fileName);
         }
 
-        List<ProjectReference> references = [];
+        List<FileProjectReference> references = [];
 
         XmlDocument doc = new();
         doc.Load(fileName);
@@ -721,11 +721,11 @@ public sealed class DependencyReducer : IDependencyReducer
             {
                 foreach (XmlElement node in nodes.OfType<XmlElement>())
                 {
-                    string includeAttr = node.GetAttribute(localName: "Include", namespaceURI: "");
+                    string relativeFileName = node.GetAttribute("Include");
 
-                    if (!string.IsNullOrEmpty(includeAttr))
+                    if (!string.IsNullOrEmpty(relativeFileName))
                     {
-                        references.Add(new(File: baseDir, Name: includeAttr));
+                        references.Add(new(File: baseDir, Name: relativeFileName));
                     }
                 }
             }
