@@ -762,7 +762,7 @@ public sealed class DependencyReducer : IDependencyReducer
         return true;
     }
 
-    public static bool ShouldCheckSdk(string sdk, string projectFolder, XmlDocument xml)
+    private static bool ShouldCheckSdk(string sdk, string projectFolder, XmlDocument xml)
     {
         if (!sdk.StartsWith(value: "Microsoft.NET.Sdk.", comparisonType: StringComparison.Ordinal))
         {
@@ -863,6 +863,7 @@ public sealed class DependencyReducer : IDependencyReducer
         public async ValueTask ResetAsync(CancellationToken cancellationToken)
         {
             this.Xml = await LoadProjectXmlAsync(source: this.Source, cancellationToken: cancellationToken);
+            await File.WriteAllBytesAsync(path: this._fileName, bytes: this.Source, cancellationToken: cancellationToken);
         }
     }
 
