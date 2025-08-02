@@ -398,31 +398,11 @@ public sealed class DependencyReducer : IDependencyReducer
                     sdkAttr.Value = MINIMAL_SDK;
                     fileContent.Xml.Save(projectUpdateContext.Project);
 
-                    this._logger.BuildingProjectWithMinimalSdk(project: projectUpdateContext.Project, minimalSdk: MINIMAL_SDK, currentSdk: sdk);
-                    bool buildOk = await this.BuildProjectAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken);
-                    bool restore1 = true;
-
-                    if (buildOk)
-                    {
-                        WriteProgress("  - Building succeeded.");
-                        projectUpdateContext.Tracking.AddChangeSdk(new(ProjectFileName: projectUpdateContext.Project, Type: ReferenceType.SDK, Name: sdk));
-
-                        if (await this.BuildSolutionAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken))
-                        {
-                            restore1 = false;
-                        }
-                    }
-                    else
-                    {
-                        WriteProgress("  = Building failed.");
-                    }
-
-                    bool restore = restore1;
+                    bool restore = await this.TestProjectMinimalSdkChangeAsync(projectUpdateContext: projectUpdateContext, sdk: sdk, cancellationToken: cancellationToken);
 
                     if (restore)
                     {
-                        sdkAttr.Value = sdk;
-                        fileContent.Xml.Save(projectUpdateContext.Project);
+                        await fileContent.ResetAsync(cancellationToken);
                     }
                     else
                     {
@@ -435,6 +415,21 @@ public sealed class DependencyReducer : IDependencyReducer
                 }
             }
         }
+    }
+
+    private async ValueTask<bool> TestProjectMinimalSdkChangeAsync(ProjectUpdateContext projectUpdateContext, string sdk, CancellationToken cancellationToken)
+    {
+        this._logger.BuildingProjectWithMinimalSdk(project: projectUpdateContext.Project, minimalSdk: MINIMAL_SDK, currentSdk: sdk);
+        bool buildOk = await this.BuildProjectAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken);
+
+        if (buildOk)
+        {
+            projectUpdateContext.Tracking.AddChangeSdk(new(ProjectFileName: projectUpdateContext.Project, Type: ReferenceType.SDK, Name: sdk));
+
+            return !await this.BuildSolutionAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken);
+        }
+
+        return true;
     }
 
     private async ValueTask<IReadOnlyList<string>> GetProjectsAsync(string sourceDirectory, ReferenceConfig config, CancellationToken cancellationToken)
