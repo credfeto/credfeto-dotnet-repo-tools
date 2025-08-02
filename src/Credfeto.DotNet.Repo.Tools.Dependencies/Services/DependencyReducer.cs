@@ -9,6 +9,7 @@ using System.Xml;
 using System.Xml.XPath;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Dependencies.Helpers;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Models;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Services.LoggingExtensions;
 using Credfeto.Extensions.Linq;
@@ -232,7 +233,7 @@ public sealed class DependencyReducer : IDependencyReducer
         return xmlPackageReferences.OfType<XmlElement>()
                                    .FirstOrDefault(element =>
                                                    {
-                                                       PackageReference? pr = ExtractPackageReference(element);
+                                                       PackageReference? pr = PackageExtractor.ExtractPackageReference(element);
 
                                                        return pr == packageReference;
                                                    });
@@ -266,7 +267,7 @@ public sealed class DependencyReducer : IDependencyReducer
         return
         [
             .. xmlPackageReferences.OfType<XmlElement>()
-                                   .Select(ExtractPackageReference)
+                                   .Select(PackageExtractor.ExtractPackageReference)
                                    .RemoveNulls()
         ];
     }
@@ -627,7 +628,7 @@ public sealed class DependencyReducer : IDependencyReducer
                 IncludeReferencedPackages(allPackageIds: allPackageIds, packageReferenceNodes: packageReferenceNodes);
 
                 references.AddRange(packageReferenceNodes.OfType<XmlElement>()
-                                                         .Select(node => ExtractPackageReference(config: config, node: node, allPackageIds: allPackageIds, baseDir: baseDir))
+                                                         .Select(node => PackageExtractor.ExtractPackageReference(config: config, node: node, allPackageIds: allPackageIds, baseDir: baseDir))
                                                          .RemoveNulls());
             }
         }
@@ -662,46 +663,6 @@ public sealed class DependencyReducer : IDependencyReducer
         doc.Load(fileName);
 
         return doc;
-    }
-
-    private static PackageReference? ExtractPackageReference(XmlElement node)
-    {
-        string packageId = node.GetAttribute("Include");
-
-        if (string.IsNullOrEmpty(packageId))
-        {
-            return null;
-        }
-
-        XmlNode? privateAssetsNode = node.SelectSingleNode("PrivateAssets");
-
-        if (privateAssetsNode is not null)
-        {
-            return null;
-        }
-
-        XmlNode? versionNode = node.SelectSingleNode("Version");
-
-        if (versionNode is null)
-        {
-            return null;
-        }
-
-        return new(PackageId: packageId, Version: versionNode.InnerText);
-    }
-
-    private static FilePackageReference? ExtractPackageReference(ReferenceConfig config, XmlElement node, List<string> allPackageIds, string baseDir)
-    {
-        PackageReference? packageReference = ExtractPackageReference(node);
-
-        if (packageReference is null)
-        {
-            return null;
-        }
-
-        return config.IsDoNotRemovePackage(packageId: packageReference.PackageId, allPackageIds: allPackageIds)
-            ? null
-            : packageReference.ToFilePackageReference(baseDir);
     }
 
     private static ProjectReference? ExtractProjectReference(XmlElement node)
