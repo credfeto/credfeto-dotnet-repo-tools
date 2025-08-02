@@ -19,6 +19,9 @@ namespace Credfeto.DotNet.Repo.Tools.Dependencies.Services;
 public sealed class DependencyReducer : IDependencyReducer
 {
     private const string MINIMAL_SDK = "Microsoft.NET.Sdk";
+    private const string PACKAGE_REFERENCES_PATH = "/Project/ItemGroup/PackageReference";
+    private const string PROJECT_REFERENCES_PATH = "/Project/ItemGroup/ProjectReference";
+
     private readonly IDotNetBuild _dotNetBuild;
     private readonly ILogger<DependencyReducer> _logger;
 
@@ -112,7 +115,6 @@ public sealed class DependencyReducer : IDependencyReducer
         await this.CheckProjectSdkAsync(projectUpdateContext: projectUpdateContext, fileContent: fileContent, cancellationToken: cancellationToken);
         await this.CheckPackageReferenceAsync(projectUpdateContext: projectUpdateContext,
                                               childPackageReferences: childPackageReferences,
-                                              childProjectReferences: childProjectReferences,
                                               fileContent: fileContent,
                                               cancellationToken: cancellationToken);
         await this.CheckProjectReferenceAsync(projectUpdateContext: projectUpdateContext,
@@ -134,133 +136,39 @@ public sealed class DependencyReducer : IDependencyReducer
 
     private async ValueTask CheckPackageReferenceAsync(ProjectUpdateContext projectUpdateContext,
                                                        IReadOnlyList<FilePackageReference> childPackageReferences,
-                                                       IReadOnlyList<FileProjectReference> childProjectReferences,
                                                        FileContent fileContent,
                                                        CancellationToken cancellationToken)
     {
-        IReadOnlyList<XmlNode> packageReferences = GetNodes(xml: fileContent.Xml, xpath: "/Project/ItemGroup/PackageReference");
+        IReadOnlyList<PackageReference> packageReferences = GetPackageReferencesFromFileContent(fileContent);
 
-        List<string> allPackageIds = ExtractPackageIds(packageReferences);
+        IReadOnlyList<string> allPackageIds = ExtractPackageIds(packageReferences);
 
-        foreach (XmlElement node in packageReferences.OfType<XmlElement>())
+        foreach (PackageReference packageReference in packageReferences)
         {
-            string includeName = node.GetAttribute("Include");
+            XmlElement? node = FindPackageReference(xml: fileContent.Xml, packageReference: packageReference);
 
-            if (string.IsNullOrEmpty(includeName))
+            if (node is null)
             {
-                WriteProgress("= Skipping malformed include");
+                continue;
+            }
+
+            if (projectUpdateContext.Config.IsDoNotRemovePackage(packageId: packageReference.PackageId, allPackageIds: allPackageIds))
+            {
+                this._logger.SkippingDoNotRemovePackage(packageReference.PackageId);
 
                 continue;
             }
 
-            if (projectUpdateContext.Config.IsDoNotRemovePackage(packageId: includeName, allPackageIds: allPackageIds))
-            {
-                WriteProgress($"= Skipping {includeName} as it is marked as do not remove");
-
-                continue;
-            }
-
-            if (node["PrivateAssets"] is not null)
-            {
-                WriteProgress($"= Skipping {includeName} as it uses private assets");
-
-                continue;
-            }
-
-            WriteProgress($"Checking: {includeName}");
-
-            XmlNode? previousNode = node.PreviousSibling;
-            XmlNode? parentNode = node.ParentNode;
-            parentNode?.RemoveChild(node);
-
-            bool needToBuild = true;
-            fileContent.Xml.Save(projectUpdateContext.Project);
-
-            XmlNode? versionNode = node["Version"];
-
-            if (versionNode is not null)
-            {
-                FilePackageReference? existingChildInclude = FindChildPackage(childPackageReferences: childPackageReferences, includeName: includeName, version: versionNode.InnerText);
-
-                if (existingChildInclude is not null)
-                {
-                    WriteProgress($"= {projectUpdateContext.Project} references package {includeName} ({versionNode.InnerText}) also in child project {existingChildInclude.File}");
-                    needToBuild = false;
-                }
-                else
-                {
-                    WriteProgress($"* Building {projectUpdateContext.Project} without package {includeName} ({versionNode.InnerText})...");
-                }
-            }
-            else
-            {
-                FileProjectReference? existingChildInclude = FindChildProject(childProjectReferences: childProjectReferences, includeName: includeName);
-
-                if (existingChildInclude is not null)
-                {
-                    WriteProgress($"= {projectUpdateContext.Project} references project {includeName} also in child project {existingChildInclude.File}");
-                    needToBuild = false;
-                }
-                else
-                {
-                    WriteProgress($"* Building {projectUpdateContext.Project} without project {includeName}...");
-                }
-            }
-
-            bool buildOk = !needToBuild || await this.BuildProjectAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken);
-            bool restore = true;
-
-            if (buildOk)
-            {
-                WriteProgress("  - Building succeeded.");
-
-                projectUpdateContext.Tracking.AddObsolete(versionNode is not null
-                                                              ? new(ProjectFileName: projectUpdateContext.Project, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText)
-                                                              : new(ProjectFileName: projectUpdateContext.Project, Type: ReferenceType.Project, Name: includeName));
-
-                if (await this.BuildSolutionAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken))
-                {
-                    restore = false;
-                }
-            }
-            else
-            {
-                WriteProgress("  = Building failed.");
-
-                if (versionNode is not null)
-                {
-                    if (await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectUpdateContext.ProjectDirectory, packageId: includeName, cancellationToken: cancellationToken))
-                    {
-                        projectUpdateContext.Tracking.AddReduceReferences(new(ProjectFileName: projectUpdateContext.Project,
-                                                                              Type: ReferenceType.Package,
-                                                                              Name: includeName,
-                                                                              Version: versionNode.InnerText));
-                    }
-                }
-                else
-                {
-                    string? packageId = ExtractProjectFromReference(includeName);
-
-                    if (!string.IsNullOrEmpty(packageId) &&
-                        await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectUpdateContext.ProjectDirectory, packageId: packageId, cancellationToken: cancellationToken))
-                    {
-                        projectUpdateContext.Tracking.AddReduceReferences(new(ProjectFileName: projectUpdateContext.Project, Type: ReferenceType.Project, Name: includeName));
-                    }
-                }
-            }
+            bool restore = await this.TestProjectPackageReferenceRemovalChangeAsync(projectUpdateContext: projectUpdateContext,
+                                                                                    childPackageReferences: childPackageReferences,
+                                                                                    fileContent: fileContent,
+                                                                                    packageReference: packageReference,
+                                                                                    node: node,
+                                                                                    cancellationToken: cancellationToken);
 
             if (restore)
             {
-                if (previousNode is null)
-                {
-                    parentNode?.PrependChild(node);
-                }
-                else
-                {
-                    parentNode?.InsertAfter(newChild: node, refChild: previousNode);
-                }
-
-                fileContent.Xml.Save(projectUpdateContext.Project);
+                await fileContent.ResetAsync(cancellationToken);
             }
             else
             {
@@ -269,12 +177,104 @@ public sealed class DependencyReducer : IDependencyReducer
         }
     }
 
+    private async ValueTask<bool> TestProjectPackageReferenceRemovalChangeAsync(ProjectUpdateContext projectUpdateContext,
+                                                                                IReadOnlyList<FilePackageReference> childPackageReferences,
+                                                                                FileContent fileContent,
+                                                                                PackageReference packageReference,
+                                                                                XmlElement node,
+                                                                                CancellationToken cancellationToken)
+    {
+        this._logger.CheckingPackage(packageId: packageReference.PackageId, version: packageReference.Version);
+
+        RemoveNodeFromProject(projectUpdateContext: projectUpdateContext, fileContent: fileContent, node: node);
+
+        bool needToBuild = this.ProjectDoesNotAlreadyIncludePackageThroughChild(projectUpdateContext: projectUpdateContext,
+                                                                                childPackageReferences: childPackageReferences,
+                                                                                packageReference: packageReference);
+
+        bool buildOk = !needToBuild || await this.BuildProjectAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken);
+
+        if (buildOk)
+        {
+            projectUpdateContext.Tracking.AddObsolete(new(ProjectFileName: projectUpdateContext.Project,
+                                                          Type: ReferenceType.Package,
+                                                          Name: packageReference.PackageId,
+                                                          Version: packageReference.Version));
+
+            return !await this.BuildSolutionAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken);
+        }
+
+        if (await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectUpdateContext.ProjectDirectory, packageId: packageReference.PackageId, cancellationToken: cancellationToken))
+        {
+            projectUpdateContext.Tracking.AddReduceReferences(new(ProjectFileName: projectUpdateContext.Project,
+                                                                  Type: ReferenceType.Package,
+                                                                  Name: packageReference.PackageId,
+                                                                  Version: packageReference.Version));
+        }
+
+        return true;
+    }
+
+    private static void RemoveNodeFromProject(in ProjectUpdateContext projectUpdateContext, FileContent fileContent, XmlElement node)
+    {
+        XmlNode? parentNode = node.ParentNode;
+        parentNode?.RemoveChild(node);
+
+        fileContent.Xml.Save(projectUpdateContext.Project);
+    }
+
+    private static XmlElement? FindPackageReference(XmlDocument xml, PackageReference packageReference)
+    {
+        IReadOnlyList<XmlNode> xmlPackageReferences = GetNodes(xml: xml, xpath: PACKAGE_REFERENCES_PATH);
+
+        return xmlPackageReferences.OfType<XmlElement>()
+                                   .FirstOrDefault(element =>
+                                                   {
+                                                       PackageReference? pr = ExtractPackageReference(element);
+
+                                                       return pr == packageReference;
+                                                   });
+    }
+
+    private bool ProjectDoesNotAlreadyIncludePackageThroughChild(in ProjectUpdateContext projectUpdateContext,
+                                                                 IReadOnlyList<FilePackageReference> childPackageReferences,
+                                                                 PackageReference packageReference)
+    {
+        FilePackageReference? existingChildInclude = FindChildPackage(childPackageReferences: childPackageReferences, includeName: packageReference.PackageId, version: packageReference.Version);
+
+        if (existingChildInclude is null)
+        {
+            this._logger.BuildingProjectWithoutPackage(project: projectUpdateContext.Project, packageId: packageReference.PackageId, version: packageReference.Version);
+
+            return true;
+        }
+
+        this._logger.ChildProjectReferencesPackage(project: projectUpdateContext.Project,
+                                                   packageId: packageReference.PackageId,
+                                                   version: packageReference.Version,
+                                                   childProject: existingChildInclude.File);
+
+        return false;
+    }
+
+    private static IReadOnlyList<PackageReference> GetPackageReferencesFromFileContent(FileContent fileContent)
+    {
+        IReadOnlyList<XmlNode> xmlPackageReferences = GetNodes(xml: fileContent.Xml, xpath: PACKAGE_REFERENCES_PATH);
+
+        return
+        [
+            .. xmlPackageReferences.OfType<XmlElement>()
+                                   .Select(ExtractPackageReference)
+                                   .RemoveNulls()
+        ];
+    }
+
     private async ValueTask CheckProjectReferenceAsync(ProjectUpdateContext projectUpdateContext,
                                                        IReadOnlyList<FileProjectReference> childProjectReferences,
                                                        FileContent fileContent,
                                                        CancellationToken cancellationToken)
     {
-        IReadOnlyList<XmlNode> projectReferences = GetNodes(xml: fileContent.Xml, xpath: "/Project/ItemGroup/ProjectReference");
+        IReadOnlyList<XmlNode> projectReferences = GetNodes(xml: fileContent.Xml, xpath: PROJECT_REFERENCES_PATH);
 
         foreach (XmlElement node in projectReferences.OfType<XmlElement>())
         {
@@ -468,21 +468,13 @@ public sealed class DependencyReducer : IDependencyReducer
         return StringComparer.Ordinal.Equals(x: p.Name, y: includeName);
     }
 
-    private static List<string> ExtractPackageIds(IReadOnlyList<XmlNode> packageReferences)
+    private static IReadOnlyList<string> ExtractPackageIds(IReadOnlyList<PackageReference> packageReferences)
     {
-        List<string> allPackageIds = [];
-
-        foreach (XmlElement node in packageReferences.OfType<XmlElement>())
-        {
-            string include = node.GetAttribute("Include");
-
-            if (!string.IsNullOrEmpty(include))
-            {
-                allPackageIds.Add(include);
-            }
-        }
-
-        return allPackageIds;
+        return
+        [
+            ..packageReferences.Select(packageReference => packageReference.PackageId)
+                               .Distinct(StringComparer.OrdinalIgnoreCase)
+        ];
     }
 
     private static IReadOnlyList<XmlNode> GetNodes(XmlDocument xml, string xpath)
@@ -694,12 +686,9 @@ public sealed class DependencyReducer : IDependencyReducer
             return null;
         }
 
-        if (config.IsDoNotRemovePackage(packageId: packageReference.PackageId, allPackageIds: allPackageIds))
-        {
-            return null;
-        }
-
-        return packageReference.ToFilePackageReference(baseDir);
+        return config.IsDoNotRemovePackage(packageId: packageReference.PackageId, allPackageIds: allPackageIds)
+            ? null
+            : packageReference.ToFilePackageReference(baseDir);
     }
 
     private static void IncludeReferencedPackages(List<string> allPackageIds, XmlNodeList packageReferenceNodes)
@@ -899,6 +888,11 @@ public sealed class DependencyReducer : IDependencyReducer
             cancellationToken.ThrowIfCancellationRequested();
 
             return xml;
+        }
+
+        public async ValueTask ResetAsync(CancellationToken cancellationToken)
+        {
+            this.Xml = await LoadProjectXmlAsync(source: this.Source, cancellationToken: cancellationToken);
         }
     }
 
