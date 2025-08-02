@@ -659,7 +659,7 @@ public sealed class DependencyReducer : IDependencyReducer
         return doc;
     }
 
-    private static FilePackageReference? ExtractPackageReference(ReferenceConfig config, XmlElement node, List<string> allPackageIds, string baseDir)
+    private static PackageReference? ExtractPackageReference(XmlElement node)
     {
         string packageId = node.GetAttribute("Include");
 
@@ -682,14 +682,24 @@ public sealed class DependencyReducer : IDependencyReducer
             return null;
         }
 
-        FilePackageReference filePackageReference = new(File: baseDir, PackageId: packageId, Version: versionNode.InnerText);
+        return new(PackageId: packageId, Version: versionNode.InnerText);
+    }
 
-        if (config.IsDoNotRemovePackage(packageId: filePackageReference.PackageId, allPackageIds: allPackageIds))
+    private static FilePackageReference? ExtractPackageReference(ReferenceConfig config, XmlElement node, List<string> allPackageIds, string baseDir)
+    {
+        PackageReference? packageReference = ExtractPackageReference(node);
+
+        if (packageReference is null)
         {
             return null;
         }
 
-        return filePackageReference;
+        if (config.IsDoNotRemovePackage(packageId: packageReference.PackageId, allPackageIds: allPackageIds))
+        {
+            return null;
+        }
+
+        return packageReference.ToFilePackageReference(baseDir);
     }
 
     private static void IncludeReferencedPackages(List<string> allPackageIds, XmlNodeList packageReferenceNodes)
