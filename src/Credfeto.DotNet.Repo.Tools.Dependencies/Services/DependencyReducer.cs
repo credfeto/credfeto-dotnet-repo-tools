@@ -105,21 +105,46 @@ public sealed class DependencyReducer : IDependencyReducer
             throw new DotNetBuildErrorException("Failed to build a project");
         }
 
-        List<PackageReference> childPackageReferences =
+        IReadOnlyList<PackageReference> childPackageReferences =
             GetPackageReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true, config: projectUpdateContext.Config);
-        List<ProjectReference> childProjectReferences = GetProjectReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true);
+        IReadOnlyList<ProjectReference> childProjectReferences = GetProjectReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true);
 
         await this.CheckProjectSdkAsync(projectUpdateContext: projectUpdateContext, fileContent: fileContent, cancellationToken: cancellationToken);
+        await this.CheckPackageReferenceAsync(projectUpdateContext: projectUpdateContext,
+                                              childPackageReferences: childPackageReferences,
+                                              childProjectReferences: childProjectReferences,
+                                              fileContent: fileContent,
+                                              cancellationToken: cancellationToken);
+        await this.CheckProjectReferenceAsync(projectUpdateContext: projectUpdateContext,
+                                              childProjectReferences: childProjectReferences,
+                                              fileContent: fileContent,
+                                              cancellationToken: cancellationToken);
 
+        await fileContent.SaveAsync(cancellationToken: cancellationToken);
+
+        if (!await this.BuildProjectAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken))
+        {
+            this._logger.FailedToBuildProjectAfterRestore(projectUpdateContext.Project);
+
+            throw new DotNetBuildErrorException("Failed to build project after restore");
+        }
+
+        WriteSectionEnd($"({projectUpdateContext.ProjectInstance}/{projectUpdateContext.ProjectCount}): Testing project: {projectUpdateContext.Project}");
+    }
+
+    private async ValueTask CheckPackageReferenceAsync(ProjectUpdateContext projectUpdateContext,
+                                                       IReadOnlyList<PackageReference> childPackageReferences,
+                                                       IReadOnlyList<ProjectReference> childProjectReferences,
+                                                       FileContent fileContent,
+                                                       CancellationToken cancellationToken)
+    {
         XmlDocument xml = fileContent.Xml;
+
         IReadOnlyList<XmlNode> packageReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/PackageReference");
-        IReadOnlyList<XmlNode> projectReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/ProjectReference");
 
         List<string> allPackageIds = ExtractPackageIds(packageReferences);
 
-        List<XmlNode> allNodes = [.. packageReferences, .. projectReferences];
-
-        foreach (XmlElement node in allNodes.OfType<XmlElement>())
+        foreach (XmlElement node in packageReferences.OfType<XmlElement>())
         {
             string includeName = node.GetAttribute("Include");
 
@@ -244,17 +269,111 @@ public sealed class DependencyReducer : IDependencyReducer
                 await fileContent.ReloadAsync(cancellationToken: cancellationToken);
             }
         }
+    }
 
-        await fileContent.SaveAsync(cancellationToken: cancellationToken);
+    private async ValueTask CheckProjectReferenceAsync(ProjectUpdateContext projectUpdateContext,
+                                                       IReadOnlyList<ProjectReference> childProjectReferences,
+                                                       FileContent fileContent,
+                                                       CancellationToken cancellationToken)
+    {
+        XmlDocument xml = fileContent.Xml;
 
-        if (!await this.BuildProjectAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken))
+        IReadOnlyList<XmlNode> projectReferences = GetNodes(xml: xml, xpath: "/Project/ItemGroup/ProjectReference");
+
+        foreach (XmlElement node in projectReferences.OfType<XmlElement>())
         {
-            WriteError($"### Failed to build {projectUpdateContext.Project} after restore.");
+            string includeName = node.GetAttribute("Include");
 
-            throw new DotNetBuildErrorException("Failed to build project after restore");
+            if (string.IsNullOrEmpty(includeName))
+            {
+                WriteProgress("= Skipping malformed include");
+
+                continue;
+            }
+
+            WriteProgress($"Checking: {includeName}");
+
+            XmlNode? previousNode = node.PreviousSibling;
+            XmlNode? parentNode = node.ParentNode;
+            parentNode?.RemoveChild(node);
+
+            bool needToBuild = true;
+            xml.Save(projectUpdateContext.Project);
+
+            XmlNode? versionNode = node["Version"];
+
+            ProjectReference? existingChildInclude = FindChildProject(childProjectReferences: childProjectReferences, includeName: includeName);
+
+            if (existingChildInclude is not null)
+            {
+                WriteProgress($"= {projectUpdateContext.Project} references project {includeName} also in child project {existingChildInclude.File}");
+                needToBuild = false;
+            }
+            else
+            {
+                WriteProgress($"* Building {projectUpdateContext.Project} without project {includeName}...");
+            }
+
+            bool buildOk = !needToBuild || await this.BuildProjectAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken);
+            bool restore = true;
+
+            if (buildOk)
+            {
+                WriteProgress("  - Building succeeded.");
+
+                projectUpdateContext.Tracking.AddObsolete(versionNode is not null
+                                                              ? new(ProjectFileName: projectUpdateContext.Project, Type: ReferenceType.Package, Name: includeName, Version: versionNode.InnerText)
+                                                              : new(ProjectFileName: projectUpdateContext.Project, Type: ReferenceType.Project, Name: includeName));
+
+                if (await this.BuildSolutionAsync(projectUpdateContext: projectUpdateContext, cancellationToken: cancellationToken))
+                {
+                    restore = false;
+                }
+            }
+            else
+            {
+                WriteProgress("  = Building failed.");
+
+                if (versionNode is not null)
+                {
+                    if (await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectUpdateContext.ProjectDirectory, packageId: includeName, cancellationToken: cancellationToken))
+                    {
+                        projectUpdateContext.Tracking.AddReduceReferences(new(ProjectFileName: projectUpdateContext.Project,
+                                                                              Type: ReferenceType.Package,
+                                                                              Name: includeName,
+                                                                              Version: versionNode.InnerText));
+                    }
+                }
+                else
+                {
+                    string? packageId = ExtractProjectFromReference(includeName);
+
+                    if (!string.IsNullOrEmpty(packageId) &&
+                        await ShouldHaveNarrowerPackageReferenceAsync(projectFolder: projectUpdateContext.ProjectDirectory, packageId: packageId, cancellationToken: cancellationToken))
+                    {
+                        projectUpdateContext.Tracking.AddReduceReferences(new(ProjectFileName: projectUpdateContext.Project, Type: ReferenceType.Project, Name: includeName));
+                    }
+                }
+            }
+
+            if (restore)
+            {
+                if (previousNode is null)
+                {
+                    parentNode?.PrependChild(node);
+                }
+                else
+                {
+                    parentNode?.InsertAfter(newChild: node, refChild: previousNode);
+                }
+
+                xml.Save(projectUpdateContext.Project);
+            }
+            else
+            {
+                await fileContent.ReloadAsync(cancellationToken: cancellationToken);
+            }
         }
-
-        WriteSectionEnd($"({projectUpdateContext.ProjectInstance}/{projectUpdateContext.ProjectCount}): Testing project: {projectUpdateContext.Project}");
     }
 
     private async ValueTask CheckProjectSdkAsync(ProjectUpdateContext projectUpdateContext, FileContent fileContent, CancellationToken cancellationToken)
@@ -323,14 +442,14 @@ public sealed class DependencyReducer : IDependencyReducer
         ];
     }
 
-    private static ProjectReference? FindChildProject(List<ProjectReference> childProjectReferences, string includeName)
+    private static ProjectReference? FindChildProject(IReadOnlyList<ProjectReference> childProjectReferences, string includeName)
     {
-        return childProjectReferences.Find(p => IsMatchingProjectName(p: p, includeName: includeName));
+        return childProjectReferences.FirstOrDefault(p => IsMatchingProjectName(p: p, includeName: includeName));
     }
 
-    private static PackageReference? FindChildPackage(List<PackageReference> childPackageReferences, string includeName, string version)
+    private static PackageReference? FindChildPackage(IReadOnlyList<PackageReference> childPackageReferences, string includeName, string version)
     {
-        return childPackageReferences.Find(packageReference => IsMatching(p: packageReference, includeName: includeName, version: version));
+        return childPackageReferences.FirstOrDefault(packageReference => IsMatching(p: packageReference, includeName: includeName, version: version));
 
         static bool IsMatching(PackageReference p, string includeName, string version)
         {
@@ -443,11 +562,6 @@ public sealed class DependencyReducer : IDependencyReducer
         }
     }
 
-    private static void WriteError(string message)
-    {
-        Console.Error.WriteLine(message);
-    }
-
     private static void WriteProgress(string message)
     {
         Console.WriteLine(message);
@@ -489,7 +603,7 @@ public sealed class DependencyReducer : IDependencyReducer
         return null;
     }
 
-    private static List<PackageReference> GetPackageReferences(string fileName, bool includeReferences, bool includeChildReferences, ReferenceConfig config)
+    private static IReadOnlyList<PackageReference> GetPackageReferences(string fileName, bool includeReferences, bool includeChildReferences, ReferenceConfig config)
     {
         string? baseDir = Path.GetDirectoryName(fileName);
 
@@ -589,7 +703,7 @@ public sealed class DependencyReducer : IDependencyReducer
                                                     .Where(include => !string.IsNullOrEmpty(include) && !allPackageIds.Contains(value: include, comparer: StringComparer.OrdinalIgnoreCase)));
     }
 
-    private static List<ProjectReference> GetProjectReferences(string fileName, bool includeReferences, bool includeChildReferences)
+    private static IReadOnlyList<ProjectReference> GetProjectReferences(string fileName, bool includeReferences, bool includeChildReferences)
     {
         string? baseDir = Path.GetDirectoryName(fileName);
 
