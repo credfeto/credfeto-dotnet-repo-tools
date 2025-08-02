@@ -24,4 +24,16 @@ internal static partial class DependencyReducerLoggingExtensions
 
     [LoggerMessage(EventId = 7, Level = LogLevel.Information, Message = "### Failed to build {project} after restore.")]
     public static partial void FailedToBuildProjectAfterRestore(this ILogger<DependencyReducer> logger, string project);
+
+    [LoggerMessage(EventId = 8, Level = LogLevel.Information, Message = "= Skipping {packageId} as it is marked as do not remove")]
+    public static partial void SkippingDoNotRemovePackage(this ILogger<DependencyReducer> logger, string packageId);
+
+    [LoggerMessage(EventId = 9, Level = LogLevel.Information, Message = "Checking {packageId} ({version})")]
+    public static partial void CheckingPackage(this ILogger<DependencyReducer> logger, string packageId, string version);
+
+    [LoggerMessage(EventId = 10, Level = LogLevel.Information, Message = "= {project} references package {packageId} ({version}) also in child project {childProject}")]
+    public static partial void ChildProjectReferencesPackage(this ILogger<DependencyReducer> logger, string project, string packageId, string version, string childProject);
+
+    [LoggerMessage(EventId = 11, Level = LogLevel.Information, Message = "* Building {project} without package {packageId} ({version})...")]
+    public static partial void BuildingProjectWithoutPackage(this ILogger<DependencyReducer> logger, string project, string packageId, string version);
 }
