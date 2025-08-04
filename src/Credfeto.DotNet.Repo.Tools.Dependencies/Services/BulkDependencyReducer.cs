@@ -113,22 +113,29 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
             RepoContext repoContext = new(Repository: repository, ChangeLogFileName: changeLogFileName);
 
-            await this.ProcessRepoUpdatesAsync(repoContext: repoContext, cancellationToken: cancellationToken);
+            await this.ProcessRepoUpdatesAsync(repoContext: repoContext, updateContext: updateContext, cancellationToken: cancellationToken);
         }
     }
 
-    private async Task ProcessRepoUpdatesAsync(RepoContext repoContext, CancellationToken cancellationToken)
+    private async ValueTask ProcessRepoUpdatesAsync(RepoContext repoContext, DependencyReductionUpdateContext updateContext, CancellationToken cancellationToken)
     {
         try
         {
-            if (repoContext.HasDotNetSolutions(out string? sourceDirectory, out IReadOnlyList<string>? _))
+            if (!repoContext.HasDotNetSolutions(out string? sourceDirectory, out IReadOnlyList<string>? _))
             {
-                ReferenceConfig config = new(CommitAsync);
-
-                bool result = await this._dependencyReducer.CheckReferencesAsync(sourceDirectory: sourceDirectory, config: config, cancellationToken: cancellationToken);
-
-                this._logger.LogWorkingChangeStatus(repo: repoContext.ClonePath, changes: result);
+                return;
             }
+
+            if (await this.TrackingOutOfDateAsync(repoContext: repoContext, updateContext: updateContext, cancellationToken: cancellationToken))
+            {
+                return;
+            }
+
+            ReferenceConfig config = new(CommitAsync);
+
+            bool result = await this._dependencyReducer.CheckReferencesAsync(sourceDirectory: sourceDirectory, config: config, cancellationToken: cancellationToken);
+
+            this._logger.LogWorkingChangeStatus(repo: repoContext.ClonePath, changes: result);
         }
         finally
         {
@@ -140,7 +147,49 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             await repoContext.Repository.CommitNamedAsync(message: message, [projectFileName], cancellationToken: ct);
             await repoContext.Repository.PushAsync(ct);
             await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: ct);
+
+            await this.UpdateTrackingCacheAsync(repoContext: repoContext, updateContext: updateContext, cancellationToken: ct);
         }
+    }
+
+    private async ValueTask UpdateTrackingCacheAsync(RepoContext repoContext, DependencyReductionUpdateContext updateContext, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(updateContext.TrackingFileName))
+        {
+            return;
+        }
+
+        string current = await GenerateTrackingHashAsync(repoContext: repoContext, cancellationToken: cancellationToken);
+
+        this._trackingCache.Set(repoUrl: repoContext.ClonePath, value: current);
+        await this._trackingCache.SaveAsync(fileName: updateContext.TrackingFileName, cancellationToken: cancellationToken);
+    }
+
+    private async ValueTask<bool> TrackingOutOfDateAsync(RepoContext repoContext, DependencyReductionUpdateContext updateContext, CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrEmpty(updateContext.TrackingFileName))
+        {
+            return true;
+        }
+
+        string? previous = this._trackingCache.Get(repoContext.ClonePath);
+
+        if (string.IsNullOrEmpty(previous))
+        {
+            return true;
+        }
+
+        string current = await GenerateTrackingHashAsync(repoContext: repoContext, cancellationToken: cancellationToken);
+
+        return !StringComparer.Ordinal.Equals(x: previous, y: current);
+    }
+
+    private static async ValueTask<string> GenerateTrackingHashAsync(RepoContext repoContext, CancellationToken cancellationToken)
+    {
+        // TODO: generate hash in a way that only changes when code changes
+        await Task.Delay(TimeSpan.FromMilliseconds(1), cancellationToken: cancellationToken);
+
+        return repoContext.Repository.HeadRev;
     }
 
     private async ValueTask<DependencyReductionUpdateContext> BuildUpdateContextAsync(IGitRepository templateRepo,
