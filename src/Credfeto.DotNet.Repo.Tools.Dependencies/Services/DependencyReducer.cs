@@ -435,7 +435,7 @@ public sealed class DependencyReducer : IDependencyReducer
 
         return
         [
-            ..projects.Where(config.IsIgnoreProject)
+            ..projects.Where(project => !config.IsIgnoreProject(project))
         ];
     }
 
@@ -654,10 +654,26 @@ public sealed class DependencyReducer : IDependencyReducer
 
     private static XmlDocument LoadProjectXmlFromFile(string fileName)
     {
+        string projectFileName = GetPlatformFileName(fileName);
         XmlDocument doc = new();
-        doc.Load(fileName);
+        doc.Load(projectFileName);
 
         return doc;
+    }
+
+    private static string GetPlatformFileName(string fileName)
+    {
+        if (Path.DirectorySeparatorChar != '\\' && fileName.Contains(value: '\\', comparisonType: StringComparison.Ordinal))
+        {
+            return fileName.Replace(oldChar: '\\', newChar: Path.DirectorySeparatorChar);
+        }
+
+        if (Path.DirectorySeparatorChar != '/' && fileName.Contains(value: '/', comparisonType: StringComparison.Ordinal))
+        {
+            return fileName.Replace(oldChar: '/', newChar: Path.DirectorySeparatorChar);
+        }
+
+        return fileName;
     }
 
     private static void IncludeReferencedPackages(List<string> allPackageIds, XmlNodeList packageReferenceNodes)
