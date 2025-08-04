@@ -73,27 +73,25 @@ public sealed class DependencyReducer : IDependencyReducer
 
         this._logger.FinishedCheckingProjects();
 
-        OutputSummary(stopwatch: stopwatch, tracking: tracking);
+        this.OutputSummary(stopwatch: stopwatch, tracking: tracking);
 
         return tracking.Obsolete.Count + tracking.ChangeSdk.Count + tracking.ReduceReferences.Count > 0;
     }
 
-    private static void OutputSummary(Stopwatch stopwatch, DependencyTracking tracking)
+    private void OutputSummary(Stopwatch stopwatch, DependencyTracking tracking)
     {
-        WriteProgress("");
-        WriteProgress("-------------------------------------------------------------------------");
-        WriteProgress($"Analyse completed in {stopwatch.Elapsed.TotalSeconds} seconds");
-        WriteProgress($"{tracking.ChangeSdk.Count} SDK reference(s) could potentially be narrowed.");
-        WriteProgress($"{tracking.Obsolete.Count} reference(s) could potentially be removed.");
-        WriteProgress($"{tracking.ReduceReferences.Count} reference(s) could potentially be switched.");
+        this._logger.AnalyzeCompletedInDuration(stopwatch.Elapsed.TotalSeconds);
+        this._logger.SdkNarrowReferenceCount(tracking.ChangeSdk.Count);
+        this._logger.ReferencesCouldBeRemoved(tracking.Obsolete.Count);
+        this._logger.ReferencesCouldBeSwitched(tracking.ReduceReferences.Count);
 
-        PrintResults(header: "SDK:", items: tracking.ChangeSdk);
-        PrintResults(header: "Obsolete:", items: tracking.Obsolete);
-        PrintResults(header: "Reduce Scope:", items: tracking.ReduceReferences);
+        this.PrintResults(header: "SDK:", items: tracking.ChangeSdk);
+        this.PrintResults(header: "Obsolete:", items: tracking.Obsolete);
+        this.PrintResults(header: "Reduce Scope:", items: tracking.ReduceReferences);
 
-        WriteStatistics(section: "SDK", value: tracking.ChangeSdk.Count);
-        WriteStatistics(section: "Obsolete", value: tracking.Obsolete.Count);
-        WriteStatistics(section: "Reduce", value: tracking.ReduceReferences.Count);
+        this._logger.WriteStatistics(section: "SDK", value: tracking.ChangeSdk.Count);
+        this._logger.WriteStatistics(section: "Obsolete", value: tracking.Obsolete.Count);
+        this._logger.WriteStatistics(section: "Reduce", value: tracking.ReduceReferences.Count);
     }
 
     private async ValueTask CheckProjectDependenciesAsync(ProjectUpdateContext projectUpdateContext, CancellationToken cancellationToken)
@@ -134,7 +132,7 @@ public sealed class DependencyReducer : IDependencyReducer
             throw new DotNetBuildErrorException("Failed to build project after restore");
         }
 
-        WriteSectionEnd($"({projectUpdateContext.ProjectInstance}/{projectUpdateContext.ProjectCount}): Testing project: {projectUpdateContext.Project}");
+        this._logger.FinishTestingProject(projectInstance: projectUpdateContext.ProjectInstance, projectCount: projectUpdateContext.ProjectCount, project: projectUpdateContext.Project);
     }
 
     private async ValueTask CheckPackageReferenceAsync(ProjectUpdateContext projectUpdateContext,
@@ -412,7 +410,7 @@ public sealed class DependencyReducer : IDependencyReducer
         }
         else
         {
-            WriteProgress($"= SDK does not need changing. Currently {MINIMAL_SDK}.");
+            this._logger.SdkDoesNotNeedChanging(project: projectUpdateContext.Project, sdk: MINIMAL_SDK);
         }
     }
 
@@ -492,28 +490,31 @@ public sealed class DependencyReducer : IDependencyReducer
         return [..nodes.Cast<XmlNode>()];
     }
 
-    private static void PrintResults(string header, IReadOnlyList<ReferenceCheckResult> items)
+    private void PrintResults(string header, IReadOnlyList<ReferenceCheckResult> items)
     {
-        Console.WriteLine($"\n{header}");
-        string? previousFile = null;
-
-        foreach (ReferenceCheckResult item in items)
+        using (this._logger.BeginScope(header))
         {
-            if (!StringComparer.Ordinal.Equals(x: previousFile, y: item.ProjectFileName))
-            {
-                Console.WriteLine($"\nProject: {item.ProjectFileName}");
-            }
+            this._logger.LogSection(header);
+            string? previousFile = null;
 
-            if (item.Type == ReferenceType.PACKAGE)
+            foreach (ReferenceCheckResult item in items)
             {
-                Console.WriteLine($"* Package reference: {item.Name} ({item.Version})");
-            }
-            else
-            {
-                Console.WriteLine($"* Project reference: {item.Name}");
-            }
+                if (!StringComparer.Ordinal.Equals(x: previousFile, y: item.ProjectFileName))
+                {
+                    this._logger.LogProject(item.ProjectFileName);
+                    Console.WriteLine($"\nProject: {item.ProjectFileName}");
+                }
 
-            previousFile = item.ProjectFileName;
+                switch (item.Type)
+                {
+                    case ReferenceType.PACKAGE: this._logger.ProjectPackageReference(item.ProjectFileName, item.Name, item.Version); break;
+                    case ReferenceType.PROJECT: this._logger.ProjectChildProjectReference(item.ProjectFileName, item.Name); break;
+                    case ReferenceType.SDK: this._logger.ProjectSdkReference(item.ProjectFileName, item.Name); break;
+                    default: this._logger.UnknownReference(item.ProjectFileName, item.Name); break;
+                }
+
+                previousFile = item.ProjectFileName;
+            }
         }
     }
 
@@ -553,20 +554,20 @@ public sealed class DependencyReducer : IDependencyReducer
         }
     }
 
-    private static void WriteProgress(string message)
-    {
-        Console.WriteLine(message);
-    }
-
-    private static void WriteSectionEnd(string message)
-    {
-        Console.WriteLine("=== End " + message + " ===");
-    }
-
-    private static void WriteStatistics(string section, int value)
-    {
-        Console.WriteLine($"{section}: {value}");
-    }
+    // private static void WriteProgress(string message)
+    // {
+    //     Console.WriteLine(message);
+    // }
+    //
+    // private static void WriteSectionEnd(string message)
+    // {
+    //     Console.WriteLine("=== End " + message + " ===");
+    // }
+    //
+    // private static void WriteStatistics(string section, int value)
+    // {
+    //     Console.WriteLine($"{section}: {value}");
+    // }
 
     private static string? ExtractProjectFromReference(string reference)
     {
