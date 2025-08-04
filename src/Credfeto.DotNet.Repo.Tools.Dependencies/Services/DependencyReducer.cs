@@ -55,6 +55,11 @@ public sealed class DependencyReducer : IDependencyReducer
         {
             projectInstance++;
 
+            if (!project.Contains(value: "Credfeto.Date.csproj", comparisonType: StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
             // ! Project directory guaranteed not to be null here
             string projectDirectory = Path.GetDirectoryName(project)!;
 
@@ -111,15 +116,15 @@ public sealed class DependencyReducer : IDependencyReducer
             GetPackageReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true, config: projectUpdateContext.Config);
         IReadOnlyList<FileProjectReference> childProjectReferences = GetProjectReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true);
 
+        await this.CheckPackageReferenceAsync(projectUpdateContext: projectUpdateContext,
+                                              childPackageReferences: childPackageReferences,
+                                              fileContent: fileContent,
+                                              cancellationToken: cancellationToken);
+
         await this.CheckProjectSdkAsync(projectUpdateContext: projectUpdateContext, fileContent: fileContent, cancellationToken: cancellationToken);
 
         await this.CheckProjectReferenceAsync(projectUpdateContext: projectUpdateContext,
                                               childProjectReferences: childProjectReferences,
-                                              fileContent: fileContent,
-                                              cancellationToken: cancellationToken);
-
-        await this.CheckPackageReferenceAsync(projectUpdateContext: projectUpdateContext,
-                                              childPackageReferences: childPackageReferences,
                                               fileContent: fileContent,
                                               cancellationToken: cancellationToken);
 
@@ -173,6 +178,8 @@ public sealed class DependencyReducer : IDependencyReducer
             }
             else
             {
+                await this.CommitAsync(projectUpdateContext, $"Removed reference to {packageReference.PackageId} ({packageReference.Version})", cancellationToken: cancellationToken);
+
                 await fileContent.ReloadAsync(cancellationToken: cancellationToken);
             }
         }
@@ -306,6 +313,9 @@ public sealed class DependencyReducer : IDependencyReducer
             }
             else
             {
+                string projectBeingRemoved = Path.GetFileNameWithoutExtension(projectReference.RelativeInclude);
+                await this.CommitAsync(projectUpdateContext, $"Removed reference to {projectBeingRemoved}", cancellationToken: cancellationToken);
+
                 await fileContent.ReloadAsync(cancellationToken: cancellationToken);
             }
         }
@@ -405,6 +415,8 @@ public sealed class DependencyReducer : IDependencyReducer
             }
             else
             {
+                await this.CommitAsync(projectUpdateContext, $"Reduces SDK reference from {sdk} to {MINIMAL_SDK}", cancellationToken: cancellationToken);
+
                 await fileContent.ReloadAsync(cancellationToken);
             }
         }
