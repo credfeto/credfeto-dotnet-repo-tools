@@ -82,11 +82,27 @@ public sealed class DotNetBuild : IDotNetBuild
         }
     }
 
-    public ValueTask BuildAsync(string projectFileName, string basePath, BuildSettings buildSettings, BuildOverride buildOverride, CancellationToken cancellationToken)
+    public async ValueTask BuildAsync(string projectFileName, string basePath, BuildSettings buildSettings, BuildOverride buildOverride, CancellationToken cancellationToken)
     {
-        // $results = dotnet build $FileName -warnAsError -nodeReuse:False /p:SolutionDir=$solutionDirectory
+        this._logger.LogStartingBuild(basePath);
 
-        throw new DotNetBuildErrorException("Not yet supported");
+        await this.StopBuildServerAsync(basePath: basePath, cancellationToken: cancellationToken);
+
+        try
+        {
+            string noWarn = BuildNoWarn(buildOverride);
+            string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION), ("SolutionDir", basePath));
+
+            this._logger.LogBuilding();
+
+            await this.ExecRequireCleanAsync(basePath: basePath,
+                                             $"build  {projectFileName} -warnAsError -nodeReuse:False --configuration:Release {parameters} {noWarn}",
+                                             cancellationToken: cancellationToken);
+        }
+        finally
+        {
+            await this.StopBuildServerAsync(basePath: basePath, cancellationToken: cancellationToken);
+        }
     }
 
     public async ValueTask<BuildSettings> LoadBuildSettingsAsync(IReadOnlyList<string> projects, CancellationToken cancellationToken)
