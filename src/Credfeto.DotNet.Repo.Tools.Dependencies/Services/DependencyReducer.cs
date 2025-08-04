@@ -178,7 +178,8 @@ public sealed class DependencyReducer : IDependencyReducer
             }
             else
             {
-                await this.CommitAsync(projectUpdateContext, $"Removed reference to {packageReference.PackageId} ({packageReference.Version})", cancellationToken: cancellationToken);
+                string commitMessage = $"Removed reference to {packageReference.PackageId}";
+                await projectUpdateContext.Config.OnSuccessfulRemoval(arg1: projectUpdateContext.Project, arg2: commitMessage, arg3: cancellationToken);
 
                 await fileContent.ReloadAsync(cancellationToken: cancellationToken);
             }
@@ -314,7 +315,8 @@ public sealed class DependencyReducer : IDependencyReducer
             else
             {
                 string projectBeingRemoved = Path.GetFileNameWithoutExtension(projectReference.RelativeInclude);
-                await this.CommitAsync(projectUpdateContext, $"Removed reference to {projectBeingRemoved}", cancellationToken: cancellationToken);
+                string commitMessage = $"Removed reference to {projectBeingRemoved}";
+                await projectUpdateContext.Config.OnSuccessfulRemoval(arg1: projectUpdateContext.Project, arg2: commitMessage, arg3: cancellationToken);
 
                 await fileContent.ReloadAsync(cancellationToken: cancellationToken);
             }
@@ -415,7 +417,8 @@ public sealed class DependencyReducer : IDependencyReducer
             }
             else
             {
-                await this.CommitAsync(projectUpdateContext, $"Reduces SDK reference from {sdk} to {MINIMAL_SDK}", cancellationToken: cancellationToken);
+                string commitMessage = $"Reduces SDK reference from {sdk} to {MINIMAL_SDK}";
+                await projectUpdateContext.Config.OnSuccessfulRemoval(arg1: projectUpdateContext.Project, arg2: commitMessage, arg3: cancellationToken);
 
                 await fileContent.ReloadAsync(cancellationToken);
             }

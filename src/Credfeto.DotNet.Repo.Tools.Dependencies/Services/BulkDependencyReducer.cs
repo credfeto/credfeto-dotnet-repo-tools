@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -122,15 +121,22 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
     {
         try
         {
-            ReferenceConfig config = new();
+            ReferenceConfig config = new(CommitAsync);
 
             bool result = await this._dependencyReducer.CheckReferencesAsync(sourceDirectory: repoContext.WorkingDirectory, config: config, cancellationToken: cancellationToken);
 
-            Debug.WriteLine(result);
+            this._logger.LogWorkingChangeStatus(repo: repoContext.ClonePath, changes: result);
         }
         finally
         {
             await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+        }
+
+        async ValueTask CommitAsync(string projectFileName, string message, CancellationToken ct)
+        {
+            await repoContext.Repository.CommitNamedAsync(message: message, [projectFileName], cancellationToken: ct);
+            await repoContext.Repository.PushAsync(ct);
+            await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: ct);
         }
     }
 

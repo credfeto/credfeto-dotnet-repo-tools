@@ -55,4 +55,7 @@ internal static partial class BulkPackageUpdaterLoggingExtensions
 
     [LoggerMessage(EventId = 20, Level = LogLevel.Error, Message = "Could not create release: {message}")]
     public static partial void LogBuildFailedOnCreateRelease(this ILogger<BulkDependencyReducer> logger, string message, Exception exception);
+
+    [LoggerMessage(EventId = 21, Level = LogLevel.Warning, Message = "{repo}: Can reduced references: {changes}")]
+    public static partial void LogWorkingChangeStatus(this ILogger<BulkDependencyReducer> logger, string repo, bool changes);
 }
