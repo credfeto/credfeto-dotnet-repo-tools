@@ -113,10 +113,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
             RepoContext repoContext = new(Repository: repository, ChangeLogFileName: changeLogFileName);
 
-            if (repoContext.HasDotNetSolutions(out string? _, out IReadOnlyList<string>? _))
-            {
-                await this.ProcessRepoUpdatesAsync(repoContext: repoContext, cancellationToken: cancellationToken);
-            }
+            await this.ProcessRepoUpdatesAsync(repoContext: repoContext, cancellationToken: cancellationToken);
         }
     }
 
@@ -124,11 +121,14 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
     {
         try
         {
-            ReferenceConfig config = new(CommitAsync);
+            if (repoContext.HasDotNetSolutions(out string? sourceDirectory, out IReadOnlyList<string>? _))
+            {
+                ReferenceConfig config = new(CommitAsync);
 
-            bool result = await this._dependencyReducer.CheckReferencesAsync(sourceDirectory: repoContext.WorkingDirectory, config: config, cancellationToken: cancellationToken);
+                bool result = await this._dependencyReducer.CheckReferencesAsync(sourceDirectory: sourceDirectory, config: config, cancellationToken: cancellationToken);
 
-            this._logger.LogWorkingChangeStatus(repo: repoContext.ClonePath, changes: result);
+                this._logger.LogWorkingChangeStatus(repo: repoContext.ClonePath, changes: result);
+            }
         }
         finally
         {
