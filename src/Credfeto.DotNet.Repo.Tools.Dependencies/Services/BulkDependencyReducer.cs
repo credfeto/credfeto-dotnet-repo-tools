@@ -113,7 +113,10 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
             RepoContext repoContext = new(Repository: repository, ChangeLogFileName: changeLogFileName);
 
-            await this.ProcessRepoUpdatesAsync(repoContext: repoContext, cancellationToken: cancellationToken);
+            if (repoContext.HasDotNetSolutions(out string? _, out IReadOnlyList<string>? _))
+            {
+                await this.ProcessRepoUpdatesAsync(repoContext: repoContext, cancellationToken: cancellationToken);
+            }
         }
     }
 
