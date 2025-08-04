@@ -23,14 +23,21 @@ internal static class PackageExtractor
             return null;
         }
 
-        XmlNode? versionNode = node.SelectSingleNode("Version");
+        string privateAssets = node.GetAttribute("PrivateAssets");
 
-        if (versionNode is null)
+        if (!string.IsNullOrEmpty(privateAssets))
         {
             return null;
         }
 
-        return new(PackageId: packageId, Version: versionNode.InnerText);
+        string version = node.GetAttribute("Version");
+
+        if (string.IsNullOrEmpty(version))
+        {
+            return null;
+        }
+
+        return new(PackageId: packageId, Version: version);
     }
 
     public static FilePackageReference? ExtractPackageReference(ReferenceConfig config, XmlElement node, List<string> allPackageIds, string baseDir)
