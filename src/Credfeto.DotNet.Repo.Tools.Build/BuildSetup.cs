@@ -10,9 +10,10 @@ public static class BuildSetup
 {
     public static IServiceCollection AddBuild(this IServiceCollection services)
     {
-        return services.AddSingleton<IDotNetSolutionCheck, DotNetSolutionCheck>()
-                       .AddSingleton<IDotNetBuild, DotNetBuild>()
-                       .AddSingleton<IProjectXmlLoader, ProjectXmlLoader>()
-                       .AddSingleton<IProjectFinder, ProjectFinder>();
+        return services
+            .AddSingleton<IDotNetSolutionCheck, DotNetSolutionCheck>()
+            .AddSingleton<IDotNetBuild, DotNetBuild>()
+            .AddSingleton<IProjectXmlLoader, ProjectXmlLoader>()
+            .AddSingleton<IProjectFinder, ProjectFinder>();
     }
 }
