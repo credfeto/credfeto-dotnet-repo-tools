@@ -44,6 +44,8 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     private readonly IGlobalJson _globalJson;
     private readonly ILabelsBuilder _labelsBuilder;
     private readonly ILogger<BulkTemplateUpdater> _logger;
+
+    private readonly IProjectFinder _projectFinder;
     private readonly IReleaseConfigLoader _releaseConfigLoader;
     private readonly IReleaseGeneration _releaseGeneration;
     private readonly ITemplateConfigLoader _templateConfigLoader;
@@ -51,6 +53,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
     public BulkTemplateUpdater(ITrackingCache trackingCache,
                                IGlobalJson globalJson,
+                               IProjectFinder projectFinder,
                                IDotNetVersion dotNetVersion,
                                IDotNetSolutionCheck dotNetSolutionCheck,
                                IDotNetBuild dotNetBuild,
@@ -66,6 +69,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         this._trackingCache = trackingCache;
         this._globalJson = globalJson;
+        this._projectFinder = projectFinder;
         this._dotNetVersion = dotNetVersion;
         this._dotNetSolutionCheck = dotNetSolutionCheck;
         this._dotNetBuild = dotNetBuild;
@@ -204,14 +208,14 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         foreach ((string fileName, string prefix) in updateContext.TemplateConfig.Cleanup.Files)
         {
-            string repoFile = Path.Combine(repoContext.WorkingDirectory, fileName);
+            string repoFile = Path.Combine(path1: repoContext.WorkingDirectory, path2: fileName);
 
             if (File.Exists(repoFile))
             {
                 File.Delete(repoFile);
-                await repoContext.Repository.CommitAsync(message: $"Removed: {prefix}", cancellationToken: cancellationToken);
+                await repoContext.Repository.CommitAsync($"Removed: {prefix}", cancellationToken: cancellationToken);
                 await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
-                await repoContext.Repository.ResetToMasterAsync(GitConstants.Upstream, cancellationToken: cancellationToken);
+                await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
             }
         }
     }
@@ -315,7 +319,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         foreach ((string fileName, string context) in templateConfig.General.Files)
         {
-            copyInstructions.Add(fileContext.MakeFile(fileName, prefix: context));
+            copyInstructions.Add(fileContext.MakeFile(fileName: fileName, prefix: context));
         }
 
         if (templateConfig.GitHub.IssueTemplates)
@@ -325,7 +329,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         if (templateConfig.GitHub.PullRequestTemplates)
         {
-            copyInstructions.Add(fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "PULL_REQUEST_TEMPLATE.md"), "Config"));
+            copyInstructions.Add(fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, "PULL_REQUEST_TEMPLATE.md"), prefix: "Config"));
         }
 
         if (templateConfig.GitHub.Actions)
@@ -410,7 +414,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                               int totalUpdates,
                                               CancellationToken cancellationToken)
     {
-        IReadOnlyList<string> projects = Directory.GetFiles(path: sourceDirectory, searchPattern: "*.csproj", searchOption: SearchOption.AllDirectories);
+        IReadOnlyList<string> projects = await this._projectFinder.FindProjectsAsync(basePath: sourceDirectory, cancellationToken: cancellationToken);
 
         BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
 
@@ -675,7 +679,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                                                    sourceDirectory: sourceDirectory,
                                                                    solutions: solutions,
                                                                    buildSettings: buildSettings,
-                                                                   cancellationToken: cancellationToken);
+                                                                   cancellationToken: token);
 
             if (!ok)
             {
@@ -684,7 +688,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                     throw new BranchAlreadyExistsException(branchName);
                 }
 
-                await repoContext.Repository.CreateBranchAsync(branchName: branchName, cancellationToken: cancellationToken);
+                await repoContext.Repository.CreateBranchAsync(branchName: branchName, cancellationToken: token);
 
                 branchCreated = true;
             }

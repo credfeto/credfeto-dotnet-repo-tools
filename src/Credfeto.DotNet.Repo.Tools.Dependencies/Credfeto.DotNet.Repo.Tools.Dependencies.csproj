@@ -30,7 +30,7 @@
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <LangVersion>latest</LangVersion>
     <NeutralLanguage>en-GB</NeutralLanguage>
-    <NoWarn />
+    <NoWarn/>
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditLevel>low</NuGetAuditLevel>
     <NuGetAuditMode>all</NuGetAuditMode>
@@ -48,42 +48,48 @@
     <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     <TieredCompilation>true</TieredCompilation>
     <TieredPGO>true</TieredPGO>
-    <TreatSpecificWarningsAsErrors />
+    <TreatSpecificWarningsAsErrors/>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <UseSystemResourceKeys>true</UseSystemResourceKeys>
-    <WarningsAsErrors />
+    <WarningsAsErrors/>
   </PropertyGroup>
   <ItemGroup>
     <!-- error NU1903: Warning As Error: Package 'System.Private.Uri' 4.3.0 has a known high severity vulnerability -->
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-5f2m-466j-3848" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-5f2m-466j-3848"/>
     <!-- error NU1902: Warning As Error: Package 'System.Private.Uri' 4.3.0 has a known moderate severity vulnerability -->
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-x5qj-9vmx-7g6g" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-x5qj-9vmx-7g6g"/>
     <!-- error NU1903: Warning As Error: Package 'System.Private.Uri' 4.3.0 has a known high severity vulnerability -->
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-xhfc-gr8f-ffwc" />
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-xhfc-gr8f-ffwc"/>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces\Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces.csproj" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.7"/>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.7"/>
+    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.178.1288"/>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.7" />
+    <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="codecracker.CSharp" Version="1.1.0" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="Credfeto.Enumeration.Source.Generation" Version="1.2.119.1263" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="CSharpIsNullAnalyzer" Version="0.1.593" PrivateAssets="all" ExcludeAssets="runtime"/>
+    <PackageReference Include="FunFair.CodeAnalysis" Version="7.1.7.1279" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="Meziantou.Analyzer" Version="2.0.205" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="Microsoft.Sbom.Targets" Version="4.0.3" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="Nullable.Extended.Analyzer" Version="1.15.6581" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="Philips.CodeAnalysis.DuplicateCodeAnalyzer" Version="1.1.7" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="Philips.CodeAnalysis.MaintainabilityAnalyzers" Version="1.6.3" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="Roslynator.Analyzers" Version="4.13.1" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="SecurityCodeScan.VS2019" Version="5.6.7" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="SmartAnalyzers.CSharpExtensions.Annotations" Version="4.2.11" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.13.0.120203" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All" ExcludeAssets="runtime"/>
+    <PackageReference Include="ToStringWithoutOverrideAnalyzer" Version="0.6.0" PrivateAssets="All" ExcludeAssets="runtime"/>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="codecracker.CSharp" Version="1.1.0" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Credfeto.Enumeration.Source.Generation" Version="1.2.119.1263" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="CSharpIsNullAnalyzer" Version="0.1.593" PrivateAssets="all" ExcludeAssets="runtime" />
-    <PackageReference Include="FunFair.CodeAnalysis" Version="7.1.7.1279" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Meziantou.Analyzer" Version="2.0.205" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.Sbom.Targets" Version="4.0.3" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Nullable.Extended.Analyzer" Version="1.15.6581" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Philips.CodeAnalysis.DuplicateCodeAnalyzer" Version="1.1.7" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Philips.CodeAnalysis.MaintainabilityAnalyzers" Version="1.6.3" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Roslynator.Analyzers" Version="4.13.1" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="SecurityCodeScan.VS2019" Version="5.6.7" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="SmartAnalyzers.CSharpExtensions.Annotations" Version="4.2.11" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.13.0.120203" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="ToStringWithoutOverrideAnalyzer" Version="0.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces\Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git.Interfaces\Credfeto.DotNet.Repo.Tools.Git.Interfaces.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Models\Credfeto.DotNet.Repo.Tools.Models.csproj"/>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj"/>
   </ItemGroup>
 </Project>
