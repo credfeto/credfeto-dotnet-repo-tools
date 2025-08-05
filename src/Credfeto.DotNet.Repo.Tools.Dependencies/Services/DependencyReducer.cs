@@ -111,15 +111,15 @@ public sealed class DependencyReducer : IDependencyReducer
             GetPackageReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true, config: projectUpdateContext.Config);
         IReadOnlyList<FileProjectReference> childProjectReferences = GetProjectReferences(fileName: projectUpdateContext.Project, includeReferences: false, includeChildReferences: true);
 
-        await this.CheckPackageReferenceAsync(projectUpdateContext: projectUpdateContext,
-                                              childPackageReferences: childPackageReferences,
-                                              fileContent: fileContent,
-                                              cancellationToken: cancellationToken);
-
         await this.CheckProjectSdkAsync(projectUpdateContext: projectUpdateContext, fileContent: fileContent, cancellationToken: cancellationToken);
 
         await this.CheckProjectReferenceAsync(projectUpdateContext: projectUpdateContext,
                                               childProjectReferences: childProjectReferences,
+                                              fileContent: fileContent,
+                                              cancellationToken: cancellationToken);
+
+        await this.CheckPackageReferenceAsync(projectUpdateContext: projectUpdateContext,
+                                              childPackageReferences: childPackageReferences,
                                               fileContent: fileContent,
                                               cancellationToken: cancellationToken);
 
