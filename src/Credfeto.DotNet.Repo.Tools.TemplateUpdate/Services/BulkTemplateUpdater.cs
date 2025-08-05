@@ -679,7 +679,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                                                    sourceDirectory: sourceDirectory,
                                                                    solutions: solutions,
                                                                    buildSettings: buildSettings,
-                                                                   cancellationToken: cancellationToken);
+                                                                   cancellationToken: token);
 
             if (!ok)
             {
@@ -688,7 +688,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                     throw new BranchAlreadyExistsException(branchName);
                 }
 
-                await repoContext.Repository.CreateBranchAsync(branchName: branchName, cancellationToken: cancellationToken);
+                await repoContext.Repository.CreateBranchAsync(branchName: branchName, cancellationToken: token);
 
                 branchCreated = true;
             }
