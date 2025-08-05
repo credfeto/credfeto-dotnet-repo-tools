@@ -41,14 +41,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         this._logger = logger;
     }
 
-    public async ValueTask BulkUpdateAsync(string templateRepository,
-                                           string trackingFileName,
-                                           string packagesFileName,
-                                           string workFolder,
-                                           string releaseConfigFileName,
-                                           IReadOnlyList<string> additionalNugetSources,
-                                           IReadOnlyList<string> repositories,
-                                           CancellationToken cancellationToken)
+    public async ValueTask BulkUpdateAsync(string templateRepository, string trackingFileName, string workFolder, IReadOnlyList<string> repositories, CancellationToken cancellationToken)
     {
         await this.LoadTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
 
@@ -57,7 +50,6 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             DependencyReductionUpdateContext updateContext = await this.BuildUpdateContextAsync(templateRepo: templateRepo,
                                                                                                 workFolder: workFolder,
                                                                                                 trackingFileName: trackingFileName,
-                                                                                                additionalNugetSources: additionalNugetSources,
                                                                                                 cancellationToken: cancellationToken);
 
             try
@@ -192,11 +184,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         return repoContext.Repository.HeadRev;
     }
 
-    private async ValueTask<DependencyReductionUpdateContext> BuildUpdateContextAsync(IGitRepository templateRepo,
-                                                                                      string workFolder,
-                                                                                      string trackingFileName,
-                                                                                      IReadOnlyList<string> additionalNugetSources,
-                                                                                      CancellationToken cancellationToken)
+    private async ValueTask<DependencyReductionUpdateContext> BuildUpdateContextAsync(IGitRepository templateRepo, string workFolder, string trackingFileName, CancellationToken cancellationToken)
     {
         DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.WorkingDirectory, cancellationToken: cancellationToken);
 
@@ -212,7 +200,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             }
         }
 
-        return new(WorkFolder: workFolder, TrackingFileName: trackingFileName, AdditionalSources: additionalNugetSources, DotNetSettings: dotNetSettings);
+        return new(WorkFolder: workFolder, TrackingFileName: trackingFileName, DotNetSettings: dotNetSettings);
     }
 
     private ValueTask LoadTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)
