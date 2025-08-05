@@ -155,10 +155,10 @@ internal sealed class Commands
 
     [Command("reduce-dependencies", Description = "Reduce dependencies in all repositories")]
     [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
-    public async Task CodeCleanupAsync([Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")] string repositoriesFileName,
-                                       [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
-                                       [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")] string trackingFileName,
-                                       [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder)
+    public async Task ReduceDependenciesAsync([Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")] string repositoriesFileName,
+                                              [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
+                                              [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")] string trackingFileName,
+                                              [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder)
     {
         IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
             repositoriesFileName: repositoriesFileName,
