@@ -8,7 +8,8 @@ public static class DependenciesSetup
 {
     public static IServiceCollection AddDependenciesReduction(this IServiceCollection services)
     {
-        return services.AddSingleton<IBulkDependencyReducer, BulkDependencyReducer>()
-                       .AddSingleton<IDependencyReducer, DependencyReducer>();
+        return services
+            .AddSingleton<IBulkDependencyReducer, BulkDependencyReducer>()
+            .AddSingleton<IDependencyReducer, DependencyReducer>();
     }
 }
