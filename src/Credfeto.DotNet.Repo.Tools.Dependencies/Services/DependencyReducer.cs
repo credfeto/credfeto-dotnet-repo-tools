@@ -55,11 +55,6 @@ public sealed class DependencyReducer : IDependencyReducer
         {
             projectInstance++;
 
-            if (!project.Contains(value: "Credfeto.Date.csproj", comparisonType: StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
             // ! Project directory guaranteed not to be null here
             string projectDirectory = Path.GetDirectoryName(project)!;
 

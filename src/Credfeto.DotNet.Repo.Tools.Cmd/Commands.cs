@@ -180,9 +180,9 @@ internal sealed class Commands
         this.Done();
     }
 
-    [Command("dependencies", Description = "Reduce dependencies one folder")]
+    [Command("check-dependencies", Description = "Reduce dependencies one folder")]
     [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
-    public async Task ReduceDependenciesAsync([Option(name: "source-folder", ['s'], Description = "folder where the dotnet source is")] string workFolder)
+    public async Task CheckDependenciesAsync([Option(name: "source-folder", ['s'], Description = "folder where the dotnet source is")] string workFolder)
     {
         await this._dependencyReducer.CheckReferencesAsync(sourceDirectory: workFolder, new(CommitAsync), cancellationToken: this._cancellationToken);
 
