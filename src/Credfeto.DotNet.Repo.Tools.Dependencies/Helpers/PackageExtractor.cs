@@ -40,7 +40,12 @@ internal static class PackageExtractor
         return new(PackageId: packageId, Version: version);
     }
 
-    public static FilePackageReference? ExtractPackageReference(ReferenceConfig config, XmlElement node, List<string> allPackageIds, string baseDir)
+    public static FilePackageReference? ExtractPackageReference(
+        ReferenceConfig config,
+        XmlElement node,
+        List<string> allPackageIds,
+        string baseDir
+    )
     {
         PackageReference? packageReference = ExtractPackageReference(node);
 
