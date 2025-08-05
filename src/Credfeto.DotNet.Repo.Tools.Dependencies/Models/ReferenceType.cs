@@ -4,5 +4,5 @@ internal enum ReferenceType
 {
     SDK,
     PACKAGE,
-    PROJECT
+    PROJECT,
 }
