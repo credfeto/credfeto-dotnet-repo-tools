@@ -24,7 +24,7 @@ public sealed class DependencyReducerTests : LoggingTestBase
                        .AddDependenciesReduction();
     }
 
-    [Fact]
+    [Fact(Skip = "Enable manually to test")]
     public async Task ReduceAsync()
     {
         const string sourceDirectory = "/home/markr/work/personal/credfeto-date/src";
