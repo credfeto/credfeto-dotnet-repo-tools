@@ -6,12 +6,5 @@ namespace Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces;
 
 public interface IBulkDependencyReducer
 {
-    ValueTask BulkUpdateAsync(string templateRepository,
-                              string trackingFileName,
-                              string packagesFileName,
-                              string workFolder,
-                              string releaseConfigFileName,
-                              IReadOnlyList<string> additionalNugetSources,
-                              IReadOnlyList<string> repositories,
-                              CancellationToken cancellationToken);
+    ValueTask BulkUpdateAsync(string templateRepository, string trackingFileName, string workFolder, IReadOnlyList<string> repositories, CancellationToken cancellationToken);
 }
