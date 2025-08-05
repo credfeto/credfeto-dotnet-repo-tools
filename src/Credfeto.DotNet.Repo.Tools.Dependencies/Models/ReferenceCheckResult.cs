@@ -6,7 +6,5 @@ namespace Credfeto.DotNet.Repo.Tools.Dependencies.Models;
 internal sealed record ReferenceCheckResult(string ProjectFileName, ReferenceType Type, string Name, string? Version)
 {
     public ReferenceCheckResult(string ProjectFileName, ReferenceType Type, string Name)
-        : this(ProjectFileName: ProjectFileName, Type: Type, Name: Name, Version: null)
-    {
-    }
+        : this(ProjectFileName: ProjectFileName, Type: Type, Name: Name, Version: null) { }
 };
