@@ -1,3 +1,4 @@
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build;
@@ -27,6 +28,14 @@ public sealed class DependencyReducerTests : LoggingTestBase
     public async Task ReduceAsync()
     {
         const string sourceDirectory = "/home/markr/work/personal/credfeto-date/src";
+
+        if (!Directory.Exists(sourceDirectory))
+        {
+            Assert.Skip("Sourceproject does not exist ");
+
+            return;
+        }
+
         ReferenceConfig referenceConfig = new(this.CommitAsync);
 
         IDependencyReducer dependencyReducer = this.GetServiceFromDependencyInjection<IDependencyReducer>();
