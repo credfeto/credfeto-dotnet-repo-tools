@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Cocona;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Cmd.LoggingExtensions;
+using Credfeto.DotNet.Repo.Tools.Dependencies;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
@@ -24,6 +25,7 @@ internal sealed class Commands
     private readonly IBulkPackageUpdater _bulkPackageUpdater;
     private readonly IBulkTemplateUpdater _bulkTemplateUpdater;
     private readonly CancellationToken _cancellationToken = CancellationToken.None;
+    private readonly IDependencyReducer _dependencyReducer;
     private readonly IGitRepositoryListLoader _gitRepositoryListLoader;
     private readonly ILogger<Commands> _logger;
 
@@ -33,6 +35,7 @@ internal sealed class Commands
                     IBulkPackageUpdater bulkPackageUpdater,
                     IBulkTemplateUpdater bulkTemplateUpdater,
                     IBulkDependencyReducer bulkDependencyReducer,
+                    IDependencyReducer dependencyReducer,
                     ILogger<Commands> logger)
     {
         this._gitRepositoryListLoader = gitRepositoryListLoader;
@@ -40,6 +43,7 @@ internal sealed class Commands
         this._bulkPackageUpdater = bulkPackageUpdater;
         this._bulkTemplateUpdater = bulkTemplateUpdater;
         this._bulkDependencyReducer = bulkDependencyReducer;
+        this._dependencyReducer = dependencyReducer;
         this._logger = logger;
     }
 
@@ -174,6 +178,20 @@ internal sealed class Commands
                                                           cancellationToken: this._cancellationToken);
 
         this.Done();
+    }
+
+    [Command("dependencies", Description = "Reduce dependencies one folder")]
+    [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
+    public async Task ReduceDependenciesAsync([Option(name: "source-folder", ['s'], Description = "folder where the dotnet source is")] string workFolder)
+    {
+        await this._dependencyReducer.CheckReferencesAsync(sourceDirectory: workFolder, new(CommitAsync), cancellationToken: this._cancellationToken);
+
+        this.Done();
+
+        static ValueTask CommitAsync(string projectFileName, string message, CancellationToken cancellationToken)
+        {
+            return ValueTask.CompletedTask;
+        }
     }
 
     [SuppressMessage("codecracker.CSharp", "CC0091: Make Static", Justification = "Needed For Logging")]
