@@ -14,9 +14,7 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests;
 public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 {
     public DependencyInjectionTests(ITestOutputHelper output)
-        : base(output: output, dependencyInjectionRegistration: Configure)
-    {
-    }
+        : base(output: output, dependencyInjectionRegistration: Configure) { }
 
     [Fact]
     public void BulkTemplateUpdaterMustBeRegistered()
@@ -50,16 +48,17 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 
     private static IServiceCollection Configure(IServiceCollection services)
     {
-        return services.AddMockedService<IBulkPackageConfigLoader>()
-                       .AddMockedService<IDotNetBuild>()
-                       .AddMockedService<IDotNetSolutionCheck>()
-                       .AddMockedService<IDotNetVersion>()
-                       .AddMockedService<IGitRepositoryFactory>()
-                       .AddMockedService<IGlobalJson>()
-                       .AddMockedService<IReleaseConfigLoader>()
-                       .AddMockedService<IReleaseGeneration>()
-                       .AddMockedService<ITrackingCache>()
-                       .AddMockedService<IProjectFinder>()
-                       .AddTemplateUpdate();
+        return services
+            .AddMockedService<IBulkPackageConfigLoader>()
+            .AddMockedService<IDotNetBuild>()
+            .AddMockedService<IDotNetSolutionCheck>()
+            .AddMockedService<IDotNetVersion>()
+            .AddMockedService<IGitRepositoryFactory>()
+            .AddMockedService<IGlobalJson>()
+            .AddMockedService<IReleaseConfigLoader>()
+            .AddMockedService<IReleaseGeneration>()
+            .AddMockedService<ITrackingCache>()
+            .AddMockedService<IProjectFinder>()
+            .AddTemplateUpdate();
     }
 }
