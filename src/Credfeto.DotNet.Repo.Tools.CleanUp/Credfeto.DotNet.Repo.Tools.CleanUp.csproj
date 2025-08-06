@@ -68,7 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Credfeto.ChangeLog" Version="1.10.181.1367" />
-    <PackageReference Include="Credfeto.Tsql.Formatter" Version="0.1.0.9" />
+    <PackageReference Include="Credfeto.Tsql.Formatter" Version="0.1.1.82" />
     <PackageReference Include="CSharpier.Core" Version="1.1.1" />
   </ItemGroup>
   <ItemGroup>
