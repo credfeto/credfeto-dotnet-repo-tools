@@ -10,6 +10,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated Philips.CodeAnalysis.DuplicateCodeAnalyzer to 1.6.4
+- Dependencies - Updated Philips.CodeAnalysis.MaintainabilityAnalyzers to 1.6.4
 ### Removed
 ### Deployment Changes
 
