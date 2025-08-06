@@ -69,7 +69,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Credfeto.ChangeLog" Version="1.10.178.1288" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.7" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.7" />
   </ItemGroup>
   <ItemGroup>
