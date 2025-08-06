@@ -10,6 +10,7 @@ public static class DependenciesSetup
     {
         return services
             .AddSingleton<IBulkDependencyReducer, BulkDependencyReducer>()
-            .AddSingleton<IDependencyReducer, DependencyReducer>();
+            .AddSingleton<IDependencyReducer, DependencyReducer>()
+            .AddSingleton<ITrackingHashGenerator, TrackingHashGenerator>();
     }
 }

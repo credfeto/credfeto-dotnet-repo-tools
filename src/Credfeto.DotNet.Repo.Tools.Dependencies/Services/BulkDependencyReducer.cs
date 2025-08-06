@@ -20,6 +20,7 @@ namespace Credfeto.DotNet.Repo.Tools.Dependencies.Services;
 public sealed class BulkDependencyReducer : IBulkDependencyReducer
 {
     private readonly IDependencyReducer _dependencyReducer;
+    private readonly ITrackingHashGenerator _trackingHashGenerator;
     private readonly IDotNetVersion _dotNetVersion;
     private readonly IGitRepositoryFactory _gitRepositoryFactory;
     private readonly IGlobalJson _globalJson;
@@ -32,6 +33,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         IDotNetVersion dotNetVersion,
         IGitRepositoryFactory gitRepositoryFactory,
         IDependencyReducer dependencyReducer,
+        ITrackingHashGenerator trackingHashGenerator,
         ILogger<BulkDependencyReducer> logger
     )
     {
@@ -40,6 +42,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         this._dotNetVersion = dotNetVersion;
         this._gitRepositoryFactory = gitRepositoryFactory;
         this._dependencyReducer = dependencyReducer;
+        this._trackingHashGenerator = trackingHashGenerator;
         this._logger = logger;
     }
 
@@ -222,7 +225,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             return;
         }
 
-        string current = await GenerateTrackingHashAsync(
+        string current = await this._trackingHashGenerator.GenerateTrackingHashAsync(
             repoContext: repoContext,
             cancellationToken: cancellationToken
         );
@@ -252,7 +255,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             return false;
         }
 
-        string current = await GenerateTrackingHashAsync(
+        string current = await this._trackingHashGenerator.GenerateTrackingHashAsync(
             repoContext: repoContext,
             cancellationToken: cancellationToken
         );
@@ -260,16 +263,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         return StringComparer.Ordinal.Equals(x: previous, y: current);
     }
 
-    private static async ValueTask<string> GenerateTrackingHashAsync(
-        RepoContext repoContext,
-        CancellationToken cancellationToken
-    )
-    {
-        // TODO: generate hash in a way that only changes when code changes
-        await Task.Delay(TimeSpan.FromMilliseconds(1), cancellationToken: cancellationToken);
 
-        return repoContext.Repository.HeadRev;
-    }
 
     private async ValueTask<DependencyReductionUpdateContext> BuildUpdateContextAsync(
         IGitRepository templateRepo,
