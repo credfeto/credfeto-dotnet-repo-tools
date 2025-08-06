@@ -18,6 +18,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Package to 1.10.202.1764
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.130.1126
 - Extracted TrackingHashGenerator
+- Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.108.756
 ### Removed
 ### Deployment Changes
 
