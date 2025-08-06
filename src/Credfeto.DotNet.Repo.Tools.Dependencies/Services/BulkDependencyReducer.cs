@@ -263,8 +263,6 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         return StringComparer.Ordinal.Equals(x: previous, y: current);
     }
 
-
-
     private async ValueTask<DependencyReductionUpdateContext> BuildUpdateContextAsync(
         IGitRepository templateRepo,
         string workFolder,
