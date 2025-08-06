@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Philips.CodeAnalysis.DuplicateCodeAnalyzer to 1.6.4
 - Dependencies - Updated Philips.CodeAnalysis.MaintainabilityAnalyzers to 1.6.4
 - Dependencies - Updated Credfeto.Package to 1.10.201.1752
+- Dependencies - Updated Microsoft.Extensions to 9.0.8
 ### Removed
 ### Deployment Changes
 

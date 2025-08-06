@@ -69,7 +69,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Credfeto.ChangeLog" Version="1.10.178.1288" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
