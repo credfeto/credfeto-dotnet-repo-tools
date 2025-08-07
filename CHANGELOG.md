@@ -10,12 +10,12 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.181.1367
-- Dependencies - Updated Credfeto.Package to 1.10.203.1770
 - Dependencies - Updated Credfeto.Tsql.Formatter to 0.1.1.82
 - Dependencies - Updated Credfeto.Enumeration to 1.2.122.1340
 - Dependencies - Updated Credfeto.Date to 1.1.132.1254
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.131.1129
 - Dependencies - Updated Meziantou.Analyzer to 2.0.211
+- Dependencies - Updated Credfeto.Package to 1.10.204.1774
 ### Removed
 ### Deployment Changes
 
