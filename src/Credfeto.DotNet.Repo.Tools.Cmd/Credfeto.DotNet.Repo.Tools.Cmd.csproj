@@ -81,7 +81,7 @@
   <ItemGroup>
     <PackageReference Include="Cocona" Version="2.2.0" />
     <PackageReference Include="Credfeto.Date" Version="1.1.131.1251" />
-    <PackageReference Include="Credfeto.Enumeration.Source.Generation.Attributes" Version="1.2.121.1337" />
+    <PackageReference Include="Credfeto.Enumeration.Source.Generation.Attributes" Version="1.2.122.1340" />
     <PackageReference Include="FunFair.BuildVersion.Detection" Version="6.2.17.1375" />
     <PackageReference Include="Serilog.Enrichers.Demystifier" Version="1.0.3" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
@@ -93,7 +93,7 @@
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="codecracker.CSharp" Version="1.1.0" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Credfeto.Enumeration.Source.Generation" Version="1.2.121.1337" PrivateAssets="All" ExcludeAssets="runtime" />
+    <PackageReference Include="Credfeto.Enumeration.Source.Generation" Version="1.2.122.1340" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Credfeto.Version.Information.Generator" Version="1.0.108.756" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="CSharpIsNullAnalyzer" Version="0.1.593" PrivateAssets="all" ExcludeAssets="runtime" />
     <PackageReference Include="FunFair.CodeAnalysis" Version="7.1.14.1336" PrivateAssets="All" ExcludeAssets="runtime" />
