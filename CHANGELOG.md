@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Package to 1.10.206.1787
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.184.1381
 - Dependencies - Updated Credfeto.Tsql.Formatter to 0.1.3.95
+- Dependencies - Updated Credfeto.Enumeration to 1.2.124.1351
 ### Removed
 ### Deployment Changes
 
