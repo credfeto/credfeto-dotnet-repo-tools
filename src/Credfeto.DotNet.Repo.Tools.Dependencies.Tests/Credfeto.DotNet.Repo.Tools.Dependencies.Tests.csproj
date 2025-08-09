@@ -64,7 +64,7 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Dependencies\Credfeto.DotNet.Repo.Tools.Dependencies.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="FunFair.Test.Common" Version="6.1.281.1593" />
+    <PackageReference Include="FunFair.Test.Common" Version="6.1.282.1603" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="NSubstitute" Version="5.3.0" />
     <PackageReference Include="xunit.v3" Version="3.0.0" />
