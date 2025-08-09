@@ -16,10 +16,10 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.184.1381
 - Dependencies - Updated Credfeto.Tsql.Formatter to 0.1.3.95
 - SDK - Updated DotNet SDK to 9.0.304
-- Dependencies - Updated FunFair.CodeAnalysis to 7.1.17.1347
 - Dependencies - Updated Credfeto.Package to 1.10.207.1791
 - Dependencies - Updated FunFair.Test.Common to 6.1.282.1603
 - Dependencies - Updated Credfeto.Enumeration to 1.2.125.1355
+- Dependencies - Updated FunFair.CodeAnalysis to 7.1.18.1350
 ### Removed
 ### Deployment Changes
 
