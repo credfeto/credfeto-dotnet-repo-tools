@@ -10,7 +10,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated Credfeto.Date to 1.1.134.1263
-- Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.110.765
 - Dependencies - Updated Meziantou.Analyzer to 2.0.212
 - Dependencies - Updated Credfeto.Tsql.Formatter to 0.1.3.95
 - SDK - Updated DotNet SDK to 9.0.304
@@ -21,6 +20,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Package to 1.10.208.1794
 - Dependencies - Updated Philips.CodeAnalysis.MaintainabilityAnalyzers to 1.7.0
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.134.1145
+- Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.111.775
 ### Removed
 ### Deployment Changes
 
