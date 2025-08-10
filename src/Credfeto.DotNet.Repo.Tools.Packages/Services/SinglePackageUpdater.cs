@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -48,56 +47,26 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
         this._logger = logger;
     }
 
-    public ValueTask<bool> UpdateAsync(PackageUpdateContext updateContext,
-                                       RepoContext repoContext,
-                                       IReadOnlyList<string> solutions,
-                                       string sourceDirectory,
-                                       BuildSettings buildSettings,
-                                       DotNetVersionSettings dotNetSettings,
-                                       PackageUpdate package,
-                                       CancellationToken cancellationToken)
+    public async ValueTask<bool> UpdateAsync(PackageUpdateContext updateContext,
+                                             RepoContext repoContext,
+                                             IReadOnlyList<string> solutions,
+                                             string sourceDirectory,
+                                             BuildSettings buildSettings,
+                                             DotNetVersionSettings dotNetSettings,
+                                             PackageUpdate package,
+                                             CancellationToken cancellationToken)
     {
-        string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
-
-        return this.ProcessRepoOnePackageUpdateAsync(updateContext: updateContext,
-                                                     repoContext: repoContext,
-                                                     solutions: solutions,
-                                                     sourceDirectory: sourceDirectory,
-                                                     buildSettings: buildSettings,
-                                                     dotNetSettings: dotNetSettings,
-                                                     package: package,
-                                                     lastKnownGoodBuild: lastKnownGoodBuild,
-                                                     cancellationToken: cancellationToken);
-    }
-
-    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Needs Review")]
-    private async ValueTask<bool> ProcessRepoOnePackageUpdateAsync(PackageUpdateContext updateContext,
-                                                                   RepoContext repoContext,
-                                                                   IReadOnlyList<string> solutions,
-                                                                   string sourceDirectory,
-                                                                   BuildSettings buildSettings,
-                                                                   DotNetVersionSettings dotNetSettings,
-                                                                   PackageUpdate package,
-                                                                   string? lastKnownGoodBuild,
-                                                                   CancellationToken cancellationToken)
-    {
-        if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
-        {
-            BuildOverride buildOverride = new(PreRelease: true);
-            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions,
-                                                          repositoryDotNetSettings: dotNetSettings,
-                                                          templateDotNetSettings: updateContext.DotNetSettings,
+        await this.RequireSolutionBuildsBeforeUpdateAsync(updateContext: updateContext,
+                                                          repoContext: repoContext,
+                                                          solutions: solutions,
+                                                          sourceDirectory: sourceDirectory,
+                                                          buildSettings: buildSettings,
+                                                          dotNetSettings: dotNetSettings,
                                                           cancellationToken: cancellationToken);
-
-            await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
-
-            string hash = await this._trackingHashGenerator.GenerateTrackingHashAsync(repoContext: repoContext, cancellationToken: cancellationToken);
-            await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: hash, cancellationToken: cancellationToken);
-        }
 
         IReadOnlyList<PackageVersion> updatesMade = await this.UpdatePackagesAsync(updateContext: updateContext, repoContext: repoContext, package: package, cancellationToken: cancellationToken);
 
-        if (updatesMade.Count == 0)
+        if (updatesMade is [])
         {
             await RemoveExistingBranchesForPackageAsync(repoContext: repoContext, package: package, cancellationToken: cancellationToken);
 
@@ -115,6 +84,34 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
                                         cancellationToken: cancellationToken);
 
         return true;
+    }
+
+    private async ValueTask RequireSolutionBuildsBeforeUpdateAsync(PackageUpdateContext updateContext,
+                                                                   RepoContext repoContext,
+                                                                   IReadOnlyList<string> solutions,
+                                                                   string sourceDirectory,
+                                                                   BuildSettings buildSettings,
+                                                                   DotNetVersionSettings dotNetSettings,
+                                                                   CancellationToken cancellationToken)
+    {
+        string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
+
+        if (lastKnownGoodBuild is not null && StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
+        {
+            // content of last build was successful
+            return;
+        }
+
+        BuildOverride buildOverride = new(PreRelease: true);
+        await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions,
+                                                      repositoryDotNetSettings: dotNetSettings,
+                                                      templateDotNetSettings: updateContext.DotNetSettings,
+                                                      cancellationToken: cancellationToken);
+
+        await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+
+        string hash = await this._trackingHashGenerator.GenerateTrackingHashAsync(repoContext: repoContext, cancellationToken: cancellationToken);
+        await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: hash, cancellationToken: cancellationToken);
     }
 
     private static ValueTask RemoveExistingBranchesForPackageAsync(in RepoContext repoContext, PackageUpdate package, in CancellationToken cancellationToken)
