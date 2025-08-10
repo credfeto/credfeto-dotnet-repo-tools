@@ -17,10 +17,10 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Enumeration to 1.2.125.1355
 - Dependencies - Updated FunFair.CodeAnalysis to 7.1.18.1350
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.185.1386
-- Dependencies - Updated Credfeto.Package to 1.10.208.1794
 - Dependencies - Updated Philips.CodeAnalysis.MaintainabilityAnalyzers to 1.7.0
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.134.1145
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.111.775
+- Dependencies - Updated Credfeto.Package to 1.10.209.1799
 ### Removed
 ### Deployment Changes
 
