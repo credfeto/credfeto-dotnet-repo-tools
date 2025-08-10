@@ -110,6 +110,11 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
 
         await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
 
+        await this.UpdateTrackingHashAsync(repoContext: repoContext, updateContext: updateContext, cancellationToken: cancellationToken);
+    }
+
+    private async ValueTask UpdateTrackingHashAsync(RepoContext repoContext, PackageUpdateContext updateContext, CancellationToken cancellationToken)
+    {
         string hash = await this._trackingHashGenerator.GenerateTrackingHashAsync(repoContext: repoContext, cancellationToken: cancellationToken);
         await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: hash, cancellationToken: cancellationToken);
     }
@@ -148,8 +153,7 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
 
         if (ok)
         {
-            string hash = await this._trackingHashGenerator.GenerateTrackingHashAsync(repoContext: repoContext, cancellationToken: cancellationToken);
-            await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: hash, cancellationToken: cancellationToken);
+            await this.UpdateTrackingHashAsync(repoContext: repoContext, updateContext: updateContext, cancellationToken: cancellationToken);
         }
     }
 
@@ -192,7 +196,7 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
         finally
         {
             this._logger.LogResettingToDefault(repoContext);
-            await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+            await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
         }
     }
 
@@ -203,7 +207,7 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
             // nothing to do - may already be a PR that's being worked on
             this._logger.LogSkippingPackageCommit(repoContext: repoContext, branch: branchForUpdate, packageId: package.PackageId, version: version);
 
-            await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+            await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
             return;
         }
@@ -214,7 +218,7 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
         await CommitChangeWithChangelogAsync(repoContext: repoContext, package: package, version: version, cancellationToken: cancellationToken);
         await repoContext.Repository.PushOriginAsync(branchName: branchForUpdate, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
         await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: branchForUpdate, branchPrefix: branchPrefix, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
-        await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+        await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
     }
 
     private async ValueTask CommitDefaultBranchToRepositoryAsync(RepoContext repoContext,
@@ -233,7 +237,7 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
                                                                   cancellationToken: cancellationToken);
 
         this._logger.LogResettingToDefault(repoContext);
-        await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+        await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
     }
 
     private static string GetBranchPrefixForPackage(PackageUpdate package)

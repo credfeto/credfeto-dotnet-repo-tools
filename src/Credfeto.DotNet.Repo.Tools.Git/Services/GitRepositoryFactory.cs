@@ -13,13 +13,7 @@ namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 
 public sealed class GitRepositoryFactory : IGitRepositoryFactory
 {
-    private static readonly CloneOptions GitCloneOptions = new()
-    {
-        Checkout = true,
-        IsBare = false,
-        RecurseSubmodules = true,
-        FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All },
-    };
+    private static readonly CloneOptions GitCloneOptions = new() { Checkout = true, IsBare = false, RecurseSubmodules = true, FetchOptions = { Prune = true, TagFetchMode = TagFetchMode.All } };
 
     private readonly IGitRepositoryLocator _locator;
     private readonly ILogger<GitRepositoryFactory> _logger;
@@ -30,11 +24,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
         this._logger = logger;
     }
 
-    public ValueTask<IGitRepository> OpenOrCloneAsync(
-        string workDir,
-        string repoUrl,
-        in CancellationToken cancellationToken
-    )
+    public ValueTask<IGitRepository> OpenOrCloneAsync(string workDir, string repoUrl, in CancellationToken cancellationToken)
     {
         string workingDirectory = this._locator.GetWorkingDirectory(workDir: workDir, repoUrl: repoUrl);
 
@@ -44,11 +34,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
 
             if (!File.Exists(lockFile))
             {
-                return this.OpenRepoAsync(
-                    repoUrl: repoUrl,
-                    workingDirectory: workingDirectory,
-                    cancellationToken: cancellationToken
-                );
+                return this.OpenRepoAsync(repoUrl: repoUrl, workingDirectory: workingDirectory, cancellationToken: cancellationToken);
             }
 
             this._logger.DestroyingAndReCloning(repoUrl: repoUrl, repoPath: workingDirectory);
@@ -57,33 +43,19 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
             Directory.Delete(path: workingDirectory, recursive: true);
         }
 
-        return this.CloneRepositoryAsync(
-            workDir: workDir,
-            destinationPath: workingDirectory,
-            repoUrl: repoUrl,
-            cancellationToken: cancellationToken
-        );
+        return this.CloneRepositoryAsync(workDir: workDir, destinationPath: workingDirectory, repoUrl: repoUrl, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask<IGitRepository> OpenRepoAsync(
-        string repoUrl,
-        string workingDirectory,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask<IGitRepository> OpenRepoAsync(string repoUrl, string workingDirectory, CancellationToken cancellationToken)
     {
         this._logger.OpeningRepo(repoUrl: repoUrl, repoPath: workingDirectory);
         IGitRepository? repo = null;
 
         try
         {
-            repo = new GitRepository(
-                clonePath: repoUrl,
-                workingDirectory: workingDirectory,
-                new(Repository.Discover(workingDirectory)),
-                logger: this._logger
-            );
+            repo = new GitRepository(clonePath: repoUrl, workingDirectory: workingDirectory, new(Repository.Discover(workingDirectory)), logger: this._logger);
 
-            await repo.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+            await repo.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
             // Start with a clean slate - branches will be created as needed
             repo.RemoveAllLocalBranches();
@@ -98,50 +70,25 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
         }
     }
 
-    private async ValueTask<IGitRepository> CloneRepositoryAsync(
-        string workDir,
-        string destinationPath,
-        string repoUrl,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask<IGitRepository> CloneRepositoryAsync(string workDir, string destinationPath, string repoUrl, CancellationToken cancellationToken)
     {
         this._logger.CloningRepo(repoUrl: repoUrl, repoPath: destinationPath);
 
         string? path = IsHttps(repoUrl)
             ? Repository.Clone(sourceUrl: repoUrl, workdirPath: destinationPath, options: GitCloneOptions)
-            : await CloneSshAsync(
-                sourceUrl: repoUrl,
-                workdirPath: workDir,
-                destinationPath: destinationPath,
-                cancellationToken: cancellationToken
-            );
+            : await CloneSshAsync(sourceUrl: repoUrl, workdirPath: workDir, destinationPath: destinationPath, cancellationToken: cancellationToken);
 
         if (string.IsNullOrWhiteSpace(path))
         {
             throw new GitException($"Failed to clone repo {repoUrl} to {workDir}");
         }
 
-        return new GitRepository(
-            clonePath: repoUrl,
-            workingDirectory: destinationPath,
-            new(Repository.Discover(path)),
-            logger: this._logger
-        );
+        return new GitRepository(clonePath: repoUrl, workingDirectory: destinationPath, new(Repository.Discover(path)), logger: this._logger);
     }
 
-    private static async ValueTask<string?> CloneSshAsync(
-        string sourceUrl,
-        string workdirPath,
-        string destinationPath,
-        CancellationToken cancellationToken
-    )
+    private static async ValueTask<string?> CloneSshAsync(string sourceUrl, string workdirPath, string destinationPath, CancellationToken cancellationToken)
     {
-        await GitCommandLine.ExecAsync(
-            clonePath: sourceUrl,
-            repoPath: workdirPath,
-            $"clone --recurse-submodules {sourceUrl} {destinationPath}",
-            cancellationToken: cancellationToken
-        );
+        await GitCommandLine.ExecAsync(clonePath: sourceUrl, repoPath: workdirPath, $"clone --recurse-submodules {sourceUrl} {destinationPath}", cancellationToken: cancellationToken);
 
         return destinationPath;
     }

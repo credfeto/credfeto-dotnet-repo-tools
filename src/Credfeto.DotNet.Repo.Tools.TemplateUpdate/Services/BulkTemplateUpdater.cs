@@ -215,7 +215,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 File.Delete(repoFile);
                 await repoContext.Repository.CommitAsync($"Removed: {prefix}", cancellationToken: cancellationToken);
                 await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
-                await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+                await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
             }
         }
     }
@@ -637,7 +637,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                                                               branchPrefix: branchPrefix,
                                                                               upstream: GitConstants.Upstream,
                                                                               cancellationToken: cancellationToken);
-                    await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+                    await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
                 }
                 else
                 {
@@ -667,7 +667,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         }
         finally
         {
-            await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+            await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
         }
 
         async ValueTask ChangelogUpdateAsync(CancellationToken token)

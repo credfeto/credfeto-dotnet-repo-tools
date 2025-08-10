@@ -20,7 +20,7 @@ public interface IGitRepository : IDisposable
 
     void RemoveAllLocalBranches();
 
-    ValueTask ResetToMasterAsync(string upstream, CancellationToken cancellationToken);
+    ValueTask ResetToDefaultBranchAsync(string upstream, CancellationToken cancellationToken);
 
     string GetDefaultBranch(string upstream);
 
@@ -40,12 +40,7 @@ public interface IGitRepository : IDisposable
 
     ValueTask CreateBranchAsync(string branchName, CancellationToken cancellationToken);
 
-    ValueTask RemoveBranchesForPrefixAsync(
-        string branchForUpdate,
-        string branchPrefix,
-        string upstream,
-        CancellationToken cancellationToken
-    );
+    ValueTask RemoveBranchesForPrefixAsync(string branchForUpdate, string branchPrefix, string upstream, CancellationToken cancellationToken);
 
     DateTimeOffset GetLastCommitDate();
 }
