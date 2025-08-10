@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 
-namespace Credfeto.DotNet.Repo.Tools.Dependencies.Services;
+namespace Credfeto.DotNet.Repo.Tracking.Services;
 
 public sealed class TrackingHashGenerator : ITrackingHashGenerator
 {

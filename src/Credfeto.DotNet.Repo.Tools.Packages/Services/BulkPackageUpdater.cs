@@ -40,21 +40,21 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     private readonly IReleaseConfigLoader _releaseConfigLoader;
     private readonly IReleaseGeneration _releaseGeneration;
     private readonly ITrackingCache _trackingCache;
+    private readonly ITrackingHashGenerator _trackingHashGenerator;
 
-    public BulkPackageUpdater(
-        IPackageUpdater packageUpdater,
-        IPackageCache packageCache,
-        ITrackingCache trackingCache,
-        IGlobalJson globalJson,
-        IDotNetVersion dotNetVersion,
-        IDotNetSolutionCheck dotNetSolutionCheck,
-        IDotNetBuild dotNetBuild,
-        IReleaseConfigLoader releaseConfigLoader,
-        IReleaseGeneration releaseGeneration,
-        IGitRepositoryFactory gitRepositoryFactory,
-        IBulkPackageConfigLoader bulkPackageConfigLoader,
-        ILogger<BulkPackageUpdater> logger
-    )
+    public BulkPackageUpdater(IPackageUpdater packageUpdater,
+                              IPackageCache packageCache,
+                              ITrackingCache trackingCache,
+                              IGlobalJson globalJson,
+                              IDotNetVersion dotNetVersion,
+                              IDotNetSolutionCheck dotNetSolutionCheck,
+                              IDotNetBuild dotNetBuild,
+                              IReleaseConfigLoader releaseConfigLoader,
+                              IReleaseGeneration releaseGeneration,
+                              IGitRepositoryFactory gitRepositoryFactory,
+                              IBulkPackageConfigLoader bulkPackageConfigLoader,
+                              ITrackingHashGenerator trackingHashGenerator,
+                              ILogger<BulkPackageUpdater> logger)
     {
         this._packageUpdater = packageUpdater;
         this._packageCache = packageCache;
@@ -67,82 +67,56 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         this._releaseGeneration = releaseGeneration;
         this._gitRepositoryFactory = gitRepositoryFactory;
         this._bulkPackageConfigLoader = bulkPackageConfigLoader;
+        this._trackingHashGenerator = trackingHashGenerator;
         this._logger = logger;
     }
 
-    public async ValueTask BulkUpdateAsync(
-        string templateRepository,
-        string? cacheFileName,
-        string trackingFileName,
-        string packagesFileName,
-        string workFolder,
-        string releaseConfigFileName,
-        IReadOnlyList<string> additionalNugetSources,
-        IReadOnlyList<string> repositories,
-        CancellationToken cancellationToken
-    )
+    public async ValueTask BulkUpdateAsync(string templateRepository,
+                                           string? cacheFileName,
+                                           string trackingFileName,
+                                           string packagesFileName,
+                                           string workFolder,
+                                           string releaseConfigFileName,
+                                           IReadOnlyList<string> additionalNugetSources,
+                                           IReadOnlyList<string> repositories,
+                                           CancellationToken cancellationToken)
     {
         await this.LoadPackageCacheAsync(packageCacheFile: cacheFileName, cancellationToken: cancellationToken);
         await this.LoadTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
 
-        IReadOnlyList<PackageUpdate> packages = await this._bulkPackageConfigLoader.LoadAsync(
-            path: packagesFileName,
-            cancellationToken: cancellationToken
-        );
+        IReadOnlyList<PackageUpdate> packages = await this._bulkPackageConfigLoader.LoadAsync(path: packagesFileName, cancellationToken: cancellationToken);
 
-        using (
-            IGitRepository templateRepo = await this._gitRepositoryFactory.OpenOrCloneAsync(
-                workDir: workFolder,
-                repoUrl: templateRepository,
-                cancellationToken: cancellationToken
-            )
-        )
+        using (IGitRepository templateRepo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
-            PackageUpdateContext updateContext = await this.BuildUpdateContextAsync(
-                cacheFileName: cacheFileName,
-                templateRepo: templateRepo,
-                workFolder: workFolder,
-                trackingFileName: trackingFileName,
-                releaseConfigFileName: releaseConfigFileName,
-                additionalNugetSources: additionalNugetSources,
-                cancellationToken: cancellationToken
-            );
+            PackageUpdateContext updateContext = await this.BuildUpdateContextAsync(cacheFileName: cacheFileName,
+                                                                                    templateRepo: templateRepo,
+                                                                                    workFolder: workFolder,
+                                                                                    trackingFileName: trackingFileName,
+                                                                                    releaseConfigFileName: releaseConfigFileName,
+                                                                                    additionalNugetSources: additionalNugetSources,
+                                                                                    cancellationToken: cancellationToken);
 
-            await this.UpdateCachedPackagesAsync(
-                workFolder: workFolder,
-                packages: packages,
-                updateContext: updateContext,
-                cancellationToken: cancellationToken
-            );
+            await this.UpdateCachedPackagesAsync(workFolder: workFolder, packages: packages, updateContext: updateContext, cancellationToken: cancellationToken);
 
-            await this.UpdateRepositoriesAndTrackingAsync(
-                updateContext: updateContext,
-                repositories: repositories,
-                packages: packages,
-                cacheFileName: cacheFileName,
-                trackingFileName: trackingFileName,
-                cancellationToken: cancellationToken
-            );
+            await this.UpdateRepositoriesAndTrackingAsync(updateContext: updateContext,
+                                                          repositories: repositories,
+                                                          packages: packages,
+                                                          cacheFileName: cacheFileName,
+                                                          trackingFileName: trackingFileName,
+                                                          cancellationToken: cancellationToken);
         }
     }
 
-    private async ValueTask UpdateRepositoriesAndTrackingAsync(
-        PackageUpdateContext updateContext,
-        IReadOnlyList<string> repositories,
-        IReadOnlyList<PackageUpdate> packages,
-        string? cacheFileName,
-        string trackingFileName,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask UpdateRepositoriesAndTrackingAsync(PackageUpdateContext updateContext,
+                                                               IReadOnlyList<string> repositories,
+                                                               IReadOnlyList<PackageUpdate> packages,
+                                                               string? cacheFileName,
+                                                               string trackingFileName,
+                                                               CancellationToken cancellationToken)
     {
         try
         {
-            await this.UpdateRepositoriesAsync(
-                updateContext: updateContext,
-                repositories: repositories,
-                packages: packages,
-                cancellationToken: cancellationToken
-            );
+            await this.UpdateRepositoriesAsync(updateContext: updateContext, repositories: repositories, packages: packages, cancellationToken: cancellationToken);
         }
         finally
         {
@@ -151,12 +125,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
     }
 
-    public async ValueTask UpdateRepositoriesAsync(
-        PackageUpdateContext updateContext,
-        IReadOnlyList<string> repositories,
-        IReadOnlyList<PackageUpdate> packages,
-        CancellationToken cancellationToken
-    )
+    public async ValueTask UpdateRepositoriesAsync(PackageUpdateContext updateContext, IReadOnlyList<string> repositories, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
         try
         {
@@ -164,12 +133,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             {
                 try
                 {
-                    await this.UpdateRepositoryAsync(
-                        updateContext: updateContext,
-                        packages: packages,
-                        repo: repo,
-                        cancellationToken: cancellationToken
-                    );
+                    await this.UpdateRepositoryAsync(updateContext: updateContext, packages: packages, repo: repo, cancellationToken: cancellationToken);
                 }
                 catch (SolutionCheckFailedException exception)
                 {
@@ -187,18 +151,12 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 {
                     if (!string.IsNullOrWhiteSpace(updateContext.CacheFileName))
                     {
-                        await this._packageCache.SaveAsync(
-                            fileName: updateContext.CacheFileName,
-                            cancellationToken: cancellationToken
-                        );
+                        await this._packageCache.SaveAsync(fileName: updateContext.CacheFileName, cancellationToken: cancellationToken);
                     }
 
                     if (!string.IsNullOrWhiteSpace(updateContext.TrackingFileName))
                     {
-                        await this._trackingCache.SaveAsync(
-                            fileName: updateContext.TrackingFileName,
-                            cancellationToken: cancellationToken
-                        );
+                        await this._trackingCache.SaveAsync(fileName: updateContext.TrackingFileName, cancellationToken: cancellationToken);
                     }
                 }
             }
@@ -210,12 +168,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
     }
 
-    private async ValueTask UpdateCachedPackagesAsync(
-        string workFolder,
-        IReadOnlyList<PackageUpdate> packages,
-        PackageUpdateContext updateContext,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask UpdateCachedPackagesAsync(string workFolder, IReadOnlyList<PackageUpdate> packages, PackageUpdateContext updateContext, CancellationToken cancellationToken)
     {
         IReadOnlyList<PackageVersion> allPackages = this._packageCache.GetAll();
 
@@ -253,8 +206,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 basePath: packagesFolder,
                 configuration: config,
                 packageSources: updateContext.AdditionalSources,
-                cancellationToken: cancellationToken
-            );
+                cancellationToken: cancellationToken);
 
             this._logger.LogUpdatedCachedPackages(packageId: package.PackageId, count: updated.Count);
             updates += updated.Count;
@@ -285,103 +237,61 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return document;
     }
 
-    private async ValueTask UpdateRepositoryAsync(
-        PackageUpdateContext updateContext,
-        IReadOnlyList<PackageUpdate> packages,
-        string repo,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask UpdateRepositoryAsync(PackageUpdateContext updateContext, IReadOnlyList<PackageUpdate> packages, string repo, CancellationToken cancellationToken)
     {
         this._logger.LogProcessingRepo(repo);
 
-        using (
-            IGitRepository repository = await this._gitRepositoryFactory.OpenOrCloneAsync(
-                workDir: updateContext.WorkFolder,
-                repoUrl: repo,
-                cancellationToken: cancellationToken
-            )
-        )
+        using (IGitRepository repository = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
             if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
             {
                 this._logger.LogNoChangelogFound();
-                await this._trackingCache.UpdateTrackingAsync(
-                    new(Repository: repository, ChangeLogFileName: "?"),
-                    updateContext: updateContext,
-                    value: repository.HeadRev,
-                    cancellationToken: cancellationToken
-                );
+                await this._trackingCache.UpdateTrackingAsync(new(Repository: repository, ChangeLogFileName: "?"),
+                                                              updateContext: updateContext,
+                                                              value: repository.HeadRev,
+                                                              cancellationToken: cancellationToken);
 
                 return;
             }
 
             RepoContext repoContext = new(Repository: repository, ChangeLogFileName: changeLogFileName);
 
-            await this.ProcessRepoUpdatesAsync(
-                updateContext: updateContext,
-                repoContext: repoContext,
-                packages: packages,
-                cancellationToken: cancellationToken
-            );
+            await this.ProcessRepoUpdatesAsync(updateContext: updateContext, repoContext: repoContext, packages: packages, cancellationToken: cancellationToken);
         }
     }
 
-    [SuppressMessage(
-        category: "Meziantou.Analyzer",
-        checkId: "MA0051: Method is too long",
-        Justification = "Needs Review"
-    )]
-    private async ValueTask ProcessRepoUpdatesAsync(
-        PackageUpdateContext updateContext,
-        RepoContext repoContext,
-        IReadOnlyList<PackageUpdate> packages,
-        CancellationToken cancellationToken
-    )
+    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Needs Review")]
+    private async ValueTask ProcessRepoUpdatesAsync(PackageUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
         string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
 
-        if (
-            !repoContext.HasDotNetFiles(
-                out string? sourceDirectory,
-                out IReadOnlyList<string>? solutions,
-                out IReadOnlyList<string>? projects
-            )
-        )
+        if (!repoContext.HasDotNetFiles(out string? sourceDirectory, out IReadOnlyList<string>? solutions, out IReadOnlyList<string>? projects))
         {
             this._logger.LogNoDotNetFilesFound();
-            await this._trackingCache.UpdateTrackingAsync(
-                repoContext: repoContext,
-                updateContext: updateContext,
-                value: repoContext.Repository.HeadRev,
-                cancellationToken: cancellationToken
-            );
+            await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
 
             return;
         }
 
-        BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(
-            projects: projects,
-            cancellationToken: cancellationToken
-        );
+        BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
 
         int totalUpdates = 0;
 
         foreach (PackageUpdate package in packages)
         {
-            (bool updated, lastKnownGoodBuild) = await this.ProcessRepoOnePackageUpdateAsync(
-                updateContext: updateContext,
-                repoContext: repoContext,
-                solutions: solutions,
-                sourceDirectory: sourceDirectory,
-                buildSettings: buildSettings,
-                dotNetSettings: updateContext.DotNetSettings,
-                package: package,
-                lastKnownGoodBuild: lastKnownGoodBuild,
-                cancellationToken: cancellationToken
-            );
+            (bool updated, string? hash) = await this.ProcessRepoOnePackageUpdateAsync(updateContext: updateContext,
+                                                                                       repoContext: repoContext,
+                                                                                       solutions: solutions,
+                                                                                       sourceDirectory: sourceDirectory,
+                                                                                       buildSettings: buildSettings,
+                                                                                       dotNetSettings: updateContext.DotNetSettings,
+                                                                                       package: package,
+                                                                                       lastKnownGoodBuild: lastKnownGoodBuild,
+                                                                                       cancellationToken: cancellationToken);
 
             if (updated)
             {
+                lastKnownGoodBuild = hash;
                 ++totalUpdates;
             }
         }
@@ -389,163 +299,110 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         if (totalUpdates == 0)
         {
             // no updates in this run - so might be able to create a release
-            await this._releaseGeneration.TryCreateNextPatchAsync(
-                repoContext: repoContext,
-                basePath: sourceDirectory,
-                buildSettings: buildSettings,
-                dotNetSettings: updateContext.DotNetSettings,
-                solutions: solutions,
-                packages: packages,
-                releaseConfig: updateContext.ReleaseConfig,
-                cancellationToken: cancellationToken
-            );
+            await this._releaseGeneration.TryCreateNextPatchAsync(repoContext: repoContext,
+                                                                  basePath: sourceDirectory,
+                                                                  buildSettings: buildSettings,
+                                                                  dotNetSettings: updateContext.DotNetSettings,
+                                                                  solutions: solutions,
+                                                                  packages: packages,
+                                                                  releaseConfig: updateContext.ReleaseConfig,
+                                                                  cancellationToken: cancellationToken);
         }
     }
 
-    [SuppressMessage(
-        category: "Meziantou.Analyzer",
-        checkId: "MA0051: Method is too long",
-        Justification = "Needs Review"
-    )]
-    private async ValueTask<(bool updated, string? lastKnownGoodBuild)> ProcessRepoOnePackageUpdateAsync(
-        PackageUpdateContext updateContext,
-        RepoContext repoContext,
-        IReadOnlyList<string> solutions,
-        string sourceDirectory,
-        BuildSettings buildSettings,
-        DotNetVersionSettings dotNetSettings,
-        PackageUpdate package,
-        string? lastKnownGoodBuild,
-        CancellationToken cancellationToken
-    )
+    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Needs Review")]
+    private async ValueTask<(bool updated, string? lastKnownGoodBuild)> ProcessRepoOnePackageUpdateAsync(PackageUpdateContext updateContext,
+                                                                                                         RepoContext repoContext,
+                                                                                                         IReadOnlyList<string> solutions,
+                                                                                                         string sourceDirectory,
+                                                                                                         BuildSettings buildSettings,
+                                                                                                         DotNetVersionSettings dotNetSettings,
+                                                                                                         PackageUpdate package,
+                                                                                                         string? lastKnownGoodBuild,
+                                                                                                         CancellationToken cancellationToken)
     {
-        if (
-            lastKnownGoodBuild is null
-            || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev)
-        )
+        if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
         {
             BuildOverride buildOverride = new(PreRelease: true);
-            await this._dotNetSolutionCheck.PreCheckAsync(
-                solutions: solutions,
-                repositoryDotNetSettings: dotNetSettings,
-                templateDotNetSettings: updateContext.DotNetSettings,
-                cancellationToken: cancellationToken
-            );
+            await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions,
+                                                          repositoryDotNetSettings: dotNetSettings,
+                                                          templateDotNetSettings: updateContext.DotNetSettings,
+                                                          cancellationToken: cancellationToken);
 
-            await this._dotNetBuild.BuildAsync(
-                basePath: sourceDirectory,
-                buildSettings: buildSettings,
-                buildOverride: buildOverride,
-                cancellationToken: cancellationToken
-            );
+            await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
 
-            lastKnownGoodBuild = repoContext.Repository.HeadRev;
-            await this._trackingCache.UpdateTrackingAsync(
-                repoContext: repoContext,
-                updateContext: updateContext,
-                value: lastKnownGoodBuild,
-                cancellationToken: cancellationToken
-            );
+            string hash = await this._trackingHashGenerator.GenerateTrackingHashAsync(repoContext: repoContext, cancellationToken: cancellationToken);
+            lastKnownGoodBuild = hash;
+            await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: hash, cancellationToken: cancellationToken);
         }
 
-        IReadOnlyList<PackageVersion> updatesMade = await this.UpdatePackagesAsync(
-            updateContext: updateContext,
-            repoContext: repoContext,
-            package: package,
-            cancellationToken: cancellationToken
-        );
+        IReadOnlyList<PackageVersion> updatesMade = await this.UpdatePackagesAsync(updateContext: updateContext, repoContext: repoContext, package: package, cancellationToken: cancellationToken);
 
         if (updatesMade.Count == 0)
         {
-            await RemoveExistingBranchesForPackageAsync(
-                repoContext: repoContext,
-                package: package,
-                cancellationToken: cancellationToken
-            );
+            await RemoveExistingBranchesForPackageAsync(repoContext: repoContext, package: package, cancellationToken: cancellationToken);
 
             return (false, lastKnownGoodBuild);
         }
 
-        string? goodBuildCommit = await this.OnPackageUpdateAsync(
-            updateContext: updateContext,
-            repoContext: repoContext,
-            solutions: solutions,
-            sourceDirectory: sourceDirectory,
-            buildSettings: buildSettings,
-            repositoryDotNetVersionSettings: dotNetSettings,
-            updatesMade: updatesMade,
-            package: package,
-            cancellationToken: cancellationToken
-        );
+        string? goodBuildCommit = await this.OnPackageUpdateAsync(updateContext: updateContext,
+                                                                  repoContext: repoContext,
+                                                                  solutions: solutions,
+                                                                  sourceDirectory: sourceDirectory,
+                                                                  buildSettings: buildSettings,
+                                                                  repositoryDotNetVersionSettings: dotNetSettings,
+                                                                  updatesMade: updatesMade,
+                                                                  package: package,
+                                                                  cancellationToken: cancellationToken);
 
         return (true, goodBuildCommit ?? lastKnownGoodBuild);
     }
 
-    private static ValueTask RemoveExistingBranchesForPackageAsync(
-        in RepoContext repoContext,
-        PackageUpdate package,
-        in CancellationToken cancellationToken
-    )
+    private static ValueTask RemoveExistingBranchesForPackageAsync(in RepoContext repoContext, PackageUpdate package, in CancellationToken cancellationToken)
     {
         string branchPrefix = GetBranchPrefixForPackage(package);
         string invalidUpdateBranch = BuildInvalidUpdateBranch(branchPrefix);
 
-        return repoContext.Repository.RemoveBranchesForPrefixAsync(
-            branchForUpdate: invalidUpdateBranch,
-            branchPrefix: branchPrefix,
-            upstream: GitConstants.Upstream,
-            cancellationToken: cancellationToken
-        );
+        return repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: invalidUpdateBranch,
+                                                                   branchPrefix: branchPrefix,
+                                                                   upstream: GitConstants.Upstream,
+                                                                   cancellationToken: cancellationToken);
     }
 
     private static string BuildInvalidUpdateBranch(string branchPrefix)
     {
-        return BuildBranchForVersion(branchPrefix: branchPrefix, Guid.NewGuid().ToString());
+        return BuildBranchForVersion(branchPrefix: branchPrefix,
+                                     Guid.NewGuid()
+                                         .ToString());
     }
 
-    private async ValueTask<string?> OnPackageUpdateAsync(
-        PackageUpdateContext updateContext,
-        RepoContext repoContext,
-        IReadOnlyList<string> solutions,
-        string sourceDirectory,
-        BuildSettings buildSettings,
-        DotNetVersionSettings repositoryDotNetVersionSettings,
-        IReadOnlyList<PackageVersion> updatesMade,
-        PackageUpdate package,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask<string?> OnPackageUpdateAsync(PackageUpdateContext updateContext,
+                                                          RepoContext repoContext,
+                                                          IReadOnlyList<string> solutions,
+                                                          string sourceDirectory,
+                                                          BuildSettings buildSettings,
+                                                          DotNetVersionSettings repositoryDotNetVersionSettings,
+                                                          IReadOnlyList<PackageVersion> updatesMade,
+                                                          PackageUpdate package,
+                                                          CancellationToken cancellationToken)
     {
-        bool ok = await this.PostUpdateCheckAsync(
-            solutions: solutions,
-            sourceDirectory: sourceDirectory,
-            buildSettings: buildSettings,
-            repositoryDotNetVersionSettings: repositoryDotNetVersionSettings,
-            templateDotNetSettings: updateContext.DotNetSettings,
-            cancellationToken: cancellationToken
-        );
+        bool ok = await this.PostUpdateCheckAsync(solutions: solutions,
+                                                  sourceDirectory: sourceDirectory,
+                                                  buildSettings: buildSettings,
+                                                  repositoryDotNetVersionSettings: repositoryDotNetVersionSettings,
+                                                  templateDotNetSettings: updateContext.DotNetSettings,
+                                                  cancellationToken: cancellationToken);
 
         NuGetVersion version = GetUpdateVersion(updatesMade);
 
-        await this.CommitToRepositoryAsync(
-            repoContext: repoContext,
-            package: package,
-            version.ToString(),
-            builtOk: ok,
-            cancellationToken: cancellationToken
-        );
+        await this.CommitToRepositoryAsync(repoContext: repoContext, package: package, version.ToString(), builtOk: ok, cancellationToken: cancellationToken);
 
         if (ok)
         {
-            string headRev = repoContext.Repository.HeadRev;
+            string hash = await this._trackingHashGenerator.GenerateTrackingHashAsync(repoContext: repoContext, cancellationToken: cancellationToken);
+            await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: hash, cancellationToken: cancellationToken);
 
-            await this._trackingCache.UpdateTrackingAsync(
-                repoContext: repoContext,
-                updateContext: updateContext,
-                value: headRev,
-                cancellationToken: cancellationToken
-            );
-
-            return headRev;
+            return hash;
         }
 
         return null;
@@ -553,16 +410,12 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
     private static NuGetVersion GetUpdateVersion(IReadOnlyList<PackageVersion> updatesMade)
     {
-        return updatesMade.Select(x => x.Version).OrderByDescending(x => x.Version).First();
+        return updatesMade.Select(x => x.Version)
+                          .OrderByDescending(x => x.Version)
+                          .First();
     }
 
-    private async ValueTask CommitToRepositoryAsync(
-        RepoContext repoContext,
-        PackageUpdate package,
-        string version,
-        bool builtOk,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask CommitToRepositoryAsync(RepoContext repoContext, PackageUpdate package, string version, bool builtOk, CancellationToken cancellationToken)
     {
         try
         {
@@ -572,129 +425,70 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             {
                 string invalidUpdateBranch = BuildInvalidUpdateBranch(branchPrefix);
 
-                await this.CommitDefaultBranchToRepositoryAsync(
-                    repoContext: repoContext,
-                    package: package,
-                    version: version,
-                    invalidUpdateBranch: invalidUpdateBranch,
-                    branchPrefix: branchPrefix,
-                    cancellationToken: cancellationToken
-                );
+                await this.CommitDefaultBranchToRepositoryAsync(repoContext: repoContext,
+                                                                package: package,
+                                                                version: version,
+                                                                invalidUpdateBranch: invalidUpdateBranch,
+                                                                branchPrefix: branchPrefix,
+                                                                cancellationToken: cancellationToken);
             }
             else
             {
                 string branchForUpdate = BuildBranchForVersion(branchPrefix: branchPrefix, version: version);
 
-                await this.CommitToNamedBranchAsync(
-                    repoContext: repoContext,
-                    package: package,
-                    version: version,
-                    branchForUpdate: branchForUpdate,
-                    branchPrefix: branchPrefix,
-                    cancellationToken: cancellationToken
-                );
+                await this.CommitToNamedBranchAsync(repoContext: repoContext,
+                                                    package: package,
+                                                    version: version,
+                                                    branchForUpdate: branchForUpdate,
+                                                    branchPrefix: branchPrefix,
+                                                    cancellationToken: cancellationToken);
             }
         }
         finally
         {
             this._logger.LogResettingToDefault(repoContext);
-            await repoContext.Repository.ResetToMasterAsync(
-                upstream: GitConstants.Upstream,
-                cancellationToken: cancellationToken
-            );
+            await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
         }
     }
 
-    private async ValueTask CommitToNamedBranchAsync(
-        RepoContext repoContext,
-        PackageUpdate package,
-        string version,
-        string branchForUpdate,
-        string branchPrefix,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask CommitToNamedBranchAsync(RepoContext repoContext, PackageUpdate package, string version, string branchForUpdate, string branchPrefix, CancellationToken cancellationToken)
     {
         if (repoContext.Repository.DoesBranchExist(branchName: branchForUpdate))
         {
             // nothing to do - may already be a PR that's being worked on
-            this._logger.LogSkippingPackageCommit(
-                repoContext: repoContext,
-                branch: branchForUpdate,
-                packageId: package.PackageId,
-                version: version
-            );
+            this._logger.LogSkippingPackageCommit(repoContext: repoContext, branch: branchForUpdate, packageId: package.PackageId, version: version);
 
-            await repoContext.Repository.ResetToMasterAsync(
-                upstream: GitConstants.Upstream,
-                cancellationToken: cancellationToken
-            );
+            await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
             return;
         }
 
-        this._logger.LogCommittingToNamedBranch(
-            repoContext: repoContext,
-            branch: branchForUpdate,
-            packageId: package.PackageId,
-            version: version
-        );
-        await repoContext.Repository.CreateBranchAsync(
-            branchName: branchForUpdate,
-            cancellationToken: cancellationToken
-        );
+        this._logger.LogCommittingToNamedBranch(repoContext: repoContext, branch: branchForUpdate, packageId: package.PackageId, version: version);
+        await repoContext.Repository.CreateBranchAsync(branchName: branchForUpdate, cancellationToken: cancellationToken);
 
-        await CommitChangeWithChangelogAsync(
-            repoContext: repoContext,
-            package: package,
-            version: version,
-            cancellationToken: cancellationToken
-        );
-        await repoContext.Repository.PushOriginAsync(
-            branchName: branchForUpdate,
-            upstream: GitConstants.Upstream,
-            cancellationToken: cancellationToken
-        );
-        await repoContext.Repository.RemoveBranchesForPrefixAsync(
-            branchForUpdate: branchForUpdate,
-            branchPrefix: branchPrefix,
-            upstream: GitConstants.Upstream,
-            cancellationToken: cancellationToken
-        );
-        await repoContext.Repository.ResetToMasterAsync(
-            upstream: GitConstants.Upstream,
-            cancellationToken: cancellationToken
-        );
+        await CommitChangeWithChangelogAsync(repoContext: repoContext, package: package, version: version, cancellationToken: cancellationToken);
+        await repoContext.Repository.PushOriginAsync(branchName: branchForUpdate, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+        await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: branchForUpdate, branchPrefix: branchPrefix, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+        await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask CommitDefaultBranchToRepositoryAsync(
-        RepoContext repoContext,
-        PackageUpdate package,
-        string version,
-        string invalidUpdateBranch,
-        string branchPrefix,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask CommitDefaultBranchToRepositoryAsync(RepoContext repoContext,
+                                                                 PackageUpdate package,
+                                                                 string version,
+                                                                 string invalidUpdateBranch,
+                                                                 string branchPrefix,
+                                                                 CancellationToken cancellationToken)
     {
         this._logger.LogCommittingToDefault(repoContext: repoContext, packageId: package.PackageId, version: version);
-        await CommitChangeWithChangelogAsync(
-            repoContext: repoContext,
-            package: package,
-            version: version,
-            cancellationToken: cancellationToken
-        );
+        await CommitChangeWithChangelogAsync(repoContext: repoContext, package: package, version: version, cancellationToken: cancellationToken);
         await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
-        await repoContext.Repository.RemoveBranchesForPrefixAsync(
-            branchForUpdate: invalidUpdateBranch,
-            branchPrefix: branchPrefix,
-            upstream: GitConstants.Upstream,
-            cancellationToken: cancellationToken
-        );
+        await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: invalidUpdateBranch,
+                                                                  branchPrefix: branchPrefix,
+                                                                  upstream: GitConstants.Upstream,
+                                                                  cancellationToken: cancellationToken);
 
         this._logger.LogResettingToDefault(repoContext);
-        await repoContext.Repository.ResetToMasterAsync(
-            upstream: GitConstants.Upstream,
-            cancellationToken: cancellationToken
-        );
+        await repoContext.Repository.ResetToMasterAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
     }
 
     private static string BuildBranchForVersion(string branchPrefix, string version)
@@ -707,59 +501,38 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return $"depends/update-{package.PackageId}/".ToLowerInvariant();
     }
 
-    private static async ValueTask CommitChangeWithChangelogAsync(
-        RepoContext repoContext,
-        PackageUpdate package,
-        string version,
-        CancellationToken cancellationToken
-    )
+    private static async ValueTask CommitChangeWithChangelogAsync(RepoContext repoContext, PackageUpdate package, string version, CancellationToken cancellationToken)
     {
-        await ChangeLogUpdater.RemoveEntryAsync(
-            changeLogFileName: repoContext.ChangeLogFileName,
-            type: CHANGELOG_ENTRY_TYPE,
-            $"Dependencies - Updated {package.PackageId} to ",
-            cancellationToken: cancellationToken
-        );
-        await ChangeLogUpdater.AddEntryAsync(
-            changeLogFileName: repoContext.ChangeLogFileName,
-            type: CHANGELOG_ENTRY_TYPE,
-            $"Dependencies - Updated {package.PackageId} to {version}",
-            cancellationToken: cancellationToken
-        );
+        await ChangeLogUpdater.RemoveEntryAsync(changeLogFileName: repoContext.ChangeLogFileName,
+                                                type: CHANGELOG_ENTRY_TYPE,
+                                                $"Dependencies - Updated {package.PackageId} to ",
+                                                cancellationToken: cancellationToken);
+        await ChangeLogUpdater.AddEntryAsync(changeLogFileName: repoContext.ChangeLogFileName,
+                                             type: CHANGELOG_ENTRY_TYPE,
+                                             $"Dependencies - Updated {package.PackageId} to {version}",
+                                             cancellationToken: cancellationToken);
 
-        await repoContext.Repository.CommitAsync(
-            $"[Dependencies] Updating {package.PackageId} ({package.PackageType}) to {version}",
-            cancellationToken: cancellationToken
-        );
+        await repoContext.Repository.CommitAsync($"[Dependencies] Updating {package.PackageId} ({package.PackageType}) to {version}", cancellationToken: cancellationToken);
     }
 
-    private async ValueTask<bool> PostUpdateCheckAsync(
-        IReadOnlyList<string> solutions,
-        string sourceDirectory,
-        BuildSettings buildSettings,
-        DotNetVersionSettings repositoryDotNetVersionSettings,
-        DotNetVersionSettings templateDotNetSettings,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask<bool> PostUpdateCheckAsync(IReadOnlyList<string> solutions,
+                                                       string sourceDirectory,
+                                                       BuildSettings buildSettings,
+                                                       DotNetVersionSettings repositoryDotNetVersionSettings,
+                                                       DotNetVersionSettings templateDotNetSettings,
+                                                       CancellationToken cancellationToken)
     {
         try
         {
-            bool checkOk = await this._dotNetSolutionCheck.PostCheckAsync(
-                solutions: solutions,
-                repositoryDotNetSettings: repositoryDotNetVersionSettings,
-                templateDotNetSettings: templateDotNetSettings,
-                cancellationToken: cancellationToken
-            );
+            bool checkOk = await this._dotNetSolutionCheck.PostCheckAsync(solutions: solutions,
+                                                                          repositoryDotNetSettings: repositoryDotNetVersionSettings,
+                                                                          templateDotNetSettings: templateDotNetSettings,
+                                                                          cancellationToken: cancellationToken);
 
             if (checkOk)
             {
                 BuildOverride buildOverride = new(PreRelease: true);
-                await this._dotNetBuild.BuildAsync(
-                    basePath: sourceDirectory,
-                    buildSettings: buildSettings,
-                    buildOverride: buildOverride,
-                    cancellationToken: cancellationToken
-                );
+                await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
 
                 return true;
             }
@@ -772,22 +545,15 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return false;
     }
 
-    private ValueTask<IReadOnlyList<PackageVersion>> UpdatePackagesAsync(
-        in PackageUpdateContext updateContext,
-        in RepoContext repoContext,
-        PackageUpdate package,
-        in CancellationToken cancellationToken
-    )
+    private ValueTask<IReadOnlyList<PackageVersion>> UpdatePackagesAsync(in PackageUpdateContext updateContext,
+                                                                         in RepoContext repoContext,
+                                                                         PackageUpdate package,
+                                                                         in CancellationToken cancellationToken)
     {
         this._logger.LogUpdatingPackageId(package.PackageId);
         PackageUpdateConfiguration config = this.BuildConfiguration(package);
 
-        return this._packageUpdater.UpdateAsync(
-            basePath: repoContext.WorkingDirectory,
-            configuration: config,
-            packageSources: updateContext.AdditionalSources,
-            cancellationToken: cancellationToken
-        );
+        return this._packageUpdater.UpdateAsync(basePath: repoContext.WorkingDirectory, configuration: config, packageSources: updateContext.AdditionalSources, cancellationToken: cancellationToken);
     }
 
     private PackageUpdateConfiguration BuildConfiguration(PackageUpdate package)
@@ -821,27 +587,19 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return excludedPackages;
     }
 
-    private async ValueTask<PackageUpdateContext> BuildUpdateContextAsync(
-        string? cacheFileName,
-        IGitRepository templateRepo,
-        string workFolder,
-        string trackingFileName,
-        string releaseConfigFileName,
-        IReadOnlyList<string> additionalNugetSources,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask<PackageUpdateContext> BuildUpdateContextAsync(string? cacheFileName,
+                                                                          IGitRepository templateRepo,
+                                                                          string workFolder,
+                                                                          string trackingFileName,
+                                                                          string releaseConfigFileName,
+                                                                          IReadOnlyList<string> additionalNugetSources,
+                                                                          CancellationToken cancellationToken)
     {
-        DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(
-            baseFolder: templateRepo.WorkingDirectory,
-            cancellationToken: cancellationToken
-        );
+        DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.WorkingDirectory, cancellationToken: cancellationToken);
 
         IReadOnlyList<Version> installedDotNetSdks = await this._dotNetVersion.GetInstalledSdksAsync(cancellationToken);
 
-        if (
-            dotNetSettings.SdkVersion is not null
-            && Version.TryParse(input: dotNetSettings.SdkVersion, out Version? sdkVersion)
-        )
+        if (dotNetSettings.SdkVersion is not null && Version.TryParse(input: dotNetSettings.SdkVersion, out Version? sdkVersion))
         {
             if (!installedDotNetSdks.Contains(sdkVersion))
             {
@@ -851,19 +609,14 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             }
         }
 
-        ReleaseConfig releaseConfig = await this._releaseConfigLoader.LoadAsync(
-            path: releaseConfigFileName,
-            cancellationToken: cancellationToken
-        );
+        ReleaseConfig releaseConfig = await this._releaseConfigLoader.LoadAsync(path: releaseConfigFileName, cancellationToken: cancellationToken);
 
-        return new(
-            WorkFolder: workFolder,
-            CacheFileName: cacheFileName,
-            TrackingFileName: trackingFileName,
-            AdditionalSources: additionalNugetSources,
-            DotNetSettings: dotNetSettings,
-            ReleaseConfig: releaseConfig
-        );
+        return new(WorkFolder: workFolder,
+                   CacheFileName: cacheFileName,
+                   TrackingFileName: trackingFileName,
+                   AdditionalSources: additionalNugetSources,
+                   DotNetSettings: dotNetSettings,
+                   ReleaseConfig: releaseConfig);
     }
 
     private ValueTask SaveTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)

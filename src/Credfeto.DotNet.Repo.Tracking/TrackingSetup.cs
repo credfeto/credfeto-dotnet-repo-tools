@@ -8,6 +8,7 @@ public static class TrackingSetup
 {
     public static IServiceCollection AddTracking(this IServiceCollection services)
     {
-        return services.AddSingleton<ITrackingCache, TrackingCache>();
+        return services.AddSingleton<ITrackingCache, TrackingCache>()
+                       .AddSingleton<ITrackingHashGenerator, TrackingHashGenerator>();
     }
 }
