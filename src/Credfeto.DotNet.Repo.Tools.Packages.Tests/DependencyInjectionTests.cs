@@ -30,6 +30,18 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
         this.RequireService<IBulkPackageConfigLoader>();
     }
 
+    [Fact]
+    public void SinglePackageUpdaterMustBeRegistered()
+    {
+        this.RequireService<ISinglePackageUpdater>();
+    }
+
+    [Fact]
+    public void PackageUpdateConfigurationBuilderMustBeRegistered()
+    {
+        this.RequireService<IPackageUpdateConfigurationBuilder>();
+    }
+
     private static IServiceCollection Configure(IServiceCollection services)
     {
         return services.AddMockedService<IDotNetBuild>()
