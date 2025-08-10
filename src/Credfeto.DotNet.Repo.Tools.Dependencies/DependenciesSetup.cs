@@ -1,5 +1,6 @@
 using Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Services;
+using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Credfeto.DotNet.Repo.Tools.Dependencies;
@@ -8,9 +9,8 @@ public static class DependenciesSetup
 {
     public static IServiceCollection AddDependenciesReduction(this IServiceCollection services)
     {
-        return services
-            .AddSingleton<IBulkDependencyReducer, BulkDependencyReducer>()
-            .AddSingleton<IDependencyReducer, DependencyReducer>()
-            .AddSingleton<ITrackingHashGenerator, TrackingHashGenerator>();
+        return services.AddSingleton<IBulkDependencyReducer, BulkDependencyReducer>()
+                       .AddSingleton<IDependencyReducer, DependencyReducer>()
+                       .AddSingleton<ITrackingHashGenerator, TrackingHashGenerator>();
     }
 }

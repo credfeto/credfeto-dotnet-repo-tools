@@ -2,7 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Models;
 
-namespace Credfeto.DotNet.Repo.Tools.Dependencies;
+namespace Credfeto.DotNet.Repo.Tracking.Interfaces;
 
 public interface ITrackingHashGenerator
 {
