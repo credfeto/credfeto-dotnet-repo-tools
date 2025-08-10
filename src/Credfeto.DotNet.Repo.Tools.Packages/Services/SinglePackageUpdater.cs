@@ -73,17 +73,25 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
             return false;
         }
 
-        await this.OnPackageUpdateAsync(updateContext: updateContext,
-                                        repoContext: repoContext,
-                                        solutions: solutions,
-                                        sourceDirectory: sourceDirectory,
-                                        buildSettings: buildSettings,
-                                        repositoryDotNetVersionSettings: dotNetSettings,
-                                        updatesMade: updatesMade,
-                                        package: package,
-                                        cancellationToken: cancellationToken);
+        try
+        {
+            await this.OnPackageUpdateAsync(updateContext: updateContext,
+                                            repoContext: repoContext,
+                                            solutions: solutions,
+                                            sourceDirectory: sourceDirectory,
+                                            buildSettings: buildSettings,
+                                            repositoryDotNetVersionSettings: dotNetSettings,
+                                            updatesMade: updatesMade,
+                                            package: package,
+                                            cancellationToken: cancellationToken);
 
-        return true;
+            return true;
+        }
+        finally
+        {
+            this._logger.LogResettingToDefault(repoContext);
+            await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+        }
     }
 
     private async ValueTask RequireSolutionBuildsBeforeUpdateAsync(PackageUpdateContext updateContext,
@@ -207,8 +215,6 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
             // nothing to do - may already be a PR that's being worked on
             this._logger.LogSkippingPackageCommit(repoContext: repoContext, branch: branchForUpdate, packageId: package.PackageId, version: version);
 
-            await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
-
             return;
         }
 
@@ -218,7 +224,6 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
         await CommitChangeWithChangelogAsync(repoContext: repoContext, package: package, version: version, cancellationToken: cancellationToken);
         await repoContext.Repository.PushOriginAsync(branchName: branchForUpdate, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
         await repoContext.Repository.RemoveBranchesForPrefixAsync(branchForUpdate: branchForUpdate, branchPrefix: branchPrefix, upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
-        await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
     }
 
     private async ValueTask CommitDefaultBranchToRepositoryAsync(RepoContext repoContext,
@@ -235,9 +240,6 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
                                                                   branchPrefix: branchPrefix,
                                                                   upstream: GitConstants.Upstream,
                                                                   cancellationToken: cancellationToken);
-
-        this._logger.LogResettingToDefault(repoContext);
-        await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
     }
 
     private static string GetBranchPrefixForPackage(PackageUpdate package)
