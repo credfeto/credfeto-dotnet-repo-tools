@@ -19,10 +19,14 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
         : base(output)
     {
         IGitRepositoryLocator gitRepositoryLocator = GetSubstitute<IGitRepositoryLocator>();
-        gitRepositoryLocator.GetWorkingDirectory(Arg.Any<string>(), Arg.Any<string>())
-                            .Returns(Path.Combine(path1: this.TempFolder, path2: "scratch"));
+        gitRepositoryLocator
+            .GetWorkingDirectory(Arg.Any<string>(), Arg.Any<string>())
+            .Returns(Path.Combine(path1: this.TempFolder, path2: "scratch"));
 
-        this._gitRepositoryFactory = new GitRepositoryFactory(locator: gitRepositoryLocator, this.GetTypedLogger<GitRepositoryFactory>());
+        this._gitRepositoryFactory = new GitRepositoryFactory(
+            locator: gitRepositoryLocator,
+            this.GetTypedLogger<GitRepositoryFactory>()
+        );
     }
 
     [Fact(Skip = "Requires SSH to be setup")]
@@ -36,7 +40,13 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
     {
         CancellationToken cancellationToken = this.CancellationToken();
 
-        using (IGitRepository repo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: Repositories.GitHubSsh, cancellationToken: cancellationToken))
+        using (
+            IGitRepository repo = await this._gitRepositoryFactory.OpenOrCloneAsync(
+                workDir: this.TempFolder,
+                repoUrl: Repositories.GitHubSsh,
+                cancellationToken: cancellationToken
+            )
+        )
         {
             this.Output.WriteLine($"Repo: {repo.ClonePath}");
 
@@ -53,7 +63,12 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
 
             await repo.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
 
-            await repo.RemoveBranchesForPrefixAsync(branchForUpdate: "depends/delete-me", branchPrefix: "depends/", upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+            await repo.RemoveBranchesForPrefixAsync(
+                branchForUpdate: "depends/delete-me",
+                branchPrefix: "depends/",
+                upstream: GitConstants.Upstream,
+                cancellationToken: cancellationToken
+            );
 
             repo.RemoveAllLocalBranches();
 
@@ -69,9 +84,9 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
     private static string GenerateUniqueBranchId()
     {
         return Guid.NewGuid()
-                   .ToString()
-                   .Replace(oldValue: "-", newValue: string.Empty, comparisonType: StringComparison.Ordinal)
-                   .ToLowerInvariant();
+            .ToString()
+            .Replace(oldValue: "-", newValue: string.Empty, comparisonType: StringComparison.Ordinal)
+            .ToLowerInvariant();
     }
 
     [Fact]
@@ -82,7 +97,13 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
 
     private async Task CloneTestCommonAsync(string uri, CancellationToken cancellationToken)
     {
-        using (IGitRepository repo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken: cancellationToken))
+        using (
+            IGitRepository repo = await this._gitRepositoryFactory.OpenOrCloneAsync(
+                workDir: this.TempFolder,
+                repoUrl: uri,
+                cancellationToken: cancellationToken
+            )
+        )
         {
             this.Output.WriteLine($"Repo: {repo.ClonePath}");
 
@@ -97,7 +118,13 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
             }
         }
 
-        using (IGitRepository repo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: this.TempFolder, repoUrl: uri, cancellationToken: cancellationToken))
+        using (
+            IGitRepository repo = await this._gitRepositoryFactory.OpenOrCloneAsync(
+                workDir: this.TempFolder,
+                repoUrl: uri,
+                cancellationToken: cancellationToken
+            )
+        )
         {
             repo.RemoveAllLocalBranches();
         }
