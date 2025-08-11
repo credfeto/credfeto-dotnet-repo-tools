@@ -10,12 +10,14 @@ namespace Credfeto.DotNet.Repo.Tools.Packages;
 
 public interface ISinglePackageUpdater
 {
-    ValueTask<bool> UpdateAsync(PackageUpdateContext updateContext,
-                                RepoContext repoContext,
-                                IReadOnlyList<string> solutions,
-                                string sourceDirectory,
-                                BuildSettings buildSettings,
-                                DotNetVersionSettings dotNetSettings,
-                                PackageUpdate package,
-                                CancellationToken cancellationToken);
+    ValueTask<bool> UpdateAsync(
+        PackageUpdateContext updateContext,
+        RepoContext repoContext,
+        IReadOnlyList<string> solutions,
+        string sourceDirectory,
+        BuildSettings buildSettings,
+        DotNetVersionSettings dotNetSettings,
+        PackageUpdate package,
+        CancellationToken cancellationToken
+    );
 }
