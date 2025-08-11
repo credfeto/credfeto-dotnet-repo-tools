@@ -1,4 +1,4 @@
-﻿using Credfeto.DotNet.Repo.Tracking.Interfaces;
+using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using FunFair.Test.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -8,9 +8,7 @@ namespace Credfeto.DotNet.Repo.Tracking.Tests;
 public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 {
     public DependencyInjectionTests(ITestOutputHelper output)
-        : base(output: output, dependencyInjectionRegistration: Configure)
-    {
-    }
+        : base(output: output, dependencyInjectionRegistration: Configure) { }
 
     [Fact]
     public void TrackingCacheMustBeRegistered()
