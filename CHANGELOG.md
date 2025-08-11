@@ -13,7 +13,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Tsql.Formatter to 0.1.3.95
 - SDK - Updated DotNet SDK to 9.0.304
 - Dependencies - Updated Philips.CodeAnalysis.MaintainabilityAnalyzers to 1.7.0
-- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.134.1145
 - Dependencies - Updated FunFair.Test.Common to 6.1.284.1617
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.112.779
 - Dependencies - Updated FunFair.CodeAnalysis to 7.1.20.1362
@@ -21,6 +20,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.188.1399
 - Dependencies - Updated Credfeto.Date to 1.1.136.1279
 - Dependencies - Updated Credfeto.Package to 1.10.211.1808
+- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.135.1154
 ### Removed
 ### Deployment Changes
 
