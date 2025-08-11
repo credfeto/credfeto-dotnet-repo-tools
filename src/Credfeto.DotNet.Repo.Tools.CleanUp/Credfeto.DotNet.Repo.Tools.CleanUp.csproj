@@ -67,7 +67,7 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.187.1394" />
+    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.188.1399" />
     <PackageReference Include="Credfeto.Tsql.Formatter" Version="0.1.3.95" />
     <PackageReference Include="CSharpier.Core" Version="1.1.1" />
   </ItemGroup>
