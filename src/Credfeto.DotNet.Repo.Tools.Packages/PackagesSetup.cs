@@ -18,21 +18,25 @@ public static class PackagesSetup
 
     public static IServiceCollection AddBulkPackageUpdater(this IServiceCollection services)
     {
-        return services.AddSingleton<IBulkPackageUpdater, BulkPackageUpdater>()
-                       .AddSingleton<IBulkPackageConfigLoader, BulkPackageConfigLoader>()
-                       .AddSingleton<ISinglePackageUpdater, SinglePackageUpdater>()
-                       .AddSingleton<IPackageUpdateConfigurationBuilder, PackageUpdateConfigurationBuilder>()
-                       .AddBulkPackageConfigLoaderHttpClient();
+        return services
+            .AddSingleton<IBulkPackageUpdater, BulkPackageUpdater>()
+            .AddSingleton<IBulkPackageConfigLoader, BulkPackageConfigLoader>()
+            .AddSingleton<ISinglePackageUpdater, SinglePackageUpdater>()
+            .AddSingleton<IPackageUpdateConfigurationBuilder, PackageUpdateConfigurationBuilder>()
+            .AddBulkPackageConfigLoaderHttpClient();
     }
 
     private static IServiceCollection AddBulkPackageConfigLoaderHttpClient(this IServiceCollection services)
     {
-        return services.AddHttpClient(nameof(BulkPackageConfigLoader), configureClient: ConfigureClient)
-                       .SetHandlerLifetime(TimeSpan.FromMinutes(5))
-                       .ConfigurePrimaryHttpMessageHandler(configureHandler: CreateHandler)
-                       .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(ClientPolicyTimeout))
-                       .AddTransientHttpErrorPolicy(x => x.WaitAndRetryAsync(retryCount: RETRY_COUNT, sleepDurationProvider: _ => SleepDuration))
-                       .Services;
+        return services
+            .AddHttpClient(nameof(BulkPackageConfigLoader), configureClient: ConfigureClient)
+            .SetHandlerLifetime(TimeSpan.FromMinutes(5))
+            .ConfigurePrimaryHttpMessageHandler(configureHandler: CreateHandler)
+            .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(ClientPolicyTimeout))
+            .AddTransientHttpErrorPolicy(x =>
+                x.WaitAndRetryAsync(retryCount: RETRY_COUNT, sleepDurationProvider: _ => SleepDuration)
+            )
+            .Services;
     }
 
     private static HttpClientHandler CreateHandler(IServiceProvider serviceProvider)
