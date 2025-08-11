@@ -9,7 +9,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated Credfeto.Date to 1.1.134.1263
 - Dependencies - Updated Meziantou.Analyzer to 2.0.212
 - Dependencies - Updated Credfeto.Tsql.Formatter to 0.1.3.95
 - SDK - Updated DotNet SDK to 9.0.304
@@ -21,6 +20,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.CodeAnalysis to 7.1.20.1362
 - Dependencies - Updated Credfeto.Enumeration to 1.2.127.1366
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.188.1399
+- Dependencies - Updated Credfeto.Date to 1.1.136.1279
 ### Removed
 ### Deployment Changes
 
