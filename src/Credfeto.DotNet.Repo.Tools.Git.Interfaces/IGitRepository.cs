@@ -40,7 +40,12 @@ public interface IGitRepository : IDisposable
 
     ValueTask CreateBranchAsync(string branchName, CancellationToken cancellationToken);
 
-    ValueTask RemoveBranchesForPrefixAsync(string branchForUpdate, string branchPrefix, string upstream, CancellationToken cancellationToken);
+    ValueTask RemoveBranchesForPrefixAsync(
+        string branchForUpdate,
+        string branchPrefix,
+        string upstream,
+        CancellationToken cancellationToken
+    );
 
     DateTimeOffset GetLastCommitDate();
 }
