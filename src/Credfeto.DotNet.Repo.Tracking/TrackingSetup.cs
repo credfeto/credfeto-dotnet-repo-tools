@@ -1,4 +1,4 @@
-﻿using Credfeto.DotNet.Repo.Tracking.Interfaces;
+using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.DotNet.Repo.Tracking.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -8,7 +8,8 @@ public static class TrackingSetup
 {
     public static IServiceCollection AddTracking(this IServiceCollection services)
     {
-        return services.AddSingleton<ITrackingCache, TrackingCache>()
-                       .AddSingleton<ITrackingHashGenerator, TrackingHashGenerator>();
+        return services
+            .AddSingleton<ITrackingCache, TrackingCache>()
+            .AddSingleton<ITrackingHashGenerator, TrackingHashGenerator>();
     }
 }
