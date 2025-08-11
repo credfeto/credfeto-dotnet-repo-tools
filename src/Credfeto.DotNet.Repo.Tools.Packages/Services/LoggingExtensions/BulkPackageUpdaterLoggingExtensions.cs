@@ -13,7 +13,10 @@ internal static partial class BulkPackageUpdaterLoggingExtensions
     public static partial void LogBuildFailedOnRepoCheck(this ILogger<BulkPackageUpdater> logger, Exception exception);
 
     [LoggerMessage(EventId = 3, Level = LogLevel.Warning, Message = "Release created - aborting run")]
-    public static partial void LogReleaseCreatedAbortingRun(this ILogger<BulkPackageUpdater> logger, Exception exception);
+    public static partial void LogReleaseCreatedAbortingRun(
+        this ILogger<BulkPackageUpdater> logger,
+        Exception exception
+    );
 
     [LoggerMessage(EventId = 4, Level = LogLevel.Information, Message = "[CACHE] Pre-loading cached packages")]
     public static partial void LogPreLoadingCachedPackages(this ILogger<BulkPackageUpdater> logger);
@@ -21,8 +24,16 @@ internal static partial class BulkPackageUpdaterLoggingExtensions
     [LoggerMessage(EventId = 5, Level = LogLevel.Information, Message = "[CACHE] Updating {packageId}")]
     public static partial void LogUpdatingCachedPackage(this ILogger<BulkPackageUpdater> logger, string packageId);
 
-    [LoggerMessage(EventId = 6, Level = LogLevel.Information, Message = "[CACHE] Update {packageId} updated {count} packages")]
-    public static partial void LogUpdatedCachedPackages(this ILogger<BulkPackageUpdater> logger, string packageId, int count);
+    [LoggerMessage(
+        EventId = 6,
+        Level = LogLevel.Information,
+        Message = "[CACHE] Update {packageId} updated {count} packages"
+    )]
+    public static partial void LogUpdatedCachedPackages(
+        this ILogger<BulkPackageUpdater> logger,
+        string packageId,
+        int count
+    );
 
     [LoggerMessage(EventId = 7, Level = LogLevel.Information, Message = "[CACHE] Total package updates: {count}")]
     public static partial void LogUpdatedCachedPackagesTotal(this ILogger<BulkPackageUpdater> logger, int count);
@@ -37,16 +48,36 @@ internal static partial class BulkPackageUpdaterLoggingExtensions
     public static partial void LogNoDotNetFilesFound(this ILogger<BulkPackageUpdater> logger);
 
     [LoggerMessage(EventId = 18, Level = LogLevel.Warning, Message = "{message}")]
-    public static partial void LogReleaseCreated(this ILogger<BulkPackageUpdater> logger, string message, Exception exception);
+    public static partial void LogReleaseCreated(
+        this ILogger<BulkPackageUpdater> logger,
+        string message,
+        Exception exception
+    );
 
-    [LoggerMessage(EventId = 19, Level = LogLevel.Warning, Message = "SDK {sdkVersion} was requested, but not installed.  Currently installed SDKS: {installedSdks}")]
-    private static partial void LogMissingSdk(this ILogger<BulkPackageUpdater> logger, string sdkVersion, string installedSdks);
+    [LoggerMessage(
+        EventId = 19,
+        Level = LogLevel.Warning,
+        Message = "SDK {sdkVersion} was requested, but not installed.  Currently installed SDKS: {installedSdks}"
+    )]
+    private static partial void LogMissingSdk(
+        this ILogger<BulkPackageUpdater> logger,
+        string sdkVersion,
+        string installedSdks
+    );
 
-    public static void LogMissingSdk(this ILogger<BulkPackageUpdater> logger, Version sdkVersion, IReadOnlyList<Version> installedSdks)
+    public static void LogMissingSdk(
+        this ILogger<BulkPackageUpdater> logger,
+        Version sdkVersion,
+        IReadOnlyList<Version> installedSdks
+    )
     {
         logger.LogMissingSdk(sdkVersion.ToString(), string.Join(separator: ", ", values: installedSdks));
     }
 
     [LoggerMessage(EventId = 20, Level = LogLevel.Error, Message = "Could not create release: {message}")]
-    public static partial void LogBuildFailedOnCreateRelease(this ILogger<BulkPackageUpdater> logger, string message, Exception exception);
+    public static partial void LogBuildFailedOnCreateRelease(
+        this ILogger<BulkPackageUpdater> logger,
+        string message,
+        Exception exception
+    );
 }
