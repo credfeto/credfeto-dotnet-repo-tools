@@ -62,6 +62,9 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-xhfc-gr8f-ffwc" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Models\Credfeto.DotNet.Repo.Tools.Models.csproj" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="1.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="codecracker.CSharp" Version="1.1.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Credfeto.Enumeration.Source.Generation" Version="1.2.126.1361" PrivateAssets="All" ExcludeAssets="runtime" />
@@ -79,8 +82,5 @@
     <PackageReference Include="SonarAnalyzer.CSharp" Version="10.15.0.120848" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="SourceLink.Create.CommandLine" Version="2.8.3" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="ToStringWithoutOverrideAnalyzer" Version="0.6.0" PrivateAssets="All" ExcludeAssets="runtime" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Models\Credfeto.DotNet.Repo.Tools.Models.csproj"/>
   </ItemGroup>
 </Project>
