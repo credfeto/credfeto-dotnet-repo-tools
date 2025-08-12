@@ -67,7 +67,7 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.188.1399" />
+    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.190.1404" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
   </ItemGroup>
   <ItemGroup>
