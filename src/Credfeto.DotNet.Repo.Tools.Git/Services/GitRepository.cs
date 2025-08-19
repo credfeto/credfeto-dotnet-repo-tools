@@ -530,8 +530,9 @@ internal sealed class GitRepository : IGitRepository
 
     private Remote GetRemote(string upstream)
     {
-        return this.Active.Network.Remotes[upstream]
-            ?? throw new GitException($"Could not find upstream origin {upstream}");
+        return this.Active.Network.Remotes[upstream] ?? throw new GitException(
+                $"Could not find upstream origin {upstream}"
+            );
     }
 
     private async ValueTask PruneAsync(CancellationToken cancellationToken)
