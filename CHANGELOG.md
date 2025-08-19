@@ -9,8 +9,8 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-
 - Dependencies - Updated CSharpier to 1.1.2
+- Dependencies - Updated FunFair.BuildCheck to 474.1.5.1771
 ### Removed
 ### Deployment Changes
 
