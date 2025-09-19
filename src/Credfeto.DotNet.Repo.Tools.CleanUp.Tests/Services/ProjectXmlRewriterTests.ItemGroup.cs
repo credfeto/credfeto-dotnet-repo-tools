@@ -10,8 +10,7 @@ public sealed partial class ProjectXmlRewriterTests
     [Fact]
     public Task ShouldSplitItemGroupSectionsWhenNoCommentsFoundAsync()
     {
-        const string originalXml =
-            @"<Project Sdk=""Microsoft.NET.Sdk"">
+        const string originalXml = @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
     <EnablePackageValidation>true</EnablePackageValidation>
@@ -19,7 +18,6 @@ public sealed partial class ProjectXmlRewriterTests
     <Features>strict;flow-analysis</Features>
     <GenerateNeutralResourcesLanguageAttribute>true</GenerateNeutralResourcesLanguageAttribute>
     <ImplicitUsings>disable</ImplicitUsings>
-    <IncludeOpenAPIAnalyzers>true</IncludeOpenAPIAnalyzers>
     <IsPackable>true</IsPackable>
     <IsPublishable>false</IsPublishable>
     <IsTrimmable>false</IsTrimmable>
@@ -97,8 +95,7 @@ public sealed partial class ProjectXmlRewriterTests
   </ItemGroup>
 </Project>";
 
-        const string expectedXml =
-            @"<Project Sdk=""Microsoft.NET.Sdk"">
+        const string expectedXml = @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
     <EnablePackageValidation>true</EnablePackageValidation>
@@ -106,7 +103,6 @@ public sealed partial class ProjectXmlRewriterTests
     <Features>strict;flow-analysis</Features>
     <GenerateNeutralResourcesLanguageAttribute>true</GenerateNeutralResourcesLanguageAttribute>
     <ImplicitUsings>disable</ImplicitUsings>
-    <IncludeOpenAPIAnalyzers>true</IncludeOpenAPIAnalyzers>
     <IsPackable>true</IsPackable>
     <IsPublishable>false</IsPublishable>
     <IsTrimmable>false</IsTrimmable>
