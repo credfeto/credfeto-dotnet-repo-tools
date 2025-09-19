@@ -10,8 +10,7 @@ public sealed partial class ProjectXmlRewriterTests
     [Fact]
     public Task ReOrderPropertieShouldNotChangeAnythingWhenCommentsDetectedAsync()
     {
-        const string originalXml =
-            @"<Project Sdk=""Microsoft.NET.Sdk"">
+        const string originalXml = @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
     <EnablePackageValidation>true</EnablePackageValidation>
@@ -100,8 +99,7 @@ public sealed partial class ProjectXmlRewriterTests
   </ItemGroup>
 </Project>";
 
-        const string expectedXml =
-            @"<Project Sdk=""Microsoft.NET.Sdk"">
+        const string expectedXml = @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
     <EnablePackageValidation>true</EnablePackageValidation>
@@ -196,8 +194,7 @@ public sealed partial class ProjectXmlRewriterTests
     [Fact]
     public Task ReOrderPropertieShouldSortButNotCombineWhenAttributesDetectedAsync()
     {
-        const string originalXml =
-            @"<Project Sdk=""Microsoft.NET.Sdk"">
+        const string originalXml = @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup Test=""True"">
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
     <EnablePackageValidation>true</EnablePackageValidation>
@@ -283,8 +280,7 @@ public sealed partial class ProjectXmlRewriterTests
   </ItemGroup>
 </Project>";
 
-        const string expectedXml =
-            @"<Project Sdk=""Microsoft.NET.Sdk"">
+        const string expectedXml = @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup Test=""True"">
     <DebuggerSupport>true</DebuggerSupport>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
@@ -376,8 +372,7 @@ public sealed partial class ProjectXmlRewriterTests
     [Fact]
     public Task ReOrderPropertieShouldChangeToAlphanumericWhenNoCommentsDetectedAsync()
     {
-        const string originalXml =
-            @"<Project Sdk=""Microsoft.NET.Sdk"">
+        const string originalXml = @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
     <EnablePackageValidation>true</EnablePackageValidation>
@@ -463,8 +458,7 @@ public sealed partial class ProjectXmlRewriterTests
   </ItemGroup>
 </Project>";
 
-        const string expectedXml =
-            @"<Project Sdk=""Microsoft.NET.Sdk"">
+        const string expectedXml = @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
