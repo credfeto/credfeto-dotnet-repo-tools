@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.DotNet.Repo.Tools.Build.Helpers;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
@@ -8,7 +9,6 @@ using FunFair.BuildCheck.Interfaces;
 using FunFair.BuildCheck.Runner;
 using FunFair.BuildCheck.Runner.Services;
 using Microsoft.Extensions.Logging;
-using NuGet.Versioning;
 
 namespace Credfeto.DotNet.Repo.Tools.Build.Services;
 
@@ -35,7 +35,7 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
                                          DotNetVersionSettings templateDotNetSettings,
                                          CancellationToken cancellationToken)
     {
-        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
+        IFrameworkSettings frameworkSettings = FrameWorkSettingsBuilder.DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
 
         bool allOk = true;
 
@@ -95,7 +95,7 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
                                                 DotNetVersionSettings templateDotNetSettings,
                                                 CancellationToken cancellationToken)
     {
-        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
+        IFrameworkSettings frameworkSettings = FrameWorkSettingsBuilder.DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
 
         bool allOk = true;
 
@@ -117,29 +117,5 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         }
 
         return allOk;
-    }
-
-    private static IFrameworkSettings DefineFrameworkSettings(in DotNetVersionSettings repositoryDotNetSettings, in DotNetVersionSettings templateDotNetSettings)
-    {
-        if (string.IsNullOrEmpty(repositoryDotNetSettings.SdkVersion))
-        {
-            return new FrameworkSettings(templateDotNetSettings);
-        }
-
-        if (string.IsNullOrEmpty(templateDotNetSettings.SdkVersion))
-        {
-            return new FrameworkSettings(repositoryDotNetSettings);
-        }
-
-        DotNetVersionSettings dotNetSettings = IsRepositoryFrameworkNewerPreRelease(new(repositoryDotNetSettings.SdkVersion), new(templateDotNetSettings.SdkVersion))
-            ? repositoryDotNetSettings
-            : templateDotNetSettings;
-
-        return new FrameworkSettings(dotNetSettings);
-    }
-
-    private static bool IsRepositoryFrameworkNewerPreRelease(NuGetVersion repositoryFramework, NuGetVersion templateFramework)
-    {
-        return repositoryFramework.IsPrerelease && repositoryFramework > templateFramework;
     }
 }
