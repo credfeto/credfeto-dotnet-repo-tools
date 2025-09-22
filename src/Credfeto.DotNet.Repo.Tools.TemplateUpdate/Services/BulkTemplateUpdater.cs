@@ -556,6 +556,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         string templateSourceDirectory = Path.Combine(path1: updateContext.TemplateFolder, path2: "src");
         string? dotSettingsSourceFile = Directory.GetFiles(path: templateSourceDirectory, "*.sln" + dotSettingsExtension)
+                                                 .Concat(Directory.GetFiles(path: templateSourceDirectory, "*.slnx" + dotSettingsExtension))
                                                  .FirstOrDefault();
 
         if (string.IsNullOrEmpty(dotSettingsSourceFile))

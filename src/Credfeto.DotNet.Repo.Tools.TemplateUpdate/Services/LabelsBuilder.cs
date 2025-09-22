@@ -14,7 +14,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
     [
         new(Name: "C#", Description: "C# Source Files", Colour: "db6baa", ["./**/*.cs", "./**/*.csproj"], []),
         new(Name: "C# Project", Description: "C# Project Files", Colour: "db6baa", ["./**/*.csproj"], []),
-        new(Name: "C# Solution", Description: "C# Solutions", Colour: "db6baa", ["./**/*.sln"], []),
+        new(Name: "C# Solution", Description: "C# Solutions", Colour: "db6baa", ["./**/*.sln", "./**/*.slnx"], []),
         new(
             Name: "Powershell",
             Description: "Powershell Source Files",

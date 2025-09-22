@@ -25,7 +25,7 @@ public static class RepoContextExtensions
             return false;
         }
 
-        IReadOnlyList<string> foundSolutions = [.. GetFiles(basePath: sourceFolder, searchPattern: "*.sln")];
+        IReadOnlyList<string> foundSolutions = [.. GetFiles(basePath: sourceFolder, searchPattern: "*.sln").Concat(GetFiles(basePath: sourceFolder, searchPattern: "*.slnx"))];
 
         if (foundSolutions is [])
         {
