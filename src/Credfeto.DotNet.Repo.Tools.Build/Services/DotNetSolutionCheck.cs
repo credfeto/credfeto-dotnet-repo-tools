@@ -16,14 +16,10 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
 {
     private static readonly IProjectClassifier ProjectClassifier = new ProjectClassifier();
 
-    private static readonly ICheckConfiguration PreReleaseCheckConfiguration = new CheckConfiguration(
-        preReleaseBuild: true,
-        allowPackageVersionMismatch: true
-    );
-    private static readonly ICheckConfiguration ReleaseCheckConfiguration = new CheckConfiguration(
-        preReleaseBuild: false,
-        allowPackageVersionMismatch: false
-    );
+    private static readonly ICheckConfiguration PreReleaseCheckConfiguration = new CheckConfiguration(preReleaseBuild: true, allowPackageVersionMismatch: true);
+
+    private static readonly ICheckConfiguration ReleaseCheckConfiguration = new CheckConfiguration(preReleaseBuild: false, allowPackageVersionMismatch: false);
+
     private readonly ILogger<DotNetSolutionCheck> _logger;
 
     private readonly IServiceProviderFactory _serviceProviderFactory;
@@ -34,32 +30,25 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         this._logger = logger;
     }
 
-    public async ValueTask PreCheckAsync(
-        IReadOnlyList<string> solutions,
-        DotNetVersionSettings repositoryDotNetSettings,
-        DotNetVersionSettings templateDotNetSettings,
-        CancellationToken cancellationToken
-    )
+    public async ValueTask PreCheckAsync(IReadOnlyList<string> solutions,
+                                         DotNetVersionSettings repositoryDotNetSettings,
+                                         DotNetVersionSettings templateDotNetSettings,
+                                         CancellationToken cancellationToken)
     {
-        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(
-            repositoryDotNetSettings: repositoryDotNetSettings,
-            templateDotNetSettings: templateDotNetSettings
-        );
+        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
 
         bool allOk = true;
 
         foreach (string solution in solutions)
         {
-            int errors = await CheckRunner.CheckAsync(
-                solutionFileName: solution,
-                warningsAsErrors: true,
-                frameworkSettings: frameworkSettings,
-                projectClassifier: ProjectClassifier,
-                checkConfiguration: PreReleaseCheckConfiguration,
-                buildServiceProvider: this._serviceProviderFactory.Build,
-                logger: this._logger,
-                cancellationToken: cancellationToken
-            );
+            int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
+                                                      warningsAsErrors: true,
+                                                      frameworkSettings: frameworkSettings,
+                                                      projectClassifier: ProjectClassifier,
+                                                      checkConfiguration: PreReleaseCheckConfiguration,
+                                                      buildServiceProvider: this._serviceProviderFactory.Build,
+                                                      logger: this._logger,
+                                                      cancellationToken: cancellationToken);
 
             if (errors != 0)
             {
@@ -73,27 +62,21 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         }
     }
 
-    public async ValueTask ReleaseCheckAsync(
-        IReadOnlyList<string> solutions,
-        DotNetVersionSettings repositoryDotNetSettings,
-        CancellationToken cancellationToken
-    )
+    public async ValueTask ReleaseCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings repositoryDotNetSettings, CancellationToken cancellationToken)
     {
         IFrameworkSettings frameworkSettings = new FrameworkSettings(repositoryDotNetSettings);
         bool allOk = true;
 
         foreach (string solution in solutions)
         {
-            int errors = await CheckRunner.CheckAsync(
-                solutionFileName: solution,
-                warningsAsErrors: true,
-                frameworkSettings: frameworkSettings,
-                projectClassifier: ProjectClassifier,
-                checkConfiguration: ReleaseCheckConfiguration,
-                buildServiceProvider: this._serviceProviderFactory.Build,
-                logger: this._logger,
-                cancellationToken: cancellationToken
-            );
+            int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
+                                                      warningsAsErrors: true,
+                                                      frameworkSettings: frameworkSettings,
+                                                      projectClassifier: ProjectClassifier,
+                                                      checkConfiguration: ReleaseCheckConfiguration,
+                                                      buildServiceProvider: this._serviceProviderFactory.Build,
+                                                      logger: this._logger,
+                                                      cancellationToken: cancellationToken);
 
             if (errors != 0)
             {
@@ -107,32 +90,25 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         }
     }
 
-    public async ValueTask<bool> PostCheckAsync(
-        IReadOnlyList<string> solutions,
-        DotNetVersionSettings repositoryDotNetSettings,
-        DotNetVersionSettings templateDotNetSettings,
-        CancellationToken cancellationToken
-    )
+    public async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions,
+                                                DotNetVersionSettings repositoryDotNetSettings,
+                                                DotNetVersionSettings templateDotNetSettings,
+                                                CancellationToken cancellationToken)
     {
-        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(
-            repositoryDotNetSettings: repositoryDotNetSettings,
-            templateDotNetSettings: templateDotNetSettings
-        );
+        IFrameworkSettings frameworkSettings = DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
 
         bool allOk = true;
 
         foreach (string solution in solutions)
         {
-            int errors = await CheckRunner.CheckAsync(
-                solutionFileName: solution,
-                warningsAsErrors: true,
-                frameworkSettings: frameworkSettings,
-                projectClassifier: ProjectClassifier,
-                checkConfiguration: PreReleaseCheckConfiguration,
-                buildServiceProvider: this._serviceProviderFactory.Build,
-                logger: this._logger,
-                cancellationToken: cancellationToken
-            );
+            int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
+                                                      warningsAsErrors: true,
+                                                      frameworkSettings: frameworkSettings,
+                                                      projectClassifier: ProjectClassifier,
+                                                      checkConfiguration: PreReleaseCheckConfiguration,
+                                                      buildServiceProvider: this._serviceProviderFactory.Build,
+                                                      logger: this._logger,
+                                                      cancellationToken: cancellationToken);
 
             if (errors != 0)
             {
@@ -143,25 +119,27 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
         return allOk;
     }
 
-    private static IFrameworkSettings DefineFrameworkSettings(
-        in DotNetVersionSettings repositoryDotNetSettings,
-        in DotNetVersionSettings templateDotNetSettings
-    )
+    private static IFrameworkSettings DefineFrameworkSettings(in DotNetVersionSettings repositoryDotNetSettings, in DotNetVersionSettings templateDotNetSettings)
     {
-        if (
-            !string.IsNullOrEmpty(repositoryDotNetSettings.SdkVersion)
-            && !string.IsNullOrEmpty(templateDotNetSettings.SdkVersion)
-        )
+        if (string.IsNullOrEmpty(repositoryDotNetSettings.SdkVersion))
         {
-            NuGetVersion standardFramework = new(templateDotNetSettings.SdkVersion);
-            NuGetVersion buildFramework = new(repositoryDotNetSettings.SdkVersion);
-
-            if (buildFramework.IsPrerelease && buildFramework > standardFramework)
-            {
-                return new FrameworkSettings(repositoryDotNetSettings);
-            }
+            return new FrameworkSettings(templateDotNetSettings);
         }
 
-        return new FrameworkSettings(repositoryDotNetSettings);
+        if (string.IsNullOrEmpty(templateDotNetSettings.SdkVersion))
+        {
+            return new FrameworkSettings(repositoryDotNetSettings);
+        }
+
+        DotNetVersionSettings dotNetSettings = IsRepositoryFrameworkNewerPreRelease(new(repositoryDotNetSettings.SdkVersion), new(templateDotNetSettings.SdkVersion))
+            ? repositoryDotNetSettings
+            : templateDotNetSettings;
+
+        return new FrameworkSettings(dotNetSettings);
+    }
+
+    private static bool IsRepositoryFrameworkNewerPreRelease(NuGetVersion repositoryFramework, NuGetVersion templateFramework)
+    {
+        return repositoryFramework.IsPrerelease && repositoryFramework > templateFramework;
     }
 }
