@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 using FunFair.Test.Common;
 using Xunit;
@@ -27,6 +28,7 @@ public sealed class LabelsBuilderTests : LoggingTestBase
     }
 
     [Fact]
+    [SuppressMessage(category: "SonarAnalyzer.CSharp", checkId: "S125: No commented out code", Justification = "This code is not commented out!")]
     public void BuildLabelerYmlNoProjects()
     {
         (string _, string actual) = this._labelsBuilder.BuildLabelsConfig([]);
