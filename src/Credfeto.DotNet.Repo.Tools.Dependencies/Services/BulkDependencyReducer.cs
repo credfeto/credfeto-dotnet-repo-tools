@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.ChangeLog;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Models;
@@ -20,6 +21,7 @@ namespace Credfeto.DotNet.Repo.Tools.Dependencies.Services;
 public sealed class BulkDependencyReducer : IBulkDependencyReducer
 {
     private readonly IDependencyReducer _dependencyReducer;
+    private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IDotNetVersion _dotNetVersion;
     private readonly IGitRepositoryFactory _gitRepositoryFactory;
     private readonly IGlobalJson _globalJson;
@@ -27,15 +29,14 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
     private readonly ITrackingCache _trackingCache;
     private readonly ITrackingHashGenerator _trackingHashGenerator;
 
-    public BulkDependencyReducer(
-        ITrackingCache trackingCache,
-        IGlobalJson globalJson,
-        IDotNetVersion dotNetVersion,
-        IGitRepositoryFactory gitRepositoryFactory,
-        IDependencyReducer dependencyReducer,
-        ITrackingHashGenerator trackingHashGenerator,
-        ILogger<BulkDependencyReducer> logger
-    )
+    public BulkDependencyReducer(ITrackingCache trackingCache,
+                                 IGlobalJson globalJson,
+                                 IDotNetVersion dotNetVersion,
+                                 IGitRepositoryFactory gitRepositoryFactory,
+                                 IDependencyReducer dependencyReducer,
+                                 ITrackingHashGenerator trackingHashGenerator,
+                                 IDotNetFilesDetector dotNetFilesDetector,
+                                 ILogger<BulkDependencyReducer> logger)
     {
         this._trackingCache = trackingCache;
         this._globalJson = globalJson;
@@ -43,41 +44,25 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         this._gitRepositoryFactory = gitRepositoryFactory;
         this._dependencyReducer = dependencyReducer;
         this._trackingHashGenerator = trackingHashGenerator;
+        this._dotNetFilesDetector = dotNetFilesDetector;
         this._logger = logger;
     }
 
-    public async ValueTask BulkUpdateAsync(
-        string templateRepository,
-        string trackingFileName,
-        string workFolder,
-        IReadOnlyList<string> repositories,
-        CancellationToken cancellationToken
-    )
+    public async ValueTask BulkUpdateAsync(string templateRepository, string trackingFileName, string workFolder, IReadOnlyList<string> repositories, CancellationToken cancellationToken)
     {
         await this.LoadTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
 
-        using (
-            IGitRepository templateRepo = await this._gitRepositoryFactory.OpenOrCloneAsync(
-                workDir: workFolder,
-                repoUrl: templateRepository,
-                cancellationToken: cancellationToken
-            )
-        )
+        using (IGitRepository templateRepo = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: workFolder, repoUrl: templateRepository, cancellationToken: cancellationToken))
         {
             DependencyReductionUpdateContext updateContext = await this.BuildUpdateContextAsync(
                 templateRepo: templateRepo,
                 workFolder: workFolder,
                 trackingFileName: trackingFileName,
-                cancellationToken: cancellationToken
-            );
+                cancellationToken: cancellationToken);
 
             try
             {
-                await this.UpdateRepositoriesAsync(
-                    updateContext: updateContext,
-                    repositories: repositories,
-                    cancellationToken: cancellationToken
-                );
+                await this.UpdateRepositoriesAsync(updateContext: updateContext, repositories: repositories, cancellationToken: cancellationToken);
             }
             finally
             {
@@ -86,21 +71,13 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         }
     }
 
-    private async ValueTask UpdateRepositoriesAsync(
-        DependencyReductionUpdateContext updateContext,
-        IReadOnlyList<string> repositories,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask UpdateRepositoriesAsync(DependencyReductionUpdateContext updateContext, IReadOnlyList<string> repositories, CancellationToken cancellationToken)
     {
         foreach (string repo in repositories)
         {
             try
             {
-                await this.UpdateRepositoryAsync(
-                    updateContext: updateContext,
-                    repo: repo,
-                    cancellationToken: cancellationToken
-                );
+                await this.UpdateRepositoryAsync(updateContext: updateContext, repo: repo, cancellationToken: cancellationToken);
             }
             catch (SolutionCheckFailedException exception)
             {
@@ -114,30 +91,17 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             {
                 if (!string.IsNullOrWhiteSpace(updateContext.TrackingFileName))
                 {
-                    await this._trackingCache.SaveAsync(
-                        fileName: updateContext.TrackingFileName,
-                        cancellationToken: cancellationToken
-                    );
+                    await this._trackingCache.SaveAsync(fileName: updateContext.TrackingFileName, cancellationToken: cancellationToken);
                 }
             }
         }
     }
 
-    private async Task UpdateRepositoryAsync(
-        DependencyReductionUpdateContext updateContext,
-        string repo,
-        CancellationToken cancellationToken
-    )
+    private async Task UpdateRepositoryAsync(DependencyReductionUpdateContext updateContext, string repo, CancellationToken cancellationToken)
     {
         this._logger.LogProcessingRepo(repo);
 
-        using (
-            IGitRepository repository = await this._gitRepositoryFactory.OpenOrCloneAsync(
-                workDir: updateContext.WorkFolder,
-                repoUrl: repo,
-                cancellationToken: cancellationToken
-            )
-        )
+        using (IGitRepository repository = await this._gitRepositoryFactory.OpenOrCloneAsync(workDir: updateContext.WorkFolder, repoUrl: repo, cancellationToken: cancellationToken))
         {
             if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
             {
@@ -148,103 +112,63 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
             RepoContext repoContext = new(Repository: repository, ChangeLogFileName: changeLogFileName);
 
-            await this.ProcessRepoUpdatesAsync(
-                repoContext: repoContext,
-                updateContext: updateContext,
-                cancellationToken: cancellationToken
-            );
+            await this.ProcessRepoUpdatesAsync(repoContext: repoContext, updateContext: updateContext, cancellationToken: cancellationToken);
         }
     }
 
-    private async ValueTask ProcessRepoUpdatesAsync(
-        RepoContext repoContext,
-        DependencyReductionUpdateContext updateContext,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask ProcessRepoUpdatesAsync(RepoContext repoContext, DependencyReductionUpdateContext updateContext, CancellationToken cancellationToken)
     {
         try
         {
-            if (!repoContext.HasDotNetSolutions(out string? sourceDirectory, solutions: out _))
+            DotNetFiles? dotnetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
+
+            if (dotnetFiles is null)
             {
                 this._logger.LogNoDotNetFilesFound();
 
                 return;
             }
 
-            if (
-                await this.TrackingShowsNoChangesAsync(
-                    repoContext: repoContext,
-                    updateContext: updateContext,
-                    cancellationToken: cancellationToken
-                )
-            )
+            if (await this.TrackingShowsNoChangesAsync(repoContext: repoContext, updateContext: updateContext, cancellationToken: cancellationToken))
             {
                 return;
             }
 
             ReferenceConfig config = new(CommitAsync);
 
-            bool result = await this._dependencyReducer.CheckReferencesAsync(
-                sourceDirectory: sourceDirectory,
-                config: config,
-                cancellationToken: cancellationToken
-            );
+            bool result = await this._dependencyReducer.CheckReferencesAsync(sourceDirectory: dotnetFiles.Value.SourceDirectory, config: config, cancellationToken: cancellationToken);
 
             this._logger.LogWorkingChangeStatus(repo: repoContext.ClonePath, changes: result);
         }
         finally
         {
-            await repoContext.Repository.ResetToDefaultBranchAsync(
-                upstream: GitConstants.Upstream,
-                cancellationToken: cancellationToken
-            );
+            await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
         }
 
         async ValueTask CommitAsync(string projectFileName, string message, CancellationToken ct)
         {
             await repoContext.Repository.CommitNamedAsync(message: message, [projectFileName], cancellationToken: ct);
             await repoContext.Repository.PushAsync(ct);
-            await repoContext.Repository.ResetToDefaultBranchAsync(
-                upstream: GitConstants.Upstream,
-                cancellationToken: ct
-            );
+            await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: ct);
 
-            await this.UpdateTrackingCacheAsync(
-                repoContext: repoContext,
-                updateContext: updateContext,
-                cancellationToken: ct
-            );
+            await this.UpdateTrackingCacheAsync(repoContext: repoContext, updateContext: updateContext, cancellationToken: ct);
         }
     }
 
-    private async ValueTask UpdateTrackingCacheAsync(
-        RepoContext repoContext,
-        DependencyReductionUpdateContext updateContext,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask UpdateTrackingCacheAsync(RepoContext repoContext, DependencyReductionUpdateContext updateContext, CancellationToken cancellationToken)
     {
         if (!string.IsNullOrWhiteSpace(updateContext.TrackingFileName))
         {
             return;
         }
 
-        string current = await this._trackingHashGenerator.GenerateTrackingHashAsync(
-            repoContext: repoContext,
-            cancellationToken: cancellationToken
-        );
+        string current = await this._trackingHashGenerator.GenerateTrackingHashAsync(repoContext: repoContext, cancellationToken: cancellationToken);
 
         this._trackingCache.Set(repoUrl: repoContext.ClonePath, value: current);
-        await this._trackingCache.SaveAsync(
-            fileName: updateContext.TrackingFileName,
-            cancellationToken: cancellationToken
-        );
+        await this._trackingCache.SaveAsync(fileName: updateContext.TrackingFileName, cancellationToken: cancellationToken);
     }
 
-    private async ValueTask<bool> TrackingShowsNoChangesAsync(
-        RepoContext repoContext,
-        DependencyReductionUpdateContext updateContext,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask<bool> TrackingShowsNoChangesAsync(RepoContext repoContext, DependencyReductionUpdateContext updateContext, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(updateContext.TrackingFileName))
         {
@@ -258,32 +182,18 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             return false;
         }
 
-        string current = await this._trackingHashGenerator.GenerateTrackingHashAsync(
-            repoContext: repoContext,
-            cancellationToken: cancellationToken
-        );
+        string current = await this._trackingHashGenerator.GenerateTrackingHashAsync(repoContext: repoContext, cancellationToken: cancellationToken);
 
         return StringComparer.Ordinal.Equals(x: previous, y: current);
     }
 
-    private async ValueTask<DependencyReductionUpdateContext> BuildUpdateContextAsync(
-        IGitRepository templateRepo,
-        string workFolder,
-        string trackingFileName,
-        CancellationToken cancellationToken
-    )
+    private async ValueTask<DependencyReductionUpdateContext> BuildUpdateContextAsync(IGitRepository templateRepo, string workFolder, string trackingFileName, CancellationToken cancellationToken)
     {
-        DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(
-            baseFolder: templateRepo.WorkingDirectory,
-            cancellationToken: cancellationToken
-        );
+        DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.WorkingDirectory, cancellationToken: cancellationToken);
 
         IReadOnlyList<Version> installedDotNetSdks = await this._dotNetVersion.GetInstalledSdksAsync(cancellationToken);
 
-        if (
-            dotNetSettings.SdkVersion is not null
-            && Version.TryParse(input: dotNetSettings.SdkVersion, out Version? sdkVersion)
-        )
+        if (dotNetSettings.SdkVersion is not null && Version.TryParse(input: dotNetSettings.SdkVersion, out Version? sdkVersion))
         {
             if (!installedDotNetSdks.Contains(sdkVersion))
             {

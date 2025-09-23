@@ -5,19 +5,26 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 
-namespace Credfeto.DotNet.Repo.Tools.DotNet.Services;
+namespace Credfeto.DotNet.Repo.Tools.Build.Services;
 
 public sealed class DotNetFilesDetector : IDotNetFilesDetector
 {
-    public ValueTask<DotNetFiles?> FindAsync(string baseFolder, in CancellationToken cancellationToken)
+    private readonly IProjectFinder _projectFinder;
+
+    public DotNetFilesDetector(IProjectFinder projectFinder)
+    {
+        this._projectFinder = projectFinder;
+    }
+
+    public async ValueTask<DotNetFiles?> FindAsync(string baseFolder, CancellationToken cancellationToken)
     {
         string sourceFolder = BuildSourceFolder(baseFolder);
 
         if (!Directory.Exists(sourceFolder))
         {
-            return ValueTask.FromResult<DotNetFiles?>(null);
+            return null;
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -25,19 +32,19 @@ public sealed class DotNetFilesDetector : IDotNetFilesDetector
 
         if (foundSolutions is [])
         {
-            return ValueTask.FromResult<DotNetFiles?>(null);
+            return null;
         }
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        IReadOnlyList<string> foundProjects = [.. GetFiles(basePath: sourceFolder, searchPattern: "*.csproj")];
+        IReadOnlyList<string> foundProjects = await this._projectFinder.FindProjectsAsync(basePath: sourceFolder, cancellationToken: cancellationToken);
 
         if (foundProjects is [])
         {
-            return ValueTask.FromResult<DotNetFiles?>(null);
+            return null;
         }
 
-        return ValueTask.FromResult<DotNetFiles?>(new DotNetFiles(SourceFolder: sourceFolder, Solutions: foundSolutions, Projects: foundProjects));
+        return new DotNetFiles(SourceDirectory: sourceFolder, Solutions: foundSolutions, Projects: foundProjects);
     }
 
     private static string BuildSourceFolder(string baseFolder)

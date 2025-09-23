@@ -1,12 +1,12 @@
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
-using Credfeto.DotNet.Repo.Tools.DotNet.Services;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Build.Services;
 using FunFair.Test.Common;
 using Xunit;
 
-namespace Credfeto.DotNet.Repo.Tools.DotNet.Tests.Services;
+namespace Credfeto.DotNet.Repo.Tools.Build.Tests.Services;
 
 public sealed class DotNetFilesDetectorTests : LoggingFolderCleanupTestBase
 {
@@ -15,7 +15,7 @@ public sealed class DotNetFilesDetectorTests : LoggingFolderCleanupTestBase
     public DotNetFilesDetectorTests(ITestOutputHelper output)
         : base(output)
     {
-        this._dotNetFilesDetector = new DotNetFilesDetector();
+        this._dotNetFilesDetector = new DotNetFilesDetector(new ProjectFinder());
     }
 
     [Fact]

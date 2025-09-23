@@ -28,10 +28,4 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
     {
         this.RequireService<IGlobalJson>();
     }
-
-    [Fact]
-    public void DotNetFilesDetectorMustBeRegistered()
-    {
-        this.RequireService<IDotNetFilesDetector>();
-    }
 }
