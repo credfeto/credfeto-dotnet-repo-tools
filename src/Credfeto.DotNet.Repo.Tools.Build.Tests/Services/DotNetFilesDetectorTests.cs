@@ -78,7 +78,10 @@ public sealed class DotNetFilesDetectorTests : LoggingFolderCleanupTestBase
 
         await File.WriteAllTextAsync(Path.Combine(path1: this.TempFolder, path2: "Test.sln"), contents: "Solution", cancellationToken: cancellationToken);
         await File.WriteAllTextAsync(Path.Combine(path1: this.TempFolder, path2: "Test.csproj"), contents: "Solution", cancellationToken: cancellationToken);
-        DotNetFiles? result = await this._dotNetFilesDetector.FindAsync(baseFolder: this.TempFolder, cancellationToken: cancellationToken);
-        Assert.Null(result);
+        DotNetFiles result = await this._dotNetFilesDetector.FindAsync(baseFolder: this.TempFolder, cancellationToken: cancellationToken);
+        Assert.Equal(expected: this.TempFolder, actual: result.SourceDirectory);
+        Assert.False(condition: result.HasSolutions, userMessage: "Should not have solutions");
+        Assert.False(condition: result.HasProjects, userMessage: "Should not have projects");
+        Assert.False(condition: result.HasSolutionsAndProjects, userMessage: "Should not have projects");
     }
 }

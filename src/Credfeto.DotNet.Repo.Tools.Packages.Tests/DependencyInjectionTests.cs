@@ -45,6 +45,7 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
         return services
             .AddMockedService<IDotNetBuild>()
             .AddMockedService<IDotNetSolutionCheck>()
+            .AddMockedService<IDotNetFilesDetector>()
             .AddMockedService<IGitRepositoryFactory>()
             .AddMockedService<IGlobalJson>()
             .AddMockedService<IDotNetVersion>()

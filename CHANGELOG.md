@@ -7,17 +7,21 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
-- Support for slnx solutions
 ### Fixed
 ### Changed
-- Dotnet 10
-- Dependencies - Updated FunFair.BuildCheck to 474.2.0.1862
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.3.0] - 2025-09-23
+### Added
+- Support for slnx solutions
+### Changed
+- Dotnet 10
+- Dependencies - Updated FunFair.BuildCheck to 474.2.0.1862
+
 ## [1.2.8] - 2025-09-11
 ### Changed
 - SDK - Updated DotNet SDK to 9.0.305
