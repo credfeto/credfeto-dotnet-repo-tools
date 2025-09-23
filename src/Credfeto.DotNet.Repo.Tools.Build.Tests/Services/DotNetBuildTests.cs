@@ -32,10 +32,7 @@ public sealed class DotNetBuildTests : TestBase
     {
         this.MockLoadProject(path: project);
 
-        BuildSettings result = await this._dotNetBuild.LoadBuildSettingsAsync(
-            [project],
-            cancellationToken: System.Threading.CancellationToken.None
-        );
+        BuildSettings result = await this._dotNetBuild.LoadBuildSettingsAsync([project], cancellationToken: System.Threading.CancellationToken.None);
 
         Assert.Equal(expected: packable, actual: result.Packable);
         Assert.Equal(expected: publishable, actual: result.Publishable);
@@ -53,10 +50,7 @@ public sealed class DotNetBuildTests : TestBase
     [Fact]
     public async Task NoProjectsAsync()
     {
-        BuildSettings result = await this._dotNetBuild.LoadBuildSettingsAsync(
-            [],
-            cancellationToken: System.Threading.CancellationToken.None
-        );
+        BuildSettings result = await this._dotNetBuild.LoadBuildSettingsAsync([], cancellationToken: System.Threading.CancellationToken.None);
 
         Assert.False(condition: result.Packable, userMessage: "Empty solutions should not be packable");
         Assert.False(condition: result.Publishable, userMessage: "Empty solutions should not be publishable");
@@ -65,7 +59,8 @@ public sealed class DotNetBuildTests : TestBase
 
     private void MockLoadProject(string path)
     {
-        this._projectXmlLoader.LoadAsync(path: path, Arg.Any<CancellationToken>()).Returns(LoadDoc());
+        this._projectXmlLoader.LoadAsync(path: path, Arg.Any<CancellationToken>())
+            .Returns(LoadDoc());
 
         XmlDocument LoadDoc()
         {
@@ -99,15 +94,15 @@ public sealed class DotNetBuildTests : TestBase
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><IsPackable>true</IsPackable><IsPublishable>false</IsPublishable><OutputType>Library</OutputType><PackAsTool>false</PackAsTool></PropertyGroup></Project>";
 
         public const string PackablePublishableDotNetTool =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><IsPackable>true</IsPackable><IsPublishable>true</IsPublishable><OutputType>Exe</OutputType><PackAsTool>true</PackAsTool><TargetFrameworks>net8.0;net9.0</TargetFrameworks></PropertyGroup></Project>";
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><IsPackable>true</IsPackable><IsPublishable>true</IsPublishable><OutputType>Exe</OutputType><PackAsTool>true</PackAsTool><TargetFrameworks>net9.0;net10.0</TargetFrameworks></PropertyGroup></Project>";
 
         public const string NonPackableLibrary =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><IsPackable>false</IsPackable><IsPublishable>false</IsPublishable><OutputType>Library</OutputType><PackAsTool>false</PackAsTool></PropertyGroup></Project>";
 
         public const string PublishableExe =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><IsPackable>false</IsPackable><IsPublishable>true</IsPublishable><OutputType>Exe</OutputType><PackAsTool>false</PackAsTool><TargetFrameworks>net8.0;net9.0</TargetFrameworks></PropertyGroup></Project>";
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><IsPackable>false</IsPackable><IsPublishable>true</IsPublishable><OutputType>Exe</OutputType><PackAsTool>false</PackAsTool><TargetFrameworks>net9.0;net10.0</TargetFrameworks></PropertyGroup></Project>";
 
         public const string NonPublishableExe =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><IsPackable>false</IsPackable><IsPublishable>false</IsPublishable><OutputType>Exe</OutputType><PackAsTool>false</PackAsTool><TargetFrameworks>net8.0;net9.0</TargetFrameworks></PropertyGroup></Project>";
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><IsPackable>false</IsPackable><IsPublishable>false</IsPublishable><OutputType>Exe</OutputType><PackAsTool>false</PackAsTool><TargetFrameworks>net9.0;net10.0</TargetFrameworks></PropertyGroup></Project>";
     }
 }
