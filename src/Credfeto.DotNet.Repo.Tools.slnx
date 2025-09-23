@@ -1,0 +1,57 @@
+<Solution>
+  <Folder Name="/- Config/">
+    <File Path="../CHANGELOG.md" />
+    <File Path="../README.md" />
+    <File Path="CodeAnalysis.ruleset" />
+    <File Path="Directory.Build.props" />
+    <File Path="global.json" />
+  </Folder>
+  <Folder Name="/Build/">
+    <Project Path="Credfeto.DotNet.Repo.Tools.Build.Interfaces/Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Build.Tests/Credfeto.DotNet.Repo.Tools.Build.Tests.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Build/Credfeto.DotNet.Repo.Tools.Build.csproj" />
+  </Folder>
+  <Folder Name="/CodeCleanup/">
+    <Project Path="Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces/Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.CleanUp.Tests/Credfeto.DotNet.Repo.Tools.CleanUp.Tests.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.CleanUp/Credfeto.DotNet.Repo.Tools.CleanUp.csproj" />
+  </Folder>
+  <Folder Name="/Dependencies/">
+    <Project Path="Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces/Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Dependencies.Tests/Credfeto.DotNet.Repo.Tools.Dependencies.Tests.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Dependencies/Credfeto.DotNet.Repo.Tools.Dependencies.csproj" />
+  </Folder>
+  <Folder Name="/DotNet/">
+    <Project Path="Credfeto.DotNet.Repo.Tools.DotNet.Interfaces/Credfeto.DotNet.Repo.Tools.DotNet.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.DotNet.Tests/Credfeto.DotNet.Repo.Tools.DotNet.Tests.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.DotNet/Credfeto.DotNet.Repo.Tools.DotNet.csproj" />
+  </Folder>
+  <Folder Name="/Git/">
+    <Project Path="Credfeto.DotNet.Repo.Tools.Git.Interfaces/Credfeto.DotNet.Repo.Tools.Git.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Git.Tests/Credfeto.DotNet.Repo.Tools.Git.Tests.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Git/Credfeto.DotNet.Repo.Tools.Git.csproj" />
+  </Folder>
+  <Folder Name="/Packages/">
+    <Project Path="Credfeto.DotNet.Repo.Tools.Packages.Interfaces/Credfeto.DotNet.Repo.Tools.Packages.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Packages.Tests/Credfeto.DotNet.Repo.Tools.Packages.Tests.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Packages/Credfeto.DotNet.Repo.Tools.Packages.csproj" />
+  </Folder>
+  <Folder Name="/Release/">
+    <Project Path="Credfeto.DotNet.Repo.Tools.Release.Interfaces/Credfeto.DotNet.Repo.Tools.Release.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Release.Tests/Credfeto.DotNet.Repo.Tools.Release.Tests.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Release/Credfeto.DotNet.Repo.Tools.Release.csproj" />
+  </Folder>
+  <Folder Name="/TemplateUpdate/">
+    <Project Path="Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces/Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests/Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.TemplateUpdate/Credfeto.DotNet.Repo.Tools.TemplateUpdate.csproj" />
+  </Folder>
+  <Folder Name="/Tracking/">
+    <Project Path="Credfeto.DotNet.Repo.Tracking.Interfaces/Credfeto.DotNet.Repo.Tracking.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tracking.Tests/Credfeto.DotNet.Repo.Tracking.Tests.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tracking/Credfeto.DotNet.Repo.Tracking.csproj" />
+  </Folder>
+  <Project Path="Credfeto.DotNet.Repo.Tools.Cmd/Credfeto.DotNet.Repo.Tools.Cmd.csproj" />
+  <Project Path="Credfeto.DotNet.Repo.Tools.Extensions/Credfeto.DotNet.Repo.Tools.Extensions.csproj" />
+  <Project Path="Credfeto.DotNet.Repo.Tools.Models/Credfeto.DotNet.Repo.Tools.Models.csproj" />
+</Solution>
