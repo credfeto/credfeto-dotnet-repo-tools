@@ -9,6 +9,8 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+
+- Dependencies - Updated FunFair.BuildCheck to 474.2.1.1867
 ### Removed
 ### Deployment Changes
 
