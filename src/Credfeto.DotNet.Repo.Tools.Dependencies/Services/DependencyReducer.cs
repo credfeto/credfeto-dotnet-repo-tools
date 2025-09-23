@@ -26,21 +26,17 @@ public sealed class DependencyReducer : IDependencyReducer
     private readonly IDotNetBuild _dotNetBuild;
     private readonly ILogger<DependencyReducer> _logger;
 
-    private readonly IProjectFinder _projectFinder;
-
-    public DependencyReducer(IProjectFinder projectFinder, IDotNetBuild dotNetBuild, ILogger<DependencyReducer> logger)
+    public DependencyReducer(IDotNetBuild dotNetBuild, ILogger<DependencyReducer> logger)
     {
-        this._projectFinder = projectFinder;
         this._dotNetBuild = dotNetBuild;
         this._logger = logger;
     }
 
-    public async ValueTask<bool> CheckReferencesAsync(string sourceDirectory, ReferenceConfig config, CancellationToken cancellationToken)
+    public async ValueTask<bool> CheckReferencesAsync(DotNetFiles dotNetFiles, ReferenceConfig config, CancellationToken cancellationToken)
     {
-        IReadOnlyList<string> projects = await this.GetProjectsAsync(sourceDirectory: sourceDirectory, config: config, cancellationToken: cancellationToken);
-        this._logger.ProjectsToCheck(projects.Count);
+        this._logger.ProjectsToCheck(dotNetFiles.Projects.Count);
 
-        BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: projects, cancellationToken: cancellationToken);
+        BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: dotNetFiles.Projects, cancellationToken: cancellationToken);
         BuildOverride buildOverride = new(PreRelease: true);
 
         this._logger.CheckingProjects();
@@ -48,17 +44,17 @@ public sealed class DependencyReducer : IDependencyReducer
         Stopwatch stopwatch = Stopwatch.StartNew();
         DependencyTracking tracking = new();
 
-        int projectCount = projects.Count;
+        int projectCount = dotNetFiles.Projects.Count;
         int projectInstance = 0;
 
-        foreach (string project in projects.Where(project => !config.IsIgnoreProject(project)))
+        foreach (string project in dotNetFiles.Projects.Where(project => !config.IsIgnoreProject(project)))
         {
             projectInstance++;
 
             // ! Project directory guaranteed not to be null here
             string projectDirectory = Path.GetDirectoryName(project)!;
 
-            ProjectUpdateContext projectUpdateContext = new(SourceDirectory: sourceDirectory,
+            ProjectUpdateContext projectUpdateContext = new(SourceDirectory: dotNetFiles.SourceDirectory,
                                                             ProjectDirectory: projectDirectory,
                                                             Config: config,
                                                             ProjectInstance: projectInstance,
@@ -437,16 +433,6 @@ public sealed class DependencyReducer : IDependencyReducer
         }
 
         return true;
-    }
-
-    private async ValueTask<IReadOnlyList<string>> GetProjectsAsync(string sourceDirectory, ReferenceConfig config, CancellationToken cancellationToken)
-    {
-        IReadOnlyList<string> projects = await this._projectFinder.FindProjectsAsync(basePath: sourceDirectory, cancellationToken: cancellationToken);
-
-        return
-        [
-            ..projects.Where(project => !config.IsIgnoreProject(project))
-        ];
     }
 
     private static FileProjectReference? FindChildProject(IReadOnlyList<FileProjectReference> childProjectReferences, string includeName)

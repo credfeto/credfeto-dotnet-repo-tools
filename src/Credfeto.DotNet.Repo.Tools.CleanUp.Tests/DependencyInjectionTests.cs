@@ -14,7 +14,9 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests;
 public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 {
     public DependencyInjectionTests(ITestOutputHelper output)
-        : base(output: output, dependencyInjectionRegistration: Configure) { }
+        : base(output: output, dependencyInjectionRegistration: Configure)
+    {
+    }
 
     [Fact]
     public void CleanUpBuildMustBeRegistered()
@@ -54,14 +56,13 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 
     private static IServiceCollection Configure(IServiceCollection services)
     {
-        return services
-            .AddMockedService<ITrackingCache>()
-            .AddMockedService<IGitRepositoryFactory>()
-            .AddMockedService<IGlobalJson>()
-            .AddMockedService<IReleaseConfigLoader>()
-            .AddMockedService<IDotNetVersion>()
-            .AddMockedService<IDotNetBuild>()
-            .AddMockedService<IProjectFinder>()
-            .AddCleanUp();
+        return services.AddMockedService<ITrackingCache>()
+                       .AddMockedService<IGitRepositoryFactory>()
+                       .AddMockedService<IGlobalJson>()
+                       .AddMockedService<IReleaseConfigLoader>()
+                       .AddMockedService<IDotNetVersion>()
+                       .AddMockedService<IDotNetBuild>()
+                       .AddMockedService<IDotNetFilesDetector>()
+                       .AddCleanUp();
     }
 }

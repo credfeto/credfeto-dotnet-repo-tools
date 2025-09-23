@@ -15,7 +15,7 @@ public sealed class DotNetFilesDetectorTests : LoggingFolderCleanupTestBase
     public DotNetFilesDetectorTests(ITestOutputHelper output)
         : base(output)
     {
-        this._dotNetFilesDetector = new DotNetFilesDetector(new ProjectFinder());
+        this._dotNetFilesDetector = new DotNetFilesDetector();
     }
 
     [Fact]

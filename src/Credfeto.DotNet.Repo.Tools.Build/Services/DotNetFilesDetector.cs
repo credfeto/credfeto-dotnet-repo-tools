@@ -11,20 +11,13 @@ namespace Credfeto.DotNet.Repo.Tools.Build.Services;
 
 public sealed class DotNetFilesDetector : IDotNetFilesDetector
 {
-    private readonly IProjectFinder _projectFinder;
-
-    public DotNetFilesDetector(IProjectFinder projectFinder)
-    {
-        this._projectFinder = projectFinder;
-    }
-
-    public async ValueTask<DotNetFiles> FindAsync(string baseFolder, CancellationToken cancellationToken)
+    public ValueTask<DotNetFiles> FindAsync(string baseFolder, CancellationToken cancellationToken)
     {
         string sourceFolder = BuildSourceFolder(baseFolder);
 
         if (!Directory.Exists(sourceFolder))
         {
-            return new(SourceDirectory: baseFolder, [], []);
+            return ValueTask.FromResult(new DotNetFiles(SourceDirectory: baseFolder, [], []));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -32,14 +25,14 @@ public sealed class DotNetFilesDetector : IDotNetFilesDetector
 
         if (foundSolutions is [])
         {
-            return new(SourceDirectory: sourceFolder, Solutions: foundSolutions, []);
+            return ValueTask.FromResult(new DotNetFiles(SourceDirectory: sourceFolder, Solutions: foundSolutions, []));
         }
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        IReadOnlyList<string> foundProjects = await this._projectFinder.FindProjectsAsync(basePath: sourceFolder, cancellationToken: cancellationToken);
+        IReadOnlyList<string> foundProjects = GetFiles(basePath: sourceFolder, searchPattern: "*.csproj");
 
-        return new(SourceDirectory: sourceFolder, Solutions: foundSolutions, Projects: foundProjects);
+        return ValueTask.FromResult(new DotNetFiles(SourceDirectory: sourceFolder, Solutions: foundSolutions, Projects: foundProjects));
     }
 
     private static string BuildSourceFolder(string baseFolder)

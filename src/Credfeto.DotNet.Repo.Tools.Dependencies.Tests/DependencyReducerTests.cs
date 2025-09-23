@@ -2,6 +2,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build;
+using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Services;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using FunFair.Test.Common;
@@ -13,17 +14,21 @@ namespace Credfeto.DotNet.Repo.Tools.Dependencies.Tests;
 public sealed class DependencyReducerTests : LoggingTestBase
 {
     public DependencyReducerTests(ITestOutputHelper output)
-        : base(output: output, dependencyInjectionRegistration: Configure) { }
+        : base(output: output, dependencyInjectionRegistration: Configure)
+    {
+    }
 
     private static IServiceCollection Configure(IServiceCollection services)
     {
-        return services.AddMockedService<ITrackingCache>().AddBuild().AddDependenciesReduction();
+        return services.AddMockedService<ITrackingCache>()
+                       .AddBuild()
+                       .AddDependenciesReduction();
     }
 
     [Fact(Skip = "Enable manually to test")]
     public async Task ReduceAsync()
     {
-        const string sourceDirectory = "/home/markr/work/personal/credfeto-date/src";
+        const string sourceDirectory = "/home/markr/work/personal/credfeto-date";
 
         if (!Directory.Exists(sourceDirectory))
         {
@@ -32,15 +37,15 @@ public sealed class DependencyReducerTests : LoggingTestBase
             return;
         }
 
+        IDotNetFilesDetector dotNetFilesDetector = this.GetServiceFromDependencyInjection<IDotNetFilesDetector>();
+
+        DotNetFiles dotNetFiles = await dotNetFilesDetector.FindAsync(baseFolder: sourceDirectory, this.CancellationToken());
+
         ReferenceConfig referenceConfig = new(this.CommitAsync);
 
         IDependencyReducer dependencyReducer = this.GetServiceFromDependencyInjection<IDependencyReducer>();
 
-        await dependencyReducer.CheckReferencesAsync(
-            sourceDirectory: sourceDirectory,
-            config: referenceConfig,
-            this.CancellationToken()
-        );
+        await dependencyReducer.CheckReferencesAsync(dotNetFiles: dotNetFiles, config: referenceConfig, this.CancellationToken());
 
         this.Output.WriteLine("Completed");
     }
