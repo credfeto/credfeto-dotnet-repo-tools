@@ -182,7 +182,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     private async ValueTask ProcessRepoUpdatesAsync(TemplateUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
         string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
-        DotNetFiles? dotNetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
+        DotNetFiles dotNetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
 
         int totalUpdates = await this.UpdateStandardFilesAsync(updateContext: updateContext,
                                                                repoContext: repoContext,
@@ -190,13 +190,13 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                                                packages: packages,
                                                                cancellationToken: cancellationToken);
 
-        if (dotNetFiles is not null)
+        if (dotNetFiles.HasSolutions)
         {
             await this.UpdateDotNetAsync(updateContext: updateContext,
                                          repoContext: repoContext,
                                          packages: packages,
                                          lastKnownGoodBuild: lastKnownGoodBuild,
-                                         dotNetFiles: dotNetFiles.Value,
+                                         dotNetFiles: dotNetFiles,
                                          totalUpdates: totalUpdates,
                                          cancellationToken: cancellationToken);
         }
@@ -227,7 +227,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
     private async ValueTask<int> UpdateStandardFilesAsync(TemplateUpdateContext updateContext,
                                                           RepoContext repoContext,
-                                                          DotNetFiles? dotNetFiles,
+                                                          DotNetFiles dotNetFiles,
                                                           IReadOnlyList<PackageUpdate> packages,
                                                           CancellationToken cancellationToken)
     {
@@ -269,7 +269,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
     private async ValueTask<bool> UpdateDependabotConfigAsync(TemplateUpdateContext updateContext,
                                                               RepoContext repoContext,
-                                                              DotNetFiles? dotNetFiles,
+                                                              DotNetFiles dotNetFiles,
                                                               IReadOnlyList<PackageUpdate> packages,
                                                               CancellationToken cancellationToken)
     {

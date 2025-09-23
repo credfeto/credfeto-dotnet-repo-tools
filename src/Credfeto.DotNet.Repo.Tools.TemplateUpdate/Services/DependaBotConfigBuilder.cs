@@ -24,7 +24,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Needs Review")]
     public ValueTask<string> BuildDependabotConfigAsync(RepoContext repoContext,
                                                         string templateFolder,
-                                                        DotNetFiles? dotNetFiles,
+                                                        DotNetFiles dotNetFiles,
                                                         IReadOnlyList<PackageUpdate> packages,
                                                         CancellationToken cancellationToken)
     {
@@ -36,7 +36,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
             AllowAllDependencies(config);
         }
 
-        if (dotNetFiles is not null)
+        if (dotNetFiles.HasSolutionsAndProjects)
         {
             this.AddDotNetConfig(config: config, packages: packages);
         }

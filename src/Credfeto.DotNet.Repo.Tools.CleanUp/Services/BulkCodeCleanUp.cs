@@ -211,19 +211,15 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
     private async ValueTask ProcessRepoUpdatesAsync(CleanupUpdateContext updateContext, RepoContext repoContext, CancellationToken cancellationToken)
     {
-        DotNetFiles? dotNetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
+        DotNetFiles dotNetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
 
-        if (dotNetFiles is not null)
+        if (dotNetFiles.HasSolutionsAndProjects)
         {
-            BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: dotNetFiles.Value.Projects, cancellationToken: cancellationToken);
+            BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: dotNetFiles.Projects, cancellationToken: cancellationToken);
 
-            await this.ReOrderProjectFilesAsync(repoContext: repoContext,
-                                                sourceDirectory: dotNetFiles.Value.SourceDirectory,
-                                                projects: dotNetFiles.Value.Projects,
-                                                buildSettings: buildSettings,
-                                                cancellationToken: cancellationToken);
-            await this.CleanupSourceAsync(repoContext: repoContext, sourceDirectory: dotNetFiles.Value.SourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
-            await this.CleanupTransactSqlAsync(repoContext: repoContext, sourceDirectory: dotNetFiles.Value.SourceDirectory, cancellationToken: cancellationToken);
+            await this.ReOrderProjectFilesAsync(repoContext: repoContext, dotNetFiles: dotNetFiles, buildSettings: buildSettings, cancellationToken: cancellationToken);
+            await this.CleanupSourceAsync(repoContext: repoContext, sourceDirectory: dotNetFiles.SourceDirectory, buildSettings: buildSettings, cancellationToken: cancellationToken);
+            await this.CleanupTransactSqlAsync(repoContext: repoContext, sourceDirectory: dotNetFiles.SourceDirectory, cancellationToken: cancellationToken);
         }
         else
         {
@@ -463,17 +459,17 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         }
     }
 
-    private async ValueTask ReOrderProjectFilesAsync(RepoContext repoContext, string sourceDirectory, IReadOnlyList<string> projects, BuildSettings buildSettings, CancellationToken cancellationToken)
+    private async ValueTask ReOrderProjectFilesAsync(RepoContext repoContext, DotNetFiles dotNetFiles, BuildSettings buildSettings, CancellationToken cancellationToken)
     {
-        if (projects is [])
+        if (!dotNetFiles.HasProjects)
         {
             return;
         }
 
         await this.FileCleanupAsync(repoContext: repoContext,
-                                    sourceDirectory: sourceDirectory,
+                                    sourceDirectory: dotNetFiles.SourceDirectory,
                                     buildSettings: buildSettings,
-                                    sourceFiles: projects,
+                                    sourceFiles: dotNetFiles.Projects,
                                     cleaner: DoCleanupAsync,
                                     cancellationToken: cancellationToken);
 

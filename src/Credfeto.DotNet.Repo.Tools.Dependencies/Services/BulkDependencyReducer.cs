@@ -120,9 +120,9 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
     {
         try
         {
-            DotNetFiles? dotnetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
+            DotNetFiles dotnetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
 
-            if (dotnetFiles is null)
+            if (!dotnetFiles.HasSolutionsAndProjects)
             {
                 this._logger.LogNoDotNetFilesFound();
 
@@ -136,7 +136,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
 
             ReferenceConfig config = new(CommitAsync);
 
-            bool result = await this._dependencyReducer.CheckReferencesAsync(sourceDirectory: dotnetFiles.Value.SourceDirectory, config: config, cancellationToken: cancellationToken);
+            bool result = await this._dependencyReducer.CheckReferencesAsync(sourceDirectory: dotnetFiles.SourceDirectory, config: config, cancellationToken: cancellationToken);
 
             this._logger.LogWorkingChangeStatus(repo: repoContext.ClonePath, changes: result);
         }

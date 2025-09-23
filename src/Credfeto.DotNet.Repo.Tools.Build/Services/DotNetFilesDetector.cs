@@ -18,13 +18,13 @@ public sealed class DotNetFilesDetector : IDotNetFilesDetector
         this._projectFinder = projectFinder;
     }
 
-    public async ValueTask<DotNetFiles?> FindAsync(string baseFolder, CancellationToken cancellationToken)
+    public async ValueTask<DotNetFiles> FindAsync(string baseFolder, CancellationToken cancellationToken)
     {
         string sourceFolder = BuildSourceFolder(baseFolder);
 
         if (!Directory.Exists(sourceFolder))
         {
-            return null;
+            return new(SourceDirectory: baseFolder, [], []);
         }
 
         cancellationToken.ThrowIfCancellationRequested();
@@ -32,19 +32,14 @@ public sealed class DotNetFilesDetector : IDotNetFilesDetector
 
         if (foundSolutions is [])
         {
-            return null;
+            return new(SourceDirectory: sourceFolder, Solutions: foundSolutions, []);
         }
 
         cancellationToken.ThrowIfCancellationRequested();
 
         IReadOnlyList<string> foundProjects = await this._projectFinder.FindProjectsAsync(basePath: sourceFolder, cancellationToken: cancellationToken);
 
-        if (foundProjects is [])
-        {
-            return null;
-        }
-
-        return new DotNetFiles(SourceDirectory: sourceFolder, Solutions: foundSolutions, Projects: foundProjects);
+        return new(SourceDirectory: sourceFolder, Solutions: foundSolutions, Projects: foundProjects);
     }
 
     private static string BuildSourceFolder(string baseFolder)

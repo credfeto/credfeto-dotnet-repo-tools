@@ -5,5 +5,5 @@ namespace Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 
 public interface IDotNetFilesDetector
 {
-    ValueTask<DotNetFiles?> FindAsync(string baseFolder, CancellationToken cancellationToken);
+    ValueTask<DotNetFiles> FindAsync(string baseFolder, CancellationToken cancellationToken);
 }

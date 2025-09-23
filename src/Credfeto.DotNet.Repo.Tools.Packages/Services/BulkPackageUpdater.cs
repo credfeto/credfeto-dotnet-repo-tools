@@ -265,9 +265,9 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Needs Review")]
     private async ValueTask ProcessRepoUpdatesAsync(PackageUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
-        DotNetFiles? dotNetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
+        DotNetFiles dotNetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
 
-        if (dotNetFiles is null)
+        if (!dotNetFiles.HasSolutionsAndProjects)
         {
             this._logger.LogNoDotNetFilesFound();
             await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
@@ -275,7 +275,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             return;
         }
 
-        BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: dotNetFiles.Value.Projects, cancellationToken: cancellationToken);
+        BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: dotNetFiles.Projects, cancellationToken: cancellationToken);
 
         int totalUpdates = 0;
 
@@ -283,8 +283,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         {
             bool updated = await this._singlePackageUpdater.UpdateAsync(updateContext: updateContext,
                                                                         repoContext: repoContext,
-                                                                        solutions: dotNetFiles.Value.Solutions,
-                                                                        sourceDirectory: dotNetFiles.Value.SourceDirectory,
+                                                                        solutions: dotNetFiles.Solutions,
+                                                                        sourceDirectory: dotNetFiles.SourceDirectory,
                                                                         buildSettings: buildSettings,
                                                                         dotNetSettings: updateContext.DotNetSettings,
                                                                         package: package,
@@ -300,10 +300,10 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         {
             // no updates in this run - so might be able to create a release
             await this._releaseGeneration.TryCreateNextPatchAsync(repoContext: repoContext,
-                                                                  basePath: dotNetFiles.Value.SourceDirectory,
+                                                                  basePath: dotNetFiles.SourceDirectory,
                                                                   buildSettings: buildSettings,
                                                                   dotNetSettings: updateContext.DotNetSettings,
-                                                                  solutions: dotNetFiles.Value.Solutions,
+                                                                  solutions: dotNetFiles.Solutions,
                                                                   packages: packages,
                                                                   releaseConfig: updateContext.ReleaseConfig,
                                                                   cancellationToken: cancellationToken);
