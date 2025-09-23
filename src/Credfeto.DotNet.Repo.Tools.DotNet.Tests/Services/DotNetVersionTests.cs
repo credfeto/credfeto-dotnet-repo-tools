@@ -6,7 +6,7 @@ using Credfeto.DotNet.Repo.Tools.DotNet.Services;
 using FunFair.Test.Common;
 using Xunit;
 
-namespace Credfeto.DotNet.Repo.Tools.DotNet.Tests;
+namespace Credfeto.DotNet.Repo.Tools.DotNet.Tests.Services;
 
 public sealed class DotNetVersionTests : LoggingTestBase
 {
