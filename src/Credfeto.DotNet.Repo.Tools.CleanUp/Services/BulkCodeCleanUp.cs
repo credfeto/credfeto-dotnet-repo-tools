@@ -330,7 +330,6 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
     private async ValueTask CleanupTransactSqlAsync(RepoContext repoContext, string sourceDirectory, CancellationToken cancellationToken)
     {
-        // TODO load options from editorconfig
         SqlScriptGeneratorOptions options = TSqlOptions.DefaultOptions;
 
         IReadOnlyList<string> sourceFiles = Directory.GetFiles(path: sourceDirectory, searchPattern: "*.sql", searchOption: SearchOption.AllDirectories);

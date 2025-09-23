@@ -550,21 +550,6 @@ public sealed class DependencyReducer : IDependencyReducer
         }
     }
 
-    // private static void WriteProgress(string message)
-    // {
-    //     Console.WriteLine(message);
-    // }
-    //
-    // private static void WriteSectionEnd(string message)
-    // {
-    //     Console.WriteLine("=== End " + message + " ===");
-    // }
-    //
-    // private static void WriteStatistics(string section, int value)
-    // {
-    //     Console.WriteLine($"{section}: {value}");
-    // }
-
     private static string? ExtractProjectFromReference(string reference)
     {
         // Validate input

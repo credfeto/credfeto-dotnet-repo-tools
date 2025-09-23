@@ -7,6 +7,4 @@ internal static class Repositories
 
     public const string GitHubSelfHttps = "https://github.com/credfeto/credfeto-dotnet-repo-tools";
     public const string GitHubSelfSsh = "git@github.com:credfeto/credfeto-dotnet-repo-tools.git";
-
-    // TODO: Add in Gitlab etc
 }

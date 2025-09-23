@@ -17,11 +17,6 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         this._logger = logger;
     }
 
-    [SuppressMessage(
-        category: "Meziantou.Analyzer",
-        checkId: "MA0051: Method is too long",
-        Justification = "TODO just comments"
-    )]
     public bool ReOrderPropertyGroups(XmlDocument projectDocument, string filename)
     {
         if (projectDocument.SelectSingleNode("Project") is not XmlElement project)
@@ -47,11 +42,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         return !StringComparer.Ordinal.Equals(x: before, y: after);
     }
 
-    [SuppressMessage(
-        category: "Meziantou.Analyzer",
-        checkId: "MA0051: Method is too long",
-        Justification = "TODO just comments"
-    )]
+    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Needs simplification")]
     public bool ReOrderIncludes(XmlDocument projectDocument, string filename)
     {
         if (projectDocument.SelectSingleNode("Project") is not XmlElement project)
@@ -82,7 +73,8 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
                 continue;
             }
 
-            if (itemGroup.ChildNodes.OfType<XmlNode>().Any(IsComment))
+            if (itemGroup.ChildNodes.OfType<XmlNode>()
+                         .Any(IsComment))
             {
                 this._logger.SkippingGroupWithComment(filename);
 
@@ -149,11 +141,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         return !StringComparer.Ordinal.Equals(x: before, y: after);
     }
 
-    private static void AppendReferences(
-        XmlDocument projectDocument,
-        Dictionary<string, XmlNode> source,
-        XmlElement project
-    )
+    private static void AppendReferences(XmlDocument projectDocument, Dictionary<string, XmlNode> source, XmlElement project)
     {
         if (source.Count == 0)
         {
@@ -162,12 +150,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
         XmlElement itemGroup = projectDocument.CreateElement("ItemGroup");
 
-        foreach (
-            (string _, XmlNode node) in source.OrderBy(
-                keySelector: x => x.Key,
-                comparer: StringComparer.OrdinalIgnoreCase
-            )
-        )
+        foreach ((string _, XmlNode node) in source.OrderBy(keySelector: x => x.Key, comparer: StringComparer.OrdinalIgnoreCase))
         {
             itemGroup.AppendChild(node);
         }
@@ -190,7 +173,8 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
     {
         IReadOnlyList<XmlElement> combinablePropertyGroups =
         [
-            .. propertyGroups.OfType<XmlElement>().Where(IsCombinableGroup),
+            .. propertyGroups.OfType<XmlElement>()
+                             .Where(IsCombinableGroup)
         ];
 
         XmlElement? targetPropertyGroup = combinablePropertyGroups.FirstOrDefault();
@@ -270,16 +254,13 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         return true;
     }
 
-    [SuppressMessage(
-        category: "Meziantou.Analyzer",
-        checkId: "MA0051: Method is too long",
-        Justification = "TODO just comments"
-    )]
+    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Should be simplified")]
     private void ReOrderPropertyGroupWithAttributesOrComments(string filename, XmlNodeList propertyGroups)
     {
         IReadOnlyList<XmlElement> nonCombinablePropertyGroups =
         [
-            .. propertyGroups.OfType<XmlElement>().Where(ph => !IsCombinableGroup(ph)),
+            .. propertyGroups.OfType<XmlElement>()
+                             .Where(ph => !IsCombinableGroup(ph))
         ];
 
         foreach (XmlElement propertyGroup in nonCombinablePropertyGroups)
@@ -294,7 +275,8 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
             XmlNodeList children = propertyGroup.ChildNodes;
 
-            if (children.OfType<XmlNode>().Any(IsComment))
+            if (children.OfType<XmlNode>()
+                        .Any(IsComment))
             {
                 this._logger.SkippingGroupWithComment(filename: filename);
 

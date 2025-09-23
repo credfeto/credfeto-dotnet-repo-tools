@@ -32,17 +32,7 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
         "PrivateFieldCanBeConvertedToLocalVariable",
     ];
 
-    // private const string linesToRemoveRegex = "(?<LinesToRemove>((\r\n){2,}))";
-    // private const string suppressMessageRegex = "(?<End>\\s+\\[(System\\.Diagnostics\\.CodeAnalysis\\.)?SuppressMessage)";
-    // private const string removeBlankLinesRegex = "(?ms)" + "(?<Start>(^((\\s+)///\\s+</(.*?)\\>)))" + linesToRemoveRegex + suppressMessageRegex;
-    //
-    // private const string removeBlankLines2Regex = "(?ms)" + "(?<Start>(^((\\s+)///\\s+<(.*?)/\\>)))" + linesToRemoveRegex + suppressMessageRegex;
-
-    private const RegexOptions REGEX_OPTIONS =
-        RegexOptions.Compiled
-        | RegexOptions.CultureInvariant
-        | RegexOptions.NonBacktracking
-        | RegexOptions.ExplicitCapture;
+    private const RegexOptions REGEX_OPTIONS = RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking | RegexOptions.ExplicitCapture;
     private static readonly TimeSpan RegexTimeSpan = TimeSpan.FromSeconds(1);
 
     public string Replace(string content)
@@ -55,13 +45,7 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
 
             string replacementText = BuildReplacementText(replacement);
 
-            source = Regex.Replace(
-                input: source,
-                pattern: regex,
-                replacement: replacementText,
-                options: REGEX_OPTIONS,
-                matchTimeout: RegexTimeSpan
-            );
+            source = Regex.Replace(input: source, pattern: regex, replacement: replacementText, options: REGEX_OPTIONS, matchTimeout: RegexTimeSpan);
         }
 
         return source;
@@ -69,9 +53,7 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
 
     private static string BuildReplacementText(string replacement)
     {
-        return "[System.Diagnostics.CodeAnalysis.SuppressMessage(\"ReSharper\", \""
-            + replacement
-            + "\", Justification=\"TODO: Review\")]";
+        return "[System.Diagnostics.CodeAnalysis.SuppressMessage(\"ReSharper\", \"" + replacement + "\", Justification=\"TODO: Review\")]";
     }
 
     private static string BuildRegex(string replacement)

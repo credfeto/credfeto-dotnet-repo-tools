@@ -479,11 +479,6 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             ++totalUpdates;
         }
 
-        // TODO
-        /*
-           updateLabel -baseFolder $targetRepo
-         */
-
         if (totalUpdates == 0)
         {
             // no updates in this run - so might be able to create a release

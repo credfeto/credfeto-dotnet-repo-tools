@@ -7,33 +7,16 @@ internal static partial class GitRepositoryLoggingExtensions
     [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Pushed {canonicalName}")]
     public static partial void LogPushedBranch(this ILogger logger, string canonicalName);
 
-    [LoggerMessage(
-        EventId = 2,
-        Level = LogLevel.Information,
-        Message = "Pushed {canonicalName} to {upstream} ({branchName})"
-    )]
-    public static partial void LogPushedBranchUpstream(
-        this ILogger logger,
-        string canonicalName,
-        string upstream,
-        string branchName
-    );
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Pushed {canonicalName} to {upstream} ({branchName})")]
+    public static partial void LogPushedBranchUpstream(this ILogger logger, string canonicalName, string upstream, string branchName);
 
     [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Deleting branch {branch} from local repo...")]
     public static partial void LogDeletingLocalBranch(this ILogger logger, string branch);
 
-    [LoggerMessage(
-        EventId = 4,
-        Level = LogLevel.Information,
-        Message = "Deleting branch {branch} from upstream {upstream}..."
-    )]
+    [LoggerMessage(EventId = 4, Level = LogLevel.Information, Message = "Deleting branch {branch} from upstream {upstream}...")]
     public static partial void LogDeletingUpstreamBranch(this ILogger logger, string branch, string upstream);
 
-    [LoggerMessage(
-        EventId = 5,
-        Level = LogLevel.Information,
-        Message = "Deleting branch {branch} is not upstream {upstream}..."
-    )]
+    [LoggerMessage(EventId = 5, Level = LogLevel.Information, Message = "Deleting branch {branch} is not upstream {upstream}...")]
     public static partial void LogSkippingDeleteOfUpstreamBranch(this ILogger logger, string branch, string upstream);
 
     [LoggerMessage(EventId = 6, Level = LogLevel.Information, Message = "{prefix} exit code: {exitCode}")]
@@ -42,10 +25,27 @@ internal static partial class GitRepositoryLoggingExtensions
     [LoggerMessage(EventId = 7, Level = LogLevel.Warning, Message = "{message}")]
     public static partial void LogGitMessage(this ILogger logger, string message);
 
-    [LoggerMessage(
-        EventId = 8,
-        Level = LogLevel.Information,
-        Message = "Found default branch {branch} for upstream {upstream}..."
-    )]
+    [LoggerMessage(EventId = 8, Level = LogLevel.Information, Message = "Found default branch {branch} for upstream {upstream}...")]
     public static partial void DefaultBranchForUpstream(this ILogger logger, string branch, string upstream);
+
+    [LoggerMessage(EventId = 9,
+                   Level = LogLevel.Warning,
+                   Message = "* [RemoveBranchesForPrefix] Matched (skip) Current Branch exact {branch} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})")]
+    public static partial void RemoveBranchesForPrefixMatchedSkipPrefix(this ILogger logger, string branch, string upstream, string branchPrefix, string branchForUpdate);
+
+    [LoggerMessage(EventId = 10,
+                   Level = LogLevel.Warning,
+                   Message =
+                       "* [RemoveBranchesForPrefix] Matched (Skip) Current Branch for update exact {branch} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})")]
+    public static partial void RemoveBranchesForPrefixMatchedExactSkip(this ILogger logger, string branch, string upstream, string branchPrefix, string branchForUpdate);
+
+    [LoggerMessage(EventId = 11,
+                   Level = LogLevel.Warning,
+                   Message = "* [RemoveBranchesForPrefix] Matched for update prefix {branch} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})")]
+    public static partial void RemoveBranchesForPrefixMatchedAlternate(this ILogger logger, string branch, string upstream, string branchPrefix, string branchForUpdate);
+
+    [LoggerMessage(EventId = 12,
+                   Level = LogLevel.Warning,
+                   Message = "* [RemoveBranchesForPrefix] No Match {branch} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})")]
+    public static partial void RemoveBranchesForPrefixNoMatch(this ILogger logger, string branch, string upstream, string branchPrefix, string branchForUpdate);
 }
