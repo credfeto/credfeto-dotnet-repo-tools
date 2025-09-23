@@ -11,6 +11,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dotnet 10
+- Dependencies - Updated FunFair.BuildCheck to 474.2.0.1862
 ### Removed
 ### Deployment Changes
 
