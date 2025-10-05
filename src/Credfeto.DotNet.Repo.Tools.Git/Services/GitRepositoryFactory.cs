@@ -136,12 +136,17 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
         CancellationToken cancellationToken
     )
     {
-        await GitCommandLine.ExecAsync(
+       (string[] output, int exitCode) =  await GitCommandLine.ExecAsync(
             clonePath: sourceUrl,
             repoPath: workdirPath,
             $"clone --recurse-submodules {sourceUrl} {destinationPath}",
             cancellationToken: cancellationToken
         );
+
+        if (exitCode != 0)
+        {
+            throw new GitException(string.Join(Environment.NewLine, output))
+        }
 
         return destinationPath;
     }
