@@ -265,6 +265,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Needs Review")]
     private async ValueTask ProcessRepoUpdatesAsync(PackageUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
+        DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(repoContext.WorkingDirectory, cancellationToken);
+
         DotNetFiles dotNetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
 
         if (!dotNetFiles.HasSolutionsAndProjects)
@@ -286,7 +288,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                         solutions: dotNetFiles.Solutions,
                                                                         sourceDirectory: dotNetFiles.SourceDirectory,
                                                                         buildSettings: buildSettings,
-                                                                        dotNetSettings: updateContext.DotNetSettings,
+                                                                        dotNetSettings: dotNetSettings,
                                                                         package: package,
                                                                         cancellationToken: cancellationToken);
 
@@ -302,7 +304,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             await this._releaseGeneration.TryCreateNextPatchAsync(repoContext: repoContext,
                                                                   basePath: dotNetFiles.SourceDirectory,
                                                                   buildSettings: buildSettings,
-                                                                  dotNetSettings: updateContext.DotNetSettings,
+                                                                  dotNetSettings: dotNetSettings,
                                                                   solutions: dotNetFiles.Solutions,
                                                                   packages: packages,
                                                                   releaseConfig: updateContext.ReleaseConfig,
