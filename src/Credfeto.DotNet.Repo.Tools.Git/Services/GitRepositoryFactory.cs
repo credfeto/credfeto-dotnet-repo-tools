@@ -145,7 +145,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
 
         if (exitCode != 0)
         {
-            throw new GitException(string.Join(Environment.NewLine, output))
+            throw new GitException(string.Join(Environment.NewLine, output));
         }
 
         return destinationPath;
