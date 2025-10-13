@@ -9,13 +9,16 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Fixing SDK version upgrade check
 ### Removed
 ### Deployment Changes
 
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.3.2] - 2025-10-13
+### Changed
+- Fixing SDK version upgrade check
+
 ## [1.3.1] - 2025-09-23
 ### Changed
 - Dependencies - Updated FunFair.BuildCheck to 474.2.1.1867
