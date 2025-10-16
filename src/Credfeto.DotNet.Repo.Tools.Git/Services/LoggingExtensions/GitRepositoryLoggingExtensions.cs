@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-
 namespace Credfeto.DotNet.Repo.Tools.Git.Services.LoggingExtensions;
 
 internal static partial class GitRepositoryLoggingExtensions
@@ -28,22 +26,26 @@ internal static partial class GitRepositoryLoggingExtensions
     [LoggerMessage(EventId = 8, Level = LogLevel.Information, Message = "Found default branch {branch} for upstream {upstream}...")]
     public static partial void DefaultBranchForUpstream(this ILogger logger, string branch, string upstream);
 
+    [Conditional("DEBUG")]
     [LoggerMessage(EventId = 9,
                    Level = LogLevel.Warning,
                    Message = "* [RemoveBranchesForPrefix] Matched (skip) Current Branch exact {branch} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})")]
     public static partial void RemoveBranchesForPrefixMatchedSkipPrefix(this ILogger logger, string branch, string upstream, string branchPrefix, string branchForUpdate);
 
+    [Conditional("DEBUG")]
     [LoggerMessage(EventId = 10,
                    Level = LogLevel.Warning,
                    Message =
                        "* [RemoveBranchesForPrefix] Matched (Skip) Current Branch for update exact {branch} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})")]
     public static partial void RemoveBranchesForPrefixMatchedExactSkip(this ILogger logger, string branch, string upstream, string branchPrefix, string branchForUpdate);
 
+    [Conditional("DEBUG")]
     [LoggerMessage(EventId = 11,
                    Level = LogLevel.Warning,
                    Message = "* [RemoveBranchesForPrefix] Matched for update prefix {branch} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})")]
     public static partial void RemoveBranchesForPrefixMatchedAlternate(this ILogger logger, string branch, string upstream, string branchPrefix, string branchForUpdate);
 
+    [Conditional("DEBUG")]
     [LoggerMessage(EventId = 12,
                    Level = LogLevel.Warning,
                    Message = "* [RemoveBranchesForPrefix] No Match {branch} (branchPrefix: [{upstream}/]{branchPrefix}, branchForUpdate: [{upstream}/]{branchForUpdate})")]
