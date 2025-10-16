@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+
 namespace Credfeto.DotNet.Repo.Tools.Git.Services.LoggingExtensions;
 
 internal static partial class GitRepositoryLoggingExtensions
