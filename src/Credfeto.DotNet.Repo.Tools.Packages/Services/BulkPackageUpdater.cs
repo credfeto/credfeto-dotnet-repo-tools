@@ -265,8 +265,6 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Needs Review")]
     private async ValueTask ProcessRepoUpdatesAsync(PackageUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
-        DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(repoContext.WorkingDirectory, cancellationToken);
-
         DotNetFiles dotNetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
 
         if (!dotNetFiles.HasSolutionsAndProjects)
@@ -276,6 +274,8 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
             return;
         }
+
+        DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(repoContext.WorkingDirectory, cancellationToken);
 
         BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: dotNetFiles.Projects, cancellationToken: cancellationToken);
 

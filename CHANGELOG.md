@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
+- Moved repo setting load for global.json till after its determined that the repo hasn't got any dotnet files
 ### Changed
 ### Removed
 ### Deployment Changes
