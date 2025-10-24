@@ -56,6 +56,11 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
                                              PackageUpdate package,
                                              CancellationToken cancellationToken)
     {
+        if (repoContext.Repository.HasUncommittedChanges())
+        {
+            await repoContext.Repository.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
+        }
+
         await this.RequireSolutionBuildsBeforeUpdateAsync(updateContext: updateContext,
                                                           repoContext: repoContext,
                                                           solutions: solutions,
@@ -64,17 +69,17 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
                                                           dotNetSettings: dotNetSettings,
                                                           cancellationToken: cancellationToken);
 
-        IReadOnlyList<PackageVersion> updatesMade = await this.UpdatePackagesAsync(updateContext: updateContext, repoContext: repoContext, package: package, cancellationToken: cancellationToken);
-
-        if (updatesMade is [])
-        {
-            await RemoveExistingBranchesForPackageAsync(repoContext: repoContext, package: package, cancellationToken: cancellationToken);
-
-            return false;
-        }
-
         try
         {
+            IReadOnlyList<PackageVersion> updatesMade = await this.UpdatePackagesAsync(updateContext: updateContext, repoContext: repoContext, package: package, cancellationToken: cancellationToken);
+
+            if (updatesMade is [])
+            {
+                await RemoveExistingBranchesForPackageAsync(repoContext: repoContext, package: package, cancellationToken: cancellationToken);
+
+                return false;
+            }
+
             await this.OnPackageUpdateAsync(updateContext: updateContext,
                                             repoContext: repoContext,
                                             solutions: solutions,
