@@ -58,11 +58,13 @@ internal sealed class GitRepository : IGitRepository
 
         await this.CleanRepoAsync(cancellationToken: cancellationToken);
 
-        await this.CheckoutAsync(branchName: defaultBranch, cancellationToken: cancellationToken);
+        await this.SwitchBranchAsync(branchName: defaultBranch, cancellationToken: cancellationToken);
 
         await this.ResetHeadHardAsync(cancellationToken);
 
         await this.CleanRepoAsync(cancellationToken: cancellationToken);
+
+        await this.FetchRemoteAsync(upstream: upstream, cancellationToken: cancellationToken);
 
         // # NOTE Loses all local commits on master
         // & git -C $repoPath reset --hard $upstreamBranch 2>&1 | Out-Null
@@ -434,17 +436,13 @@ internal sealed class GitRepository : IGitRepository
         return string.Concat(str0: upstream, str1: "/", str2: branch);
     }
 
-    public async ValueTask CheckoutAsync(string branchName, CancellationToken cancellationToken)
+    public async ValueTask SwitchBranchAsync(string branchName, CancellationToken cancellationToken)
     {
         this.ResetActiveRepoLink();
 
         try
         {
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
-                clonePath: this.ClonePath,
-                repoPath: this.WorkingDirectory,
-                $"checkout {branchName}",
-                cancellationToken: cancellationToken);
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, $"switch {branchName}", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
@@ -479,7 +477,8 @@ internal sealed class GitRepository : IGitRepository
     {
         try
         {
-            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, arguments: "prune", cancellationToken: cancellationToken);
+            (string[] result, int exitCode) =
+                await GitCommandLine.ExecAsync(clonePath: this.ClonePath, repoPath: this.WorkingDirectory, arguments: "prune --verbose", cancellationToken: cancellationToken);
 
             if (exitCode != 0)
             {
