@@ -9,12 +9,12 @@ public static class CleanUpSetup
 {
     public static IServiceCollection AddCleanUp(this IServiceCollection services)
     {
-        return services
-            .AddSingleton<IBulkCodeCleanUp, BulkCodeCleanUp>()
-            .AddSingleton<IProjectXmlRewriter, ProjectXmlRewriter>()
-            .AddSingleton<ISourceFileReformatter, SourceFileReformatter>()
-            .AddSingleton<IXmlDocCommentRemover, XmlDocCommentRemover>()
-            .AddSingleton<IResharperSuppressionToSuppressMessage, ResharperSuppressionToSuppressMessage>()
-            .AddTransactSqlFormatting();
+        return services.AddSingleton<IBulkCodeCleanUp, BulkCodeCleanUp>()
+                       .AddSingleton<IProjectXmlRewriter, ProjectXmlRewriter>()
+                       .AddSingleton<ISourceFileReformatter, SourceFileReformatter>()
+                       .AddSingleton<IXmlDocCommentRemover, XmlDocCommentRemover>()
+                       .AddSingleton<IResharperSuppressionToSuppressMessage, ResharperSuppressionToSuppressMessage>()
+                       .AddSingleton<ISourceFileSuppressionRemover, SourceFileSuppressionRemover>()
+                       .AddTransactSqlFormatting();
     }
 }
