@@ -374,11 +374,17 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                                                        in BuildSettings buildSettings,
                                                        in CancellationToken cancellationToken)
     {
+        BuildContext buildContext = new(SourceDirectory: sourceDirectory, BuildSettings: buildSettings, new(PreRelease: true));
+
         return this.FileCleanupAsync(repoContext: repoContext,
                                      sourceDirectory: sourceDirectory,
                                      sourceFiles: sourceFiles,
                                      buildSettings: buildSettings,
-                                     asyncCleanup: this._sourceFileSuppressionRemover.RemoveSuppressionsAsync,
+                                     asyncCleanup: (fileName, content, ct) =>
+                                                       this._sourceFileSuppressionRemover.RemoveSuppressionsAsync(fileName: fileName,
+                                                                                                                  content: content,
+                                                                                                                  buildContext: buildContext,
+                                                                                                                  cancellationToken: ct),
                                      cancellationToken: cancellationToken);
     }
 
