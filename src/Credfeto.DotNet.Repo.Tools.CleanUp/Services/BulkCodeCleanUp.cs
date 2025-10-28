@@ -37,6 +37,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     private readonly IReleaseConfigLoader _releaseConfigLoader;
     private readonly IResharperSuppressionToSuppressMessage _resharperSuppressionToSuppressMessage;
     private readonly ISourceFileReformatter _sourceFileReformatter;
+    private readonly ISourceFileSuppressionRemover _sourceFileSuppressionRemover;
     private readonly ITrackingCache _trackingCache;
     private readonly ITransactSqlFormatter _tsqlFormatter;
 
@@ -52,6 +53,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                            ISourceFileReformatter sourceFileReformatter,
                            IXmlDocCommentRemover xmlDocCommentRemover,
                            IResharperSuppressionToSuppressMessage resharperSuppressionToSuppressMessage,
+                           ISourceFileSuppressionRemover sourceFileSuppressionRemover,
                            ITransactSqlFormatter tsqlFormatter,
                            IDotNetBuild dotNetBuild,
                            ILogger<BulkCodeCleanUp> logger)
@@ -66,6 +68,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         this._sourceFileReformatter = sourceFileReformatter;
         this._xmlDocCommentRemover = xmlDocCommentRemover;
         this._resharperSuppressionToSuppressMessage = resharperSuppressionToSuppressMessage;
+        this._sourceFileSuppressionRemover = sourceFileSuppressionRemover;
         this._dotNetBuild = dotNetBuild;
         this._logger = logger;
         this._tsqlFormatter = tsqlFormatter;
@@ -325,6 +328,11 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                                                                                buildSettings: buildSettings,
                                                                                cancellationToken: cancellationToken);
         await this.RemoveXmlDocCommentsAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, sourceFiles: sourceFiles, buildSettings: buildSettings, cancellationToken: cancellationToken);
+        await this.RemoveRedundantSuppressionsAsync(repoContext: repoContext,
+                                                    sourceDirectory: sourceDirectory,
+                                                    sourceFiles: sourceFiles,
+                                                    buildSettings: buildSettings,
+                                                    cancellationToken: cancellationToken);
         await this.ReformatCSharpAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, sourceFiles: sourceFiles, buildSettings: buildSettings, cancellationToken: cancellationToken);
     }
 
@@ -358,6 +366,20 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             await repoContext.Repository.CommitAsync($"Cleanup: {sourceFileName}", cancellationToken: cancellationToken);
             await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
         }
+    }
+
+    private ValueTask RemoveRedundantSuppressionsAsync(in RepoContext repoContext,
+                                                       string sourceDirectory,
+                                                       IReadOnlyList<string> sourceFiles,
+                                                       in BuildSettings buildSettings,
+                                                       in CancellationToken cancellationToken)
+    {
+        return this.FileCleanupAsync(repoContext: repoContext,
+                                     sourceDirectory: sourceDirectory,
+                                     sourceFiles: sourceFiles,
+                                     buildSettings: buildSettings,
+                                     asyncCleanup: this._sourceFileSuppressionRemover.RemoveSuppressionsAsync,
+                                     cancellationToken: cancellationToken);
     }
 
     private ValueTask RemoveXmlDocCommentsAsync(in RepoContext repoContext,
