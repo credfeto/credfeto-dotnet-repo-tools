@@ -446,8 +446,8 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
                     if (StringComparer.Ordinal.Equals(x: updateContext.DotNetSettings.SdkVersion, y: repoDotNetSettings.SdkVersion))
                     {
-                        BuildOverride buildOverride = new(PreRelease: true);
-                        await this._dotNetBuild.BuildAsync(basePath: dotNetFiles.SourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+                        BuildContext buildContext = new(SourceDirectory: dotNetFiles.SourceDirectory, BuildSettings: buildSettings, new(PreRelease: true));
+                        await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
 
                         lastKnownGoodBuild = repoContext.Repository.HeadRev;
                         await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
@@ -734,14 +734,13 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         try
         {
-            BuildOverride buildOverride = new(PreRelease: true);
-
+            BuildContext buildContext = new(SourceDirectory: dotNetFiles.SourceDirectory, BuildSettings: buildSettings, new(PreRelease: true));
             await this._dotNetSolutionCheck.PreCheckAsync(solutions: dotNetFiles.Solutions,
                                                           repositoryDotNetSettings: updateContext.DotNetSettings,
                                                           templateDotNetSettings: updateContext.DotNetSettings,
                                                           cancellationToken: cancellationToken);
 
-            await this._dotNetBuild.BuildAsync(basePath: dotNetFiles.SourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+            await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
 
             return true;
         }

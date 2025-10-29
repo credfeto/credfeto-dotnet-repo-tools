@@ -29,6 +29,7 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
 
         string successfulBuild = content;
 
+        // go from the last match backwards to ensure that the positions always match
         foreach (Match match in matches.Reverse())
         {
             string before = successfulBuild[..match.Index];
@@ -41,25 +42,23 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
 
             try
             {
-                await this._dotNetBuild.BuildAsync(basePath: buildContext.SourceDirectory,
-                                                   buildSettings: buildContext.BuildSettings,
-                                                   buildOverride: buildContext.BuildOverride,
-                                                   cancellationToken: cancellationToken);
+                await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
                 successfulBuild = before + after;
             }
             catch (Exception exception)
             {
+                // Revert to the last successful build
+                await File.WriteAllTextAsync(path: fileName, contents: successfulBuild, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
+
                 // build failed without this suppression so skip it.
                 this._logger.LogDebug(exception: exception, message: "Failed to build");
                 Debug.WriteLine(exception.Message);
             }
         }
 
-        await Task.Delay(millisecondsDelay: 1, cancellationToken: cancellationToken);
-
         return content;
     }
 
-    [GeneratedRegex(pattern: "\\[SuppressMessage\\(.*\\)\\]", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline, matchTimeoutMilliseconds: 5000)]
+    [GeneratedRegex(pattern: "\\[SuppressMessage\\(.*?\\)\\]", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline, matchTimeoutMilliseconds: 5000)]
     private static partial Regex SuppressMessages();
 }

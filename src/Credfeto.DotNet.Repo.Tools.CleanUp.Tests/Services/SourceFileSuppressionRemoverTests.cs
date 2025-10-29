@@ -1,7 +1,9 @@
+using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 using FunFair.Test.Common;
+using NSubstitute;
 using Xunit;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests.Services;
@@ -39,10 +41,24 @@ public static class Test {
         string actual = await this._sourceFileSuppressionRemover.RemoveSuppressionsAsync(fileName: "example.txt", content: source, buildContext: this._buildContext, this.CancellationToken());
 
         Assert.Equal(expected: source, actual: actual);
+
+        await this.DidNotReceiveBuildAsync();
+    }
+
+    private ValueTask ReceivedBuildAsync(int times)
+    {
+        return this._dotNetBuild.Received(times)
+                   .BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
+    }
+
+    private ValueTask DidNotReceiveBuildAsync()
+    {
+        return this._dotNetBuild.DidNotReceive()
+                   .BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task OneSuppressionShouldBeRemovedAsync()
+    public async Task OneSuppressionShouldBeRemovedIfBuildSucceedsAsync()
     {
         const string source = @"
 using System.Diagnostics;
@@ -74,5 +90,7 @@ public static class Test {
         string actual = await this._sourceFileSuppressionRemover.RemoveSuppressionsAsync(fileName: "example.txt", content: source, buildContext: this._buildContext, this.CancellationToken());
 
         Assert.Equal(expected: expected, actual: actual);
+
+        await this.ReceivedBuildAsync(1);
     }
 }
