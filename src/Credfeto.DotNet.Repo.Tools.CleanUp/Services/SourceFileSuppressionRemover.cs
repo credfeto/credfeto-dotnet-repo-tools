@@ -43,7 +43,7 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
             }
             catch (Exception exception)
             {
-                // Revert to the last successful build
+                // Revert to the last successful build on disk
                 await File.WriteAllTextAsync(path: fileName, contents: successfulBuild, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
 
                 // build failed without this suppression, so skip it.
@@ -66,6 +66,8 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
         return testSource;
     }
 
-    [GeneratedRegex(pattern: "\\[\\s*SuppressMessage\\(.*?\\)\\s*\\]", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline, matchTimeoutMilliseconds: 5000)]
+    [GeneratedRegex(pattern: "\\[\\s*(assembly:)?\\s*SuppressMessage\\(.*?\\)\\s*\\]",
+                    RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline | RegexOptions.ExplicitCapture,
+                    matchTimeoutMilliseconds: 5000)]
     private static partial Regex SuppressMessages();
 }
