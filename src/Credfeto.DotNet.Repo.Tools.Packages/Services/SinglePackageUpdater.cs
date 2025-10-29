@@ -115,13 +115,13 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
             return;
         }
 
-        BuildOverride buildOverride = new(PreRelease: true);
+        BuildContext buildContext = new(SourceDirectory: sourceDirectory, BuildSettings: buildSettings, new(PreRelease: true));
         await this._dotNetSolutionCheck.PreCheckAsync(solutions: solutions,
                                                       repositoryDotNetSettings: dotNetSettings,
                                                       templateDotNetSettings: updateContext.DotNetSettings,
                                                       cancellationToken: cancellationToken);
 
-        await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+        await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
 
         await this.UpdateTrackingHashAsync(repoContext: repoContext, updateContext: updateContext, cancellationToken: cancellationToken);
     }
@@ -283,8 +283,8 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
 
             if (checkOk)
             {
-                BuildOverride buildOverride = new(PreRelease: true);
-                await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+                BuildContext buildContext = new(SourceDirectory: sourceDirectory, BuildSettings: buildSettings, new(PreRelease: true));
+                await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
 
                 return true;
             }

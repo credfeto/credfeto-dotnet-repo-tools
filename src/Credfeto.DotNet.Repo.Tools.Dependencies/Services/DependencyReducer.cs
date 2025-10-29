@@ -519,11 +519,7 @@ public sealed class DependencyReducer : IDependencyReducer
         try
         {
             // $results = dotnet build $FileName -warnAsError -nodeReuse:False /p:SolutionDir=$solutionDirectory
-            await this._dotNetBuild.BuildAsync(projectFileName: projectUpdateContext.Project,
-                                               basePath: projectUpdateContext.SourceDirectory,
-                                               buildSettings: projectUpdateContext.BuildSettings,
-                                               buildOverride: projectUpdateContext.BuildOverride,
-                                               cancellationToken: cancellationToken);
+            await this._dotNetBuild.BuildAsync(projectFileName: projectUpdateContext.Project, buildContext: projectUpdateContext.BuildContext, cancellationToken: cancellationToken);
 
             return true;
         }
@@ -537,10 +533,7 @@ public sealed class DependencyReducer : IDependencyReducer
     {
         try
         {
-            await this._dotNetBuild.BuildAsync(basePath: projectUpdateContext.SourceDirectory,
-                                               buildSettings: projectUpdateContext.BuildSettings,
-                                               buildOverride: projectUpdateContext.BuildOverride,
-                                               cancellationToken: cancellationToken);
+            await this._dotNetBuild.BuildAsync(buildContext: projectUpdateContext.BuildContext, cancellationToken: cancellationToken);
 
             return true;
         }
@@ -806,7 +799,10 @@ public sealed class DependencyReducer : IDependencyReducer
         string Project,
         BuildSettings BuildSettings,
         BuildOverride BuildOverride,
-        DependencyTracking Tracking);
+        DependencyTracking Tracking)
+    {
+        public BuildContext BuildContext => new(SourceDirectory: this.SourceDirectory, BuildSettings: this.BuildSettings, BuildOverride: this.BuildOverride);
+    }
 
     private sealed class FileContent
     {

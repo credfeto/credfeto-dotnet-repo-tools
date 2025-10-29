@@ -37,6 +37,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     private readonly IReleaseConfigLoader _releaseConfigLoader;
     private readonly IResharperSuppressionToSuppressMessage _resharperSuppressionToSuppressMessage;
     private readonly ISourceFileReformatter _sourceFileReformatter;
+    private readonly ISourceFileSuppressionRemover _sourceFileSuppressionRemover;
     private readonly ITrackingCache _trackingCache;
     private readonly ITransactSqlFormatter _tsqlFormatter;
 
@@ -52,6 +53,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                            ISourceFileReformatter sourceFileReformatter,
                            IXmlDocCommentRemover xmlDocCommentRemover,
                            IResharperSuppressionToSuppressMessage resharperSuppressionToSuppressMessage,
+                           ISourceFileSuppressionRemover sourceFileSuppressionRemover,
                            ITransactSqlFormatter tsqlFormatter,
                            IDotNetBuild dotNetBuild,
                            ILogger<BulkCodeCleanUp> logger)
@@ -66,6 +68,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         this._sourceFileReformatter = sourceFileReformatter;
         this._xmlDocCommentRemover = xmlDocCommentRemover;
         this._resharperSuppressionToSuppressMessage = resharperSuppressionToSuppressMessage;
+        this._sourceFileSuppressionRemover = sourceFileSuppressionRemover;
         this._dotNetBuild = dotNetBuild;
         this._logger = logger;
         this._tsqlFormatter = tsqlFormatter;
@@ -242,9 +245,9 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             return;
         }
 
-        BuildOverride buildOverride = new(PreRelease: true);
+        BuildContext buildContext = new(SourceDirectory: sourceDirectory, BuildSettings: buildSettings, new(PreRelease: true));
 
-        await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+        await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
 
         bool lastBuildFailed = false;
 
@@ -254,7 +257,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             {
                 try
                 {
-                    await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+                    await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
                     lastBuildFailed = false;
                 }
                 catch (DotNetBuildErrorException)
@@ -280,25 +283,15 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
             string sourceFileName = Path.GetFileName(sourceFile);
 
-            lastBuildFailed = await this.TestBuildAndCommitIfCleanAsync(repoContext: repoContext,
-                                                                        sourceDirectory: sourceDirectory,
-                                                                        buildSettings: buildSettings,
-                                                                        buildOverride: buildOverride,
-                                                                        sourceFileName: sourceFileName,
-                                                                        cancellationToken: cancellationToken);
+            lastBuildFailed = await this.TestBuildAndCommitIfCleanAsync(repoContext: repoContext, buildContext: buildContext, sourceFileName: sourceFileName, cancellationToken: cancellationToken);
         }
     }
 
-    private async ValueTask<bool> TestBuildAndCommitIfCleanAsync(RepoContext repoContext,
-                                                                 string sourceDirectory,
-                                                                 BuildSettings buildSettings,
-                                                                 BuildOverride buildOverride,
-                                                                 string sourceFileName,
-                                                                 CancellationToken cancellationToken)
+    private async ValueTask<bool> TestBuildAndCommitIfCleanAsync(RepoContext repoContext, BuildContext buildContext, string sourceFileName, CancellationToken cancellationToken)
     {
         try
         {
-            await this._dotNetBuild.BuildAsync(basePath: sourceDirectory, buildSettings: buildSettings, buildOverride: buildOverride, cancellationToken: cancellationToken);
+            await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
 
             await repoContext.Repository.CommitAsync($"Cleanup: {sourceFileName}", cancellationToken: cancellationToken);
             await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
@@ -325,6 +318,11 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                                                                                buildSettings: buildSettings,
                                                                                cancellationToken: cancellationToken);
         await this.RemoveXmlDocCommentsAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, sourceFiles: sourceFiles, buildSettings: buildSettings, cancellationToken: cancellationToken);
+        await this.RemoveRedundantSuppressionsAsync(repoContext: repoContext,
+                                                    sourceDirectory: sourceDirectory,
+                                                    sourceFiles: sourceFiles,
+                                                    buildSettings: buildSettings,
+                                                    cancellationToken: cancellationToken);
         await this.ReformatCSharpAsync(repoContext: repoContext, sourceDirectory: sourceDirectory, sourceFiles: sourceFiles, buildSettings: buildSettings, cancellationToken: cancellationToken);
     }
 
@@ -358,6 +356,26 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             await repoContext.Repository.CommitAsync($"Cleanup: {sourceFileName}", cancellationToken: cancellationToken);
             await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
         }
+    }
+
+    private ValueTask RemoveRedundantSuppressionsAsync(in RepoContext repoContext,
+                                                       string sourceDirectory,
+                                                       IReadOnlyList<string> sourceFiles,
+                                                       in BuildSettings buildSettings,
+                                                       in CancellationToken cancellationToken)
+    {
+        BuildContext buildContext = new(SourceDirectory: sourceDirectory, BuildSettings: buildSettings, new(PreRelease: true));
+
+        return this.FileCleanupAsync(repoContext: repoContext,
+                                     sourceDirectory: sourceDirectory,
+                                     sourceFiles: sourceFiles,
+                                     buildSettings: buildSettings,
+                                     asyncCleanup: (fileName, content, ct) =>
+                                                       this._sourceFileSuppressionRemover.RemoveSuppressionsAsync(fileName: fileName,
+                                                                                                                  content: content,
+                                                                                                                  buildContext: buildContext,
+                                                                                                                  cancellationToken: ct),
+                                     cancellationToken: cancellationToken);
     }
 
     private ValueTask RemoveXmlDocCommentsAsync(in RepoContext repoContext,
