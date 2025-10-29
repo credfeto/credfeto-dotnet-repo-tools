@@ -50,7 +50,7 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
                 // Revert to the last successful build
                 await File.WriteAllTextAsync(path: fileName, contents: successfulBuild, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
 
-                // build failed without this suppression so skip it.
+                // build failed without this suppression, so skip it.
                 this._logger.LogDebug(exception: exception, message: "Failed to build");
                 Debug.WriteLine(exception.Message);
             }
