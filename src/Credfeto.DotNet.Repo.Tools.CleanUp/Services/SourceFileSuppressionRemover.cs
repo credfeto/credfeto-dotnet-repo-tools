@@ -32,18 +32,14 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
         // go from the last match backwards to ensure that the positions always match
         foreach (Match match in matches.Reverse())
         {
-            string before = successfulBuild[..match.Index];
-            int endPos = match.Index + match.Length;
-            string after = successfulBuild[endPos..];
-
-            string testSource = before + after;
+            string testSource = RemoveSuppressionFromMatch(match: match, source: successfulBuild);
 
             await File.WriteAllTextAsync(path: fileName, contents: testSource, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
 
             try
             {
                 await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
-                successfulBuild = before + after;
+                successfulBuild = testSource;
             }
             catch (Exception exception)
             {
@@ -57,6 +53,17 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
         }
 
         return content;
+    }
+
+    private static string RemoveSuppressionFromMatch(Match match, string source)
+    {
+        string before = source[..match.Index];
+        int endPos = match.Index + match.Length;
+        string after = source[endPos..];
+
+        string testSource = before + after;
+
+        return testSource;
     }
 
     [GeneratedRegex(pattern: "\\[SuppressMessage\\(.*?\\)\\]", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline, matchTimeoutMilliseconds: 5000)]

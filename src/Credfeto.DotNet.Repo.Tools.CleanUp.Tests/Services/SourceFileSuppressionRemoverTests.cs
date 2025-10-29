@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
@@ -8,7 +10,7 @@ using Xunit;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests.Services;
 
-public sealed class SourceFileSuppressionRemoverTests : IntegrationTestBase
+public sealed class SourceFileSuppressionRemoverTests : LoggingFolderCleanupTestBase
 {
     private readonly BuildContext _buildContext;
     private readonly IDotNetBuild _dotNetBuild;
@@ -38,7 +40,7 @@ public static class Test {
 }
 ";
 
-        string actual = await this._sourceFileSuppressionRemover.RemoveSuppressionsAsync(fileName: "example.txt", content: source, buildContext: this._buildContext, this.CancellationToken());
+        string actual = await this.CleanupAsync(source);
 
         Assert.Equal(expected: source, actual: actual);
 
@@ -81,16 +83,35 @@ namespace Test;
 
 public static class Test {
 
+
     public static void DoesNothing() {
           // Example
     }
 }
 ";
 
-        string actual = await this._sourceFileSuppressionRemover.RemoveSuppressionsAsync(fileName: "example.txt", content: source, buildContext: this._buildContext, this.CancellationToken());
+        this.MockSuccessfulBuild();
+
+        string actual = await this.CleanupAsync(source);
 
         Assert.Equal(expected: expected, actual: actual);
 
         await this.ReceivedBuildAsync(1);
+    }
+
+    [SuppressMessage(category: "Microsoft.Design", checkId: "CA2012: Should be awaited", Justification = "Mocking not executing")]
+    private void MockSuccessfulBuild()
+    {
+        _ = this._dotNetBuild.BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>())
+                .Returns(ValueTask.CompletedTask);
+    }
+
+    private async Task<string> CleanupAsync(string source)
+    {
+        string fileName = Path.Combine(path1: this.TempFolder, path2: "example.cs");
+
+        string actual = await this._sourceFileSuppressionRemover.RemoveSuppressionsAsync(fileName: fileName, content: source, buildContext: this._buildContext, this.CancellationToken());
+
+        return actual;
     }
 }
