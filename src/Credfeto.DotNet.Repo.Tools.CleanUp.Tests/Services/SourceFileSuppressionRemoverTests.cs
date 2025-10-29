@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -99,11 +98,11 @@ public static class Test {
         await this.ReceivedBuildAsync(1);
     }
 
-    [SuppressMessage(category: "Microsoft.Design", checkId: "CA2012: Should be awaited", Justification = "Mocking not executing")]
+    // [SuppressMessage(category: "Microsoft.Design", checkId: "CA2012: Should be awaited", Justification = "Mocking not executing")]
     private void MockSuccessfulBuild()
     {
-        _ = this._dotNetBuild.BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>())
-                .Returns(ValueTask.CompletedTask);
+        this._dotNetBuild.When(async x => await x.BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>()))
+            .Do(_ => { });
     }
 
     private async Task<string> CleanupAsync(string source)

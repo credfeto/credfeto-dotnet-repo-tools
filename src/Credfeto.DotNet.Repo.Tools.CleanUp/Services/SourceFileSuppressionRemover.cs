@@ -52,7 +52,7 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
             }
         }
 
-        return content;
+        return successfulBuild;
     }
 
     private static string RemoveSuppressionFromMatch(Match match, string source)
@@ -66,6 +66,6 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
         return testSource;
     }
 
-    [GeneratedRegex(pattern: "\\[SuppressMessage\\(.*?\\)\\]", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline, matchTimeoutMilliseconds: 5000)]
+    [GeneratedRegex(pattern: "\\[\\s*SuppressMessage\\(.*?\\)\\s*\\]", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline, matchTimeoutMilliseconds: 5000)]
     private static partial Regex SuppressMessages();
 }
