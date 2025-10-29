@@ -7,7 +7,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
-- Cleanup support for removing now redundant SuppressMessage attributes
 ### Fixed
 ### Changed
 ### Removed
@@ -16,6 +15,10 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.4.0] - 2025-10-29
+### Added
+- Cleanup support for removing now redundant SuppressMessage attributes
+
 ## [1.3.3] - 2025-10-23
 ### Fixed
 - Moved repo setting load for global.json till after its determined that the repo hasn't got any dotnet files
