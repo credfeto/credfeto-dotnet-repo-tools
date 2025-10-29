@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -7,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
+using Credfeto.DotNet.Repo.Tools.CleanUp.Services.LoggingExtensions;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
@@ -46,9 +46,8 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
                 // Revert to the last successful build on disk
                 await File.WriteAllTextAsync(path: fileName, contents: successfulBuild, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
 
-                // build failed without this suppression, so skip it.
-                this._logger.LogDebug(exception: exception, message: "Failed to build");
-                Debug.WriteLine(exception.Message);
+                // build failed without this suppression, so skip it the revert
+                this._logger.FailedToBuild(filename: fileName, message: exception.Message, exception: exception);
             }
         }
 
