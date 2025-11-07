@@ -511,24 +511,19 @@ public sealed class DotNetBuild : IDotNetBuild
         }
 
         IReadOnlyList<RuleChange> changes = await ChangeSet.LoadAsync(rulesetOverridesFileName, cancellationToken);
-
-        if (changes is [])
+        if (changes is not [])
         {
-            return null;
+            XmlDocument ruleSet = await RuleSet.LoadAsync(rulesetFileName);
+            if (this.ApplyChanges(ruleSet: ruleSet, changes: changes))
+            {
+                byte[] originalContents = await File.ReadAllBytesAsync(path: rulesetFileName, cancellationToken: cancellationToken);
+                await RuleSet.SaveAsync(rulesetFileName, ruleSet);
+
+                return new FileRestorer(rulesetFileName, originalContents);
+            }
         }
 
-        byte[] originalContents = await File.ReadAllBytesAsync(path: rulesetFileName, cancellationToken: cancellationToken);
-
-        XmlDocument ruleSet = await RuleSet.LoadAsync(rulesetFileName);
-
-        if (!this.ApplyChanges(ruleSet: ruleSet, changes: changes))
-        {
-            return null;
-        }
-
-        await RuleSet.SaveAsync(rulesetFileName, ruleSet);
-
-        return new FileRestorer(rulesetFileName, originalContents);
+        return null;
     }
 
     private sealed class FileRestorer : IAsyncDisposable
