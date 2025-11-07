@@ -48,4 +48,11 @@ internal static partial class DotNetBuildLoggingExtensions
 
     [LoggerMessage(EventId = 15, Level = LogLevel.Warning, Message = "{project} is publishable")]
     public static partial void LogProjectIsPublishable(this ILogger<DotNetBuild> logger, string project);
+
+    [LoggerMessage(EventId = 16, Level = LogLevel.Warning, Message = "No changes in code analysis overrides {fileName}")]
+    public static partial void NoChangesInFile(this ILogger<DotNetBuild> logger, string fileName);
+
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Changing {ruleSet}/{rule} to {state}")]
+    public static partial void ChangingState(this ILogger<DotNetBuild> logger, string ruleSet, string rule, string state);
+
 }

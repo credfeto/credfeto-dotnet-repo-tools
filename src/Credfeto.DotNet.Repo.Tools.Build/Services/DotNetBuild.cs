@@ -1,10 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using Credfeto.DotNet.Code.Analysis.Overrides;
+using Credfeto.DotNet.Code.Analysis.Overrides.Helpers;
+using Credfeto.DotNet.Code.Analysis.Overrides.Models;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Build.Services.LoggingExtensions;
@@ -55,30 +60,33 @@ public sealed class DotNetBuild : IDotNetBuild
 
         await this.StopBuildServerAsync(buildContext: buildContext, cancellationToken: cancellationToken);
 
-        try
+        await using (await this.SetCodeAnalysisConfigAsync(buildContext: buildContext, cancellationToken: cancellationToken))
         {
-            await this.DotNetCleanAsync(buildContext: buildContext, cancellationToken: cancellationToken);
-
-            await this.DotNetRestoreAsync(buildContext: buildContext, cancellationToken: cancellationToken);
-
-            await this.DotNetBuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
-
-            await this.DotNetTestAsync(buildContext: buildContext, cancellationToken: cancellationToken);
-
-            if (buildContext.BuildSettings.Packable)
+            try
             {
-                await this.DotNetPackAsync(buildContext: buildContext, cancellationToken: cancellationToken);
-            }
+                await this.DotNetCleanAsync(buildContext: buildContext, cancellationToken: cancellationToken);
 
-            if (buildContext.BuildSettings.Publishable)
-            {
-                string? framework = buildContext.BuildSettings.Framework;
-                await this.DotNetPublishAsync(buildContext: buildContext, framework: framework, cancellationToken: cancellationToken);
+                await this.DotNetRestoreAsync(buildContext: buildContext, cancellationToken: cancellationToken);
+
+                await this.DotNetBuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
+
+                await this.DotNetTestAsync(buildContext: buildContext, cancellationToken: cancellationToken);
+
+                if (buildContext.BuildSettings.Packable)
+                {
+                    await this.DotNetPackAsync(buildContext: buildContext, cancellationToken: cancellationToken);
+                }
+
+                if (buildContext.BuildSettings.Publishable)
+                {
+                    string? framework = buildContext.BuildSettings.Framework;
+                    await this.DotNetPublishAsync(buildContext: buildContext, framework: framework, cancellationToken: cancellationToken);
+                }
             }
-        }
-        finally
-        {
-            await this.StopBuildServerAsync(buildContext: buildContext, cancellationToken: cancellationToken);
+            finally
+            {
+                await this.StopBuildServerAsync(buildContext: buildContext, cancellationToken: cancellationToken);
+            }
         }
     }
 
@@ -88,24 +96,27 @@ public sealed class DotNetBuild : IDotNetBuild
 
         await this.StopBuildServerAsync(buildContext: buildContext, cancellationToken: cancellationToken);
 
-        try
+        await using (await this.SetCodeAnalysisConfigAsync(buildContext: buildContext, cancellationToken: cancellationToken))
         {
-            string noWarn = BuildNoWarn(buildContext);
-            string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION),
-                                                           ("SolutionDir", buildContext.SourceDirectory),
-                                                           ("SuppressNETCoreSdkPreviewMessage", "True"),
-                                                           ("Optimize", "True"),
-                                                           ("ContinuousIntegrationBuild", "True"));
+            try
+            {
+                string noWarn = BuildNoWarn(buildContext);
+                string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION),
+                                                               ("SolutionDir", buildContext.SourceDirectory),
+                                                               ("SuppressNETCoreSdkPreviewMessage", "True"),
+                                                               ("Optimize", "True"),
+                                                               ("ContinuousIntegrationBuild", "True"));
 
-            this._logger.LogBuilding();
+                this._logger.LogBuilding();
 
-            await this.ExecRequireCleanAsync(buildContext: buildContext,
-                                             $"build  {projectFileName} -warnAsError -nodeReuse:False --configuration:Release {parameters} {noWarn}",
-                                             cancellationToken: cancellationToken);
-        }
-        finally
-        {
-            await this.StopBuildServerAsync(buildContext: buildContext, cancellationToken: cancellationToken);
+                await this.ExecRequireCleanAsync(buildContext: buildContext,
+                                                 $"build  {projectFileName} -warnAsError -nodeReuse:False --configuration:Release {parameters} {noWarn}",
+                                                 cancellationToken: cancellationToken);
+            }
+            finally
+            {
+                await this.StopBuildServerAsync(buildContext: buildContext, cancellationToken: cancellationToken);
+            }
         }
     }
 
@@ -435,6 +446,100 @@ public sealed class DotNetBuild : IDotNetBuild
             string result = string.Join(separator: Environment.NewLine, output, error);
 
             return (result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries), process.ExitCode);
+        }
+    }
+
+    private static bool TryGetCodeAnalysisFileName(in BuildContext buildContext, [NotNullWhen(true)] out string? fileName)
+    {
+        string rulesetFileName = Path.Combine(buildContext.SourceDirectory, "CodeAnalysis.ruleset");
+
+        if (!File.Exists(rulesetFileName))
+        {
+            fileName = null;
+
+            return false;
+        }
+
+        fileName = rulesetFileName;
+
+        return true;
+    }
+
+    private static bool TryGetCodeAnalysisOverrideFileName(in BuildContext buildContext, [NotNullWhen(true)] out string? fileName)
+    {
+        string rulesetOverridesFileName = Path.Combine(buildContext.SourceDirectory,
+                                                       buildContext.BuildOverride.PreRelease
+                                                           ? "pre-release.rule-settings.json"
+                                                           : "release.rule-settings.json");
+
+        if (!File.Exists(rulesetOverridesFileName))
+        {
+            fileName = null;
+
+            return false;
+        }
+
+        fileName = rulesetOverridesFileName;
+
+        return true;
+    }
+
+    private bool ApplyChanges(XmlDocument ruleSet, IReadOnlyList<RuleChange> changes)
+    {
+        bool changed = false;
+
+        foreach (RuleChange change in changes)
+        {
+            this._logger.ChangingState(change.RuleSet, rule: change.Rule, change.State);
+            bool hasChanged = ruleSet.ChangeValue(ruleSet: change.RuleSet, rule: change.Rule, name: change.Description, newState: change.State, logger: this._logger);
+            changed |= hasChanged;
+        }
+
+        return changed;
+    }
+
+    private async ValueTask<IAsyncDisposable?> SetCodeAnalysisConfigAsync(BuildContext buildContext, CancellationToken cancellationToken)
+    {
+        if (!TryGetCodeAnalysisFileName(buildContext, out string? rulesetFileName))
+        {
+            return null;
+        }
+
+        if (!TryGetCodeAnalysisOverrideFileName(buildContext, out string? rulesetOverridesFileName))
+        {
+            return null;
+        }
+
+        IReadOnlyList<RuleChange> changes = await ChangeSet.LoadAsync(rulesetOverridesFileName, cancellationToken);
+        if (changes is not [])
+        {
+            XmlDocument ruleSet = await RuleSet.LoadAsync(rulesetFileName);
+            if (this.ApplyChanges(ruleSet: ruleSet, changes: changes))
+            {
+                byte[] originalContents = await File.ReadAllBytesAsync(path: rulesetFileName, cancellationToken: cancellationToken);
+                await RuleSet.SaveAsync(rulesetFileName, ruleSet);
+
+                return new FileRestorer(rulesetFileName, originalContents);
+            }
+        }
+
+        return null;
+    }
+
+    private sealed class FileRestorer : IAsyncDisposable
+    {
+        private readonly byte[] _content;
+        private readonly string _fileName;
+
+        public FileRestorer(string fileName, byte[] content)
+        {
+            this._fileName = fileName;
+            this._content = content;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            await File.WriteAllBytesAsync(this._fileName, this._content, CancellationToken.None);
         }
     }
 }
