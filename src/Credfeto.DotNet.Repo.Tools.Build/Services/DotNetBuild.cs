@@ -7,6 +7,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using Credfeto.DotNet.Code.Analysis.Overrides;
+using Credfeto.DotNet.Code.Analysis.Overrides.Helpers;
+using Credfeto.DotNet.Code.Analysis.Overrides.Models;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Build.Services.LoggingExtensions;
@@ -57,9 +60,8 @@ public sealed class DotNetBuild : IDotNetBuild
 
         await this.StopBuildServerAsync(buildContext: buildContext, cancellationToken: cancellationToken);
 
-        await using (await SetCodeAnalysisConfigAsync(buildContext, cancellationToken))
+        await using (await this.SetCodeAnalysisConfigAsync(buildContext: buildContext, cancellationToken: cancellationToken))
         {
-
             try
             {
                 await this.DotNetCleanAsync(buildContext: buildContext, cancellationToken: cancellationToken);
@@ -94,7 +96,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
         await this.StopBuildServerAsync(buildContext: buildContext, cancellationToken: cancellationToken);
 
-        await using (await SetCodeAnalysisConfigAsync(buildContext, cancellationToken))
+        await using (await this.SetCodeAnalysisConfigAsync(buildContext: buildContext, cancellationToken: cancellationToken))
         {
             try
             {
@@ -447,12 +449,14 @@ public sealed class DotNetBuild : IDotNetBuild
         }
     }
 
-    private static bool TryGetCodeAnalysisFileName(in BuildContext buildContext, [NotNullWhen(true)]out string? fileName)
+    private static bool TryGetCodeAnalysisFileName(in BuildContext buildContext, [NotNullWhen(true)] out string? fileName)
     {
         string rulesetFileName = Path.Combine(buildContext.SourceDirectory, "CodeAnalysis.ruleset");
+
         if (!File.Exists(rulesetFileName))
         {
             fileName = null;
+
             return false;
         }
 
@@ -461,15 +465,17 @@ public sealed class DotNetBuild : IDotNetBuild
         return true;
     }
 
-    private static bool TryGetCodeAnalysisOverrideFileName(in BuildContext buildContext, [NotNullWhen(true)]out string? fileName)
+    private static bool TryGetCodeAnalysisOverrideFileName(in BuildContext buildContext, [NotNullWhen(true)] out string? fileName)
     {
         string rulesetOverridesFileName = Path.Combine(buildContext.SourceDirectory,
                                                        buildContext.BuildOverride.PreRelease
                                                            ? "pre-release.rule-settings.json"
                                                            : "release.rule-settings.json");
+
         if (!File.Exists(rulesetOverridesFileName))
         {
             fileName = null;
+
             return false;
         }
 
@@ -481,18 +487,11 @@ public sealed class DotNetBuild : IDotNetBuild
     private bool ApplyChanges(XmlDocument ruleSet, IReadOnlyList<RuleChange> changes)
     {
         bool changed = false;
-        XmlDocument ruleSet = await RuleSet.LoadAsync(rulesetFileName);
 
         foreach (RuleChange change in changes)
         {
             this._logger.ChangingState(change.RuleSet, rule: change.Rule, change.State);
-            bool hasChanged = ruleSet.ChangeValue(
-                ruleSet: change.RuleSet,
-                rule: change.Rule,
-                name: change.Description,
-                newState: change.State,
-                logger: this._logger
-            );
+            bool hasChanged = ruleSet.ChangeValue(ruleSet: change.RuleSet, rule: change.Rule, name: change.Description, newState: change.State, logger: this._logger);
             changed |= hasChanged;
         }
 
@@ -518,22 +517,24 @@ public sealed class DotNetBuild : IDotNetBuild
             return null;
         }
 
-        byte[] originalContents = await File.ReadAllBytesAsync(rulesetFileName,  cancellationToken: cancellationToken);
+        byte[] originalContents = await File.ReadAllBytesAsync(path: rulesetFileName, cancellationToken: cancellationToken);
 
         XmlDocument ruleSet = await RuleSet.LoadAsync(rulesetFileName);
-        if (!ApplyChanges(ruleSet, changes))
+
+        if (!this.ApplyChanges(ruleSet: ruleSet, changes: changes))
         {
             return null;
         }
 
         await RuleSet.SaveAsync(rulesetFileName, ruleSet);
+
         return new FileRestorer(rulesetFileName, originalContents);
     }
 
     private sealed class FileRestorer : IAsyncDisposable
     {
-        private readonly string _fileName;
         private readonly byte[] _content;
+        private readonly string _fileName;
 
         public FileRestorer(string fileName, byte[] content)
         {
