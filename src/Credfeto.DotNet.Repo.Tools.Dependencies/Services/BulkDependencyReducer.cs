@@ -12,6 +12,7 @@ using Credfeto.DotNet.Repo.Tools.Dependencies.Models;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Services.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -87,6 +88,11 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             {
                 this._logger.LogBuildFailedOnRepoCheck(exception: exception);
             }
+            catch (GitRepositoryLockedException exception)
+            {
+                this._logger.LogRepoLocked(repo, exception.Message,  exception: exception);
+            }
+
             finally
             {
                 if (!string.IsNullOrWhiteSpace(updateContext.TrackingFileName))
