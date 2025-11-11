@@ -59,7 +59,7 @@ internal static class GitCommandLine
         }
     }
 
-    public static void EnsureNotLocked(string repoUrl, string workingDirectory)
+    private static void EnsureNotLocked(string repoUrl, string workingDirectory)
     {
         IReadOnlyList<string> lockFiles =
         [
