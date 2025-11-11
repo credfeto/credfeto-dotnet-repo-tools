@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
@@ -59,11 +61,23 @@ internal static class GitCommandLine
 
     public static void EnsureNotLocked(string repoUrl, string workingDirectory)
     {
-        string lockFile = Path.Combine(path1: workingDirectory, path2: ".git", path3: "index.lock");
+        IReadOnlyList<string> lockFiles =
+        [
+            .. LockFiles(Path.Combine(path1: workingDirectory, path2: ".git"))
+               .Where(File.Exists)
+               .Order(StringComparer.Ordinal)
+        ];
 
-        if (File.Exists(lockFile))
+        if (lockFiles is [])
         {
-            throw new GitRepositoryLockedException($"Repository {repoUrl} at {workingDirectory} is locked.");
+            return;
         }
+
+        throw new GitRepositoryLockedException($"Repository {repoUrl} at {workingDirectory} is locked ({string.Join(", ", lockFiles)}).");
+    }
+
+    private static IEnumerable<string> LockFiles(string dotGitDirectory)
+    {
+        return Directory.EnumerateFiles(dotGitDirectory, "*.lock", SearchOption.AllDirectories);
     }
 }
