@@ -172,4 +172,7 @@ internal static partial class BulkTemplateUpdaterLoggingExtensions
         string message,
         Exception exception
     );
+
+    [LoggerMessage(EventId = 28, Level = LogLevel.Error, Message = "Skipping repo as {repo} is locked: {message}")]
+    public static partial void LogRepoLocked(this ILogger<BulkTemplateUpdater> logger, string repo, string message, Exception exception);
 }

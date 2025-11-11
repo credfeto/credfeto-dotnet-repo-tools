@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Packages.Services.LoggingExtensions;
@@ -80,4 +81,7 @@ internal static partial class BulkPackageUpdaterLoggingExtensions
         string message,
         Exception exception
     );
+
+    [LoggerMessage(EventId = 21, Level = LogLevel.Error, Message = "Skipping repo as {repo} is locked: {message}")]
+    public static partial void LogRepoLocked(this ILogger<IBulkPackageUpdater> logger, string repo, string message, Exception exception);
 }

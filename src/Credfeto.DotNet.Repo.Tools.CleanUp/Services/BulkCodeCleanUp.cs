@@ -15,6 +15,7 @@ using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces.Exceptions;
@@ -172,6 +173,10 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                 catch (DotNetBuildErrorException exception)
                 {
                     this._logger.LogBuildFailedOnRepoCheck(exception: exception);
+                }
+                catch (GitRepositoryLockedException exception)
+                {
+                    this._logger.LogRepoLocked(repo, exception.Message, exception: exception);
                 }
                 finally
                 {

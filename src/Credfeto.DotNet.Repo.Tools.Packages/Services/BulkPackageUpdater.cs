@@ -12,6 +12,7 @@ using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
@@ -149,6 +150,11 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 {
                     this._logger.LogBuildFailedOnCreateRelease(message: exception.Message, exception: exception);
                 }
+                catch (GitRepositoryLockedException exception)
+                {
+                    this._logger.LogRepoLocked(repo, exception.Message, exception: exception);
+                }
+
                 finally
                 {
                     if (!string.IsNullOrWhiteSpace(updateContext.CacheFileName))
