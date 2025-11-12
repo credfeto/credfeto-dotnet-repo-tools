@@ -331,7 +331,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
         this._logger.LogPacking();
 
-        return this.ExecRequireCleanAsync(buildContext: buildContext, $"pack --no-restore -nodeReuse:False --configuration:Release {parameters} {noWarn}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(buildContext: buildContext, $"pack -nodeReuse:False --configuration:Release {parameters} {noWarn}", cancellationToken: cancellationToken);
     }
 
     private ValueTask DotNetTestAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
