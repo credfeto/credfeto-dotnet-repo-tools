@@ -26,10 +26,12 @@
     <IncludeSymbols>true</IncludeSymbols>
     <IsPackable>true</IsPackable>
     <IsPublishable>true</IsPublishable>
+    <IsTool>true</IsTool>
     <IsTrimmable>false</IsTrimmable>
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <LangVersion>latest</LangVersion>
     <NeutralLanguage>en-GB</NeutralLanguage>
+    <NoWarn/>
     <NuGetAudit>true</NuGetAudit>
     <NuGetAuditLevel>low</NuGetAuditLevel>
     <NuGetAuditMode>direct</NuGetAuditMode>
