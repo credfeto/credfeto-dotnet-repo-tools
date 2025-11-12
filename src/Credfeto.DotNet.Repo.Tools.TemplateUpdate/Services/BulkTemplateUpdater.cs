@@ -464,10 +464,9 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         {
             // no updates in this run - so might be able to create a release
             await this._releaseGeneration.TryCreateNextPatchAsync(repoContext: repoContext,
-                                                                  basePath: dotNetFiles.SourceDirectory,
+                                                                  dotNetFiles: dotNetFiles,
                                                                   buildSettings: buildSettings,
                                                                   dotNetSettings: updateContext.DotNetSettings,
-                                                                  solutions: dotNetFiles.Solutions,
                                                                   packages: packages,
                                                                   releaseConfig: updateContext.ReleaseConfig,
                                                                   cancellationToken: cancellationToken);

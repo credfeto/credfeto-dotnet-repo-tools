@@ -12,10 +12,9 @@ public interface IReleaseGeneration
 {
     ValueTask TryCreateNextPatchAsync(
         RepoContext repoContext,
-        string basePath,
+        DotNetFiles dotNetFiles,
         BuildSettings buildSettings,
         DotNetVersionSettings dotNetSettings,
-        IReadOnlyList<string> solutions,
         IReadOnlyList<PackageUpdate> packages,
         ReleaseConfig releaseConfig,
         CancellationToken cancellationToken

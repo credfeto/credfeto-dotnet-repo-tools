@@ -315,7 +315,7 @@ public sealed class DotNetBuild : IDotNetBuild
                 ? "'"
                 : "\\";
 
-            return $"-nowarn:{quotedPropertyEscape}\"{string.Join(separator: ';', items.Order(comparer: StringComparer.Ordinal))}{quotedPropertyEscape}\"";
+            return $"-p:nowarn={quotedPropertyEscape}\"{string.Join(separator: ';', items.Order(comparer: StringComparer.Ordinal))}{quotedPropertyEscape}\"";
         }
     }
 
@@ -332,12 +332,12 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private ValueTask DotNetTestAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
     {
-
+        string noWarn = BuildNoWarn(buildContext);
         string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION), ("SuppressNETCoreSdkPreviewMessage", "True"), ("Optimize", "True"), ("ContinuousIntegrationBuild", "True"));
 
         this._logger.LogTesting();
 
-        return this.ExecRequireCleanAsync(buildContext: buildContext, $"test --no-build --no-restore --configuration:Release {parameters}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(buildContext: buildContext, $"test --no-build --no-restore --configuration:Release {parameters} {noWarn}", cancellationToken: cancellationToken);
     }
 
     private ValueTask DotNetBuildAsync(in BuildContext buildContext, in CancellationToken cancellationToken)

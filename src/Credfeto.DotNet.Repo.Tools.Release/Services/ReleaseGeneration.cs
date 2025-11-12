@@ -52,10 +52,9 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     }
 
     public async ValueTask TryCreateNextPatchAsync(RepoContext repoContext,
-                                                   string basePath,
+                                                   DotNetFiles dotNetFiles,
                                                    BuildSettings buildSettings,
                                                    DotNetVersionSettings dotNetSettings,
-                                                   IReadOnlyList<string> solutions,
                                                    IReadOnlyList<PackageUpdate> packages,
                                                    ReleaseConfig releaseConfig,
                                                    CancellationToken cancellationToken)
@@ -79,10 +78,9 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         // * 3 CODE QUALITY AND BUILD
 
         if (await this.ShouldNeverReleaseCodeQualityAsync(repoContext: repoContext,
-                                                          basePath: basePath,
+                                                          dotNetFiles: dotNetFiles,
                                                           buildSettings: buildSettings,
                                                           dotNetSettings: dotNetSettings,
-                                                          solutions: solutions,
                                                           cancellationToken: cancellationToken))
         {
             return;
@@ -153,22 +151,27 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     }
 
     private async ValueTask<bool> ShouldNeverReleaseCodeQualityAsync(RepoContext repoContext,
-                                                                     string basePath,
+                                                                     DotNetFiles dotNetFiles,
                                                                      BuildSettings buildSettings,
                                                                      DotNetVersionSettings dotNetSettings,
-                                                                     IReadOnlyList<string> solutions,
                                                                      CancellationToken cancellationToken)
     {
+        if (!dotNetFiles.HasSolutionsAndProjects)
+        {
+            // nothing to check here - needs both solutions and projects to build
+            return false;
+        }
+
         try
         {
-            await this._dotNetSolutionCheck.ReleaseCheckAsync(solutions: solutions, repositoryDotNetSettings: dotNetSettings, cancellationToken: cancellationToken);
+            await this._dotNetSolutionCheck.ReleaseCheckAsync(solutions: dotNetFiles.Solutions, repositoryDotNetSettings: dotNetSettings, cancellationToken: cancellationToken);
         }
         catch (SolutionCheckFailedException)
         {
             return this.ReleaseSkipped(repoContext: repoContext, skippingReason: ReleaseSkippingReason.FAILED_RELEASE_CHECK);
         }
 
-        BuildContext buildContext = new(SourceDirectory: basePath, BuildSettings: buildSettings, new(PreRelease: false));
+        BuildContext buildContext = new(SourceDirectory: dotNetFiles.SourceDirectory, BuildSettings: buildSettings, new(PreRelease: false));
 
         try
         {

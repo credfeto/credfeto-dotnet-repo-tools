@@ -308,10 +308,9 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         {
             // no updates in this run - so might be able to create a release
             await this._releaseGeneration.TryCreateNextPatchAsync(repoContext: repoContext,
-                                                                  basePath: dotNetFiles.SourceDirectory,
+                                                                  dotNetFiles: dotNetFiles,
                                                                   buildSettings: buildSettings,
                                                                   dotNetSettings: dotNetSettings,
-                                                                  solutions: dotNetFiles.Solutions,
                                                                   packages: packages,
                                                                   releaseConfig: updateContext.ReleaseConfig,
                                                                   cancellationToken: cancellationToken);
