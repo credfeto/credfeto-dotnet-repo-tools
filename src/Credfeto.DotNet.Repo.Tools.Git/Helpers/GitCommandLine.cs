@@ -61,9 +61,16 @@ internal static class GitCommandLine
 
     private static void EnsureNotLocked(string repoUrl, string workingDirectory)
     {
+        string gitFolder = Path.Combine(path1: workingDirectory, path2: ".git");
+
+        if (!Directory.Exists(gitFolder))
+        {
+            return;
+        }
+
         IReadOnlyList<string> lockFiles =
         [
-            .. LockFiles(Path.Combine(path1: workingDirectory, path2: ".git"))
+            .. LockFiles(gitFolder)
                .Where(File.Exists)
                .Order(StringComparer.Ordinal)
         ];
