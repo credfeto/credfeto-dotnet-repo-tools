@@ -187,7 +187,6 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
     private async ValueTask ProcessRepoUpdatesAsync(TemplateUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
-        string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
         DotNetFiles dotNetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
 
         int totalUpdates = await this.UpdateStandardFilesAsync(updateContext: updateContext,
@@ -201,7 +200,6 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             await this.UpdateDotNetAsync(updateContext: updateContext,
                                          repoContext: repoContext,
                                          packages: packages,
-                                         lastKnownGoodBuild: lastKnownGoodBuild,
                                          dotNetFiles: dotNetFiles,
                                          totalUpdates: totalUpdates,
                                          cancellationToken: cancellationToken);
@@ -424,11 +422,9 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         return fileContext.UpdateContext.TemplateFolder.Length + 1;
     }
 
-    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Debug logging")]
     private async ValueTask UpdateDotNetAsync(TemplateUpdateContext updateContext,
                                               RepoContext repoContext,
                                               IReadOnlyList<PackageUpdate> packages,
-                                              string? lastKnownGoodBuild,
                                               DotNetFiles dotNetFiles,
                                               int totalUpdates,
                                               CancellationToken cancellationToken)
@@ -449,30 +445,6 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             if (changed)
             {
                 ++totalUpdates;
-            }
-        }
-
-        if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
-        {
-            DotNetVersionSettings repoDotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
-
-            if (dotNetFiles.Projects is not [])
-            {
-                DotNetVersionSettings dotnetSettingsOverride = repoDotNetSettings;
-
-                await this._dotNetSolutionCheck.PreCheckAsync(solutions: dotNetFiles.Solutions,
-                                                              repositoryDotNetSettings: repoDotNetSettings,
-                                                              templateDotNetSettings: dotnetSettingsOverride,
-                                                              cancellationToken: cancellationToken);
-
-                if (StringComparer.Ordinal.Equals(x: updateContext.DotNetSettings.SdkVersion, y: repoDotNetSettings.SdkVersion))
-                {
-                    BuildContext buildContext = new(SourceDirectory: dotNetFiles.SourceDirectory, BuildSettings: buildSettings, new(PreRelease: true));
-                    await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
-
-                    lastKnownGoodBuild = repoContext.Repository.HeadRev;
-                    await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
-                }
             }
         }
 

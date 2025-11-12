@@ -37,66 +37,43 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
     {
         IFrameworkSettings frameworkSettings = FrameWorkSettingsBuilder.DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
 
-        bool allOk = true;
-
-        foreach (string solution in solutions)
-        {
-            int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                                                      warningsAsErrors: true,
-                                                      frameworkSettings: frameworkSettings,
-                                                      projectClassifier: ProjectClassifier,
-                                                      checkConfiguration: PreReleaseCheckConfiguration,
-                                                      buildServiceProvider: this._serviceProviderFactory.Build,
-                                                      logger: this._logger,
-                                                      cancellationToken: cancellationToken);
-
-            if (errors != 0)
-            {
-                allOk = false;
-            }
-        }
+        bool allOk = await this.CheckAllBuildAsync(solutions: solutions, frameworkSettings: frameworkSettings, checkConfiguration: ReleaseCheckConfiguration, cancellationToken: cancellationToken);
 
         if (!allOk)
         {
-            throw new SolutionCheckFailedException($"Pre-check {string.Join(", ", solutions)}");
+            throw new SolutionCheckFailedException(FailureReason(solutions: solutions, type: "Pre-Check"));
         }
     }
 
     public async ValueTask ReleaseCheckAsync(IReadOnlyList<string> solutions, DotNetVersionSettings repositoryDotNetSettings, CancellationToken cancellationToken)
     {
         IFrameworkSettings frameworkSettings = new FrameworkSettings(repositoryDotNetSettings);
-        bool allOk = true;
 
-        foreach (string solution in solutions)
-        {
-            int errors = await CheckRunner.CheckAsync(solutionFileName: solution,
-                                                      warningsAsErrors: true,
-                                                      frameworkSettings: frameworkSettings,
-                                                      projectClassifier: ProjectClassifier,
-                                                      checkConfiguration: ReleaseCheckConfiguration,
-                                                      buildServiceProvider: this._serviceProviderFactory.Build,
-                                                      logger: this._logger,
-                                                      cancellationToken: cancellationToken);
-
-            if (errors != 0)
-            {
-                allOk = false;
-            }
-        }
+        bool allOk = await this.CheckAllBuildAsync(solutions: solutions, frameworkSettings: frameworkSettings, checkConfiguration: ReleaseCheckConfiguration, cancellationToken: cancellationToken);
 
         if (!allOk)
         {
-            throw new SolutionCheckFailedException($"Release {string.Join(", ", solutions)}");
+            throw new SolutionCheckFailedException(FailureReason(solutions: solutions, type: "Release"));
         }
     }
 
-    public async ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions,
-                                                DotNetVersionSettings repositoryDotNetSettings,
-                                                DotNetVersionSettings templateDotNetSettings,
-                                                CancellationToken cancellationToken)
+    public ValueTask<bool> PostCheckAsync(IReadOnlyList<string> solutions,
+                                          DotNetVersionSettings repositoryDotNetSettings,
+                                          DotNetVersionSettings templateDotNetSettings,
+                                          CancellationToken cancellationToken)
     {
         IFrameworkSettings frameworkSettings = FrameWorkSettingsBuilder.DefineFrameworkSettings(repositoryDotNetSettings: repositoryDotNetSettings, templateDotNetSettings: templateDotNetSettings);
 
+        return this.CheckAllBuildAsync(solutions: solutions, frameworkSettings: frameworkSettings, checkConfiguration: PreReleaseCheckConfiguration, cancellationToken: cancellationToken);
+    }
+
+    private static string FailureReason(IReadOnlyList<string> solutions, string type)
+    {
+        return $"{type} {string.Join(separator: ", ", values: solutions)}";
+    }
+
+    private async ValueTask<bool> CheckAllBuildAsync(IReadOnlyList<string> solutions, IFrameworkSettings frameworkSettings, ICheckConfiguration checkConfiguration, CancellationToken cancellationToken)
+    {
         bool allOk = true;
 
         foreach (string solution in solutions)
@@ -105,7 +82,7 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
                                                       warningsAsErrors: true,
                                                       frameworkSettings: frameworkSettings,
                                                       projectClassifier: ProjectClassifier,
-                                                      checkConfiguration: PreReleaseCheckConfiguration,
+                                                      checkConfiguration: checkConfiguration,
                                                       buildServiceProvider: this._serviceProviderFactory.Build,
                                                       logger: this._logger,
                                                       cancellationToken: cancellationToken);
