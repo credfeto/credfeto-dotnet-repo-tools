@@ -26,7 +26,7 @@ public sealed class DotNetBuild : IDotNetBuild
     [
         // MSB3243 - two assemblies of the same name, but different version
         // NU1802 - restoring from HTTP source
-        "NU1802",
+        "NU1802"
     ];
 
     private static readonly IReadOnlyList<string> NoWarnPreRelease =
@@ -41,17 +41,22 @@ public sealed class DotNetBuild : IDotNetBuild
         "NU1903",
 
         // NU1904 - Package with critical severity detected
-        "NU1904",
+        "NU1904"
     ];
 
     private readonly ILogger<DotNetBuild> _logger;
     private readonly IProjectXmlLoader _projectLoader;
+
+    private readonly string _quotedPropertyEscape;
 
     public DotNetBuild(IProjectXmlLoader projectLoader, ILogger<DotNetBuild> logger)
     {
         this._logger = logger;
 
         this._projectLoader = projectLoader;
+        this._quotedPropertyEscape = OperatingSystem.IsLinux()
+            ? "'"
+            : "\\";
     }
 
     public async ValueTask BuildAsync(BuildContext buildContext, CancellationToken cancellationToken)
@@ -100,7 +105,7 @@ public sealed class DotNetBuild : IDotNetBuild
         {
             try
             {
-                string noWarn = BuildNoWarn(buildContext);
+                string noWarn = this.BuildNoWarn(buildContext);
                 string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION),
                                                                ("SolutionDir", buildContext.SourceDirectory),
                                                                ("SuppressNETCoreSdkPreviewMessage", "True"),
@@ -257,7 +262,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private async ValueTask DotNetPublishAsync(BuildContext buildContext, string? framework, CancellationToken cancellationToken)
     {
-        string noWarn = BuildNoWarn(buildContext);
+        string noWarn = this.BuildNoWarn(buildContext);
 
         if (string.IsNullOrWhiteSpace(framework))
         {
@@ -292,7 +297,7 @@ public sealed class DotNetBuild : IDotNetBuild
         }
     }
 
-    private static string BuildNoWarn(in BuildContext buildContext)
+    private string BuildNoWarn(in BuildContext buildContext)
     {
         if (buildContext.BuildOverride.PreRelease)
         {
@@ -304,24 +309,23 @@ public sealed class DotNetBuild : IDotNetBuild
 
         return Build(NoWarnAll);
 
-        static string Build(IReadOnlyList<string> items)
+        string Build(IReadOnlyList<string> items)
         {
-            if (items is [])
+            const string parameter = "--nowarn:";
+            const char separator = ';';
+
+            return items.Count switch
             {
-                return string.Empty;
-            }
-
-            string quotedPropertyEscape = OperatingSystem.IsLinux()
-                ? "'"
-                : "\\";
-
-            return $"-p:nowarn={quotedPropertyEscape}\"{string.Join(separator: ';', items.Order(comparer: StringComparer.Ordinal))}{quotedPropertyEscape}\"";
+                0 => string.Empty,
+                1 => string.Concat(parameter, items[0]),
+                _ => string.Concat(parameter, $"{this._quotedPropertyEscape}\"{string.Join(separator: separator, items.Order(comparer: StringComparer.Ordinal))}\"{this._quotedPropertyEscape}")
+            };
         }
     }
 
     private ValueTask DotNetPackAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
     {
-        string noWarn = BuildNoWarn(buildContext);
+        string noWarn = this.BuildNoWarn(buildContext);
 
         string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION), ("SuppressNETCoreSdkPreviewMessage", "True"), ("Optimize", "True"), ("ContinuousIntegrationBuild", "True"));
 
@@ -332,17 +336,16 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private ValueTask DotNetTestAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
     {
-        string noWarn = BuildNoWarn(buildContext);
         string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION), ("SuppressNETCoreSdkPreviewMessage", "True"), ("Optimize", "True"), ("ContinuousIntegrationBuild", "True"));
 
         this._logger.LogTesting();
 
-        return this.ExecRequireCleanAsync(buildContext: buildContext, $"test --no-build --no-restore --configuration:Release {parameters} {noWarn}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(buildContext: buildContext, $"test --no-build --no-restore --configuration:Release {parameters}", cancellationToken: cancellationToken);
     }
 
     private ValueTask DotNetBuildAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
     {
-        string noWarn = BuildNoWarn(buildContext);
+        string noWarn = this.BuildNoWarn(buildContext);
         string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION), ("SuppressNETCoreSdkPreviewMessage", "True"), ("Optimize", "True"), ("ContinuousIntegrationBuild", "True"));
 
         this._logger.LogBuilding();
@@ -354,7 +357,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private ValueTask DotNetRestoreAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
     {
-        string noWarn = BuildNoWarn(buildContext);
+        string noWarn = this.BuildNoWarn(buildContext);
 
         this._logger.LogRestoring();
 
@@ -363,7 +366,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private ValueTask DotNetCleanAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
     {
-        string noWarn = BuildNoWarn(buildContext);
+        string noWarn = this.BuildNoWarn(buildContext);
 
         this._logger.LogCleaning();
 
@@ -383,18 +386,20 @@ public sealed class DotNetBuild : IDotNetBuild
 
         if (exitCode != 0)
         {
-            this.DumpErrors(results: results);
+            this.DumpErrors(arguments: arguments, results: results);
 
             throw new DotNetBuildErrorException();
         }
     }
 
-    private void DumpErrors(string[] results)
+    private void DumpErrors(string arguments, string[] results)
     {
         if (!this._logger.IsEnabled(LogLevel.Error))
         {
             return;
         }
+
+        this._logger.LogBuildError(arguments);
 
         foreach (string line in results)
         {
@@ -451,7 +456,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private static bool TryGetCodeAnalysisFileName(in BuildContext buildContext, [NotNullWhen(true)] out string? fileName)
     {
-        string rulesetFileName = Path.Combine(buildContext.SourceDirectory, "CodeAnalysis.ruleset");
+        string rulesetFileName = Path.Combine(path1: buildContext.SourceDirectory, path2: "CodeAnalysis.ruleset");
 
         if (!File.Exists(rulesetFileName))
         {
@@ -467,7 +472,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private static bool TryGetCodeAnalysisOverrideFileName(in BuildContext buildContext, [NotNullWhen(true)] out string? fileName)
     {
-        string rulesetOverridesFileName = Path.Combine(buildContext.SourceDirectory,
+        string rulesetOverridesFileName = Path.Combine(path1: buildContext.SourceDirectory,
                                                        buildContext.BuildOverride.PreRelease
                                                            ? "pre-release.rule-settings.json"
                                                            : "release.rule-settings.json");
@@ -490,7 +495,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
         foreach (RuleChange change in changes)
         {
-            this._logger.ChangingState(change.RuleSet, rule: change.Rule, change.State);
+            this._logger.ChangingState(ruleSet: change.RuleSet, rule: change.Rule, state: change.State);
             bool hasChanged = ruleSet.ChangeValue(ruleSet: change.RuleSet, rule: change.Rule, name: change.Description, newState: change.State, logger: this._logger);
             changed |= hasChanged;
         }
@@ -500,26 +505,28 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private async ValueTask<IAsyncDisposable?> SetCodeAnalysisConfigAsync(BuildContext buildContext, CancellationToken cancellationToken)
     {
-        if (!TryGetCodeAnalysisFileName(buildContext, out string? rulesetFileName))
+        if (!TryGetCodeAnalysisFileName(buildContext: buildContext, out string? rulesetFileName))
         {
             return null;
         }
 
-        if (!TryGetCodeAnalysisOverrideFileName(buildContext, out string? rulesetOverridesFileName))
+        if (!TryGetCodeAnalysisOverrideFileName(buildContext: buildContext, out string? rulesetOverridesFileName))
         {
             return null;
         }
 
-        IReadOnlyList<RuleChange> changes = await ChangeSet.LoadAsync(rulesetOverridesFileName, cancellationToken);
+        IReadOnlyList<RuleChange> changes = await ChangeSet.LoadAsync(changesFileName: rulesetOverridesFileName, cancellationToken: cancellationToken);
+
         if (changes is not [])
         {
             XmlDocument ruleSet = await RuleSet.LoadAsync(rulesetFileName);
+
             if (this.ApplyChanges(ruleSet: ruleSet, changes: changes))
             {
                 byte[] originalContents = await File.ReadAllBytesAsync(path: rulesetFileName, cancellationToken: cancellationToken);
-                await RuleSet.SaveAsync(rulesetFileName, ruleSet);
+                await RuleSet.SaveAsync(project: rulesetFileName, doc: ruleSet);
 
-                return new FileRestorer(rulesetFileName, originalContents);
+                return new FileRestorer(fileName: rulesetFileName, content: originalContents);
             }
         }
 
@@ -539,7 +546,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
         public async ValueTask DisposeAsync()
         {
-            await File.WriteAllBytesAsync(this._fileName, this._content, CancellationToken.None);
+            await File.WriteAllBytesAsync(path: this._fileName, bytes: this._content, cancellationToken: CancellationToken.None);
         }
     }
 }
