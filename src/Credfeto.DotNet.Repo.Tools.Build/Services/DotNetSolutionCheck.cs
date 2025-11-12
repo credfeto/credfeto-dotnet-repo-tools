@@ -58,7 +58,7 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
 
         if (!allOk)
         {
-            throw new SolutionCheckFailedException();
+            throw new SolutionCheckFailedException($"Pre-check {string.Join(", ", solutions)}");
         }
     }
 
@@ -86,7 +86,7 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
 
         if (!allOk)
         {
-            throw new SolutionCheckFailedException();
+            throw new SolutionCheckFailedException($"Release {string.Join(", ", solutions)}");
         }
     }
 

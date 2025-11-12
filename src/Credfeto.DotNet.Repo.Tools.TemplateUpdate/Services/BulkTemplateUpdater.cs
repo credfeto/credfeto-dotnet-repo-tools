@@ -435,42 +435,45 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(projects: dotNetFiles.Projects, cancellationToken: cancellationToken);
 
-        if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
+        // Always update global.json if needed before checking updating the last known good build
+        string repoGlobalJson = Path.Combine(path1: dotNetFiles.SourceDirectory, path2: "global.json");
+
+        if (File.Exists(repoGlobalJson))
         {
-            string repoGlobalJson = Path.Combine(path1: dotNetFiles.SourceDirectory, path2: "global.json");
+            bool changed = await this.UpdateGlobalJsonAsync(repoContext: repoContext,
+                                                       updateContext: updateContext,
+                                                       dotNetFiles: dotNetFiles,
+                                                       buildSettings: buildSettings,
+                                                       cancellationToken: cancellationToken);
 
-            if (File.Exists(repoGlobalJson))
+            if (changed)
             {
-                DotNetVersionSettings repoDotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
-
-                if (dotNetFiles.Projects is not [])
-                {
-                    await this._dotNetSolutionCheck.PreCheckAsync(solutions: dotNetFiles.Solutions,
-                                                                  repositoryDotNetSettings: repoDotNetSettings,
-                                                                  templateDotNetSettings: updateContext.DotNetSettings,
-                                                                  cancellationToken: cancellationToken);
-
-                    if (StringComparer.Ordinal.Equals(x: updateContext.DotNetSettings.SdkVersion, y: repoDotNetSettings.SdkVersion))
-                    {
-                        BuildContext buildContext = new(SourceDirectory: dotNetFiles.SourceDirectory, BuildSettings: buildSettings, new(PreRelease: true));
-                        await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
-
-                        lastKnownGoodBuild = repoContext.Repository.HeadRev;
-                        await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
-                    }
-                }
+                ++totalUpdates;
             }
         }
 
-        bool changed = await this.UpdateGlobalJsonAsync(repoContext: repoContext,
-                                                        updateContext: updateContext,
-                                                        dotNetFiles: dotNetFiles,
-                                                        buildSettings: buildSettings,
-                                                        cancellationToken: cancellationToken);
-
-        if (changed)
+        if (lastKnownGoodBuild is null || !StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev))
         {
-            ++totalUpdates;
+            DotNetVersionSettings repoDotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
+
+            if (dotNetFiles.Projects is not [])
+            {
+                DotNetVersionSettings dotnetSettingsOverride = repoDotNetSettings;
+
+                await this._dotNetSolutionCheck.PreCheckAsync(solutions: dotNetFiles.Solutions,
+                                                              repositoryDotNetSettings: repoDotNetSettings,
+                                                              templateDotNetSettings: dotnetSettingsOverride,
+                                                              cancellationToken: cancellationToken);
+
+                if (StringComparer.Ordinal.Equals(x: updateContext.DotNetSettings.SdkVersion, y: repoDotNetSettings.SdkVersion))
+                {
+                    BuildContext buildContext = new(SourceDirectory: dotNetFiles.SourceDirectory, BuildSettings: buildSettings, new(PreRelease: true));
+                    await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
+
+                    lastKnownGoodBuild = repoContext.Repository.HeadRev;
+                    await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: lastKnownGoodBuild, cancellationToken: cancellationToken);
+                }
+            }
         }
 
         totalUpdates += await this.UpdateResharperSettingsAsync(repoContext: repoContext, updateContext: updateContext, dotNetFiles: dotNetFiles, cancellationToken: cancellationToken);
