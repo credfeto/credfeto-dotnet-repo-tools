@@ -195,6 +195,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                                                                packages: packages,
                                                                cancellationToken: cancellationToken);
 
+        if (await this.UpdateLabelAsync(updateContext: updateContext, repoContext: repoContext, projects: dotNetFiles.Projects, cancellationToken: cancellationToken))
+        {
+            ++totalUpdates;
+        }
+
         if (dotNetFiles.HasSolutions)
         {
             await this.UpdateDotNetAsync(updateContext: updateContext,
@@ -454,11 +459,6 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         IEnumerable<CopyInstruction> filesToUpdate = GetDotNetFilesToUpdate(fileContext);
 
         totalUpdates += await this.MakeCopyInstructionChangesAsync(repoContext: repoContext, filesToUpdate: filesToUpdate, cancellationToken: cancellationToken);
-
-        if (await this.UpdateLabelAsync(updateContext: updateContext, repoContext: repoContext, projects: dotNetFiles.Projects, cancellationToken: cancellationToken))
-        {
-            ++totalUpdates;
-        }
 
         if (totalUpdates == 0)
         {
