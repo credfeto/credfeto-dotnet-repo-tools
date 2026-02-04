@@ -45,10 +45,17 @@ public sealed class LabelsBuilder : ILabelsBuilder
             ["src/global.json"]
         ),
         new(
+            Name: "Editorconfig",
+            Description: "Editor config file change",
+            Colour: "00dead",
+            [ ".editorconfig"],
+            []
+        ),
+        new(
             Name: "Static Code Analysis Rules",
             Description: "Ruleset for static code analysis files",
             Colour: "00dead",
-            ["src/CodeAnalysis.ruleset"],
+            ["src/CodeAnalysis.ruleset", ".globalconfig"],
             []
         ),
         new(
@@ -66,7 +73,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
             Name: "github-actions",
             Description: "Github actions workflow files",
             Colour: "e09cf4",
-            [".github/workflows/*.yml"],
+            [".github/workflows/*.yml", ".github/actions/*.yml"],
             []
         ),
         new(Name: "Tech Debt", Description: "Technical debt", Colour: "30027a", [], []),
@@ -80,8 +87,8 @@ public sealed class LabelsBuilder : ILabelsBuilder
             []
         ),
         new(Name: "dependencies", Description: "Updates to dependencies", Colour: "0366d6", [], []),
-        new(Name: "dotnet", Description: "Dotnet package updates", Colour: "db6baa", [], []),
-        new(Name: "npm", Description: "npm package update", Colour: "e99695", [], []),
+        new(Name: "dotnet", Description: "Dotnet package updates", Colour: "db6baa", ["src/**/*.csproj"], []),
+        new(Name: "npm", Description: "npm package update", Colour: "e99695", ["./**/package.json", "./**/package-lock.json"], []),
         new(Name: "DO NOT MERGE", Description: "This pull request should not be merged yet", Colour: "ff0000", [], []),
     ];
 
