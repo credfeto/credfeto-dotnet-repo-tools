@@ -497,12 +497,23 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 changed = true;
             }
         }
-
-        if (!changed && File.Exists(labelersFileName))
+        else
         {
-            string content = await File.ReadAllTextAsync(path: labelersFileName, cancellationToken: cancellationToken);
+            changed = true;
+        }
 
-            if (!StringComparer.Ordinal.Equals(x: content, y: labeler))
+        if (!changed)
+        {
+            if (File.Exists(labelersFileName))
+            {
+                string content = await File.ReadAllTextAsync(path: labelersFileName, cancellationToken: cancellationToken);
+
+                if (!StringComparer.Ordinal.Equals(x: content, y: labeler))
+                {
+                    changed = true;
+                }
+            }
+            else
             {
                 changed = true;
             }
