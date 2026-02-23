@@ -247,8 +247,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
     private static int ScoreCount(string releaseNotes, Regex regex, int scoreMultiplier)
     {
-        return regex.Matches(releaseNotes)
-                    .Count * scoreMultiplier;
+        return regex.Count(releaseNotes) * scoreMultiplier;
     }
 
     private int IsAllAutoUpdates(in RepoContext repoContext, string releaseNotes, IReadOnlyList<PackageUpdate> packages)
