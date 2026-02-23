@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Microsoft.Extensions.Logging;
+using NuGet.Versioning;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services.LoggingExtensions;
 
@@ -173,6 +174,11 @@ internal static partial class BulkTemplateUpdaterLoggingExtensions
         Exception exception
     );
 
-    [LoggerMessage(EventId = 28, Level = LogLevel.Error, Message = "Skipping repo as {repo} is locked: {message}")]
+    [LoggerMessage(EventId = 18, Level = LogLevel.Error, Message = "Skipping repo as {repo} is locked: {message}")]
     public static partial void LogRepoLocked(this ILogger<BulkTemplateUpdater> logger, string repo, string message, Exception exception);
+
+
+    [LoggerMessage(EventId = 19, Level = LogLevel.Information, Message = "Comparing SDK Versions: {sourceVersion} -> {targetVersion}")]
+    public static partial void ComparingSdkVersions(this ILogger<BulkTemplateUpdater> logger, NuGetVersion sourceVersion, NuGetVersion targetVersion);
+
 }

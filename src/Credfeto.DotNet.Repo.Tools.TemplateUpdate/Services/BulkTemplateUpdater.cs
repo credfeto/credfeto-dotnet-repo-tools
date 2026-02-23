@@ -705,7 +705,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             NuGetVersion targetVersion = new(solutionDotNetSettings.SdkVersion);
             NuGetVersion sourceVersion = new(updateContext.DotNetSettings.SdkVersion);
 
-            this._logger.LogInformation(message: "Comparing SDK Versions: {Source} -> {Target}", sourceVersion, targetVersion);
+            this._logger.ComparingSdkVersions(sourceVersion, targetVersion);
 
             return VersionCheck.IsDotNetSdkTargetNewer(sourceVersion: sourceVersion, targetVersion: targetVersion);
         }

@@ -43,7 +43,10 @@ internal static partial class ReleaseGenerationLoggingExtensions
         ReleaseSkippingReason skippingReason
     )
     {
-        logger.LogReleaseSkipped(clonePath: repoContext.ClonePath, skippingReason.GetDescription());
+        if (logger.IsEnabled(LogLevel.Information))
+        {
+            logger.LogReleaseSkipped(clonePath: repoContext.ClonePath, skippingReason.GetDescription());
+        }
     }
 
     [LoggerMessage(
@@ -95,7 +98,10 @@ internal static partial class ReleaseGenerationLoggingExtensions
 
     public static void LogLastRelease(this ILogger<ReleaseGeneration> logger, NuGetVersion version)
     {
-        logger.LogLastRelease(version.ToString());
+        if (logger.IsEnabled(LogLevel.Information))
+        {
+            logger.LogLastRelease(version.ToString());
+        }
     }
 
     [LoggerMessage(EventId = 6, Level = LogLevel.Information, Message = "Next release is: {version}")]
@@ -103,7 +109,10 @@ internal static partial class ReleaseGenerationLoggingExtensions
 
     public static void LogNextRelease(this ILogger<ReleaseGeneration> logger, NuGetVersion version)
     {
-        logger.LogNextRelease(version.ToString());
+        if (logger.IsEnabled(LogLevel.Information))
+        {
+            logger.LogNextRelease(version.ToString());
+        }
     }
 
     [LoggerMessage(
