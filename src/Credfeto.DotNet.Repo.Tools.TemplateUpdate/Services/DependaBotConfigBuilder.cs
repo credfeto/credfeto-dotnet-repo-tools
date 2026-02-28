@@ -21,7 +21,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
         this._logger = logger;
     }
 
-    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Needs Review")]
+    
     public ValueTask<string> BuildDependabotConfigAsync(RepoContext repoContext,
                                                         string templateFolder,
                                                         DotNetFiles dotNetFiles,
