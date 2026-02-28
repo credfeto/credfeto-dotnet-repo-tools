@@ -6,5 +6,10 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp;
 
 public interface ISourceFileSuppressionRemover
 {
-    ValueTask<string> RemoveSuppressionsAsync(string fileName, string content, BuildContext buildContext, CancellationToken cancellationToken);
+    ValueTask<string> RemoveSuppressionsAsync(
+        string fileName,
+        string content,
+        BuildContext buildContext,
+        CancellationToken cancellationToken
+    );
 }
