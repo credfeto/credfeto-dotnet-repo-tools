@@ -473,7 +473,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         }
     }
 
-    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Needs Review")]
+    
     private async ValueTask<bool> UpdateLabelAsync(TemplateUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<string> projects, CancellationToken cancellationToken)
     {
         if (!updateContext.TemplateConfig.GitHub.Labels.Generate)
