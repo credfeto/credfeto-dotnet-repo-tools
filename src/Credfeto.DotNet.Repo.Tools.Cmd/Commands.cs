@@ -18,7 +18,7 @@ using Microsoft.Extensions.Logging;
 namespace Credfeto.DotNet.Repo.Tools.Cmd;
 
 [SuppressMessage(category: "Microsoft.Performance", checkId: "CA1812:AvoidUninstantiatedInternalClasses", Justification = "Instantiated by Cocona")]
-[SuppressMessage(category: "ReSharper", checkId: "ClassNeverInstantiated.Global", Justification = "Instantiated by Cocona")]
+
 internal sealed class Commands
 {
     private readonly IBulkCodeCleanUp _bulkCodeCleanUp;
@@ -52,7 +52,7 @@ internal sealed class Commands
     }
 
     [Command("update-packages", Description = "Update all packages in all repositories")]
-    [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
+    
     public async Task UpdatePackagesAsync([Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")] string repositoriesFileName,
                                           [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
                                           [Option(name: "cache", ['c'], Description = "package cache file")] string? cacheFileName,
@@ -89,7 +89,7 @@ internal sealed class Commands
     }
 
     [Command("update-template", Description = "Update repos from template in all repositories")]
-    [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
+    
     public async Task UpdateFromTemplateAsync([Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")] string repositoriesFileName,
                                               [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
                                               [Option(name: "template-config", ['c'], Description = "template.config file to load")] string templateConfigFileName,
@@ -135,7 +135,7 @@ internal sealed class Commands
     }
 
     [Command("code-cleanup", Description = "Perform code cleanup in all repositories")]
-    [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
+    
     public async Task CodeCleanupAsync([Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")] string repositoriesFileName,
                                        [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
                                        [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")] string trackingFileName,
@@ -162,7 +162,7 @@ internal sealed class Commands
     }
 
     [Command("reduce-dependencies", Description = "Reduce dependencies in all repositories")]
-    [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
+    
     public async Task ReduceDependenciesAsync([Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")] string repositoriesFileName,
                                               [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
                                               [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")] string trackingFileName,
@@ -185,7 +185,7 @@ internal sealed class Commands
     }
 
     [Command("check-dependencies", Description = "Reduce dependencies one folder")]
-    [SuppressMessage(category: "ReSharper", checkId: "UnusedMember.Global", Justification = "Used by Cocona")]
+    
     public async Task CheckDependenciesAsync([Option(name: "source-folder", ['s'], Description = "folder where the dotnet source is")] string workFolder)
     {
         DotNetFiles dotNetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: workFolder, cancellationToken: this._cancellationToken);
