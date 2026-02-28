@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 using FunFair.Test.Common;
 using Xunit;
