@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -237,7 +237,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         await this._trackingCache.UpdateTrackingAsync(repoContext: repoContext, updateContext: updateContext, value: repoContext.Repository.HeadRev, cancellationToken: cancellationToken);
     }
 
-    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Needs Review")]
+    
     private async ValueTask FileCleanupAsync(RepoContext repoContext,
                                              string sourceDirectory,
                                              BuildSettings buildSettings,
