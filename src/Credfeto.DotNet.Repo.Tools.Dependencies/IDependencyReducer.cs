@@ -7,5 +7,9 @@ namespace Credfeto.DotNet.Repo.Tools.Dependencies;
 
 public interface IDependencyReducer
 {
-    ValueTask<bool> CheckReferencesAsync(DotNetFiles dotNetFiles, ReferenceConfig config, CancellationToken cancellationToken);
+    ValueTask<bool> CheckReferencesAsync(
+        DotNetFiles dotNetFiles,
+        ReferenceConfig config,
+        CancellationToken cancellationToken
+    );
 }
