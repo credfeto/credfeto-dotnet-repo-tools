@@ -26,8 +26,7 @@ public static class RepoContextExtensions
 
     private static bool HasFiles(this in RepoContext repoContext, string searchPattern)
     {
-        return repoContext.GetFiles(searchPattern: searchPattern)
-                          .Any();
+        return repoContext.GetFiles(searchPattern: searchPattern).Any();
     }
 
     public static bool HasNonStandardGithubActions(this in RepoContext repoContext, string templatePath)
@@ -35,11 +34,23 @@ public static class RepoContextExtensions
         string templateActionsPath = Path.Combine(path1: templatePath, path2: ".github", path3: "actions");
         string repoActionsPath = Path.Combine(path1: repoContext.WorkingDirectory, path2: ".github", path3: "actions");
 
-        string templateWorkflowsPath = Path.Combine(path1: repoContext.WorkingDirectory, path2: ".github", path3: "workflows");
-        string repoWorkflowsPath = Path.Combine(path1: repoContext.WorkingDirectory, path2: ".github", path3: "workflows");
+        string templateWorkflowsPath = Path.Combine(
+            path1: repoContext.WorkingDirectory,
+            path2: ".github",
+            path3: "workflows"
+        );
+        string repoWorkflowsPath = Path.Combine(
+            path1: repoContext.WorkingDirectory,
+            path2: ".github",
+            path3: "workflows"
+        );
 
-        return HasAdditionalFiles(templatePath: templateActionsPath, repoPath: repoActionsPath, searchPattern: "*.yml") ||
-               HasAdditionalFiles(templatePath: templateWorkflowsPath, repoPath: repoWorkflowsPath, searchPattern: "*.yml");
+        return HasAdditionalFiles(templatePath: templateActionsPath, repoPath: repoActionsPath, searchPattern: "*.yml")
+            || HasAdditionalFiles(
+                templatePath: templateWorkflowsPath,
+                repoPath: repoWorkflowsPath,
+                searchPattern: "*.yml"
+            );
     }
 
     private static bool HasAdditionalFiles(string templatePath, string repoPath, string searchPattern)
@@ -59,8 +70,7 @@ public static class RepoContextExtensions
         IEnumerable<string> templateFiles = GetFiles(basePath: templatePath, searchPattern: searchPattern)
             .WithoutPrefix(templatePath.Length);
 
-        return repoFiles.Except(second: templateFiles, comparer: StringComparer.Ordinal)
-                        .Any();
+        return repoFiles.Except(second: templateFiles, comparer: StringComparer.Ordinal).Any();
     }
 
     private static IEnumerable<string> GetFiles(this in RepoContext repoContext, string searchPattern)
@@ -70,14 +80,16 @@ public static class RepoContextExtensions
 
     private static IEnumerable<string> GetFiles(string basePath, string searchPattern)
     {
-        return Directory.EnumerateFiles(path: basePath, searchPattern: searchPattern, searchOption: SearchOption.AllDirectories);
+        return Directory.EnumerateFiles(
+            path: basePath,
+            searchPattern: searchPattern,
+            searchOption: SearchOption.AllDirectories
+        );
     }
 
     private static IEnumerable<string> GetDirectoriesOfFiles(this IEnumerable<string> source)
     {
-        return source.Select(Path.GetDirectoryName)
-                     .RemoveNulls()
-                     .Distinct(StringComparer.Ordinal);
+        return source.Select(Path.GetDirectoryName).RemoveNulls().Distinct(StringComparer.Ordinal);
     }
 
     private static IEnumerable<string> WithoutPrefix(this IEnumerable<string> source, int prefix)
@@ -85,13 +97,17 @@ public static class RepoContextExtensions
         return source.Select(file => file[prefix..]);
     }
 
-    public static bool HasNpmAndYarn(this in RepoContext repoContext, [NotNullWhen(true)] out IReadOnlyList<string>? directories)
+    public static bool HasNpmAndYarn(
+        this in RepoContext repoContext,
+        [NotNullWhen(true)] out IReadOnlyList<string>? directories
+    )
     {
         IReadOnlyList<string> dirs =
         [
-            .. repoContext.GetFiles("package.json")
-                          .GetDirectoriesOfFiles()
-                          .WithoutPrefix(repoContext.WorkingDirectory.Length)
+            .. repoContext
+                .GetFiles("package.json")
+                .GetDirectoriesOfFiles()
+                .WithoutPrefix(repoContext.WorkingDirectory.Length),
         ];
 
         if (dirs is [])
