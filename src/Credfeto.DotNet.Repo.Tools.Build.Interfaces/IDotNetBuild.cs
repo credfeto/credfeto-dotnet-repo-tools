@@ -6,7 +6,10 @@ namespace Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 
 public interface IDotNetBuild
 {
-    ValueTask<BuildSettings> LoadBuildSettingsAsync(IReadOnlyList<string> projects, CancellationToken cancellationToken);
+    ValueTask<BuildSettings> LoadBuildSettingsAsync(
+        IReadOnlyList<string> projects,
+        CancellationToken cancellationToken
+    );
 
     ValueTask BuildAsync(BuildContext buildContext, CancellationToken cancellationToken);
 
