@@ -340,7 +340,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
         this._logger.LogTesting();
 
-        return this.ExecRequireCleanAsync(buildContext: buildContext, $"test --no-build --no-restore --configuration:Release {parameters}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(buildContext: buildContext, $"test --no-build --no-restore --configuration:Release --long-running 10 --filter-not-namespace \"*.BenchMark.Tests\" --filter-not-namespace \"*.BenchMark.Tests.*\" --filter-not-namespace \"*.Integration.Tests\" --filter-not-namespace \"*.Integration.Tests.*\" --parallel-algorithm aggressive --ignore-exit-code 8 {parameters}", cancellationToken: cancellationToken);
     }
 
     private ValueTask DotNetBuildAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
