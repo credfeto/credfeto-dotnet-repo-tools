@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
+- Issue where projects were cached for too long
 ### Changed
 ### Removed
 ### Deployment Changes
