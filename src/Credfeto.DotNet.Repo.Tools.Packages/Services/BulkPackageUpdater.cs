@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -29,7 +28,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 {
     private readonly IBulkPackageConfigLoader _bulkPackageConfigLoader;
     private readonly IDotNetBuild _dotNetBuild;
-    private readonly IProjectXmlLoader _projectLoader;
+    private readonly IProjectLoader _projectLoader;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IDotNetVersion _dotNetVersion;
     private readonly IGitRepositoryFactory _gitRepositoryFactory;
@@ -50,7 +49,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                               IGlobalJson globalJson,
                               IDotNetVersion dotNetVersion,
                               IDotNetBuild dotNetBuild,
-                              IProjectXmlLoader projectLoader,
+                              IProjectLoader projectLoader,
                               IDotNetFilesDetector dotNetFilesDetector,
                               IReleaseConfigLoader releaseConfigLoader,
                               IReleaseGeneration releaseGeneration,
@@ -292,7 +291,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         foreach (PackageUpdate package in packages)
         {
-            bool updated = await this.UpdateOnePackageAsync(updateContext: updateContext, repoContext: repoContext, cancellationToken: cancellationToken, dotNetFiles: dotNetFiles, buildSettings: buildSettings, dotNetSettings: dotNetSettings, package: package);
+            bool updated = await this.UpdateOnePackageAsync(updateContext: updateContext, repoContext: repoContext, dotNetFiles: dotNetFiles, buildSettings: buildSettings, dotNetSettings: dotNetSettings, package: package, cancellationToken: cancellationToken);
 
             if (updated)
             {
