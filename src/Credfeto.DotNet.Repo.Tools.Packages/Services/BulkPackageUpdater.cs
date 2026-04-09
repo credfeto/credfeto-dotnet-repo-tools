@@ -29,6 +29,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 {
     private readonly IBulkPackageConfigLoader _bulkPackageConfigLoader;
     private readonly IDotNetBuild _dotNetBuild;
+    private readonly IProjectXmlLoader _projectLoader;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IDotNetVersion _dotNetVersion;
     private readonly IGitRepositoryFactory _gitRepositoryFactory;
@@ -49,6 +50,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                               IGlobalJson globalJson,
                               IDotNetVersion dotNetVersion,
                               IDotNetBuild dotNetBuild,
+                              IProjectXmlLoader projectLoader,
                               IDotNetFilesDetector dotNetFilesDetector,
                               IReleaseConfigLoader releaseConfigLoader,
                               IReleaseGeneration releaseGeneration,
@@ -64,6 +66,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         this._globalJson = globalJson;
         this._dotNetVersion = dotNetVersion;
         this._dotNetBuild = dotNetBuild;
+        this._projectLoader = projectLoader;
         this._dotNetFilesDetector = dotNetFilesDetector;
         this._releaseConfigLoader = releaseConfigLoader;
         this._releaseGeneration = releaseGeneration;
@@ -268,7 +271,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
     }
 
-    
+
     private async ValueTask ProcessRepoUpdatesAsync(PackageUpdateContext updateContext, RepoContext repoContext, IReadOnlyList<PackageUpdate> packages, CancellationToken cancellationToken)
     {
         DotNetFiles dotNetFiles = await this._dotNetFilesDetector.FindAsync(baseFolder: repoContext.WorkingDirectory, cancellationToken: cancellationToken);
@@ -289,14 +292,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
         foreach (PackageUpdate package in packages)
         {
-            bool updated = await this._singlePackageUpdater.UpdateAsync(updateContext: updateContext,
-                                                                        repoContext: repoContext,
-                                                                        solutions: dotNetFiles.Solutions,
-                                                                        sourceDirectory: dotNetFiles.SourceDirectory,
-                                                                        buildSettings: buildSettings,
-                                                                        dotNetSettings: dotNetSettings,
-                                                                        package: package,
-                                                                        cancellationToken: cancellationToken);
+            bool updated = await this.UpdateOnePackageAsync(updateContext: updateContext, repoContext: repoContext, cancellationToken: cancellationToken, dotNetFiles: dotNetFiles, buildSettings: buildSettings, dotNetSettings: dotNetSettings, package: package);
 
             if (updated)
             {
@@ -315,6 +311,29 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                                                                   releaseConfig: updateContext.ReleaseConfig,
                                                                   cancellationToken: cancellationToken);
         }
+    }
+
+    private ValueTask<bool> UpdateOnePackageAsync(in PackageUpdateContext updateContext,
+                                                  in RepoContext repoContext,
+                                                  in DotNetFiles dotNetFiles,
+                                                  in BuildSettings buildSettings,
+                                                  in DotNetVersionSettings dotNetSettings,
+                                                  PackageUpdate package,
+                                                  in CancellationToken cancellationToken)
+    {
+        // Ensure that any cached project information is cleared before each package update to ensure that the latest information is used
+        // for each package update
+        this._projectLoader.Reset();
+
+        return this._singlePackageUpdater.UpdateAsync(updateContext: updateContext,
+                                                                    repoContext: repoContext,
+                                                                    solutions: dotNetFiles.Solutions,
+                                                                    sourceDirectory: dotNetFiles.SourceDirectory,
+                                                                    buildSettings: buildSettings,
+                                                                    dotNetSettings: dotNetSettings,
+                                                                    package: package,
+                                                                    cancellationToken: cancellationToken);
+
     }
 
     private async ValueTask<PackageUpdateContext> BuildUpdateContextAsync(string? cacheFileName,
