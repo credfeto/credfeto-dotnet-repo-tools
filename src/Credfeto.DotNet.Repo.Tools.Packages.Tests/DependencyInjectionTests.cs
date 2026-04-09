@@ -55,6 +55,7 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
             .AddMockedService<IReleaseGeneration>()
             .AddMockedService<ITrackingCache>()
             .AddMockedService<ITrackingHashGenerator>()
+            .AddMockedService<IProjectLoader>()
             .AddBulkPackageUpdater();
     }
 }
