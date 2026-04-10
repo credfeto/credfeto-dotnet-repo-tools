@@ -247,6 +247,8 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         changes += await this.MakeCopyInstructionChangesAsync(repoContext: repoContext, filesToUpdate: filesToUpdate, cancellationToken: cancellationToken);
 
+        changes += await UpdatePartialFilesAsync(fileContext: fileContext, cancellationToken: cancellationToken);
+
         if (await this.UpdateDependabotConfigAsync(updateContext: updateContext, repoContext: repoContext, dotNetFiles: dotNetFiles, packages: packages, cancellationToken: cancellationToken))
         {
             ++changes;
@@ -369,6 +371,12 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         foreach ((string fileName, string context) in templateConfig.GitHub.Files)
         {
             copyInstructions.Add(fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, DOT_GITHUB_DIR, fileName), prefix: context));
+        }
+
+        foreach ((string folderPath, string context) in templateConfig.General.MirrorFolders)
+        {
+            string sourceFolderFullPath = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: folderPath);
+            copyInstructions.AddRange(IncludeFilesInSource(fileContext: fileContext, sourceFolder: sourceFolderFullPath, prefix: context, search: "*"));
         }
 
         return copyInstructions;
@@ -537,6 +545,64 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         foreach ((string fileName, string context) in fileContext.UpdateContext.TemplateConfig.DotNet.Files)
         {
             yield return fileContext.MakeFile(string.Join(separator: Path.DirectorySeparatorChar, "src", fileName), prefix: context);
+        }
+    }
+
+    private static async ValueTask<int> UpdatePartialFilesAsync(FileContext fileContext, CancellationToken cancellationToken)
+    {
+        int changes = 0;
+
+        foreach ((string fileName, string prefix) in fileContext.UpdateContext.TemplateConfig.General.PartialFiles)
+        {
+            bool changed = await UpdatePartialFileAsync(fileContext: fileContext, fileName: fileName, prefix: prefix, cancellationToken: cancellationToken);
+
+            if (changed)
+            {
+                ++changes;
+                await fileContext.RepoContext.Repository.PushAsync(cancellationToken);
+            }
+        }
+
+        return changes;
+    }
+
+    private static async ValueTask<bool> UpdatePartialFileAsync(FileContext fileContext, string fileName, string prefix, CancellationToken cancellationToken)
+    {
+        string sourceFileName = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: fileName);
+        string targetFileName = Path.Combine(path1: fileContext.RepoContext.WorkingDirectory, path2: fileName);
+
+        if (!File.Exists(sourceFileName))
+        {
+            return false;
+        }
+
+        string sourceContent = await File.ReadAllTextAsync(path: sourceFileName, cancellationToken: cancellationToken);
+
+        string? existingTargetContent = File.Exists(targetFileName)
+            ? await File.ReadAllTextAsync(path: targetFileName, cancellationToken: cancellationToken)
+            : null;
+
+        string newContent = PartialFileHelper.BuildContent(globalContent: sourceContent, existingTargetContent: existingTargetContent);
+
+        if (existingTargetContent is not null && StringComparer.Ordinal.Equals(x: existingTargetContent, y: newContent))
+        {
+            return false;
+        }
+
+        EnsureFolderExistsForPath(targetFileName);
+        await File.WriteAllTextAsync(path: targetFileName, contents: newContent, cancellationToken: cancellationToken);
+        await fileContext.RepoContext.Repository.CommitAsync(message: $"[{prefix}] Updated {fileName}", cancellationToken: cancellationToken);
+
+        return true;
+    }
+
+    private static void EnsureFolderExistsForPath(string filePath)
+    {
+        string? parent = Path.GetDirectoryName(filePath);
+
+        if (parent is not null && !Directory.Exists(parent))
+        {
+            Directory.CreateDirectory(parent);
         }
     }
 
