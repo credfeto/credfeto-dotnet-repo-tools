@@ -552,9 +552,9 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         int changes = 0;
 
-        foreach ((string fileName, string prefix) in fileContext.UpdateContext.TemplateConfig.General.PartialFiles)
+        foreach ((string fileName, PartialFileConfig config) in fileContext.UpdateContext.TemplateConfig.General.PartialFiles)
         {
-            bool changed = await UpdatePartialFileAsync(fileContext: fileContext, fileName: fileName, prefix: prefix, cancellationToken: cancellationToken);
+            bool changed = await UpdatePartialFileAsync(fileContext: fileContext, fileName: fileName, config: config, cancellationToken: cancellationToken);
 
             if (changed)
             {
@@ -566,7 +566,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         return changes;
     }
 
-    private static async ValueTask<bool> UpdatePartialFileAsync(FileContext fileContext, string fileName, string prefix, CancellationToken cancellationToken)
+    private static async ValueTask<bool> UpdatePartialFileAsync(FileContext fileContext, string fileName, PartialFileConfig config, CancellationToken cancellationToken)
     {
         string sourceFileName = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: fileName);
         string targetFileName = Path.Combine(path1: fileContext.RepoContext.WorkingDirectory, path2: fileName);
@@ -582,7 +582,13 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             ? await File.ReadAllTextAsync(path: targetFileName, cancellationToken: cancellationToken)
             : null;
 
-        string newContent = PartialFileHelper.BuildContent(globalContent: sourceContent, existingTargetContent: existingTargetContent);
+        string globallyMaintainedMarker = config.Match?.Begin ?? PartialFileHelper.DefaultGloballyMaintainedMarker;
+        string locallyMaintainedMarker = config.Match?.End ?? PartialFileHelper.DefaultLocallyMaintainedMarker;
+
+        string newContent = PartialFileHelper.BuildContent(globalContent: sourceContent,
+                                                           existingTargetContent: existingTargetContent,
+                                                           globallyMaintainedMarker: globallyMaintainedMarker,
+                                                           locallyMaintainedMarker: locallyMaintainedMarker);
 
         if (existingTargetContent is not null && StringComparer.Ordinal.Equals(x: existingTargetContent, y: newContent))
         {
@@ -591,7 +597,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         EnsureFolderExistsForPath(targetFileName);
         await File.WriteAllTextAsync(path: targetFileName, contents: newContent, cancellationToken: cancellationToken);
-        await fileContext.RepoContext.Repository.CommitAsync(message: $"[{prefix}] Updated {fileName}", cancellationToken: cancellationToken);
+        await fileContext.RepoContext.Repository.CommitAsync(message: $"[{config.Type}] Updated {fileName}", cancellationToken: cancellationToken);
 
         return true;
     }

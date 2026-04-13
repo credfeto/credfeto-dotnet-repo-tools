@@ -57,6 +57,9 @@ public sealed class TemplateConfigLoaderTests : TestBase
             this.CancellationToken()
         );
         Assert.NotEmpty(config.General.PartialFiles);
+        PartialFileConfig partialFileConfig = Assert.Single(config.General.PartialFiles.Values);
+        Assert.Equal(expected: "AI", actual: partialFileConfig.Type);
+        Assert.NotNull(partialFileConfig.Match);
     }
 
     private void MockConfig()
@@ -117,7 +120,13 @@ public sealed class TemplateConfigLoaderTests : TestBase
                   "ai/global": "AI"
                 },
                 "partial-files": {
-                  "ai/local/index.md": "AI"
+                  "ai/local/index.md": {
+                    "type": "AI",
+                    "match": {
+                      "begin": "<-- Globally Maintained -->",
+                      "end": "<-- Locally Maintained -->"
+                    }
+                  }
                 }
               },
               "dotNet": {

@@ -24,9 +24,9 @@ public sealed class PartialFileHelperTests : TestBase
 
         string result = PartialFileHelper.BuildContent(globalContent: globalContent, existingTargetContent: null);
 
-        int globalMarkerPos = result.IndexOf(PartialFileHelper.GloballyMaintainedMarker, StringComparison.Ordinal);
+        int globalMarkerPos = result.IndexOf(PartialFileHelper.DefaultGloballyMaintainedMarker, StringComparison.Ordinal);
         int globalContentPos = result.IndexOf(globalContent, StringComparison.Ordinal);
-        int localMarkerPos = result.IndexOf(PartialFileHelper.LocallyMaintainedMarker, StringComparison.Ordinal);
+        int localMarkerPos = result.IndexOf(PartialFileHelper.DefaultLocallyMaintainedMarker, StringComparison.Ordinal);
 
         Assert.True(globalMarkerPos < globalContentPos, userMessage: "Global marker should precede global content");
         Assert.True(globalContentPos < localMarkerPos, userMessage: "Global content should precede local marker");
@@ -85,5 +85,61 @@ public sealed class PartialFileHelperTests : TestBase
         string result = PartialFileHelper.BuildContent(globalContent: globalContent, existingTargetContent: existingTarget);
 
         Assert.Equal(expected: expected, actual: result);
+    }
+
+    [Fact]
+    public void BuildContent_WithCustomMarkers_WhenNoTargetExists_ProducesExpectedOutput()
+    {
+        const string globalContent = "Some global content";
+        const string beginMarker = "<!-- BEGIN GLOBAL -->";
+        const string endMarker = "<!-- END GLOBAL -->";
+        const string expected = "<!-- BEGIN GLOBAL -->\nSome global content\n<!-- END GLOBAL -->\n";
+
+        string result = PartialFileHelper.BuildContent(globalContent: globalContent,
+                                                       existingTargetContent: null,
+                                                       globallyMaintainedMarker: beginMarker,
+                                                       locallyMaintainedMarker: endMarker);
+
+        Assert.Equal(expected: expected, actual: result);
+    }
+
+    [Fact]
+    public void BuildContent_WithCustomMarkers_PreservesLocalContent()
+    {
+        const string globalContent = "New global content";
+        const string localContent = "My local notes";
+        const string beginMarker = "<!-- BEGIN GLOBAL -->";
+        const string endMarker = "<!-- END GLOBAL -->";
+        const string existingTarget = "<!-- BEGIN GLOBAL -->\n" +
+                                     "Old global content\n" +
+                                     "<!-- END GLOBAL -->\n" +
+                                     localContent;
+
+        string result = PartialFileHelper.BuildContent(globalContent: globalContent,
+                                                       existingTargetContent: existingTarget,
+                                                       globallyMaintainedMarker: beginMarker,
+                                                       locallyMaintainedMarker: endMarker);
+
+        Assert.Contains(localContent, result, StringComparison.Ordinal);
+        Assert.Contains(globalContent, result, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildContent_WithCustomMarkers_IsIdempotent()
+    {
+        const string globalContent = "Some global content";
+        const string beginMarker = "<!-- BEGIN GLOBAL -->";
+        const string endMarker = "<!-- END GLOBAL -->";
+        string firstResult = PartialFileHelper.BuildContent(globalContent: globalContent,
+                                                            existingTargetContent: null,
+                                                            globallyMaintainedMarker: beginMarker,
+                                                            locallyMaintainedMarker: endMarker);
+
+        string secondResult = PartialFileHelper.BuildContent(globalContent: globalContent,
+                                                             existingTargetContent: firstResult,
+                                                             globallyMaintainedMarker: beginMarker,
+                                                             locallyMaintainedMarker: endMarker);
+
+        Assert.Equal(expected: firstResult, actual: secondResult);
     }
 }

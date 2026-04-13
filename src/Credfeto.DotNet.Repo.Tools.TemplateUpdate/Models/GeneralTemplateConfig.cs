@@ -9,12 +9,12 @@ public sealed class GeneralTemplateConfig
     public GeneralTemplateConfig(
         Dictionary<string, string> files,
         Dictionary<string, string>? mirrorFolders = null,
-        Dictionary<string, string>? partialFiles = null
+        Dictionary<string, PartialFileConfig>? partialFiles = null
     )
     {
         this.Files = files;
         this.MirrorFolders = mirrorFolders ?? new Dictionary<string, string>(System.StringComparer.Ordinal);
-        this.PartialFiles = partialFiles ?? new Dictionary<string, string>(System.StringComparer.Ordinal);
+        this.PartialFiles = partialFiles ?? new Dictionary<string, PartialFileConfig>(System.StringComparer.Ordinal);
     }
 
     public Dictionary<string, string> Files { get; }
@@ -23,5 +23,5 @@ public sealed class GeneralTemplateConfig
     public Dictionary<string, string> MirrorFolders { get; }
 
     [JsonPropertyName("partial-files")]
-    public Dictionary<string, string> PartialFiles { get; }
+    public Dictionary<string, PartialFileConfig> PartialFiles { get; }
 }
