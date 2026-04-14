@@ -904,8 +904,8 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         public CopyInstruction MakeFile(string fileName, string prefix, Func<byte[], (byte[] bytes, bool changed)> apply)
         {
-            string sourceFileName = Path.Combine(path1: this.UpdateContext.TemplateFolder, path2: fileName);
-            string targetFileName = Path.Combine(path1: this.RepoContext.WorkingDirectory, path2: fileName);
+            string sourceFileName = ResolveContainedPath(baseDirectory: this.UpdateContext.TemplateFolder, relativePath: fileName);
+            string targetFileName = ResolveContainedPath(baseDirectory: this.RepoContext.WorkingDirectory, relativePath: fileName);
 
             return new(SourceFileName: sourceFileName, TargetFileName: targetFileName, Apply: apply, IsTargetNewer: (_, _) => false, $"[{prefix}] Updated {fileName}");
         }
