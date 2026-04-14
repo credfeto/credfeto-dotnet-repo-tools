@@ -35,6 +35,33 @@ public sealed class TemplateConfigLoaderTests : TestBase
         Assert.NotEmpty(config.General.Files);
     }
 
+    [Fact]
+    public async Task LoadConfigWithMirrorFoldersAsync()
+    {
+        this.MockConfigWithMirrorAndPartialFiles();
+
+        TemplateConfig config = await this._templateConfigLoader.LoadConfigAsync(
+            path: "https://example.com/templates.json",
+            this.CancellationToken()
+        );
+        Assert.NotEmpty(config.General.MirrorFolders);
+    }
+
+    [Fact]
+    public async Task LoadConfigWithPartialFilesAsync()
+    {
+        this.MockConfigWithMirrorAndPartialFiles();
+
+        TemplateConfig config = await this._templateConfigLoader.LoadConfigAsync(
+            path: "https://example.com/templates.json",
+            this.CancellationToken()
+        );
+        Assert.NotEmpty(config.General.PartialFiles);
+        PartialFileConfig partialFileConfig = Assert.Single(config.General.PartialFiles.Values);
+        Assert.Equal(expected: "AI", actual: partialFileConfig.Type);
+        Assert.NotNull(partialFileConfig.Match);
+    }
+
     private void MockConfig()
     {
         const string releaseConfigJson = """
@@ -69,6 +96,59 @@ public sealed class TemplateConfigLoaderTests : TestBase
                   ".github/actions/nuget-push-integrated-symbol-feed/actions.yml": "Obsolete action",
                   ".github/actions/nuget-push-separate-symbol-feed/actions.yml": "Obsolete action"
                 }
+              }
+            }
+            """;
+
+        this._httpClientFactory.MockCreateClientWithResponse(
+            nameof(TemplateConfigLoader),
+            httpStatusCode: HttpStatusCode.OK,
+            responseMessage: releaseConfigJson
+        );
+    }
+
+    private void MockConfigWithMirrorAndPartialFiles()
+    {
+        const string releaseConfigJson = """
+            {
+              "general": {
+                "files": {
+                  ".editorconfig": "Config"
+                },
+                "mirror-folders": {
+                  ".github/instructions": "Config",
+                  "ai/global": "AI"
+                },
+                "partial-files": {
+                  "ai/local/index.md": {
+                    "type": "AI",
+                    "match": {
+                      "begin": "<-- Globally Maintained -->",
+                      "end": "<-- Locally Maintained -->"
+                    }
+                  }
+                }
+              },
+              "dotNet": {
+                "global-json": true,
+                "resharper-dotsettings": true,
+                "files": {}
+              },
+              "gitHub": {
+                "dependabot": {
+                  "generate": true
+                },
+                "labels": {
+                  "generate": true
+                },
+                "issue-templates": true,
+                "pr-template": true,
+                "actions": true,
+                "linters": true,
+                "files": {}
+              },
+              "cleanup": {
+                "files": {}
               }
             }
             """;

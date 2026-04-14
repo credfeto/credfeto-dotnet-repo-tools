@@ -19,6 +19,7 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 [JsonSerializable(typeof(DependabotTemplateConfig))]
 [JsonSerializable(typeof(GitHubTemplateConfig))]
 [JsonSerializable(typeof(LabelsTemplateConfig))]
-[JsonSerializable(typeof(LabelsTemplateConfig))]
+[JsonSerializable(typeof(PartialFileConfig))]
+[JsonSerializable(typeof(PartialFileMatchConfig))]
 [JsonSerializable(typeof(TemplateConfig))]
 internal sealed partial class TemplateConfigSerializationContext : JsonSerializerContext;

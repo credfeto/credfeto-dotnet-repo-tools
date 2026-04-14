@@ -181,4 +181,7 @@ internal static partial class BulkTemplateUpdaterLoggingExtensions
     [LoggerMessage(EventId = 19, Level = LogLevel.Information, Message = "Comparing SDK Versions: {sourceVersion} -> {targetVersion}")]
     public static partial void ComparingSdkVersions(this ILogger<BulkTemplateUpdater> logger, NuGetVersion sourceVersion, NuGetVersion targetVersion);
 
+    [LoggerMessage(EventId = 20, Level = LogLevel.Error, Message = "Configured partial file '{fileName}' is missing from the template. Expected source file: '{sourceFileName}'.")]
+    public static partial void LogMissingPartialFileInTemplate(this ILogger<BulkTemplateUpdater> logger, string fileName, string sourceFileName);
+
 }
