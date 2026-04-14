@@ -247,7 +247,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         changes += await this.MakeCopyInstructionChangesAsync(repoContext: repoContext, filesToUpdate: filesToUpdate, cancellationToken: cancellationToken);
 
-        changes += await UpdatePartialFilesAsync(fileContext: fileContext, cancellationToken: cancellationToken);
+        changes += await this.UpdatePartialFilesAsync(fileContext: fileContext, cancellationToken: cancellationToken);
 
         if (await this.UpdateDependabotConfigAsync(updateContext: updateContext, repoContext: repoContext, dotNetFiles: dotNetFiles, packages: packages, cancellationToken: cancellationToken))
         {
@@ -375,7 +375,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         foreach ((string folderPath, string context) in templateConfig.General.MirrorFolders)
         {
-            string sourceFolderFullPath = ResolveContainedPath(baseDirectory: fileContext.UpdateContext.TemplateFolder, relativePath: folderPath);
+            string sourceFolderFullPath = Path.GetFullPath(Path.Combine(fileContext.UpdateContext.TemplateFolder, folderPath));
             copyInstructions.AddRange(IncludeFilesInSource(fileContext: fileContext, sourceFolder: sourceFolderFullPath, prefix: context, search: "*"));
         }
 
@@ -548,13 +548,13 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         }
     }
 
-    private static async ValueTask<int> UpdatePartialFilesAsync(FileContext fileContext, CancellationToken cancellationToken)
+    private async ValueTask<int> UpdatePartialFilesAsync(FileContext fileContext, CancellationToken cancellationToken)
     {
         int changes = 0;
 
         foreach ((string fileName, PartialFileConfig config) in fileContext.UpdateContext.TemplateConfig.General.PartialFiles)
         {
-            bool changed = await UpdatePartialFileAsync(fileContext: fileContext, fileName: fileName, config: config, cancellationToken: cancellationToken);
+            bool changed = await this.UpdatePartialFileAsync(fileContext: fileContext, fileName: fileName, config: config, cancellationToken: cancellationToken);
 
             if (changed)
             {
@@ -566,14 +566,14 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         return changes;
     }
 
-    private static async ValueTask<bool> UpdatePartialFileAsync(FileContext fileContext, string fileName, PartialFileConfig config, CancellationToken cancellationToken)
+    private async ValueTask<bool> UpdatePartialFileAsync(FileContext fileContext, string fileName, PartialFileConfig config, CancellationToken cancellationToken)
     {
-        string sourceFileName = ResolveContainedPath(baseDirectory: fileContext.UpdateContext.TemplateFolder, relativePath: fileName);
-        string targetFileName = ResolveContainedPath(baseDirectory: fileContext.RepoContext.WorkingDirectory, relativePath: fileName);
+        string sourceFileName = Path.GetFullPath(Path.Combine(fileContext.UpdateContext.TemplateFolder, fileName));
+        string targetFileName = Path.GetFullPath(Path.Combine(fileContext.RepoContext.WorkingDirectory, fileName));
 
         if (!File.Exists(sourceFileName))
         {
-            Trace.TraceWarning($"Configured partial file '{fileName}' is missing from the template. Expected source file: '{sourceFileName}'.");
+            this._logger.LogMissingPartialFileInTemplate(fileName: fileName, sourceFileName: sourceFileName);
 
             return false;
         }
@@ -610,7 +610,35 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         return true;
     }
 
-    private static string ResolveContainedPath(string baseDirectory, string relativePath)
+    private static void ValidateConfigPaths(TemplateConfig config, string templateFolder)
+    {
+        foreach (string fileName in config.General.Files.Keys)
+        {
+            ResolveContainedPath(baseDirectory: templateFolder, relativePath: fileName);
+        }
+
+        foreach (string folderPath in config.General.MirrorFolders.Keys)
+        {
+            ResolveContainedPath(baseDirectory: templateFolder, relativePath: folderPath);
+        }
+
+        foreach (string fileName in config.General.PartialFiles.Keys)
+        {
+            ResolveContainedPath(baseDirectory: templateFolder, relativePath: fileName);
+        }
+
+        foreach (string fileName in config.GitHub.Files.Keys)
+        {
+            ResolveContainedPath(baseDirectory: templateFolder, relativePath: Path.Combine(DOT_GITHUB_DIR, fileName));
+        }
+
+        foreach (string fileName in config.DotNet.Files.Keys)
+        {
+            ResolveContainedPath(baseDirectory: templateFolder, relativePath: Path.Combine("src", fileName));
+        }
+    }
+
+    private static void ResolveContainedPath(string baseDirectory, string relativePath)
     {
         if (Path.IsPathRooted(relativePath))
         {
@@ -629,8 +657,6 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         {
             throw new ArgumentException(message: $"Path escapes the base directory: '{relativePath}'", paramName: nameof(relativePath));
         }
-
-        return resolvedFullPath;
     }
 
     private async ValueTask<int> UpdateResharperSettingsAsync(RepoContext repoContext, TemplateUpdateContext updateContext, DotNetFiles dotNetFiles, CancellationToken cancellationToken)
@@ -847,7 +873,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         TemplateConfig templateConfig = await this._templateConfigLoader.LoadConfigAsync(path: templateConfigFileName, cancellationToken: cancellationToken);
 
-        DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: templateRepo.WorkingDirectory, cancellationToken: cancellationToken);
+        string templateFolder = templateRepo.WorkingDirectory;
+
+        ValidateConfigPaths(config: templateConfig, templateFolder: templateFolder);
+
+        DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: templateFolder, cancellationToken: cancellationToken);
 
         IReadOnlyList<Version> installedDotNetSdks = await this._dotNetVersion.GetInstalledSdksAsync(cancellationToken);
 
@@ -864,7 +894,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         ReleaseConfig releaseConfig = await this._releaseConfigLoader.LoadAsync(path: releaseConfigFileName, cancellationToken: cancellationToken);
 
         return new(WorkFolder: workFolder,
-                   TemplateFolder: templateRepo.WorkingDirectory,
+                   TemplateFolder: templateFolder,
                    TrackingFileName: trackingFileName,
                    TemplateConfig: templateConfig,
                    DotNetSettings: dotNetSettings,
@@ -904,8 +934,8 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         public CopyInstruction MakeFile(string fileName, string prefix, Func<byte[], (byte[] bytes, bool changed)> apply)
         {
-            string sourceFileName = ResolveContainedPath(baseDirectory: this.UpdateContext.TemplateFolder, relativePath: fileName);
-            string targetFileName = ResolveContainedPath(baseDirectory: this.RepoContext.WorkingDirectory, relativePath: fileName);
+            string sourceFileName = Path.GetFullPath(Path.Combine(this.UpdateContext.TemplateFolder, fileName));
+            string targetFileName = Path.GetFullPath(Path.Combine(this.RepoContext.WorkingDirectory, fileName));
 
             return new(SourceFileName: sourceFileName, TargetFileName: targetFileName, Apply: apply, IsTargetNewer: (_, _) => false, $"[{prefix}] Updated {fileName}");
         }

@@ -1,8 +1,10 @@
 using System;
+using System.Diagnostics;
 using System.Text.Json.Serialization;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 
+[DebuggerDisplay("Begin: {Begin}, End: {End}")]
 public sealed class PartialFileMatchConfig
 {
     [JsonConstructor]

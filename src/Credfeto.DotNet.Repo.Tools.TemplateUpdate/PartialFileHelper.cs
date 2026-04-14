@@ -11,7 +11,7 @@ public static class PartialFileHelper
     {
         string localContent = ExtractLocalContent(existingTargetContent: existingTargetContent, locallyMaintainedMarker: locallyMaintainedMarker);
 
-        return globallyMaintainedMarker + "\n" + globalContent.TrimEnd('\r', '\n') + "\n" + locallyMaintainedMarker + "\n" + localContent;
+        return globallyMaintainedMarker + Environment.NewLine + globalContent.TrimEnd('\r', '\n') + Environment.NewLine + locallyMaintainedMarker + Environment.NewLine + localContent;
     }
 
     public static string BuildContent(string globalContent, string? existingTargetContent)
@@ -24,7 +24,7 @@ public static class PartialFileHelper
 
     private static string ExtractLocalContent(string? existingTargetContent, string locallyMaintainedMarker)
     {
-        if (existingTargetContent is null)
+        if (string.IsNullOrWhiteSpace(existingTargetContent))
         {
             return string.Empty;
         }
