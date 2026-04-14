@@ -375,7 +375,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         foreach ((string folderPath, string context) in templateConfig.General.MirrorFolders)
         {
-            string sourceFolderFullPath = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: folderPath);
+            string sourceFolderFullPath = ResolveContainedPath(baseDirectory: fileContext.UpdateContext.TemplateFolder, relativePath: folderPath);
             copyInstructions.AddRange(IncludeFilesInSource(fileContext: fileContext, sourceFolder: sourceFolderFullPath, prefix: context, search: "*"));
         }
 
@@ -568,11 +568,13 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
     private static async ValueTask<bool> UpdatePartialFileAsync(FileContext fileContext, string fileName, PartialFileConfig config, CancellationToken cancellationToken)
     {
-        string sourceFileName = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: fileName);
-        string targetFileName = Path.Combine(path1: fileContext.RepoContext.WorkingDirectory, path2: fileName);
+        string sourceFileName = ResolveContainedPath(baseDirectory: fileContext.UpdateContext.TemplateFolder, relativePath: fileName);
+        string targetFileName = ResolveContainedPath(baseDirectory: fileContext.RepoContext.WorkingDirectory, relativePath: fileName);
 
         if (!File.Exists(sourceFileName))
         {
+            Trace.TraceWarning($"Configured partial file '{fileName}' is missing from the template. Expected source file: '{sourceFileName}'.");
+
             return false;
         }
 
@@ -595,21 +597,40 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             return false;
         }
 
-        EnsureFolderExistsForPath(targetFileName);
+        string? parent = Path.GetDirectoryName(targetFileName);
+
+        if (!string.IsNullOrEmpty(parent))
+        {
+            Directory.CreateDirectory(parent);
+        }
+
         await File.WriteAllTextAsync(path: targetFileName, contents: newContent, cancellationToken: cancellationToken);
         await fileContext.RepoContext.Repository.CommitAsync(message: $"[{config.Type}] Updated {fileName}", cancellationToken: cancellationToken);
 
         return true;
     }
 
-    private static void EnsureFolderExistsForPath(string filePath)
+    private static string ResolveContainedPath(string baseDirectory, string relativePath)
     {
-        string? parent = Path.GetDirectoryName(filePath);
-
-        if (parent is not null && !Directory.Exists(parent))
+        if (Path.IsPathRooted(relativePath))
         {
-            Directory.CreateDirectory(parent);
+            throw new ArgumentException(message: $"Path must be relative: '{relativePath}'", paramName: nameof(relativePath));
         }
+
+        string baseFullPath = Path.GetFullPath(path: baseDirectory);
+        string resolvedFullPath = Path.GetFullPath(path: Path.Combine(path1: baseFullPath, path2: relativePath));
+        StringComparison comparisonType = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS()
+            ? StringComparison.OrdinalIgnoreCase
+            : StringComparison.Ordinal;
+        string baseWithSeparator = baseFullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                                 + Path.DirectorySeparatorChar;
+
+        if (!resolvedFullPath.StartsWith(value: baseWithSeparator, comparisonType: comparisonType))
+        {
+            throw new ArgumentException(message: $"Path escapes the base directory: '{relativePath}'", paramName: nameof(relativePath));
+        }
+
+        return resolvedFullPath;
     }
 
     private async ValueTask<int> UpdateResharperSettingsAsync(RepoContext repoContext, TemplateUpdateContext updateContext, DotNetFiles dotNetFiles, CancellationToken cancellationToken)
