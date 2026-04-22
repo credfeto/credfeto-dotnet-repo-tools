@@ -18,5 +18,7 @@ Precedence is given to local instructions over global instructions.
 - If a memory file's description diverges from the source code, update it to reflect the changes.
 - Re-organise the sections in the memory file whenever the current file set no longer works.
 - Whenever rebasing from main, take the the current branch's changes, but merge the changes in from main into the current fileset.
+- For .NET NuGet vulnerability handling, do not suppress NU19xx warnings/errors globally (for example via `WarningsNotAsErrors` or `NoWarn` in shared props); use explicit `<NuGetAuditSuppress Include="..." />` entries in the affected `.csproj` files instead.
+- Whenever applying NuGet advisory suppressions, scope them to specific advisory URLs and keep them in the project that owns the dependency.
 - Whenever starting work - re-read all these files and use this as a basis for how the work is performed.
 - This file (.ai-instructions) should only be edited in git@github.com:credfeto/cs-template.git.

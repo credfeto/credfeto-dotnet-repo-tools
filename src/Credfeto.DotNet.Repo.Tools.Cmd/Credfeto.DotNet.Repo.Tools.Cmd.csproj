@@ -67,6 +67,8 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-8g4q-xg66-9fp4" />
     <!-- error NU1903 Warning As Error: Package 'System.Formats.Asn1' 6.0.0 has a known high severity vulnerability -->
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-447r-wph3-92pm" />
+    <!-- error NU1901: Warning As Error: Package 'NuGet.Protocol' 6.14.0 has a known low severity vulnerability -->
+    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-g4vj-cjjj-v7hg" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build\Credfeto.DotNet.Repo.Tools.Build.csproj" />
