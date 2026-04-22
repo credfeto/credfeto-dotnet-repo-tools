@@ -1,4 +1,5 @@
 <-- Globally Maintained -->
+<-- Globally Maintained -->
 # Local instructions
 
 This is an index of local instructions that apply to just this project. 
@@ -11,4 +12,5 @@ This is an index of local instructions that apply to just this project.
 - This file should not be modified in git@github.com:credfeto/cs-template.git, but can be modified in forks and other repositories as needed.
 - The rules above this point in the file should be considered global rules.
 
+<-- Locally Maintained -->
 <-- Locally Maintained -->
