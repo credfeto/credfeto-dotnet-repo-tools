@@ -67,3 +67,16 @@ fi
 
 - Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) format for all commit messages.
 - Always include the user's original prompt verbatim in the commit description (body), prefixed with `Prompt: `. Do not include it in the commit title.
+
+## Dependabot Vulnerability Warnings
+
+- After any push, if the remote prints a message like:
+  ```
+  remote: GitHub found N vulnerabilities on <repo>'s default branch (X critical, Y high, ...).
+  remote:      https://github.com/<repo>/security/dependabot
+  ```
+  check whether there are already open Dependabot PRs covering those vulnerabilities (`gh pr list --label dependencies`).
+- If there are no open Dependabot PRs (or they do not cover all flagged advisories), visit `https://github.com/<repo>/security/dependabot`, review each unfixed advisory, and for any where a manual fix is possible create a GitHub Issue that:
+  - Names the vulnerable package and the severity.
+  - Describes the steps to fix it manually.
+  - Is labelled `Security` and `AI-Work`.
