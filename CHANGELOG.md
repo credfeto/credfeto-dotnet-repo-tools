@@ -8,7 +8,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
-- Corrupting tags in partially maintained files
 ### Changed
 ### Removed
 ### Deployment Changes
@@ -16,6 +15,10 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.4.9] - 2026-04-23
+### Fixed
+- Corrupting tags in partially maintained files
+
 ## [1.4.8] - 2026-04-22
 ### Added
 - Template updater: maintain AI/instruction files and partially-maintained files from template repo with configurable section markers
