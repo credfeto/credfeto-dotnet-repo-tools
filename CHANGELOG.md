@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
+- Corrupting tags in partially maintained files
 ### Changed
 ### Removed
 ### Deployment Changes
