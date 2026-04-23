@@ -123,8 +123,8 @@ public sealed class TemplateConfigLoaderTests : TestBase
                   "ai/local/index.md": {
                     "type": "AI",
                     "match": {
-                      "begin": "<-- Globally Maintained -->",
-                      "end": "<-- Locally Maintained -->"
+                      "begin": "<!-- Globally Maintained -->",
+                      "end": "<!-- Locally Maintained -->"
                     }
                   }
                 }
