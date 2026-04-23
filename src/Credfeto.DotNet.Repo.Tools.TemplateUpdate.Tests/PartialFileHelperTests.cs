@@ -172,6 +172,30 @@ public sealed class PartialFileHelperTests : TestBase
         Assert.Equal(expected: 1, actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultLocallyMaintainedMarker));
     }
 
+    [Fact]
+    public void BuildContent_WhenSourceOnlyHasGlobalMarker_DoesNotReintroduceGlobalMarker()
+    {
+        const string sourceContent = "<!-- Globally Maintained -->\n" +
+                                     "# Local instructions\n";
+
+        string result = PartialFileHelper.BuildContent(globalContent: sourceContent, existingTargetContent: null);
+
+        Assert.Equal(expected: 1, actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultGloballyMaintainedMarker));
+        Assert.Contains("# Local instructions", result, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildContent_WhenSourceOnlyHasLocalMarker_DoesNotReintroduceLocalMarker()
+    {
+        const string sourceContent = "# Local instructions\n" +
+                                     "<!-- Locally Maintained -->\n";
+
+        string result = PartialFileHelper.BuildContent(globalContent: sourceContent, existingTargetContent: null);
+
+        Assert.Equal(expected: 1, actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultLocallyMaintainedMarker));
+        Assert.Contains("# Local instructions", result, StringComparison.Ordinal);
+    }
+
     private static int CountOccurrences(string result, string marker)
     {
         int count = 0;

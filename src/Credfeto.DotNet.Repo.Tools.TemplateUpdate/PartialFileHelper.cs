@@ -9,10 +9,10 @@ public static class PartialFileHelper
 
     public static string BuildContent(string globalContent, string? existingTargetContent, string globallyMaintainedMarker, string locallyMaintainedMarker)
     {
-        string cleanedGlobalContent = ExtractGlobalContent(content: globalContent, globallyMaintainedMarker: globallyMaintainedMarker, locallyMaintainedMarker: locallyMaintainedMarker);
+        string extractedGlobalContent = ExtractGlobalContent(content: globalContent, globallyMaintainedMarker: globallyMaintainedMarker, locallyMaintainedMarker: locallyMaintainedMarker);
         string localContent = ExtractLocalContent(existingTargetContent: existingTargetContent, locallyMaintainedMarker: locallyMaintainedMarker);
 
-        return globallyMaintainedMarker + Environment.NewLine + cleanedGlobalContent + Environment.NewLine + locallyMaintainedMarker + Environment.NewLine + localContent;
+        return globallyMaintainedMarker + Environment.NewLine + extractedGlobalContent + Environment.NewLine + locallyMaintainedMarker + Environment.NewLine + localContent;
     }
 
     public static string BuildContent(string globalContent, string? existingTargetContent)
@@ -52,21 +52,28 @@ public static class PartialFileHelper
     {
         int globalMarkerPos = content.IndexOf(value: globallyMaintainedMarker, comparisonType: StringComparison.Ordinal);
 
-        if (globalMarkerPos < 0)
+        if (globalMarkerPos >= 0)
+        {
+            int globalContentStartPos = globalMarkerPos + globallyMaintainedMarker.Length;
+            int localMarkerPos = content.IndexOf(value: locallyMaintainedMarker, startIndex: globalContentStartPos, comparisonType: StringComparison.Ordinal);
+
+            if (localMarkerPos >= 0)
+            {
+                string betweenMarkers = content[globalContentStartPos..localMarkerPos];
+
+                return betweenMarkers.Trim('\r', '\n');
+            }
+
+            return content[globalContentStartPos..].Trim('\r', '\n');
+        }
+
+        int localOnlyMarkerPos = content.IndexOf(value: locallyMaintainedMarker, comparisonType: StringComparison.Ordinal);
+
+        if (localOnlyMarkerPos < 0)
         {
             return content.TrimEnd('\r', '\n');
         }
 
-        int globalContentStartPos = globalMarkerPos + globallyMaintainedMarker.Length;
-        int localMarkerPos = content.IndexOf(value: locallyMaintainedMarker, startIndex: globalContentStartPos, comparisonType: StringComparison.Ordinal);
-
-        if (localMarkerPos < 0)
-        {
-            return content.TrimEnd('\r', '\n');
-        }
-
-        string betweenMarkers = content[globalContentStartPos..localMarkerPos];
-
-        return betweenMarkers.Trim('\r', '\n');
+        return content[..localOnlyMarkerPos].Trim('\r', '\n');
     }
 }
