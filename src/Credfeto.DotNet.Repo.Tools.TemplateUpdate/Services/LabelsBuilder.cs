@@ -77,8 +77,30 @@ public sealed class LabelsBuilder : ILabelsBuilder
             []
         ),
         new(Name: "Tech Debt", Description: "Technical debt", Colour: "30027a", [], []),
+        new(Name: "AI-Work", Description: "Work for an AI Agent", Colour: "ffa500", [], []),
         new(Name: "Changelog Not Required", Description: "Changelog Not Required", Colour: "08f5f8", [], []),
         new(Name: "auto-pr", Description: "Pull request created automatically", Colour: "0000aa", [], []),
+        new(
+            Name: "High",
+            Description: "High Priority",
+            Colour: "ffa500",
+            [],
+            []
+        ),
+        new(
+            Name: "Low",
+            Description: "Low Priority",
+            Colour: "cc8899",
+            [],
+            []
+        ),
+        new(
+            Name: "Medium",
+            Description: "Medium Priority",
+            Colour: "ffff00",
+            [],
+            []
+        ),
         new(
             Name: "no-pr-activity",
             Description: "Pull Request has had no activity for a long time",
@@ -90,6 +112,8 @@ public sealed class LabelsBuilder : ILabelsBuilder
         new(Name: "dotnet", Description: "Dotnet package updates", Colour: "db6baa", ["src/**/*.csproj"], []),
         new(Name: "npm", Description: "npm package update", Colour: "e99695", ["./**/package.json", "./**/package-lock.json"], []),
         new(Name: "DO NOT MERGE", Description: "This pull request should not be merged yet", Colour: "ff0000", [], []),
+        new(Name: "On Hold", Description: "Do not work on this", Colour: "ff0000", [], []),
+        new(Name: "Urgent", Description: "Urgent Priority", Colour: "ff0000", [], []),
     ];
 
     public LabelContent BuildLabelsConfig(IReadOnlyList<string> projects)
