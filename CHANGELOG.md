@@ -7,7 +7,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
-- AI-Work, Urgent, High, Medium, Low, and On Hold labels for pull request triage and priority tracking.
 ### Fixed
 ### Changed
 ### Removed
@@ -16,6 +15,10 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.4.10] - 2026-04-24
+### Added
+- AI-Work, Urgent, High, Medium, Low, and On Hold labels for pull request triage and priority tracking.
+
 ## [1.4.9] - 2026-04-23
 ### Fixed
 - Corrupting tags in partially maintained files
