@@ -659,6 +659,20 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         }
     }
 
+    private void ValidateCleanupConflicts(TemplateConfig config, string templateFolder)
+    {
+        foreach ((string fileName, _) in config.Cleanup.Files)
+        {
+            string templateFilePath = Path.GetFullPath(Path.Combine(path1: templateFolder, path2: fileName));
+
+            if (File.Exists(templateFilePath))
+            {
+                this._logger.LogCleanupConflict(fileName: fileName);
+                throw new InvalidTemplateConfigException($"Template configuration conflict: '{fileName}' is listed in cleanup.files but still exists in the template. Remove it from the template or from cleanup.files to prevent repeated add/remove cycles.");
+            }
+        }
+    }
+
     private async ValueTask<int> UpdateResharperSettingsAsync(RepoContext repoContext, TemplateUpdateContext updateContext, DotNetFiles dotNetFiles, CancellationToken cancellationToken)
     {
         if (!updateContext.TemplateConfig.DotNet.JetBrainsDotSettings)
@@ -876,6 +890,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         string templateFolder = templateRepo.WorkingDirectory;
 
         ValidateConfigPaths(config: templateConfig, templateFolder: templateFolder);
+        this.ValidateCleanupConflicts(config: templateConfig, templateFolder: templateFolder);
 
         DotNetVersionSettings dotNetSettings = await this._globalJson.LoadGlobalJsonAsync(baseFolder: templateFolder, cancellationToken: cancellationToken);
 

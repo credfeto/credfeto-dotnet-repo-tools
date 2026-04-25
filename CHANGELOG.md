@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Added
 ### Fixed
+- Detect when a file is listed in `cleanup.files` but still exists in the template; this would cause repeated add/remove cycles on every run — report an error and abort immediately
 ### Changed
 ### Removed
 ### Deployment Changes
