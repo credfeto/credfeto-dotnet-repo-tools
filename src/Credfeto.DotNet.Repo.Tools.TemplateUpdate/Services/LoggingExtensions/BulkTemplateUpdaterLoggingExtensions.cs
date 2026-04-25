@@ -184,4 +184,7 @@ internal static partial class BulkTemplateUpdaterLoggingExtensions
     [LoggerMessage(EventId = 20, Level = LogLevel.Error, Message = "Configured partial file '{fileName}' is missing from the template. Expected source file: '{sourceFileName}'.")]
     public static partial void LogMissingPartialFileInTemplate(this ILogger<BulkTemplateUpdater> logger, string fileName, string sourceFileName);
 
+    [LoggerMessage(EventId = 21, Level = LogLevel.Error, Message = "Template config conflict: '{fileName}' is listed in cleanup.files but still exists in the template. Remove it from the template or from cleanup.files to prevent repeated add/remove cycles.")]
+    public static partial void LogCleanupConflict(this ILogger<BulkTemplateUpdater> logger, string fileName);
+
 }
