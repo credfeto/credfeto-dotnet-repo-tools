@@ -7,6 +7,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 
 ## [Unreleased]
 ### Added
+- Add Bug, Enhancement, Performance, and Security labels to LabelBuilder with appropriate colours and descriptions; fix Changelog Not Required label description; refactor label builder tests to use builder pattern; document labels in README
 ### Fixed
 - Detect when a file is listed in `cleanup.files` but still exists in the template; this would cause repeated add/remove cycles on every run — report an error and abort immediately
 ### Changed
