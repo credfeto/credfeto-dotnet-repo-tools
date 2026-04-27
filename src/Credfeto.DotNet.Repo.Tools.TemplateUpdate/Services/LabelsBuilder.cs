@@ -78,7 +78,11 @@ public sealed class LabelsBuilder : ILabelsBuilder
         ),
         new(Name: "Tech Debt", Description: "Technical debt", Colour: "30027a", [], []),
         new(Name: "AI-Work", Description: "Work for an AI Agent", Colour: "ffa500", [], []),
-        new(Name: "Changelog Not Required", Description: "Changelog Not Required", Colour: "08f5f8", [], []),
+        new(Name: "Changelog Not Required", Description: "No changelog entry required for this pull request", Colour: "08f5f8", [], []),
+        new(Name: "Bug", Description: "Generic bug fix", Colour: "d73a4a", [], []),
+        new(Name: "Enhancement", Description: "Enhancement to project", Colour: "a2eeef", [], []),
+        new(Name: "Performance", Description: "Performance enhancement or issue", Colour: "0075ca", [], []),
+        new(Name: "Security", Description: "Security issue, e.g. use of insecure packages, or security fix", Colour: "ee0701", [], []),
         new(Name: "auto-pr", Description: "Pull request created automatically", Colour: "0000aa", [], []),
         new(
             Name: "High",
