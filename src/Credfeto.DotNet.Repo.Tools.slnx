@@ -18,6 +18,10 @@
     <Project Path="Credfeto.DotNet.Repo.Tools.CleanUp.Tests/Credfeto.DotNet.Repo.Tools.CleanUp.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.CleanUp/Credfeto.DotNet.Repo.Tools.CleanUp.csproj" />
   </Folder>
+  <Folder Name="/Formatter/">
+    <Project Path="Credfeto.DotNet.Repo.Formatter/Credfeto.DotNet.Repo.Formatter.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Formatter.Tests/Credfeto.DotNet.Repo.Formatter.Tests.csproj" />
+  </Folder>
   <Folder Name="/Dependencies/">
     <Project Path="Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces/Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.Dependencies.Tests/Credfeto.DotNet.Repo.Tools.Dependencies.Tests.csproj" />
