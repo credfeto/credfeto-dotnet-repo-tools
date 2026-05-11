@@ -11,6 +11,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Add 'never-close' label type to repo configuration
 ### Fixed
 ### Changed
+- Converted standalone benchmarks to benchmark test project using FunFair.Test.Common LoggingTestBase pattern
 ### Deprecated
 ### Removed
 ### Deployment Changes

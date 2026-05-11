@@ -14,12 +14,10 @@
     <Project Path="Credfeto.DotNet.Repo.Tools.Build/Credfeto.DotNet.Repo.Tools.Build.csproj" />
   </Folder>
   <Folder Name="/CodeCleanup/">
+    <Project Path="Credfeto.DotNet.Repo.Tools.CleanUp.Benchmarks.Tests/Credfeto.DotNet.Repo.Tools.CleanUp.Benchmarks.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces/Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.CleanUp.Tests/Credfeto.DotNet.Repo.Tools.CleanUp.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.CleanUp/Credfeto.DotNet.Repo.Tools.CleanUp.csproj" />
-  </Folder>
-  <Folder Name="/Benchmarks/">
-    <Project Path="Credfeto.DotNet.Repo.Tools.Benchmarks/Credfeto.DotNet.Repo.Tools.Benchmarks.csproj" />
   </Folder>
   <Folder Name="/Formatter/">
     <Project Path="Credfeto.DotNet.Repo.Formatter/Credfeto.DotNet.Repo.Formatter.csproj" />
