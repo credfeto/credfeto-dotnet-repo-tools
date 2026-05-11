@@ -1,12 +1,14 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
 public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressionToSuppressMessage
 {
-    private static readonly IReadOnlyCollection<string> Replacements =
+    private static readonly IReadOnlyList<string> Replacements =
     [
         "RedundantDefaultMemberInitializer",
         "ParameterOnlyUsedForPreconditionCheck.Global",
@@ -32,114 +34,35 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
         "PrivateFieldCanBeConvertedToLocalVariable",
     ];
 
-    private const RegexOptions REGEX_OPTIONS = RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.NonBacktracking | RegexOptions.ExplicitCapture;
-    private static readonly TimeSpan RegexTimeSpan = TimeSpan.FromSeconds(1);
+    private static readonly FrozenDictionary<string, string> ReplacementMap =
+        Replacements.ToFrozenDictionary(
+            keySelector: r => r,
+            elementSelector: r =>
+                "[System.Diagnostics.CodeAnalysis.SuppressMessage(\"ReSharper\", \""
+                + r
+                + "\", Justification=\"TODO: Review\")]",
+            comparer: StringComparer.Ordinal
+        );
+
+    private static readonly Regex CombinedRegex = new(
+        pattern: "//\\s+ReSharper\\s+disable\\s+once\\s+(?<Rule>"
+            + string.Join(separator: '|', Replacements.Select(Regex.Escape))
+            + ")",
+        options: RegexOptions.Compiled
+            | RegexOptions.CultureInvariant
+            | RegexOptions.NonBacktracking
+            | RegexOptions.ExplicitCapture,
+        matchTimeout: TimeSpan.FromSeconds(1)
+    );
 
     public string Replace(string content)
     {
-        string source = content;
-
-        foreach (string replacement in Replacements)
-        {
-            string regex = BuildRegex(replacement);
-
-            string replacementText = BuildReplacementText(replacement);
-
-            source = Regex.Replace(input: source, pattern: regex, replacement: replacementText, options: REGEX_OPTIONS, matchTimeout: RegexTimeSpan);
-        }
-
-        return source;
+        return CombinedRegex.Replace(
+            input: content,
+            evaluator: m =>
+                ReplacementMap.TryGetValue(key: m.Groups["Rule"].Value, out string? replacement)
+                    ? replacement
+                    : m.Value
+        );
     }
-
-    private static string BuildReplacementText(string replacement)
-    {
-        return "[System.Diagnostics.CodeAnalysis.SuppressMessage(\"ReSharper\", \"" + replacement + "\", Justification=\"TODO: Review\")]";
-    }
-
-    private static string BuildRegex(string replacement)
-    {
-        string code = replacement.Replace(oldValue: ".", newValue: "\\.", comparisonType: StringComparison.Ordinal);
-
-        return "(?<Suppression>//\\s+ReSharper\\s+disable\\s+once\\s+" + code + ")";
-    }
-
-#if FALSE
-function Resharper_ConvertSuppressionCommentToSuppressMessage {
-param (
-    [string] $sourceFolder
-    )
-
-    Write-Information "* Changing Resharper disable once comments to SuppressMessage"
-    Write-Information "  - Folder: $sourceFolder"
-
-    $emptyLine = [char]13 + [char]10
-
-    $linesToRemoveRegex = "(?<LinesToRemove>((\r\n){2,}))"
-    $suppressMessageRegex = "(?<End>\s+\[(System\.Diagnostics\.CodeAnalysis\.)?SuppressMessage)"
-    $removeBlankLinesRegex = "(?ms)" +  "(?<Start>(^((\s+)///\s+</(.*?)\>)))" + $linesToRemoveRegex + $suppressMessageRegex
-    $removeBlankLines2Regex = "(?ms)" + "(?<Start>(^((\s+)///\s+<(.*?)/\>)))" + $linesToRemoveRegex + $suppressMessageRegex
-
-
-    $files = Get-ChildItem -Path $sourceFolder -Filter "*.cs" -Recurse
-    ForEach($file in $files) {
-        $fileName = $file.FullName
-
-        $content = Get-Content -Path $fileName -Raw
-        $originalContent = $content
-        $updatedContent = $content
-
-        $changedFile = $False
-
-        ForEach($replacement in $replacements) {
-            $code = $replacement.Replace(".", "\.")
-            $regex = "//\s+ReSharper\s+disable\s+once\s+$code"
-            $replacementText = "[System.Diagnostics.CodeAnalysis.SuppressMessage(""ReSharper"", ""$replacement"", Justification=""TODO: Review"")]"
-
-            $updatedContent = $content -replace $regex, $replacementText
-            if($content -ne $updatedContent)
-            {
-                $content = $updatedContent
-                if($changedFile -eq $False) {
-                    Write-Information "* $fileName"
-                    $changedFile = $True
-                }
-
-                Write-Information "   - Changed $replacement comment to SuppressMessage"
-            }
-        }
-
-
-        $replacementText = '${Start}' + $emptyLine + '${End}'
-        $updatedContent = $content -replace $removeBlankLinesRegex, $replacementText
-        if($content -ne $updatedContent)
-        {
-            $content = $updatedContent
-            if($changedFile -eq $False) {
-                Write-Information "* $fileName"
-                $changedFile = $True
-            }
-
-            Write-Information "   - Removed blank lines (end tag)"
-        }
-
-
-        $replacementText = '${Start}' + $emptyLine + '${End}'
-        $updatedContent = $content -replace $removeBlankLines2Regex, $replacementText
-        if($content -ne $updatedContent)
-        {
-            $content = $updatedContent
-            if($changedFile -eq $False) {
-                Write-Information "* $fileName"
-                $changedFile = $True
-            }
-
-            Write-Information "   - Removed blank lines (single tag)"
-        }
-
-        if($content -ne $originalContent) {
-            Set-Content -Path $fileName -Value $content
-        }
-    }
-}
-#endif
 }

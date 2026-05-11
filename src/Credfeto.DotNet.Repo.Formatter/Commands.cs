@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -23,7 +24,22 @@ namespace Credfeto.DotNet.Repo.Formatter;
 )]
 internal sealed class Commands
 {
-    private static readonly IReadOnlyList<string> SupportedExtensions = [".cs", ".csproj"];
+    private static readonly FrozenSet<string> SupportedExtensions = FrozenSet.Create(
+        StringComparer.OrdinalIgnoreCase,
+        ".cs",
+        ".csproj"
+    );
+
+    private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
+
+    private static readonly XmlWriterSettings XmlSettings = new()
+    {
+        Indent = true,
+        IndentChars = "  ",
+        NewLineOnAttributes = false,
+        OmitXmlDeclaration = true,
+        Async = false,
+    };
 
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
@@ -109,28 +125,51 @@ internal sealed class Commands
             buildRoot: buildRoot
         );
 
-        int updatedCount = 0;
-
-        foreach (string file in resolvedFiles)
-        {
-            this._logger.LogProcessingFile(file);
-
-            bool updated = await this.ProcessFileAsync(filePath: file, buildContext: buildContext);
-
-            if (updated)
-            {
-                ++updatedCount;
-                this._logger.LogFileUpdated(file);
-            }
-            else
-            {
-                this._logger.LogFileUnchanged(file);
-            }
-        }
+        int updatedCount = await this.ProcessAllFilesAsync(
+            resolvedFiles: resolvedFiles,
+            buildContext: buildContext
+        );
 
         this._logger.LogCompleted(fileCount: resolvedFiles.Count, updatedCount: updatedCount);
 
         return Constants.ExitCodes.Success;
+    }
+
+    private async Task<int> ProcessAllFilesAsync(
+        IReadOnlyList<string> resolvedFiles,
+        BuildContext? buildContext
+    )
+    {
+        int updatedCount = 0;
+
+        // Parallelise when no build context — suppression removal requires serial dotnet build per file
+        int maxDegree = buildContext is null ? Environment.ProcessorCount : 1;
+
+        await Parallel.ForEachAsync(
+            source: resolvedFiles,
+            parallelOptions: new() { MaxDegreeOfParallelism = maxDegree },
+            body: async (file, _) =>
+            {
+                this._logger.LogProcessingFile(file);
+
+                bool updated = await this.ProcessFileAsync(
+                    filePath: file,
+                    buildContext: buildContext
+                );
+
+                if (updated)
+                {
+                    Interlocked.Increment(ref updatedCount);
+                    this._logger.LogFileUpdated(file);
+                }
+                else
+                {
+                    this._logger.LogFileUnchanged(file);
+                }
+            }
+        );
+
+        return updatedCount;
     }
 
     private async ValueTask<BuildContext?> BuildContextOrNullAsync(
@@ -218,7 +257,7 @@ internal sealed class Commands
         await File.WriteAllTextAsync(
             path: filePath,
             contents: content,
-            encoding: Encoding.UTF8,
+            encoding: Utf8NoBom,
             cancellationToken: this._cancellationToken
         );
 
@@ -251,29 +290,27 @@ internal sealed class Commands
             return false;
         }
 
-        XmlWriterSettings settings = new()
-        {
-            Indent = true,
-            IndentChars = "  ",
-            NewLineOnAttributes = false,
-            OmitXmlDeclaration = true,
-            Async = true,
-        };
-
-        await using (
-            XmlWriter xmlWriter = XmlWriter.Create(outputFileName: filePath, settings: settings)
-        )
+        StringBuilder sb = new(capacity: original.Length);
+        await using (XmlWriter xmlWriter = XmlWriter.Create(output: sb, settings: XmlSettings))
         {
             doc.Save(xmlWriter);
         }
 
-        string rewritten = await File.ReadAllTextAsync(
+        string rewritten = sb.ToString();
+
+        if (StringComparer.Ordinal.Equals(x: original, y: rewritten))
+        {
+            return false;
+        }
+
+        await File.WriteAllTextAsync(
             path: filePath,
-            encoding: Encoding.UTF8,
+            contents: rewritten,
+            encoding: Utf8NoBom,
             cancellationToken: this._cancellationToken
         );
 
-        return !StringComparer.Ordinal.Equals(x: original, y: rewritten);
+        return true;
     }
 
     private bool ValidateFileTypes(IReadOnlyList<string> files)
@@ -284,12 +321,7 @@ internal sealed class Commands
         {
             string extension = Path.GetExtension(file);
 
-            if (
-                !SupportedExtensions.Contains(
-                    value: extension,
-                    comparer: StringComparer.OrdinalIgnoreCase
-                )
-            )
+            if (!SupportedExtensions.Contains(extension))
             {
                 this._logger.LogInvalidFileType(file);
                 valid = false;
