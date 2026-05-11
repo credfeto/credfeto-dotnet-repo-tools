@@ -116,6 +116,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
         new(Name: "dotnet", Description: "Dotnet package updates", Colour: "db6baa", ["src/**/*.csproj"], []),
         new(Name: "npm", Description: "npm package update", Colour: "e99695", ["./**/package.json", "./**/package-lock.json"], []),
         new(Name: "DO NOT MERGE", Description: "This pull request should not be merged yet", Colour: "ff0000", [], []),
+        new(Name: "never-close", Description: "This issue should never be closed — it is a permanent tracking issue", Colour: "1d76db", [], []),
         new(Name: "On Hold", Description: "Do not work on this", Colour: "ff0000", [], []),
         new(Name: "Urgent", Description: "Urgent Priority", Colour: "ff0000", [], []),
     ];
@@ -244,12 +245,12 @@ public sealed class LabelsBuilder : ILabelsBuilder
     {
         //Log -message " - Adding Colour Group"
         labelsWithColour = labelsWithColour
-            .AppendLine($" - name: \"{labelConfig.Name}\"")
-            .AppendLine($"   color: \"{labelConfig.Colour}\"");
+            .AppendLine($"- name: \"{labelConfig.Name}\"")
+            .AppendLine($"  color: \"{labelConfig.Colour}\"");
 
         if (!string.IsNullOrWhiteSpace(labelConfig.Description))
         {
-            labelsWithColour = labelsWithColour.AppendLine($"   description: \"{labelConfig.Description}\"");
+            labelsWithColour = labelsWithColour.AppendLine($"  description: \"{labelConfig.Description}\"");
         }
 
         labelsWithColour = labelsWithColour.AppendLine();

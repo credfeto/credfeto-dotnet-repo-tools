@@ -43,6 +43,7 @@ public sealed class LabelsBuilderTests : LoggingTestBase
             .Add("Markdown", "5319e7", "Markdown files")
             .Add("Medium", "ffff00", "Medium Priority")
             .Add("Migration Script", "b680e5", "SQL Migration scripts")
+            .Add("never-close", "1d76db", "This issue should never be closed — it is a permanent tracking issue")
             .Add("no-pr-activity", "ffff00", "Pull Request has had no activity for a long time")
             .Add("npm", "e99695", "npm package update")
             .Add("On Hold", "ff0000", "Do not work on this")
