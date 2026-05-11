@@ -30,7 +30,11 @@ public sealed class LabelsBuilderTests : LoggingTestBase
             .Add("C# Project", "db6baa", "C# Project Files")
             .Add("C# Solution", "db6baa", "C# Solutions")
             .Add("Change Log", "53fcd4", "Changelog tracking file")
-            .Add("Changelog Not Required", "08f5f8", "No changelog entry required for this pull request")
+            .Add(
+                "Changelog Not Required",
+                "08f5f8",
+                "No changelog entry required for this pull request"
+            )
             .Add("Config Change", "d8bb50", "Configuration files changes")
             .Add("dependencies", "0366d6", "Updates to dependencies")
             .Add("DO NOT MERGE", "ff0000", "This pull request should not be merged yet")
@@ -43,13 +47,22 @@ public sealed class LabelsBuilderTests : LoggingTestBase
             .Add("Markdown", "5319e7", "Markdown files")
             .Add("Medium", "ffff00", "Medium Priority")
             .Add("Migration Script", "b680e5", "SQL Migration scripts")
+            .Add(
+                "never-close",
+                "1d76db",
+                "This issue should never be closed — it is a permanent tracking issue"
+            )
             .Add("no-pr-activity", "ffff00", "Pull Request has had no activity for a long time")
             .Add("npm", "e99695", "npm package update")
             .Add("On Hold", "ff0000", "Do not work on this")
             .Add("Performance", "0075ca", "Performance enhancement or issue")
             .Add("Powershell", "23bc12", "Powershell Source Files")
             .Add("Read Me", "5319e7", "Repository readme file")
-            .Add("Security", "ee0701", "Security issue, e.g. use of insecure packages, or security fix")
+            .Add(
+                "Security",
+                "ee0701",
+                "Security issue, e.g. use of insecure packages, or security fix"
+            )
             .Add("Setup", "5319e7", "Setup instructions")
             .Add("Solidity", "413cd1", "Solidity Source Files")
             .Add("SQL", "413cd1", "SQL Source Files")
@@ -88,7 +101,13 @@ public sealed class LabelsBuilderTests : LoggingTestBase
             .Add("Solidity", "./**/*.sol")
             .Add("SQL", "./**/*.sql", "db/**/*")
             .Add("Static Code Analysis Rules", ".globalconfig", "src/CodeAnalysis.ruleset")
-            .Add("Unit Tests", "src/*.Tests.*/**/*", "src/*.Tests.Integration.*/**/*", "src/*.Tests.Integration/**/*", "src/*.Tests/**/*")
+            .Add(
+                "Unit Tests",
+                "src/*.Tests.*/**/*",
+                "src/*.Tests.Integration.*/**/*",
+                "src/*.Tests.Integration/**/*",
+                "src/*.Tests/**/*"
+            )
             .Build();
 
         Assert.Equal(expected: expected, actual: actual);
