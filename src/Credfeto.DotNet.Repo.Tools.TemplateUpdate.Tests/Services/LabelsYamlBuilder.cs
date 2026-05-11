@@ -20,12 +20,12 @@ internal sealed class LabelsYamlBuilder
 
         foreach ((string name, string color, string description) in this._labels)
         {
-            sb.AppendLine($" - name: \"{name}\"");
-            sb.AppendLine($"   color: \"{color}\"");
+            sb.AppendLine($"- name: \"{name}\"");
+            sb.AppendLine($"  color: \"{color}\"");
 
             if (!string.IsNullOrWhiteSpace(description))
             {
-                sb.AppendLine($"   description: \"{description}\"");
+                sb.AppendLine($"  description: \"{description}\"");
             }
 
             sb.AppendLine();
