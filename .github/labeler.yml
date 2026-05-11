@@ -10,6 +10,10 @@
  - any: [ 'CHANGELOG.md' ]
 "Config Change":
  - any: [ 'src/**/*.json', '!src/global.json' ]
+"credfeto-dotnet-repo-formatter":
+ - any: [ 'src/$Credfeto.DotNet.Repo.Formatter/**/*' ]
+"credfeto-dotnet-repo-formatter-tests":
+ - any: [ 'src/$Credfeto.DotNet.Repo.Formatter.Tests/**/*' ]
 "credfeto-dotnet-repo-tools-build":
  - any: [ 'src/$Credfeto.DotNet.Repo.Tools.Build/**/*' ]
 "credfeto-dotnet-repo-tools-build-interfaces":
