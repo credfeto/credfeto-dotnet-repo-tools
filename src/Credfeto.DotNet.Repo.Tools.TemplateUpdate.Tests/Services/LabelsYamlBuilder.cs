@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests.Services;
@@ -20,15 +20,14 @@ internal sealed class LabelsYamlBuilder
 
         foreach ((string name, string color, string description) in this._labels)
         {
-            sb.AppendLine($"- name: \"{name}\"");
-            sb.AppendLine($"  color: \"{color}\"");
+            sb = sb.AppendLine($"- name: \"{name}\"").AppendLine($"  color: \"{color}\"");
 
             if (!string.IsNullOrWhiteSpace(description))
             {
-                sb.AppendLine($"  description: \"{description}\"");
+                sb = sb.AppendLine($"  description: \"{description}\"");
             }
 
-            sb.AppendLine();
+            sb = sb.AppendLine();
         }
 
         return sb.ToString();
