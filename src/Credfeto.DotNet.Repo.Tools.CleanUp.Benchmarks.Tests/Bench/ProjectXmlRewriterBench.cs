@@ -1,16 +1,23 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Xml;
 using BenchmarkDotNet.Attributes;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Credfeto.DotNet.Repo.Tools.Benchmarks.Benchmarks;
+namespace Credfeto.DotNet.Repo.Tools.CleanUp.Benchmarks.Tests.Bench;
 
-[MemoryDiagnoser]
-public sealed class ProjectXmlRewriterBenchmarks
+[SimpleJob]
+[MemoryDiagnoser(false)]
+[SuppressMessage(category: "codecracker.CSharp", checkId: "CC0091:MarkMembersAsStatic", Justification = "Benchmark")]
+[SuppressMessage(
+    category: "FunFair.CodeAnalysis",
+    checkId: "FFS0012: Make sealed static or abstract",
+    Justification = "Benchmark"
+)]
+public class ProjectXmlRewriterBench
 {
     private readonly ProjectXmlRewriter _rewriter = new(NullLogger<ProjectXmlRewriter>.Instance);
 
-    // Typical csproj with multiple PropertyGroups and unordered PackageReferences
     private const string SampleCsproj = """
         <Project Sdk="Microsoft.NET.Sdk">
           <PropertyGroup>

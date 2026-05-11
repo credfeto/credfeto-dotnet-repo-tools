@@ -6,12 +6,14 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 -->
 
 ## [Unreleased]
+### Security
 ### Added
 ### Fixed
 ### Changed
+- Converted standalone benchmarks to benchmark test project using FunFair.Test.Common LoggingTestBase pattern
+### Deprecated
 ### Removed
 ### Deployment Changes
-
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
@@ -1321,7 +1323,6 @@ Dependencies - Updated Credfeto.Extensions.Linq to 1.0.78.751
 
 ## [1.0.15] - 2024-02-15
 ### Changed
-
 - Dependencies - Updated Credfeto.Enumeration.Source.Generation to 1.1.3.296
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 17.9.28
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.16.122
@@ -1378,7 +1379,6 @@ Dependencies - Updated Credfeto.Extensions.Linq to 1.0.78.751
 
 ## [1.0.7] - 2024-01-10
 ### Added
-
 - Detection of installed dotnet sdk versions
 - Explicit check for Dotnet SDK being installed by the template
 ### Changed
