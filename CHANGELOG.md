@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Converted standalone benchmarks to benchmark test project using FunFair.Test.Common LoggingTestBase pattern
+- Optimise cscleanup: single-pass pre-compiled regex in ResharperSuppressionToSuppressMessage, parallel file processing with Parallel.ForEachAsync, in-memory XML rewrite to avoid unnecessary disk round-trips, FrozenSet for extension lookup, and UTF-8 BOM-free output
 ### Deprecated
 ### Removed
 ### Deployment Changes
