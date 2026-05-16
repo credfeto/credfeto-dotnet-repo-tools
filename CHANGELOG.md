@@ -9,6 +9,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 - Add 'never-close' label type to repo configuration
+- Ensure .github/actionlint.yaml is present with self-hosted runner label declarations
 ### Fixed
 ### Changed
 ### Deprecated
