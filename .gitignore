@@ -320,6 +320,7 @@ src/Data
 .dotnet/
 
 # Jetbrains
+.idea
 
 # Lock files
 *.lock
