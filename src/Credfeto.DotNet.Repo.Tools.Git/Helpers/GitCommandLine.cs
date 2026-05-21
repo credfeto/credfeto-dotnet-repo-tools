@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -68,23 +68,23 @@ internal static class GitCommandLine
             return;
         }
 
-        IReadOnlyList<string> lockFiles =
-        [
-            .. LockFiles(gitFolder)
-               .Where(File.Exists)
-               .Order(StringComparer.Ordinal)
-        ];
+        IReadOnlyList<string> lockFiles = [.. LockFiles(gitFolder).Where(File.Exists).Order(StringComparer.Ordinal)];
 
         if (lockFiles is [])
         {
             return;
         }
 
-        throw new GitRepositoryLockedException($"Repository {repoUrl} at {workingDirectory} is locked ({string.Join(", ", lockFiles)}).");
+        throw new GitRepositoryLockedException(
+            $"Repository {repoUrl} at {workingDirectory} is locked ({string.Join(", ", lockFiles)})."
+        );
     }
 
     private static IEnumerable<string> LockFiles(string dotGitDirectory)
     {
-        return Directory.EnumerateFiles(dotGitDirectory, "*.lock", SearchOption.AllDirectories);
+        string objectsPath = Path.Combine(path1: dotGitDirectory, path2: "objects") + Path.DirectorySeparatorChar;
+        return Directory
+            .EnumerateFiles(dotGitDirectory, "*.lock", SearchOption.AllDirectories)
+            .Where(f => !f.StartsWith(value: objectsPath, comparisonType: StringComparison.Ordinal));
     }
 }
