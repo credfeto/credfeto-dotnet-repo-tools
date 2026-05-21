@@ -10,7 +10,9 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 - Add 'never-close' label type to repo configuration
 ### Fixed
+- Fixed spurious GitRepositoryLockedException caused by git background maintenance creating commit-graph lock files in .git/objects/
 ### Changed
+- Converted standalone benchmarks to benchmark test project using FunFair.Test.Common LoggingTestBase pattern
 ### Deprecated
 ### Removed
 ### Deployment Changes
