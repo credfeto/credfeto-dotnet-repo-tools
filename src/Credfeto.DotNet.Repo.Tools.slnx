@@ -58,7 +58,10 @@
     <Project Path="Credfeto.DotNet.Repo.Tracking.Tests/Credfeto.DotNet.Repo.Tracking.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tracking/Credfeto.DotNet.Repo.Tracking.csproj" />
   </Folder>
-  <Project Path="Credfeto.DotNet.Repo.Tools.Cmd/Credfeto.DotNet.Repo.Tools.Cmd.csproj" />
+  <Folder Name="/Cmd/">
+    <Project Path="Credfeto.DotNet.Repo.Tools.Cmd/Credfeto.DotNet.Repo.Tools.Cmd.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Cmd.Tests/Credfeto.DotNet.Repo.Tools.Cmd.Tests.csproj" />
+  </Folder>
   <Project Path="Credfeto.DotNet.Repo.Tools.Extensions/Credfeto.DotNet.Repo.Tools.Extensions.csproj" />
   <Project Path="Credfeto.DotNet.Repo.Tools.Models/Credfeto.DotNet.Repo.Tools.Models.csproj" />
 </Solution>
