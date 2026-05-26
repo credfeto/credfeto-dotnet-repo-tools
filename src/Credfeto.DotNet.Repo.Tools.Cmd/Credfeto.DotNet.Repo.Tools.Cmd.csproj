@@ -42,6 +42,7 @@
     <PackageReleaseNotes>$(ReleaseNotes)</PackageReleaseNotes>
     <PackageTags>Nuget;update;tool;packages</PackageTags>
     <Product>Repository Update Tool</Product>
+    <PublishAot>false</PublishAot>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/credfeto/credfeto-dotnet-repo-tools</RepositoryUrl>
     <RunAOTCompilation>false</RunAOTCompilation>

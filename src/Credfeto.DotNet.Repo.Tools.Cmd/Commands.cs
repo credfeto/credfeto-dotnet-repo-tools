@@ -17,12 +17,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd;
 
-[SuppressMessage(
-    category: "Microsoft.Performance",
-    checkId: "CA1812:AvoidUninstantiatedInternalClasses",
-    Justification = "Instantiated by Cocona"
-)]
-internal sealed class Commands
+public sealed class Commands
 {
     private readonly IBulkCodeCleanUp _bulkCodeCleanUp;
     private readonly IBulkDependencyReducer _bulkDependencyReducer;

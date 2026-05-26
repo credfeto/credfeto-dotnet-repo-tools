@@ -9,6 +9,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 - Add 'never-close' label type to repo configuration
+- Unit tests for Credfeto.DotNet.Repo.Tools.Cmd covering all command methods with full coverage
 ### Fixed
 - Fixed spurious GitRepositoryLockedException caused by git background maintenance creating commit-graph lock files in .git/objects/
 ### Changed
