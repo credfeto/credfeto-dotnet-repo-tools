@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -10,29 +10,78 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 
 public sealed class LabelsBuilder : ILabelsBuilder
 {
+    // Keep entries sorted by Name (case-insensitive, ordinal) when adding new labels.
     private static readonly IReadOnlyList<LabelConfig> BaseLabels =
     [
+        new(Name: ".NET update", Description: "Update to .net global.json", Colour: "a870c9", ["src/global.json"], []),
+        new(Name: "AI-Work", Description: "Work for an AI Agent", Colour: "ffa500", [], []),
+        new(Name: "auto-pr", Description: "Pull request created automatically", Colour: "0000aa", [], []),
+        new(Name: "Blocked", Description: "Blocked by a dependency or external factor", Colour: "ff0000", [], []),
+        new(Name: "Bug", Description: "Generic bug fix", Colour: "d73a4a", [], []),
+        new(Name: "C#", Description: "C# Source Files", Colour: "db6baa", ["./**/*.cs", "./**/*.csproj"], []),
+        new(Name: "C# Project", Description: "C# Project Files", Colour: "db6baa", ["./**/*.csproj"], []),
+        new(Name: "C# Solution", Description: "C# Solutions", Colour: "db6baa", ["./**/*.sln", "./**/*.slnx"], []),
+        new(Name: "Change Log", Description: "Changelog tracking file", Colour: "53fcd4", ["CHANGELOG.md"], []),
         new(
-            Name: "C#",
-            Description: "C# Source Files",
-            Colour: "db6baa",
-            ["./**/*.cs", "./**/*.csproj"],
+            Name: "Changelog Not Required",
+            Description: "No changelog entry required for this pull request",
+            Colour: "08f5f8",
+            [],
             []
         ),
         new(
-            Name: "C# Project",
-            Description: "C# Project Files",
-            Colour: "db6baa",
-            ["./**/*.csproj"],
+            Name: "Config Change",
+            Description: "Configuration files changes",
+            Colour: "d8bb50",
+            ["src/**/*.json"],
+            ["src/global.json"]
+        ),
+        new(Name: "dependencies", Description: "Updates to dependencies", Colour: "0366d6", [], []),
+        new(Name: "DO NOT MERGE", Description: "This pull request should not be merged yet", Colour: "ff0000", [], []),
+        new(Name: "dotnet", Description: "Dotnet package updates", Colour: "db6baa", ["src/**/*.csproj"], []),
+        new(Name: "Editorconfig", Description: "Editor config file change", Colour: "00dead", [".editorconfig"], []),
+        new(Name: "Enhancement", Description: "Enhancement to project", Colour: "a2eeef", [], []),
+        new(
+            Name: "github-actions",
+            Description: "Github actions workflow files",
+            Colour: "e09cf4",
+            [".github/workflows/*.yml", ".github/actions/*.yml"],
+            []
+        ),
+        new(Name: "High", Description: "High Priority", Colour: "ffa500", [], []),
+        new(Name: "Low", Description: "Low Priority", Colour: "cc8899", [], []),
+        new(Name: "Markdown", Description: "Markdown files", Colour: "5319e7", ["./**/*.md"], []),
+        new(Name: "Medium", Description: "Medium Priority", Colour: "ffff00", [], []),
+        new(
+            Name: "Migration Script",
+            Description: "SQL Migration scripts",
+            Colour: "b680e5",
+            ["tools/MigrationScripts/**/*"],
             []
         ),
         new(
-            Name: "C# Solution",
-            Description: "C# Solutions",
-            Colour: "db6baa",
-            ["./**/*.sln", "./**/*.slnx"],
+            Name: "never-close",
+            Description: "This issue should never be closed — it is a permanent tracking issue",
+            Colour: "1d76db",
+            [],
             []
         ),
+        new(
+            Name: "no-pr-activity",
+            Description: "Pull Request has had no activity for a long time",
+            Colour: "ffff00",
+            [],
+            []
+        ),
+        new(
+            Name: "npm",
+            Description: "npm package update",
+            Colour: "e99695",
+            ["./**/package.json", "./**/package-lock.json"],
+            []
+        ),
+        new(Name: "On Hold", Description: "Do not work on this", Colour: "ff0000", [], []),
+        new(Name: "Performance", Description: "Performance enhancement or issue", Colour: "0075ca", [], []),
         new(
             Name: "Powershell",
             Description: "Powershell Source Files",
@@ -40,20 +89,26 @@ public sealed class LabelsBuilder : ILabelsBuilder
             ["./**/*.ps1", "./**/*.psm1"],
             []
         ),
+        new(Name: "Read Me", Description: "Repository readme file", Colour: "5319e7", ["README.md"], []),
+        new(Name: "Refactor", Description: "Code refactoring", Colour: "30027a", [], []),
         new(
-            Name: "SQL",
-            Description: "SQL Source Files",
-            Colour: "413cd1",
-            ["db/**/*", "./**/*.sql"],
+            Name: "Security",
+            Description: "Security issue, e.g. use of insecure packages, or security fix",
+            Colour: "ee0701",
+            [],
             []
         ),
+        new(Name: "Setup", Description: "Setup instructions", Colour: "5319e7", ["SETUP.md"], []),
+        new(Name: "Solidity", Description: "Solidity Source Files", Colour: "413cd1", ["./**/*.sol"], []),
+        new(Name: "SQL", Description: "SQL Source Files", Colour: "413cd1", ["db/**/*", "./**/*.sql"], []),
         new(
-            Name: "Solidity",
-            Description: "Solidity Source Files",
-            Colour: "413cd1",
-            ["./**/*.sol"],
+            Name: "Static Code Analysis Rules",
+            Description: "Ruleset for static code analysis files",
+            Colour: "00dead",
+            ["src/CodeAnalysis.ruleset", ".globalconfig"],
             []
         ),
+        new(Name: "Tech Debt", Description: "Technical debt", Colour: "30027a", [], []),
         new(
             Name: "Unit Tests",
             Description: "Unit test and integration test projects",
@@ -66,136 +121,6 @@ public sealed class LabelsBuilder : ILabelsBuilder
             ],
             []
         ),
-        new(
-            Name: ".NET update",
-            Description: "Update to .net global.json",
-            Colour: "a870c9",
-            ["src/global.json"],
-            []
-        ),
-        new(
-            Name: "Config Change",
-            Description: "Configuration files changes",
-            Colour: "d8bb50",
-            ["src/**/*.json"],
-            ["src/global.json"]
-        ),
-        new(
-            Name: "Editorconfig",
-            Description: "Editor config file change",
-            Colour: "00dead",
-            [".editorconfig"],
-            []
-        ),
-        new(
-            Name: "Static Code Analysis Rules",
-            Description: "Ruleset for static code analysis files",
-            Colour: "00dead",
-            ["src/CodeAnalysis.ruleset", ".globalconfig"],
-            []
-        ),
-        new(
-            Name: "Migration Script",
-            Description: "SQL Migration scripts",
-            Colour: "b680e5",
-            ["tools/MigrationScripts/**/*"],
-            []
-        ),
-        new(
-            Name: "Change Log",
-            Description: "Changelog tracking file",
-            Colour: "53fcd4",
-            ["CHANGELOG.md"],
-            []
-        ),
-        new(
-            Name: "Read Me",
-            Description: "Repository readme file",
-            Colour: "5319e7",
-            ["README.md"],
-            []
-        ),
-        new(Name: "Setup", Description: "Setup instructions", Colour: "5319e7", ["SETUP.md"], []),
-        new(Name: "Markdown", Description: "Markdown files", Colour: "5319e7", ["./**/*.md"], []),
-        new(
-            Name: "github-actions",
-            Description: "Github actions workflow files",
-            Colour: "e09cf4",
-            [".github/workflows/*.yml", ".github/actions/*.yml"],
-            []
-        ),
-        new(Name: "Tech Debt", Description: "Technical debt", Colour: "30027a", [], []),
-        new(Name: "AI-Work", Description: "Work for an AI Agent", Colour: "ffa500", [], []),
-        new(
-            Name: "Changelog Not Required",
-            Description: "No changelog entry required for this pull request",
-            Colour: "08f5f8",
-            [],
-            []
-        ),
-        new(Name: "Bug", Description: "Generic bug fix", Colour: "d73a4a", [], []),
-        new(Name: "Enhancement", Description: "Enhancement to project", Colour: "a2eeef", [], []),
-        new(
-            Name: "Performance",
-            Description: "Performance enhancement or issue",
-            Colour: "0075ca",
-            [],
-            []
-        ),
-        new(
-            Name: "Security",
-            Description: "Security issue, e.g. use of insecure packages, or security fix",
-            Colour: "ee0701",
-            [],
-            []
-        ),
-        new(
-            Name: "auto-pr",
-            Description: "Pull request created automatically",
-            Colour: "0000aa",
-            [],
-            []
-        ),
-        new(Name: "High", Description: "High Priority", Colour: "ffa500", [], []),
-        new(Name: "Low", Description: "Low Priority", Colour: "cc8899", [], []),
-        new(Name: "Medium", Description: "Medium Priority", Colour: "ffff00", [], []),
-        new(
-            Name: "no-pr-activity",
-            Description: "Pull Request has had no activity for a long time",
-            Colour: "ffff00",
-            [],
-            []
-        ),
-        new(Name: "dependencies", Description: "Updates to dependencies", Colour: "0366d6", [], []),
-        new(
-            Name: "dotnet",
-            Description: "Dotnet package updates",
-            Colour: "db6baa",
-            ["src/**/*.csproj"],
-            []
-        ),
-        new(
-            Name: "npm",
-            Description: "npm package update",
-            Colour: "e99695",
-            ["./**/package.json", "./**/package-lock.json"],
-            []
-        ),
-        new(
-            Name: "DO NOT MERGE",
-            Description: "This pull request should not be merged yet",
-            Colour: "ff0000",
-            [],
-            []
-        ),
-        new(
-            Name: "never-close",
-            Description: "This issue should never be closed — it is a permanent tracking issue",
-            Colour: "1d76db",
-            [],
-            []
-        ),
-        new(Name: "On Hold", Description: "Do not work on this", Colour: "ff0000", [], []),
         new(Name: "Urgent", Description: "Urgent Priority", Colour: "ff0000", [], []),
     ];
 
@@ -232,10 +157,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
 
     private static string BuildLabelName(string projectName)
     {
-        return projectName
-            .Replace(oldChar: '.', newChar: '-')
-            .Replace(oldChar: ' ', newChar: '-')
-            .ToLowerInvariant();
+        return projectName.Replace(oldChar: '.', newChar: '-').Replace(oldChar: ' ', newChar: '-').ToLowerInvariant();
     }
 
     private static string GetLabelColour(string name)
@@ -271,10 +193,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
         foreach (LabelConfig labelConfig in sorted)
         {
             labeller = AddLabelMatch(labeller: labeller, labelConfig: labelConfig);
-            labelsWithColour = AddLabelsWithColor(
-                labelsWithColour: labelsWithColour,
-                labelConfig: labelConfig
-            );
+            labelsWithColour = AddLabelsWithColor(labelsWithColour: labelsWithColour, labelConfig: labelConfig);
         }
 
         return new(labelsWithColour.ToString(), labeller.ToString());
@@ -290,22 +209,16 @@ public sealed class LabelsBuilder : ILabelsBuilder
         //Log -message "Adding labelConfig $groupName"
 
         //Log -message " - Adding Group with file match"
-        return labeller
-            .AppendLine($"\"{labelConfig.Name}\":")
-            .AppendLine(BuildAllPathLine(labelConfig));
+        return labeller.AppendLine($"\"{labelConfig.Name}\":").AppendLine(BuildAllPathLine(labelConfig));
     }
 
     private static string BuildAllPathLine(in LabelConfig labelConfig)
     {
-        IEnumerable<PathInfo> paths = BuildIncludePaths(labelConfig)
-            .Concat(BuildExcludePaths(labelConfig));
+        IEnumerable<PathInfo> paths = BuildIncludePaths(labelConfig).Concat(BuildExcludePaths(labelConfig));
 
         string all =
             " - any: [ "
-            + string.Join(
-                separator: ", ",
-                paths.Select(i => i.Include ? $"'{i.Path}'" : $"'!{i.Path}'")
-            )
+            + string.Join(separator: ", ", paths.Select(i => i.Include ? $"'{i.Path}'" : $"'!{i.Path}'"))
             + " ]";
 
         return all;
@@ -323,9 +236,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
 
     private static IEnumerable<PathInfo> BuildExcludePaths(in LabelConfig labelConfig)
     {
-        return labelConfig
-            .PathsExclude.Order(comparer: StringComparer.OrdinalIgnoreCase)
-            .Select(Create);
+        return labelConfig.PathsExclude.Order(comparer: StringComparer.OrdinalIgnoreCase).Select(Create);
 
         static PathInfo Create(string path)
         {
@@ -333,10 +244,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
         }
     }
 
-    private static StringBuilder AddLabelsWithColor(
-        StringBuilder labelsWithColour,
-        in LabelConfig labelConfig
-    )
+    private static StringBuilder AddLabelsWithColor(StringBuilder labelsWithColour, in LabelConfig labelConfig)
     {
         //Log -message " - Adding Colour Group"
         labelsWithColour = labelsWithColour
@@ -345,9 +253,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
 
         if (!string.IsNullOrWhiteSpace(labelConfig.Description))
         {
-            labelsWithColour = labelsWithColour.AppendLine(
-                $"  description: \"{labelConfig.Description}\""
-            );
+            labelsWithColour = labelsWithColour.AppendLine($"  description: \"{labelConfig.Description}\"");
         }
 
         labelsWithColour = labelsWithColour.AppendLine();
