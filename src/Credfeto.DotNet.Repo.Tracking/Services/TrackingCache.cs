@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -27,9 +26,7 @@ public sealed class TrackingCache : ITrackingCache
         this._logger = logger;
         this._cache = new(StringComparer.OrdinalIgnoreCase);
 
-        this._typeInfo =
-            TrackingSerializationContext.Default.GetTypeInfo(typeof(TrackingItems)) as JsonTypeInfo<TrackingItems>
-            ?? MissingConverter();
+        this._typeInfo = TrackingSerializationContext.Default.TrackingItems;
         this._changed = false;
     }
 
@@ -101,6 +98,7 @@ public sealed class TrackingCache : ITrackingCache
                     return;
                 }
 
+                this._logger.UpdatingPackageVersion(repository: repoUrl, existing: found, version: value);
                 remove = true;
             }
         }
@@ -114,11 +112,5 @@ public sealed class TrackingCache : ITrackingCache
         {
             this._changed |= this._cache.TryAdd(key: repoUrl, value: value);
         }
-    }
-
-    [DoesNotReturn]
-    private static JsonTypeInfo<TrackingItems> MissingConverter()
-    {
-        throw new JsonException("No converter found for type TrackingItems");
     }
 }

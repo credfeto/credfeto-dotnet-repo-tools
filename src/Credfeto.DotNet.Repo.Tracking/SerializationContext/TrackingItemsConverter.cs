@@ -58,11 +58,6 @@ internal sealed class TrackingItemsConverter : JsonConverter<TrackingItems>
 
     private static (string Key, string Value) ReadEntry(ref Utf8JsonReader reader)
     {
-        if (reader.TokenType != JsonTokenType.PropertyName)
-        {
-            return ThrowInvalidJsonTokenEntry();
-        }
-
         string key = reader.GetString() ?? RequiredString();
 
         reader.Read();
@@ -72,12 +67,6 @@ internal sealed class TrackingItemsConverter : JsonConverter<TrackingItems>
         reader.Read();
 
         return (key, value);
-    }
-
-    [DoesNotReturn]
-    private static (string Key, string Value) ThrowInvalidJsonTokenEntry()
-    {
-        throw new JsonException(message: "Invalid Json token");
     }
 
     [DoesNotReturn]
