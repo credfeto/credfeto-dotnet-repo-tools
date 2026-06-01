@@ -142,7 +142,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
     public void SetSameValueDoesNotMarkChanged()
     {
         // Set an initial value, then set the same value again.
-        // The second Set should return early without marking the cache as changed.
+        // The second Set must return early without marking the cache as changed.
         string repoUrl = Guid.NewGuid().ToString();
         const string value = "SameValue";
 
