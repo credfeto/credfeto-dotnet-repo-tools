@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.DotNet.Repo.Tracking.Services;
@@ -135,5 +136,125 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         this.Output.WriteLine(content);
 
         Assert.Equal(expected: "{\"Test1\":\"Hello World\",\"Test2\":\"Banana\"}", actual: content);
+    }
+
+    [Fact]
+    public void SetSameValueDoesNotMarkChanged()
+    {
+        // Set an initial value, then set the same value again.
+        // The second Set should return early without marking the cache as changed.
+        string repoUrl = Guid.NewGuid().ToString();
+        const string value = "SameValue";
+
+        this._trackingCache.Set(repoUrl: repoUrl, value: value);
+        this._trackingCache.Set(repoUrl: repoUrl, value: value);
+
+        // The value must still be retrievable and unchanged.
+        string? result = this._trackingCache.Get(repoUrl);
+        Assert.Equal(expected: value, actual: result);
+    }
+
+    [Fact]
+    public void SetDifferentValueUpdatesEntry()
+    {
+        // Set an initial value, then set a different value.
+        // The entry must be updated to the new value.
+        string repoUrl = Guid.NewGuid().ToString();
+        const string initialValue = "InitialValue";
+        const string updatedValue = "UpdatedValue";
+
+        this._trackingCache.Set(repoUrl: repoUrl, value: initialValue);
+        this._trackingCache.Set(repoUrl: repoUrl, value: updatedValue);
+
+        string? result = this._trackingCache.Get(repoUrl);
+        Assert.Equal(expected: updatedValue, actual: result);
+    }
+
+    [Fact]
+    public void SetNullValueForNonExistentKeyDoesNothing()
+    {
+        // Setting null for a key that does not exist must leave the cache unchanged.
+        string repoUrl = Guid.NewGuid().ToString();
+
+        this._trackingCache.Set(repoUrl: repoUrl, value: null);
+
+        string? result = this._trackingCache.Get(repoUrl);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void SetWhitespaceValueForNonExistentKeyDoesNothing()
+    {
+        // Setting a whitespace value for a key that does not exist must leave the cache unchanged.
+        string repoUrl = Guid.NewGuid().ToString();
+
+        this._trackingCache.Set(repoUrl: repoUrl, value: "   ");
+
+        string? result = this._trackingCache.Get(repoUrl);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void SetWhitespaceValueForExistingKeyRemovesEntry()
+    {
+        // Setting a whitespace value for an existing key must remove the entry.
+        string repoUrl = Guid.NewGuid().ToString();
+        const string initialValue = "SomeValue";
+
+        this._trackingCache.Set(repoUrl: repoUrl, value: initialValue);
+        this._trackingCache.Set(repoUrl: repoUrl, value: "   ");
+
+        string? result = this._trackingCache.Get(repoUrl);
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task SaveDoesNotWriteFileWhenNothingHasChangedAsync()
+    {
+        // SaveAsync must return without writing a file when _changed is false.
+        string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
+        this.Output.WriteLine(trackingFile);
+
+        // Do not call Set — the cache has never been modified.
+        await this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: this.CancellationToken());
+
+        Assert.False(
+            condition: File.Exists(trackingFile),
+            userMessage: "File must not be created when nothing has changed"
+        );
+    }
+
+    [Fact]
+    public async Task LoadJsonArrayThrowsAsync()
+    {
+        string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
+        this.Output.WriteLine(trackingFile);
+
+        await File.WriteAllTextAsync(
+            path: trackingFile,
+            contents: "[1,2,3]",
+            cancellationToken: this.CancellationToken()
+        );
+
+        await Assert.ThrowsAsync<JsonException>(() =>
+            this._trackingCache.LoadAsync(fileName: trackingFile, this.CancellationToken()).AsTask()
+        );
+    }
+
+    [Fact]
+    public async Task LoadJsonWithNullValueThrowsAsync()
+    {
+        string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
+        this.Output.WriteLine(trackingFile);
+
+        await File.WriteAllTextAsync(
+            path: trackingFile,
+            contents: "{\"key\":null}",
+            cancellationToken: this.CancellationToken()
+        );
+
+        await Assert.ThrowsAsync<JsonException>(() =>
+            this._trackingCache.LoadAsync(fileName: trackingFile, this.CancellationToken()).AsTask()
+        );
     }
 }
