@@ -98,7 +98,11 @@ public sealed class TrackingCache : ITrackingCache
                     return;
                 }
 
-                this._logger.UpdatingPackageVersion(repository: repoUrl, existing: found, version: value);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    this._logger.UpdatingPackageVersion(repository: repoUrl, existing: found, version: value);
+                }
+
                 remove = true;
             }
         }
