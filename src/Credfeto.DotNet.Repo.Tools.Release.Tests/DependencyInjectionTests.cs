@@ -1,6 +1,8 @@
-﻿using Credfeto.Date.Interfaces;
+﻿using System.Net.Http;
+using Credfeto.Date.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Release.Services;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using FunFair.BuildVersion.Interfaces;
 using FunFair.Test.Common;
@@ -35,5 +37,13 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
     public void ReleaseConfigLoaderMustBeRegistered()
     {
         this.RequireService<IReleaseConfigLoader>();
+    }
+
+    [Fact]
+    public void HttpClientForReleaseConfigLoaderCanBeCreated()
+    {
+        IHttpClientFactory factory = this.GetService<IHttpClientFactory>();
+        using HttpClient client = factory.CreateClient(nameof(ReleaseConfigLoader));
+        Assert.NotNull(client);
     }
 }

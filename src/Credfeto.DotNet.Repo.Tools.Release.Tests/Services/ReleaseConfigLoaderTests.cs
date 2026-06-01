@@ -1,7 +1,9 @@
-using System;
+﻿using System;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Release.Extensions;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
@@ -9,15 +11,17 @@ using Credfeto.DotNet.Repo.Tools.Release.Services;
 using FunFair.Test.Common;
 using FunFair.Test.Common.Extensions;
 using Xunit;
+using MatchType = Credfeto.DotNet.Repo.Tools.Release.Interfaces.MatchType;
 
 namespace Credfeto.DotNet.Repo.Tools.Release.Tests.Services;
 
-public sealed class ReleaseConfigLoaderTests : TestBase
+public sealed class ReleaseConfigLoaderTests : LoggingFolderCleanupTestBase
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IReleaseConfigLoader _releaseConfigLoader;
 
-    public ReleaseConfigLoaderTests()
+    public ReleaseConfigLoaderTests(ITestOutputHelper output)
+        : base(output)
     {
         this._httpClientFactory = GetSubstitute<IHttpClientFactory>();
         this._releaseConfigLoader = new ReleaseConfigLoader(
@@ -170,6 +174,128 @@ public sealed class ReleaseConfigLoaderTests : TestBase
             config.CheckRepoForAllowedAutoUpgrade(repo),
             userMessage: "Should check repo for allowed auto upgrade"
         );
+    }
+
+    [Fact]
+    public async Task LoadFromFileAsync()
+    {
+        const string releaseConfigJson = """
+            {
+                "settings": {
+                    "autoReleasePendingPackages": 2,
+                    "minimumHoursBeforeAutoRelease": 6,
+                    "inactivityHoursBeforeAutoRelease": 10
+                },
+                "neverRelease": [],
+                "allowedAutoUpgrade": [],
+                "alwaysMatch": []
+            }
+            """;
+
+        string tempFile = Path.GetTempFileName();
+
+        try
+        {
+            await File.WriteAllTextAsync(
+                path: tempFile,
+                contents: releaseConfigJson,
+                encoding: new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+                cancellationToken: this.CancellationToken()
+            );
+
+            ReleaseConfig config = await this._releaseConfigLoader.LoadAsync(
+                path: tempFile,
+                cancellationToken: this.CancellationToken()
+            );
+
+            Assert.Equal(expected: 2, actual: config.AutoReleasePendingPackages);
+            Assert.Equal(expected: 6, actual: config.MinimumHoursBeforeAutoRelease);
+            Assert.Equal(expected: 10, actual: config.InactivityHoursBeforeAutoRelease);
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task LoadFromFileAsyncWithNullContentThrowsInvalidOperationAsync()
+    {
+        string tempFile = Path.GetTempFileName();
+
+        try
+        {
+            await File.WriteAllTextAsync(
+                path: tempFile,
+                contents: "null",
+                encoding: new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+                cancellationToken: this.CancellationToken()
+            );
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                this
+                    ._releaseConfigLoader.LoadAsync(path: tempFile, cancellationToken: this.CancellationToken())
+                    .AsTask()
+            );
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task LoadFromFileAsyncWithInvalidMatchTypeThrowsArgumentOutOfRangeAsync()
+    {
+        const string releaseConfigJson = """
+            {
+                "settings": {
+                    "autoReleasePendingPackages": 1,
+                    "minimumHoursBeforeAutoRelease": 4,
+                    "inactivityHoursBeforeAutoRelease": 8
+                },
+                "neverRelease": [
+                    {
+                        "repo": "template",
+                        "match": "invalid-match-type",
+                        "include": true
+                    }
+                ],
+                "allowedAutoUpgrade": [],
+                "alwaysMatch": []
+            }
+            """;
+
+        string tempFile = Path.GetTempFileName();
+
+        try
+        {
+            await File.WriteAllTextAsync(
+                path: tempFile,
+                contents: releaseConfigJson,
+                encoding: new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
+                cancellationToken: this.CancellationToken()
+            );
+
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+                this
+                    ._releaseConfigLoader.LoadAsync(path: tempFile, cancellationToken: this.CancellationToken())
+                    .AsTask()
+            );
+        }
+        finally
+        {
+            if (File.Exists(tempFile))
+            {
+                File.Delete(tempFile);
+            }
+        }
     }
 
     private void MockConfig()
