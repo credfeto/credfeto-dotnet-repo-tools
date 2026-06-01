@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Models;
+using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.DotNet.Repo.Tracking.Services;
 using FunFair.Test.Common;
 using Xunit;
@@ -11,7 +12,7 @@ namespace Credfeto.DotNet.Repo.Tracking.Tests.Services;
 
 public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
 {
-    private readonly TrackingHashGenerator _hashGenerator;
+    private readonly ITrackingHashGenerator _hashGenerator;
 
     public TrackingHashGeneratorTests(ITestOutputHelper output)
         : base(output)
