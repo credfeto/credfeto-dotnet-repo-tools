@@ -11,6 +11,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Add 'never-close' label type to repo configuration
 - Unit tests for Credfeto.DotNet.Repo.Tools.Cmd covering all command methods with full coverage
 - Added Blocked and Refactor labels to LabelsBuilder with appropriate colours and descriptions
+- Unit tests for Credfeto.DotNet.Repo.Tracking with 100% code coverage
 ### Fixed
 - Fixed spurious GitRepositoryLockedException caused by git background maintenance creating commit-graph lock files in .git/objects/
 ### Changed
