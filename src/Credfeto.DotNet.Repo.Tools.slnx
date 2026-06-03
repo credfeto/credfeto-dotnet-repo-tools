@@ -55,6 +55,7 @@
   </Folder>
   <Folder Name="/Tracking/">
     <Project Path="Credfeto.DotNet.Repo.Tracking.Interfaces/Credfeto.DotNet.Repo.Tracking.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tracking.Interfaces.Tests/Credfeto.DotNet.Repo.Tracking.Interfaces.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tracking.Tests/Credfeto.DotNet.Repo.Tracking.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tracking/Credfeto.DotNet.Repo.Tracking.csproj" />
   </Folder>
