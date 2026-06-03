@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Added Blocked and Refactor labels to LabelsBuilder with appropriate colours and descriptions
 - Unit tests for Credfeto.DotNet.Repo.Tracking with 100% code coverage
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Release
+- Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tracking.Interfaces
 ### Fixed
 - Fixed spurious GitRepositoryLockedException caused by git background maintenance creating commit-graph lock files in .git/objects/
 ### Changed
