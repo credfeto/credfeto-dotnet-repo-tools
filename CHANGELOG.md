@@ -15,6 +15,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Release
 ### Fixed
 - Fixed spurious GitRepositoryLockedException caused by git background maintenance creating commit-graph lock files in .git/objects/
+- Removed erroneous dollar sign from path glob pattern in LabelsBuilder so project paths are generated correctly
 ### Changed
 - Converted standalone benchmarks to benchmark test project using FunFair.Test.Common LoggingTestBase pattern
 ### Deprecated
