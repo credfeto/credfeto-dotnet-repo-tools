@@ -45,6 +45,7 @@
   </Folder>
   <Folder Name="/Release/">
     <Project Path="Credfeto.DotNet.Repo.Tools.Release.Interfaces/Credfeto.DotNet.Repo.Tools.Release.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Release.Interfaces.Tests/Credfeto.DotNet.Repo.Tools.Release.Interfaces.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.Release.Tests/Credfeto.DotNet.Repo.Tools.Release.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.Release/Credfeto.DotNet.Repo.Tools.Release.csproj" />
   </Folder>
