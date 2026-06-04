@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+- Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces
 ### Fixed
 ### Changed
 ### Deprecated
@@ -23,7 +24,6 @@ Releases that have at least been deployed to staging, BUT NOT necessarily releas
 - Added Blocked and Refactor labels to LabelsBuilder with appropriate colours and descriptions
 - Unit tests for Credfeto.DotNet.Repo.Tracking with 100% code coverage
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Release
-- Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces
 ### Fixed
 - Fixed spurious GitRepositoryLockedException caused by git background maintenance creating commit-graph lock files in .git/objects/
 - Removed erroneous dollar sign from path glob pattern in LabelsBuilder so project paths are generated correctly
