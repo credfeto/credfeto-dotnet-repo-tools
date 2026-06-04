@@ -148,7 +148,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
             Name: labelName,
             $"Changes in {projectName} project",
             Colour: colour,
-            [$"src/${projectName}/**/*"],
+            [$"src/{projectName}/**/*"],
             []
         );
 
