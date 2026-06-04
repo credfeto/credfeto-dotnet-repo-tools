@@ -50,6 +50,7 @@
   </Folder>
   <Folder Name="/TemplateUpdate/">
     <Project Path="Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces/Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces.Tests/Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests/Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.TemplateUpdate/Credfeto.DotNet.Repo.Tools.TemplateUpdate.csproj" />
   </Folder>
