@@ -8,6 +8,16 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.5.1] - 2026-06-04
+### Added
 - Add 'never-close' label type to repo configuration
 - Unit tests for Credfeto.DotNet.Repo.Tools.Cmd covering all command methods with full coverage
 - Added Blocked and Refactor labels to LabelsBuilder with appropriate colours and descriptions
@@ -18,12 +28,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Removed erroneous dollar sign from path glob pattern in LabelsBuilder so project paths are generated correctly
 ### Changed
 - Converted standalone benchmarks to benchmark test project using FunFair.Test.Common LoggingTestBase pattern
-### Deprecated
-### Removed
-### Deployment Changes
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
+
 ## [1.5.0] - 2026-05-11
 ### Added
 - Add Bug, Enhancement, Performance, and Security labels to LabelBuilder with appropriate colours and descriptions; fix Changelog Not Required label description; refactor label builder tests to use builder pattern; document labels in README
