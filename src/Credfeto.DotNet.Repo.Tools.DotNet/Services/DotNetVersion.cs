@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
@@ -12,9 +11,21 @@ namespace Credfeto.DotNet.Repo.Tools.DotNet.Services;
 
 public sealed class DotNetVersion : IDotNetVersion
 {
+    private readonly IDotNetCommandRunner _commandRunner;
+
+    public DotNetVersion()
+    {
+        this._commandRunner = new DotNetCommandRunner();
+    }
+
+    internal DotNetVersion(IDotNetCommandRunner commandRunner)
+    {
+        this._commandRunner = commandRunner;
+    }
+
     public async ValueTask<IReadOnlyList<Version>> GetInstalledSdksAsync(CancellationToken cancellationToken)
     {
-        (string[] output, int exitCode) = await ExecAsync(
+        (string[] output, int exitCode) = await this._commandRunner.RunAsync(
             arguments: "--list-sdks",
             cancellationToken: cancellationToken
         );
@@ -43,56 +54,5 @@ public sealed class DotNetVersion : IDotNetVersion
         }
 
         return Version.TryParse(parts[0], out Version? version) ? version : null;
-    }
-
-    private static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(
-        string arguments,
-        CancellationToken cancellationToken
-    )
-    {
-        ProcessStartInfo psi = new()
-        {
-            FileName = "dotnet",
-            Arguments = arguments,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            Environment =
-            {
-                ["DOTNET_NOLOGO"] = "true",
-                ["DOTNET_PRINT_TELEMETRY_MESSAGE"] = "0",
-                ["DOTNET_ReadyToRun"] = "0",
-                ["DOTNET_TC_QuickJitForLoops"] = "1",
-                ["DOTNET_TieredPGO"] = "1",
-                ["MSBUILDTERMINALLOGGER"] = "false",
-            },
-        };
-
-        using (Process? process = Process.Start(psi))
-        {
-            if (process is null)
-            {
-                throw new InvalidOperationException("Failed to start dotnet");
-            }
-
-#if NET7_0_OR_GREATER
-            string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-
-            string error = await process.StandardError.ReadToEndAsync(cancellationToken);
-#else
-            string output = await process.StandardOutput.ReadToEndAsync();
-            string error = await process.StandardError.ReadToEndAsync();
-#endif
-
-            await process.WaitForExitAsync(cancellationToken);
-
-            string result = string.Join(separator: Environment.NewLine, output, error);
-
-            return (
-                result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries),
-                process.ExitCode
-            );
-        }
     }
 }
