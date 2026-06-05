@@ -1,4 +1,5 @@
-﻿using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
+﻿using System;
+using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 using FunFair.Test.Common;
 using Xunit;
 
@@ -101,5 +102,75 @@ public sealed class LabelsBuilderTests : LoggingTestBase
             .Build();
 
         Assert.Equal(expected: expected, actual: actual);
+    }
+
+    [Fact]
+    public void BuildLabelsYmlWithTestsSuffixProjectHasTestColour()
+    {
+        (string labelsYaml, string labelerYaml) = this._labelsBuilder.BuildLabelsConfig(["Foo.Bar.Tests.csproj"]);
+
+        this.Output.WriteLine(labelsYaml);
+        this.Output.WriteLine(labelerYaml);
+
+        string expectedLabels = new LabelsYamlBuilder()
+            .Add("foo-bar-tests", "0e8a16", "Changes in Foo.Bar.Tests project")
+            .Build();
+
+        string expectedLabeler = new LabelerYamlBuilder().Add("foo-bar-tests", "src/Foo.Bar.Tests/**/*").Build();
+
+        Assert.Contains(expectedLabels, labelsYaml, StringComparison.Ordinal);
+        Assert.Contains(expectedLabeler, labelerYaml, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildLabelsYmlWithTestsInNameProjectHasTestColour()
+    {
+        (string labelsYaml, string labelerYaml) = this._labelsBuilder.BuildLabelsConfig(["Foo.Tests.Mock.csproj"]);
+
+        this.Output.WriteLine(labelsYaml);
+        this.Output.WriteLine(labelerYaml);
+
+        string expectedLabels = new LabelsYamlBuilder()
+            .Add("foo-tests-mock", "0e8a16", "Changes in Foo.Tests.Mock project")
+            .Build();
+
+        string expectedLabeler = new LabelerYamlBuilder().Add("foo-tests-mock", "src/Foo.Tests.Mock/**/*").Build();
+
+        Assert.Contains(expectedLabels, labelsYaml, StringComparison.Ordinal);
+        Assert.Contains(expectedLabeler, labelerYaml, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildLabelsYmlWithMocksSuffixProjectHasTestColour()
+    {
+        (string labelsYaml, string labelerYaml) = this._labelsBuilder.BuildLabelsConfig(["Foo.Bar.Mocks.csproj"]);
+
+        this.Output.WriteLine(labelsYaml);
+        this.Output.WriteLine(labelerYaml);
+
+        string expectedLabels = new LabelsYamlBuilder()
+            .Add("foo-bar-mocks", "0e8a16", "Changes in Foo.Bar.Mocks project")
+            .Build();
+
+        string expectedLabeler = new LabelerYamlBuilder().Add("foo-bar-mocks", "src/Foo.Bar.Mocks/**/*").Build();
+
+        Assert.Contains(expectedLabels, labelsYaml, StringComparison.Ordinal);
+        Assert.Contains(expectedLabeler, labelerYaml, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BuildLabelsYmlWithRegularProjectHasDefaultColour()
+    {
+        (string labelsYaml, string labelerYaml) = this._labelsBuilder.BuildLabelsConfig(["Foo.Bar.csproj"]);
+
+        this.Output.WriteLine(labelsYaml);
+        this.Output.WriteLine(labelerYaml);
+
+        string expectedLabels = new LabelsYamlBuilder().Add("foo-bar", "96f7d2", "Changes in Foo.Bar project").Build();
+
+        string expectedLabeler = new LabelerYamlBuilder().Add("foo-bar", "src/Foo.Bar/**/*").Build();
+
+        Assert.Contains(expectedLabels, labelsYaml, StringComparison.Ordinal);
+        Assert.Contains(expectedLabeler, labelerYaml, StringComparison.Ordinal);
     }
 }
