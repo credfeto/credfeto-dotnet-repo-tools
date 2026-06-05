@@ -64,6 +64,8 @@
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Release/**/*' ]
 "credfeto-dotnet-repo-tools-release-interfaces":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Release.Interfaces/**/*' ]
+"credfeto-dotnet-repo-tools-release-interfaces-tests":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Release.Interfaces.Tests/**/*' ]
 "credfeto-dotnet-repo-tools-release-tests":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Release.Tests/**/*' ]
 "credfeto-dotnet-repo-tools-templateupdate":

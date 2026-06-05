@@ -150,6 +150,10 @@
   color: "96f7d2"
   description: "Changes in Credfeto.DotNet.Repo.Tools.Release.Interfaces project"
 
+- name: "credfeto-dotnet-repo-tools-release-interfaces-tests"
+  color: "0e8a16"
+  description: "Changes in Credfeto.DotNet.Repo.Tools.Release.Interfaces.Tests project"
+
 - name: "credfeto-dotnet-repo-tools-release-tests"
   color: "0e8a16"
   description: "Changes in Credfeto.DotNet.Repo.Tools.Release.Tests project"
