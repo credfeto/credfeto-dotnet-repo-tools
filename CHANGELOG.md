@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+- Tests for Credfeto.DotNet.Repo.Tools.Release.Interfaces to achieve 100% code coverage
 ### Fixed
 ### Changed
 ### Deprecated
