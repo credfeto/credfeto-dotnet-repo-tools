@@ -27,12 +27,9 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
     private readonly IBulkTemplateUpdater _bulkTemplateUpdater;
 
     private readonly ITrackingCache _trackingCache;
-    private readonly IBulkPackageConfigLoader _bulkPackageConfigLoader;
-    private readonly IGitRepositoryFactory _gitRepositoryFactory;
     private readonly ITemplateConfigLoader _templateConfigLoader;
     private readonly IGlobalJson _globalJson;
     private readonly IDotNetVersion _dotNetVersion;
-    private readonly IReleaseConfigLoader _releaseConfigLoader;
 
     public BulkTemplateUpdaterTests()
     {
@@ -40,12 +37,13 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         Directory.CreateDirectory(this._tempFolder);
 
         this._trackingCache = GetSubstitute<ITrackingCache>();
-        this._bulkPackageConfigLoader = GetSubstitute<IBulkPackageConfigLoader>();
-        this._gitRepositoryFactory = GetSubstitute<IGitRepositoryFactory>();
         this._templateConfigLoader = GetSubstitute<ITemplateConfigLoader>();
         this._globalJson = GetSubstitute<IGlobalJson>();
         this._dotNetVersion = GetSubstitute<IDotNetVersion>();
-        this._releaseConfigLoader = GetSubstitute<IReleaseConfigLoader>();
+
+        IBulkPackageConfigLoader bulkPackageConfigLoader = GetSubstitute<IBulkPackageConfigLoader>();
+        IGitRepositoryFactory gitRepositoryFactory = GetSubstitute<IGitRepositoryFactory>();
+        IReleaseConfigLoader releaseConfigLoader = GetSubstitute<IReleaseConfigLoader>();
 
         this._bulkTemplateUpdater = new BulkTemplateUpdater(
             trackingCache: this._trackingCache,
@@ -54,10 +52,10 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
             dotNetVersion: this._dotNetVersion,
             dotNetSolutionCheck: GetSubstitute<IDotNetSolutionCheck>(),
             dotNetBuild: GetSubstitute<IDotNetBuild>(),
-            releaseConfigLoader: this._releaseConfigLoader,
+            releaseConfigLoader: releaseConfigLoader,
             releaseGeneration: GetSubstitute<IReleaseGeneration>(),
-            gitRepositoryFactory: this._gitRepositoryFactory,
-            bulkPackageConfigLoader: this._bulkPackageConfigLoader,
+            gitRepositoryFactory: gitRepositoryFactory,
+            bulkPackageConfigLoader: bulkPackageConfigLoader,
             fileUpdater: GetSubstitute<IFileUpdater>(),
             dependaBotConfigBuilder: GetSubstitute<IDependaBotConfigBuilder>(),
             labelsBuilder: GetSubstitute<ILabelsBuilder>(),
@@ -65,7 +63,11 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
             logger: GetSubstitute<ILogger<BulkTemplateUpdater>>()
         );
 
-        this.SetupDefaultMocks();
+        this.SetupDefaultMocks(
+            gitRepositoryFactory: gitRepositoryFactory,
+            bulkPackageConfigLoader: bulkPackageConfigLoader,
+            releaseConfigLoader: releaseConfigLoader
+        );
     }
 
     public void Dispose()
@@ -76,22 +78,25 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         }
     }
 
-    private void SetupDefaultMocks()
+    private void SetupDefaultMocks(
+        IGitRepositoryFactory gitRepositoryFactory,
+        IBulkPackageConfigLoader bulkPackageConfigLoader,
+        IReleaseConfigLoader releaseConfigLoader
+    )
     {
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         templateRepo.WorkingDirectory.Returns(this._tempFolder);
 
-        this._gitRepositoryFactory.OpenOrCloneAsync(
+        gitRepositoryFactory
+            .OpenOrCloneAsync(
                 workDir: Arg.Any<string>(),
                 repoUrl: Arg.Any<string>(),
                 cancellationToken: Arg.Any<CancellationToken>()
             )
             .Returns(templateRepo);
 
-        this._bulkPackageConfigLoader.LoadAsync(
-                path: Arg.Any<string>(),
-                cancellationToken: Arg.Any<CancellationToken>()
-            )
+        bulkPackageConfigLoader
+            .LoadAsync(path: Arg.Any<string>(), cancellationToken: Arg.Any<CancellationToken>())
             .Returns([]);
 
         this._templateConfigLoader.LoadConfigAsync(
@@ -110,7 +115,8 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         this._dotNetVersion.GetInstalledSdksAsync(cancellationToken: Arg.Any<CancellationToken>())
             .Returns(noInstalledSdks);
 
-        this._releaseConfigLoader.LoadAsync(path: Arg.Any<string>(), cancellationToken: Arg.Any<CancellationToken>())
+        releaseConfigLoader
+            .LoadAsync(path: Arg.Any<string>(), cancellationToken: Arg.Any<CancellationToken>())
             .Returns(
                 new ReleaseConfig(
                     AutoReleasePendingPackages: 0,
