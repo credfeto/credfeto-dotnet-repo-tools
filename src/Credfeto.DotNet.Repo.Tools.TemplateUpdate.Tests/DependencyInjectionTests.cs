@@ -1,9 +1,11 @@
+﻿using System.Net.Http;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces;
+using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using FunFair.Test.Common;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,9 +16,7 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests;
 public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 {
     public DependencyInjectionTests(ITestOutputHelper output)
-        : base(output: output, dependencyInjectionRegistration: Configure)
-    {
-    }
+        : base(output: output, dependencyInjectionRegistration: Configure) { }
 
     [Fact]
     public void BulkTemplateUpdaterMustBeRegistered()
@@ -48,18 +48,27 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
         this.RequireService<IDependaBotConfigBuilder>();
     }
 
+    [Fact]
+    public void TemplateConfigLoaderHttpClientCanBeCreated()
+    {
+        IHttpClientFactory factory = this.GetService<IHttpClientFactory>();
+        using HttpClient client = factory.CreateClient(nameof(TemplateConfigLoader));
+        Assert.NotNull(client);
+    }
+
     private static IServiceCollection Configure(IServiceCollection services)
     {
-        return services.AddMockedService<IBulkPackageConfigLoader>()
-                       .AddMockedService<IDotNetBuild>()
-                       .AddMockedService<IDotNetSolutionCheck>()
-                       .AddMockedService<IDotNetVersion>()
-                       .AddMockedService<IGitRepositoryFactory>()
-                       .AddMockedService<IGlobalJson>()
-                       .AddMockedService<IReleaseConfigLoader>()
-                       .AddMockedService<IReleaseGeneration>()
-                       .AddMockedService<ITrackingCache>()
-                       .AddMockedService<IDotNetFilesDetector>()
-                       .AddTemplateUpdate();
+        return services
+            .AddMockedService<IBulkPackageConfigLoader>()
+            .AddMockedService<IDotNetBuild>()
+            .AddMockedService<IDotNetSolutionCheck>()
+            .AddMockedService<IDotNetVersion>()
+            .AddMockedService<IGitRepositoryFactory>()
+            .AddMockedService<IGlobalJson>()
+            .AddMockedService<IReleaseConfigLoader>()
+            .AddMockedService<IReleaseGeneration>()
+            .AddMockedService<ITrackingCache>()
+            .AddMockedService<IDotNetFilesDetector>()
+            .AddTemplateUpdate();
     }
 }
