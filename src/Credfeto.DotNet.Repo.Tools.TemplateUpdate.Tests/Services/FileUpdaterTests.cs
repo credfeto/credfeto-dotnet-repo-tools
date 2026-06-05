@@ -168,6 +168,48 @@ public sealed class FileUpdaterTests : LoggingTestBase, IDisposable
     }
 
     [Fact]
+    public async Task TransformChangesContentCopiesAndCommitsAndReturnsTrue()
+    {
+        string sourceFile = Path.Combine(this._tempFolder, "source.txt");
+        string targetFile = Path.Combine(this._tempFolder, "target.txt");
+
+        await File.WriteAllTextAsync(
+            path: sourceFile,
+            contents: "original content",
+            cancellationToken: this.CancellationToken()
+        );
+        await File.WriteAllTextAsync(
+            path: targetFile,
+            contents: "old content",
+            cancellationToken: this.CancellationToken()
+        );
+
+        const string transformedContent = "TRANSFORMED CONTENT";
+
+        CopyInstruction copyInstruction = new(
+            SourceFileName: sourceFile,
+            TargetFileName: targetFile,
+            Apply: _ => (System.Text.Encoding.UTF8.GetBytes(transformedContent), true),
+            IsTargetNewer: static (_, _) => false,
+            Message: "test commit"
+        );
+
+        bool result = await this._fileUpdater.UpdateFileAsync(
+            repoContext: this._repoContext,
+            copyInstruction: copyInstruction,
+            changelogUpdate: static _ => ValueTask.CompletedTask,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.True(result, userMessage: "Transformed content should update file and return true");
+        string written = await File.ReadAllTextAsync(path: targetFile, cancellationToken: this.CancellationToken());
+        Assert.Equal(expected: transformedContent, actual: written);
+        await this
+            ._repository.Received(1)
+            .CommitAsync(message: "test commit", cancellationToken: Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task TargetNewerReturnsFalse()
     {
         string sourceFile = Path.Combine(this._tempFolder, "source.txt");

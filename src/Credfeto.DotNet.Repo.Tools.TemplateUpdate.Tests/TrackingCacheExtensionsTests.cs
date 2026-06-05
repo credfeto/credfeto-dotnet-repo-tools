@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
@@ -94,22 +95,22 @@ public sealed class TrackingCacheExtensionsTests : TestBase
     private static TemplateConfig CreateMinimalTemplateConfig()
     {
         return new TemplateConfig(
-            general: new GeneralTemplateConfig(files: new Dictionary<string, string>(System.StringComparer.Ordinal)),
+            general: new GeneralTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal)),
             gitHub: new GitHubTemplateConfig(
                 issueTemplates: false,
                 pullRequestTemplates: false,
                 actions: false,
                 linters: false,
-                files: new Dictionary<string, string>(System.StringComparer.Ordinal),
+                files: new Dictionary<string, string>(StringComparer.Ordinal),
                 dependabot: new DependabotTemplateConfig(generate: false),
                 labels: new LabelsTemplateConfig(generate: false)
             ),
             dotNet: new DotnetTemplateConfig(
                 globalJson: false,
                 jetBrainsDotSettings: false,
-                files: new Dictionary<string, string>(System.StringComparer.Ordinal)
+                files: new Dictionary<string, string>(StringComparer.Ordinal)
             ),
-            cleanup: new CleanupTemplateConfig(files: new Dictionary<string, string>(System.StringComparer.Ordinal))
+            cleanup: new CleanupTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal))
         );
     }
 }

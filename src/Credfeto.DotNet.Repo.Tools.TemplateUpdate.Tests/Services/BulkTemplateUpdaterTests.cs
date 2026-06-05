@@ -160,7 +160,7 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
     }
 
     [Fact]
-    public async Task BulkUpdateWithNonexistentTrackingFileDoesNotLoadTracking()
+    public async Task BulkUpdateWithNonexistentTrackingFileSkipsLoadButDoesSave()
     {
         string nonexistentTrackingFile = Path.Combine(this._tempFolder, "nonexistent-tracking.json");
 
@@ -209,16 +209,6 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
     [Fact]
     public async Task BulkUpdateWithSdkVersionNullCompletesSuccessfully()
     {
-        this._globalJson.LoadGlobalJsonAsync(
-                baseFolder: Arg.Any<string>(),
-                cancellationToken: Arg.Any<CancellationToken>()
-            )
-            .Returns(new DotNetVersionSettings(SdkVersion: null, AllowPreRelease: false, RollForward: "latestMajor"));
-
-        IReadOnlyList<Version> installedSdks = [];
-        this._dotNetVersion.GetInstalledSdksAsync(cancellationToken: Arg.Any<CancellationToken>())
-            .Returns(installedSdks);
-
         await this._bulkTemplateUpdater.BulkUpdateAsync(
             templateRepository: "git@github.com:template/repo.git",
             trackingFileName: string.Empty,
