@@ -35,20 +35,24 @@ internal sealed class DotNetCommandRunner : IDotNetCommandRunner
         using Process process = Process.Start(psi)!;
 
 #if NET7_0_OR_GREATER
-        string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-        string error = await process.StandardError.ReadToEndAsync(cancellationToken);
+        string[] streams = await Task.WhenAll(
+            process.StandardOutput.ReadToEndAsync(cancellationToken),
+            process.StandardError.ReadToEndAsync(cancellationToken)
+        );
 #else
-        string output = await process.StandardOutput.ReadToEndAsync();
-        string error = await process.StandardError.ReadToEndAsync();
+        string[] streams = await Task.WhenAll(
+            process.StandardOutput.ReadToEndAsync(),
+            process.StandardError.ReadToEndAsync()
+        );
 #endif
 
         await process.WaitForExitAsync(cancellationToken);
 
-        string result = string.Join(separator: Environment.NewLine, output, error);
+        string[] outputLines = streams[0]
+            .Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries);
+        string[] errorLines = streams[1]
+            .Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries);
 
-        return (
-            result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries),
-            process.ExitCode
-        );
+        return ([.. outputLines, .. errorLines], process.ExitCode);
     }
 }
