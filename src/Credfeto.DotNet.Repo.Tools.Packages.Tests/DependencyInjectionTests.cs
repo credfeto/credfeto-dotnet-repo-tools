@@ -1,7 +1,9 @@
+using System.Net.Http;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Packages.Services;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.Package;
@@ -38,6 +40,16 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
     public void PackageUpdateConfigurationBuilderMustBeRegistered()
     {
         this.RequireService<IPackageUpdateConfigurationBuilder>();
+    }
+
+    [Fact]
+    public void BulkPackageConfigLoaderHttpClientCanBeCreated()
+    {
+        IHttpClientFactory factory = this.GetService<IHttpClientFactory>();
+
+        using HttpClient client = factory.CreateClient(nameof(BulkPackageConfigLoader));
+
+        Assert.NotNull(client);
     }
 
     private static IServiceCollection Configure(IServiceCollection services)
