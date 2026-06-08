@@ -973,4 +973,158 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
             this._projectLoader.Received(1).Reset();
         }
     }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Unit Test"
+    )]
+    public async Task UpdateRepositoriesWithRepoHavingDotNetFilesAndPackageUpdateReturnsTrueDoesNotCallReleaseGenerationAsync()
+    {
+        string repoDir = Path.Combine(this.TempFolder, "repo");
+        Directory.CreateDirectory(repoDir);
+        LibGit2Sharp.Repository.Init(repoDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(repoDir, "CHANGELOG.md"),
+            contents: "# Changelog",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string solutionFile = Path.Combine(repoDir, "Test.sln");
+        string srcDir = Path.Combine(repoDir, "src");
+        Directory.CreateDirectory(srcDir);
+        string projectFile = Path.Combine(srcDir, "Test.csproj");
+        await File.WriteAllTextAsync(
+            path: solutionFile,
+            contents: string.Empty,
+            cancellationToken: this.CancellationToken()
+        );
+        await File.WriteAllTextAsync(
+            path: projectFile,
+            contents: string.Empty,
+            cancellationToken: this.CancellationToken()
+        );
+
+        PackageUpdate packageUpdate = new(
+            packageId: "Test.Package",
+            packageType: "nuget",
+            exactMatch: false,
+            versionBumpPackage: false,
+            prohibitVersionBumpWhenReferenced: false,
+            exclude: null
+        );
+
+        using (LibGit2Sharp.Repository realRepo = new(repoDir))
+        {
+            this._repoRepository.Active.Returns(realRepo);
+            this._repoRepository.WorkingDirectory.Returns(repoDir);
+            this._repoRepository.ClonePath.Returns(REPO_URL);
+            this._repoRepository.GetDefaultBranch(GitConstants.Upstream).Returns("main");
+            this._repoRepository.HeadRev.Returns("abc123deadbeef");
+
+            this._gitRepositoryFactory.OpenOrCloneAsync(
+                    workDir: WORK_FOLDER,
+                    repoUrl: REPO_URL,
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(this._repoRepository);
+
+            this._dotNetFilesDetector.FindAsync(baseFolder: repoDir, cancellationToken: Arg.Any<CancellationToken>())
+                .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [solutionFile], Projects: [projectFile]));
+
+            this._globalJson.LoadGlobalJsonAsync(
+                    baseFolder: Arg.Any<string>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(DefaultDotNetSettings);
+
+            this._dotNetBuild.LoadBuildSettingsAsync(
+                    projects: Arg.Any<IReadOnlyList<string>>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(new BuildSettings(PublishableProjects: [], PackableProjects: [], Framework: null));
+
+            this._singlePackageUpdater.UpdateAsync(
+                    updateContext: Arg.Any<PackageUpdateContext>(),
+                    repoContext: Arg.Any<Credfeto.DotNet.Repo.Tools.Models.RepoContext>(),
+                    solutions: Arg.Any<IReadOnlyList<string>>(),
+                    sourceDirectory: Arg.Any<string>(),
+                    buildSettings: Arg.Any<BuildSettings>(),
+                    dotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                    package: Arg.Any<PackageUpdate>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(true);
+
+            PackageUpdateContext context = CreateUpdateContext();
+
+            await this._updater.UpdateRepositoriesAsync(
+                updateContext: context,
+                repositories: [REPO_URL],
+                packages: [packageUpdate],
+                cancellationToken: this.CancellationToken()
+            );
+
+            await this
+                ._releaseGeneration.DidNotReceive()
+                .TryCreateNextPatchAsync(
+                    repoContext: Arg.Any<Credfeto.DotNet.Repo.Tools.Models.RepoContext>(),
+                    dotNetFiles: Arg.Any<DotNetFiles>(),
+                    buildSettings: Arg.Any<BuildSettings>(),
+                    dotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                    packages: Arg.Any<IReadOnlyList<PackageUpdate>>(),
+                    releaseConfig: Arg.Any<ReleaseConfig>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                );
+        }
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Unit Test"
+    )]
+    public async Task BulkUpdateWithNonExistentTrackingFileDoesNotLoadTrackingAsync()
+    {
+        this._templateRepository.WorkingDirectory.Returns("/template");
+        this._gitRepositoryFactory.OpenOrCloneAsync(
+                workDir: this.TempFolder,
+                repoUrl: TEMPLATE_REPO_URL,
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(this._templateRepository);
+        this._bulkPackageConfigLoader.LoadAsync(
+                path: Arg.Any<string>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns([]);
+        this._globalJson.LoadGlobalJsonAsync(
+                baseFolder: Arg.Any<string>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(DefaultDotNetSettings);
+        IReadOnlyList<System.Version> noSdks = [];
+        this._dotNetVersion.GetInstalledSdksAsync(Arg.Any<CancellationToken>()).Returns(noSdks);
+        this._releaseConfigLoader.LoadAsync(path: Arg.Any<string>(), cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(DefaultReleaseConfig);
+        this._packageCache.GetAll().Returns([]);
+
+        string nonExistentTracking = Path.Combine(this.TempFolder, "nonexistent-tracking.json");
+
+        await this._updater.BulkUpdateAsync(
+            templateRepository: TEMPLATE_REPO_URL,
+            cacheFileName: null,
+            trackingFileName: nonExistentTracking,
+            packagesFileName: PACKAGES_FILE,
+            workFolder: this.TempFolder,
+            releaseConfigFileName: RELEASE_CONFIG_FILE,
+            additionalNugetSources: [],
+            repositories: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        await this._trackingCache.DidNotReceive().LoadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
 }
