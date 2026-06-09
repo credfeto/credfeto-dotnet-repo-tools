@@ -67,24 +67,24 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: "Checkout Source"
-        if: (github.event.pull_request.user.login != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
+        if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
         uses: actions/checkout@v6.0.3
         with:
           clean: true
           fetch-depth: 2
 
       - name: "Fetch Base Branch"
-        if: (github.event.pull_request.user.login != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
+        if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
         shell: bash
         run: git fetch origin ${{github.base_ref}} --depth=1
 
       - name: "Diff Changes"
-        if: (github.event.pull_request.user.login != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
+        if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template'))
         shell: bash
         run: echo "CHANGES=$(git diff --exit-code --no-patch --merge-base origin/main CHANGELOG.md 2> /dev/null && echo 0 || echo $?)" >> "$GITHUB_ENV"
 
       - name: "Report unchanged"
-        if: (github.event.pull_request.user.login != 'dependabot[bot]' && !endsWith(github.repository , '-template')) && env.CHANGES == '0'
+        if: (github.actor != 'dependabot[bot]' && !endsWith(github.repository , '-template')) && env.CHANGES == '0'
         uses: actions/github-script@v9.0.0
         with:
           script: |
@@ -413,7 +413,6 @@ jobs:
           fetch-depth: 0
 
       - name: "Check Required Secrets"
-        if: github.actor != 'dependabot[bot]'
         shell: bash
         run: |
           if [ -z "${{secrets.SOURCE_PUSH_TOKEN}}" ]; then
@@ -422,7 +421,6 @@ jobs:
           fi
 
       - name: "Run Linter"
-        if: github.actor != 'dependabot[bot]'
         uses: super-linter/super-linter@v8.6.0
         env:
           DEFAULT_BRANCH: main
