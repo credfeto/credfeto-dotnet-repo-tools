@@ -28,13 +28,6 @@ jobs:
     # Specifically check that dependabot (or another trusted party) created this pull-request, and that it has been labelled correctly.
     if: contains(github.event.pull_request.labels.*.name, 'dependencies')
     steps:
-      - name: "Checkout Source"
-        uses: actions/checkout@v6.0.3
-        with:
-          clean: true
-          fetch-depth: 1
-          ref: ${{github.event.pull_request.base.sha}}
-
       - name: "Auto Merge"
         uses: ./.github/actions/enable-automerge
         with:
@@ -50,13 +43,6 @@ jobs:
 
     if: contains(github.event.pull_request.labels.*.name, 'dependencies')
     steps:
-      - name: "Checkout Source"
-        uses: actions/checkout@v6.0.3
-        with:
-          clean: true
-          fetch-depth: 1
-          ref: ${{github.event.pull_request.base.sha}}
-
       - name: "Auto Approve"
         uses: ./.github/actions/approve-pr
         with:
