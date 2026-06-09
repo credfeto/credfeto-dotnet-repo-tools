@@ -29,7 +29,6 @@ jobs:
     name: "Copilot Code Review"
     runs-on: ubuntu-latest
     needs: check-not-draft
-    if: github.actor != 'dependabot[bot]'
 
     permissions:
       contents: read
