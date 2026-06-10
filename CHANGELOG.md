@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.DotNet assembly
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Packages
 ### Fixed
+- Fixed PR automation jobs failing when pull_request_target workflow uses local composite actions
 ### Changed
 ### Deprecated
 ### Removed
