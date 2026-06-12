@@ -58,6 +58,8 @@
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Packages/**/*' ]
 "credfeto-dotnet-repo-tools-packages-interfaces":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Packages.Interfaces/**/*' ]
+"credfeto-dotnet-repo-tools-packages-interfaces-tests":
+ - any: [ 'src/Credfeto.DotNet.Repo.Tools.Packages.Interfaces.Tests/**/*' ]
 "credfeto-dotnet-repo-tools-packages-tests":
  - any: [ 'src/Credfeto.DotNet.Repo.Tools.Packages.Tests/**/*' ]
 "credfeto-dotnet-repo-tools-release":
