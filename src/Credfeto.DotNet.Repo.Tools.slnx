@@ -40,6 +40,7 @@
   </Folder>
   <Folder Name="/Packages/">
     <Project Path="Credfeto.DotNet.Repo.Tools.Packages.Interfaces/Credfeto.DotNet.Repo.Tools.Packages.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Packages.Interfaces.Tests/Credfeto.DotNet.Repo.Tools.Packages.Interfaces.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.Packages.Tests/Credfeto.DotNet.Repo.Tools.Packages.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.Packages/Credfeto.DotNet.Repo.Tools.Packages.csproj" />
   </Folder>
