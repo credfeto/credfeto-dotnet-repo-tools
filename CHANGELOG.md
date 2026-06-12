@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Unit tests for Credfeto.DotNet.Repo.Tools.TemplateUpdate assembly to achieve 100% code coverage
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.DotNet assembly
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Packages
+- Added unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Packages.Interfaces
 ### Fixed
 ### Changed
 - SDK - Updated DotNet SDK to 10.0.301
