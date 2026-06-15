@@ -15,6 +15,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Added unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Packages.Interfaces
 - Unit tests for Credfeto.DotNet.Repo.Tools.CleanUp assembly to achieve 100% code coverage
 ### Fixed
+- Skip GitRepositoryFactoryTests.CanCloneHttpsAsync in environments without direct GitHub network access
 ### Changed
 - SDK - Updated DotNet SDK to 10.0.301
 ### Deprecated
