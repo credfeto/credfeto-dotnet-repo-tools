@@ -23,7 +23,7 @@ internal sealed class LabelerYamlBuilder
         {
             string pathList = string.Join(separator: ", ", paths.Select(p => $"'{p}'"));
             sb.AppendLine($"\"{name}\":");
-            sb.AppendLine($" - any: [ {pathList} ]");
+            sb.AppendLine($"  - any: [{pathList}]");
         }
 
         return sb.ToString();

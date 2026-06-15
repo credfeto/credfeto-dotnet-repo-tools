@@ -30,6 +30,6 @@ internal sealed class LabelsYamlBuilder
             sb = sb.AppendLine();
         }
 
-        return sb.ToString();
+        return sb.ToString().TrimEnd('\r', '\n') + "\n";
     }
 }
