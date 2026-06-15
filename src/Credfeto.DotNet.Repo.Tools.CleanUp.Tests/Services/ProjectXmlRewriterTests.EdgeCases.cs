@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Xml;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services;
@@ -118,9 +120,15 @@ public sealed partial class ProjectXmlRewriterTests
 </Project>";
 
         XmlDocument doc = LoadXml(xml);
-        XmlNodeList? propertyGroups = doc.SelectSingleNode("Project")?.SelectNodes("PropertyGroup");
+        XmlElement? project = doc.SelectSingleNode("Project") as XmlElement;
+        Assert.NotNull(project);
 
-        Assert.NotNull(propertyGroups);
+        IReadOnlyList<XmlElement> propertyGroups =
+        [
+            .. project
+                .ChildNodes.OfType<XmlElement>()
+                .Where(n => StringComparer.Ordinal.Equals(x: n.Name, y: "PropertyGroup")),
+        ];
 
         ProjectXmlRewriter concreteRewriter = new(this.GetTypedLogger<ProjectXmlRewriter>());
         Assert.Throws<XmlException>(() =>
