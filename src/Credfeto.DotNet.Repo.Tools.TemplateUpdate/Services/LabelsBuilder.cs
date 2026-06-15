@@ -196,7 +196,10 @@ public sealed class LabelsBuilder : ILabelsBuilder
             labelsWithColour = AddLabelsWithColor(labelsWithColour: labelsWithColour, labelConfig: labelConfig);
         }
 
-        return new(labelsWithColour.ToString(), labeller.ToString());
+        string labelsYml = labelsWithColour.ToString().TrimEnd('\r', '\n') + "\n";
+        string labelerYml = labeller.ToString();
+
+        return new("---\n" + labelsYml, "---\n" + labelerYml);
     }
 
     private static StringBuilder AddLabelMatch(StringBuilder labeller, in LabelConfig labelConfig)
@@ -217,9 +220,9 @@ public sealed class LabelsBuilder : ILabelsBuilder
         IEnumerable<PathInfo> paths = BuildIncludePaths(labelConfig).Concat(BuildExcludePaths(labelConfig));
 
         string all =
-            " - any: [ "
+            "  - any: ["
             + string.Join(separator: ", ", paths.Select(i => i.Include ? $"'{i.Path}'" : $"'!{i.Path}'"))
-            + " ]";
+            + "]";
 
         return all;
     }
