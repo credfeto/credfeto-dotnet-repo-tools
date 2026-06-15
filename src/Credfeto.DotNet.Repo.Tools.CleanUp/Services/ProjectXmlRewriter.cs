@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -24,12 +24,12 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
             return false;
         }
 
-        XmlNodeList? propertyGroups = project.SelectNodes("PropertyGroup");
-
-        if (propertyGroups is null)
-        {
-            return false;
-        }
+        IReadOnlyList<XmlElement> propertyGroups =
+        [
+            .. project
+                .ChildNodes.OfType<XmlElement>()
+                .Where(n => StringComparer.Ordinal.Equals(x: n.Name, y: "PropertyGroup")),
+        ];
 
         string before = projectDocument.InnerXml;
 
@@ -42,7 +42,11 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         return !StringComparer.Ordinal.Equals(x: before, y: after);
     }
 
-    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Needs simplification")]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Needs simplification"
+    )]
     public bool ReOrderIncludes(XmlDocument projectDocument, string filename)
     {
         if (projectDocument.SelectSingleNode("Project") is not XmlElement project)
@@ -50,12 +54,12 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
             return false;
         }
 
-        XmlNodeList? itemGroups = project.SelectNodes("ItemGroup");
-
-        if (itemGroups is null)
-        {
-            return false;
-        }
+        IReadOnlyList<XmlElement> itemGroups =
+        [
+            .. project
+                .ChildNodes.OfType<XmlElement>()
+                .Where(n => StringComparer.Ordinal.Equals(x: n.Name, y: "ItemGroup")),
+        ];
 
         string before = projectDocument.InnerXml;
 
@@ -73,8 +77,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
                 continue;
             }
 
-            if (itemGroup.ChildNodes.OfType<XmlNode>()
-                         .Any(IsComment))
+            if (itemGroup.ChildNodes.OfType<XmlNode>().Any(IsComment))
             {
                 this._logger.SkippingGroupWithComment(filename);
 
@@ -141,7 +144,11 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         return !StringComparer.Ordinal.Equals(x: before, y: after);
     }
 
-    private static void AppendReferences(XmlDocument projectDocument, Dictionary<string, XmlNode> source, XmlElement project)
+    private static void AppendReferences(
+        XmlDocument projectDocument,
+        Dictionary<string, XmlNode> source,
+        XmlElement project
+    )
     {
         if (source.Count == 0)
         {
@@ -150,7 +157,12 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
         XmlElement itemGroup = projectDocument.CreateElement("ItemGroup");
 
-        foreach ((string _, XmlNode node) in source.OrderBy(keySelector: x => x.Key, comparer: StringComparer.OrdinalIgnoreCase))
+        foreach (
+            (string _, XmlNode node) in source.OrderBy(
+                keySelector: x => x.Key,
+                comparer: StringComparer.OrdinalIgnoreCase
+            )
+        )
         {
             itemGroup.AppendChild(node);
         }
@@ -169,13 +181,9 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         }
     }
 
-    public void MergePropertiesOfMultipleGroups(string fileName, XmlNodeList propertyGroups)
+    public void MergePropertiesOfMultipleGroups(string fileName, IReadOnlyList<XmlElement> propertyGroups)
     {
-        IReadOnlyList<XmlElement> combinablePropertyGroups =
-        [
-            .. propertyGroups.OfType<XmlElement>()
-                             .Where(IsCombinableGroup)
-        ];
+        IReadOnlyList<XmlElement> combinablePropertyGroups = [.. propertyGroups.Where(IsCombinableGroup)];
 
         XmlElement? targetPropertyGroup = combinablePropertyGroups.FirstOrDefault();
 
@@ -254,14 +262,14 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         return true;
     }
 
-    [SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Should be simplified")]
-    private void ReOrderPropertyGroupWithAttributesOrComments(string filename, XmlNodeList propertyGroups)
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Should be simplified"
+    )]
+    private void ReOrderPropertyGroupWithAttributesOrComments(string filename, IReadOnlyList<XmlElement> propertyGroups)
     {
-        IReadOnlyList<XmlElement> nonCombinablePropertyGroups =
-        [
-            .. propertyGroups.OfType<XmlElement>()
-                             .Where(ph => !IsCombinableGroup(ph))
-        ];
+        IReadOnlyList<XmlElement> nonCombinablePropertyGroups = [.. propertyGroups.Where(ph => !IsCombinableGroup(ph))];
 
         foreach (XmlElement propertyGroup in nonCombinablePropertyGroups)
         {
@@ -275,8 +283,7 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
 
             XmlNodeList children = propertyGroup.ChildNodes;
 
-            if (children.OfType<XmlNode>()
-                        .Any(IsComment))
+            if (children.OfType<XmlNode>().Any(IsComment))
             {
                 this._logger.SkippingGroupWithComment(filename: filename);
 
