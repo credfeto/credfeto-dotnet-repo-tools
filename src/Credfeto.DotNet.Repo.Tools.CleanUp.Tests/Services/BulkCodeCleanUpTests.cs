@@ -18,6 +18,7 @@ using FunFair.Test.Common;
 using LibGit2Sharp;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Xunit;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests.Services;
@@ -538,5 +539,447 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
                 )
                 .AsTask()
         );
+    }
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    private void SetupPassThroughCsCleaners()
+    {
+        this._tsqlFormatter.FormatAsync(
+                Arg.Any<string>(),
+                Arg.Any<SqlScriptGeneratorOptions>(),
+                Arg.Any<CancellationToken>()
+            )
+            .Returns(x => x.ArgAt<string>(0));
+        this._resharperSuppressionToSuppressMessage.Replace(Arg.Any<string>()).Returns(x => x.ArgAt<string>(0));
+        this._xmlDocCommentRemover.RemoveXmlDocComments(Arg.Any<string>()).Returns(x => x.ArgAt<string>(0));
+        this._sourceFileSuppressionRemover.RemoveSuppressionsAsync(
+                Arg.Any<string>(),
+                Arg.Any<string>(),
+                Arg.Any<BuildContext>(),
+                Arg.Any<CancellationToken>()
+            )
+            .Returns(x => ValueTask.FromResult(x.ArgAt<string>(1)));
+        this._sourceFileReformatter.ReformatAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(x => ValueTask.FromResult(x.ArgAt<string>(1)));
+    }
+
+    private async ValueTask<(
+        Repository activeRepo,
+        string projectFile,
+        IGitRepository testRepo
+    )> SetupRepoDirWithChangelogAndProjectAsync(string repoDirName, string cloneUrl, string headRev)
+    {
+        string repoDir = Path.Combine(path1: this.TempFolder, path2: repoDirName);
+        Directory.CreateDirectory(repoDir);
+        Repository.Init(repoDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(repoDir, "CHANGELOG.md"),
+            contents: "# Changelog\n",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string projectFile = Path.Combine(repoDir, "Test.csproj");
+        const string projectXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        await File.WriteAllTextAsync(
+            path: projectFile,
+            contents: projectXml,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Repository activeRepo = new(repoDir);
+
+        IGitRepository testRepo = GetSubstitute<IGitRepository>();
+        testRepo.Active.Returns(activeRepo);
+        testRepo.ClonePath.Returns(cloneUrl);
+        testRepo.WorkingDirectory.Returns(repoDir);
+        testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
+        testRepo.HeadRev.Returns(headRev);
+
+        return (activeRepo, projectFile, testRepo);
+    }
+
+    private void SetupDotNetFilesAndBuild(string repoDir, string projectFile)
+    {
+        this._dotNetFilesDetector.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile]));
+        this._dotNetBuild.LoadBuildSettingsAsync(Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>())
+            .Returns(new BuildSettings(PublishableProjects: [], PackableProjects: [], Framework: null));
+        this._dotNetBuild.When(async b => await b.BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>()))
+            .Do(_ => { });
+    }
+
+    private async Task RunBulkUpdateAsync(string repoUrl)
+    {
+        await this._sut.BulkUpdateAsync(
+            templateRepository: "https://github.com/template/repo.git",
+            trackingFileName: string.Empty,
+            packagesFileName: string.Empty,
+            workFolder: this.TempFolder,
+            releaseConfigFileName: "release.json",
+            repositories: [repoUrl],
+            cancellationToken: this.CancellationToken()
+        );
+    }
+
+    [Fact]
+    public async Task BulkUpdateAsyncShouldCommitWhenSqlFileChangedByFormatterAsync()
+    {
+        (Repository activeRepo, string projectFile, IGitRepository testRepo) =
+            await this.SetupRepoDirWithChangelogAndProjectAsync(
+                repoDirName: "gitrepo-sql-change",
+                cloneUrl: "https://github.com/test/sql-change-repo.git",
+                headRev: "sql001"
+            );
+
+        using (activeRepo)
+        {
+            string repoDir = testRepo.WorkingDirectory;
+            const string sqlOriginal = "select 1;";
+            const string sqlFormatted = "SELECT 1;";
+            string sqlFile = Path.Combine(repoDir, "schema.sql");
+            await File.WriteAllTextAsync(
+                path: sqlFile,
+                contents: sqlOriginal,
+                cancellationToken: this.CancellationToken()
+            );
+
+            this.SetupDotNetFilesAndBuild(repoDir: repoDir, projectFile: projectFile);
+
+            this._tsqlFormatter.FormatAsync(
+                    Arg.Any<string>(),
+                    Arg.Any<SqlScriptGeneratorOptions>(),
+                    Arg.Any<CancellationToken>()
+                )
+                .Returns(sqlFormatted);
+
+            IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+            this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
+
+            await this.RunBulkUpdateAsync("https://github.com/test/sql-change-repo.git");
+
+            await testRepo.Received(1).CommitAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        }
+    }
+
+    [Fact]
+    public async Task BulkUpdateAsyncShouldNotCommitWhenCSharpSourceFilesAreUnchangedByCleanupAsync()
+    {
+        (Repository activeRepo, string projectFile, IGitRepository testRepo) =
+            await this.SetupRepoDirWithChangelogAndProjectAsync(
+                repoDirName: "gitrepo-cs-unchanged",
+                cloneUrl: "https://github.com/test/cs-unchanged-repo.git",
+                headRev: "cs001"
+            );
+
+        using (activeRepo)
+        {
+            string repoDir = testRepo.WorkingDirectory;
+            const string csContent = "public class Foo { }";
+            string csFile = Path.Combine(repoDir, "Foo.cs");
+            await File.WriteAllTextAsync(
+                path: csFile,
+                contents: csContent,
+                cancellationToken: this.CancellationToken()
+            );
+
+            this.SetupDotNetFilesAndBuild(repoDir: repoDir, projectFile: projectFile);
+            this.SetupPassThroughCsCleaners();
+
+            IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+            this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
+
+            await this.RunBulkUpdateAsync("https://github.com/test/cs-unchanged-repo.git");
+
+            await testRepo.DidNotReceive().CommitAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        }
+    }
+
+    [Fact]
+    public async Task BulkUpdateAsyncShouldCommitWhenCSharpSourceFileIsChangedByCleanupAsync()
+    {
+        (Repository activeRepo, string projectFile, IGitRepository testRepo) =
+            await this.SetupRepoDirWithChangelogAndProjectAsync(
+                repoDirName: "gitrepo-cs-changed",
+                cloneUrl: "https://github.com/test/cs-changed-repo.git",
+                headRev: "cs002"
+            );
+
+        using (activeRepo)
+        {
+            string repoDir = testRepo.WorkingDirectory;
+            const string csContent = "// resharper disable\npublic class Foo { }";
+            string csFile = Path.Combine(repoDir, "Foo.cs");
+            await File.WriteAllTextAsync(
+                path: csFile,
+                contents: csContent,
+                cancellationToken: this.CancellationToken()
+            );
+
+            this.SetupDotNetFilesAndBuild(repoDir: repoDir, projectFile: projectFile);
+            this.SetupPassThroughCsCleaners();
+            // Replace returns different content (simulating cleanup)
+            this._resharperSuppressionToSuppressMessage.Replace(Arg.Any<string>()).Returns("public class Foo { }");
+
+            IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+            this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
+
+            await this.RunBulkUpdateAsync("https://github.com/test/cs-changed-repo.git");
+
+            await testRepo.Received(1).CommitAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        }
+    }
+
+    [Fact]
+    public async Task BulkUpdateAsyncShouldResetWhenBuildFailsAfterCSharpCleanupAsync()
+    {
+        (Repository activeRepo, string projectFile, IGitRepository testRepo) =
+            await this.SetupRepoDirWithChangelogAndProjectAsync(
+                repoDirName: "gitrepo-cs-buildfail",
+                cloneUrl: "https://github.com/test/cs-buildfail-repo.git",
+                headRev: "cs003"
+            );
+
+        using (activeRepo)
+        {
+            string repoDir = testRepo.WorkingDirectory;
+            const string csContent = "// resharper\npublic class Foo { }";
+            string csFile = Path.Combine(repoDir, "Foo.cs");
+            await File.WriteAllTextAsync(
+                path: csFile,
+                contents: csContent,
+                cancellationToken: this.CancellationToken()
+            );
+
+            this._dotNetFilesDetector.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile]));
+            this._dotNetBuild.LoadBuildSettingsAsync(Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>())
+                .Returns(new BuildSettings(PublishableProjects: [], PackableProjects: [], Framework: null));
+            // Call 1: initial build for project file cleanup
+            // Call 2: initial build for resharper CS cleanup
+            // Call 3: TestBuildAndCommitIfCleanAsync build for changed file → FAIL → reset
+            this.SetupBuildFailingOnCall(failOnCallNumber: 3);
+
+            this.SetupPassThroughCsCleaners();
+            this._resharperSuppressionToSuppressMessage.Replace(Arg.Any<string>()).Returns("public class Foo { }");
+
+            IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+            this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
+
+            await this.RunBulkUpdateAsync("https://github.com/test/cs-buildfail-repo.git");
+
+            await testRepo
+                .Received(1)
+                .ResetToDefaultBranchAsync(
+                    upstream: Arg.Any<string>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                );
+        }
+    }
+
+    private void SetupBuildFailingOnCall(int failOnCallNumber)
+    {
+        int buildCallCount = 0;
+        this._dotNetBuild.When(async b => await b.BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>()))
+            .Do(_ =>
+            {
+                ++buildCallCount;
+
+                if (buildCallCount == failOnCallNumber)
+                {
+                    throw new DotNetBuildErrorException("Build failed");
+                }
+            });
+    }
+
+    private void SetupBuildFailingOnCalls(int failOnCallA, int failOnCallB)
+    {
+        int buildCallCount = 0;
+        this._dotNetBuild.When(async b => await b.BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>()))
+            .Do(_ =>
+            {
+                ++buildCallCount;
+
+                if (buildCallCount == failOnCallA || buildCallCount == failOnCallB)
+                {
+                    throw new DotNetBuildErrorException("Build failed");
+                }
+            });
+    }
+
+    [Fact]
+    public async Task BulkUpdateAsyncShouldRetryBuildWhenPreviousCleanupBuildFailedAsync()
+    {
+        (Repository activeRepo, string projectFile, IGitRepository testRepo) =
+            await this.SetupRepoDirWithChangelogAndProjectAsync(
+                repoDirName: "gitrepo-cs-retry-success",
+                cloneUrl: "https://github.com/test/cs-retry-success-repo.git",
+                headRev: "cs004"
+            );
+
+        using (activeRepo)
+        {
+            string repoDir = testRepo.WorkingDirectory;
+            const string cleanedContent = "public class Cleaned { }";
+            // Two dirty files: whichever is processed first will have its commit-check fail (lastBuildFailed=true).
+            // The second file's retry build will then succeed (covering lines 265-266).
+            string csFile1 = Path.Combine(repoDir, "DirtyOne.cs");
+            string csFile2 = Path.Combine(repoDir, "DirtyTwo.cs");
+            await File.WriteAllTextAsync(
+                path: csFile1,
+                contents: "// dirty 1\npublic class DirtyOne { }",
+                cancellationToken: this.CancellationToken()
+            );
+            await File.WriteAllTextAsync(
+                path: csFile2,
+                contents: "// dirty 2\npublic class DirtyTwo { }",
+                cancellationToken: this.CancellationToken()
+            );
+
+            this._dotNetFilesDetector.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile]));
+            this._dotNetBuild.LoadBuildSettingsAsync(Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>())
+                .Returns(new BuildSettings(PublishableProjects: [], PackableProjects: [], Framework: null));
+            // Call 1: project cleanup initial build
+            // Call 2: resharper initial build (two cs files)
+            // Call 3: TestBuildAndCommit for first file (changed) → FAIL → reset (lastBuildFailed=true)
+            // Call 4: retry build for second file → SUCCESS → lastBuildFailed=false (lines 265-266 covered)
+            // Call 5: TestBuildAndCommit for second file (changed) → SUCCESS → commit
+            this.SetupBuildFailingOnCall(failOnCallNumber: 3);
+
+            this.SetupPassThroughCsCleaners();
+            this._resharperSuppressionToSuppressMessage.Replace(Arg.Any<string>()).Returns(cleanedContent);
+
+            IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+            this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
+
+            await this.RunBulkUpdateAsync("https://github.com/test/cs-retry-success-repo.git");
+
+            await testRepo
+                .Received(1)
+                .ResetToDefaultBranchAsync(
+                    upstream: Arg.Any<string>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                );
+        }
+    }
+
+    [Fact]
+    public async Task BulkUpdateAsyncShouldThrowWhenRetryBuildAlsoFailsAsync()
+    {
+        (Repository activeRepo, string projectFile, IGitRepository testRepo) =
+            await this.SetupRepoDirWithChangelogAndProjectAsync(
+                repoDirName: "gitrepo-cs-retry-fail",
+                cloneUrl: "https://github.com/test/cs-retry-fail-repo.git",
+                headRev: "cs005"
+            );
+
+        using (activeRepo)
+        {
+            string repoDir = testRepo.WorkingDirectory;
+            // Both files have different content from cleanedContent so both will be "changed"
+            // regardless of which is processed first
+            const string cleanedContent = "public class Cleaned { }";
+            string csFile1 = Path.Combine(repoDir, "FileOne.cs");
+            string csFile2 = Path.Combine(repoDir, "FileTwo.cs");
+            await File.WriteAllTextAsync(
+                path: csFile1,
+                contents: "// original\npublic class FileOne { }",
+                cancellationToken: this.CancellationToken()
+            );
+            await File.WriteAllTextAsync(
+                path: csFile2,
+                contents: "// original\npublic class FileTwo { }",
+                cancellationToken: this.CancellationToken()
+            );
+
+            this._dotNetFilesDetector.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+                .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile]));
+            this._dotNetBuild.LoadBuildSettingsAsync(Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>())
+                .Returns(new BuildSettings(PublishableProjects: [], PackableProjects: [], Framework: null));
+            // Call 1: project cleanup initial build, Call 2: resharper initial build,
+            // Call 3: TestBuildAndCommit for first changed file → FAIL → reset (1st), lastBuildFailed=true
+            // Call 4: retry build for second file → FAIL → reset (2nd), re-throw (caught by UpdateRepositoriesAsync)
+            this.SetupBuildFailingOnCalls(failOnCallA: 3, failOnCallB: 4);
+
+            this.SetupPassThroughCsCleaners();
+            // Replace returns cleanedContent for ANY input, so both files will be "changed"
+            this._resharperSuppressionToSuppressMessage.Replace(Arg.Any<string>()).Returns(cleanedContent);
+
+            IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+            this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
+
+            await this.RunBulkUpdateAsync("https://github.com/test/cs-retry-fail-repo.git");
+
+            // 2 resets: one from TestBuildAndCommit for first file, one from the retry for second file
+            await testRepo
+                .Received(2)
+                .ResetToDefaultBranchAsync(
+                    upstream: Arg.Any<string>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                );
+        }
+    }
+
+    [Fact]
+    public async Task BulkUpdateAsyncShouldCountIncludesReorderAsChangeAsync()
+    {
+        (Repository activeRepo, string projectFile, IGitRepository testRepo) =
+            await this.SetupRepoDirWithChangelogAndProjectAsync(
+                repoDirName: "gitrepo-includes-reorder",
+                cloneUrl: "https://github.com/test/includes-reorder-repo.git",
+                headRev: "incl001"
+            );
+
+        using (activeRepo)
+        {
+            string repoDir = testRepo.WorkingDirectory;
+
+            this.SetupDotNetFilesAndBuild(repoDir: repoDir, projectFile: projectFile);
+
+            this._projectXmlRewriter.ReOrderIncludes(Arg.Any<System.Xml.XmlDocument>(), Arg.Any<string>())
+                .Returns(true);
+
+            IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+            this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
+
+            await this.RunBulkUpdateAsync("https://github.com/test/includes-reorder-repo.git");
+
+            this._trackingCache.Received(1)
+                .Set(repoUrl: "https://github.com/test/includes-reorder-repo.git", value: "incl001");
+        }
+    }
+
+    [Fact]
+    public async Task BulkUpdateAsyncShouldHandleExceptionInProjectCleanupAsync()
+    {
+        (Repository activeRepo, string projectFile, IGitRepository testRepo) =
+            await this.SetupRepoDirWithChangelogAndProjectAsync(
+                repoDirName: "gitrepo-cleanup-exception",
+                cloneUrl: "https://github.com/test/cleanup-exception-repo.git",
+                headRev: "exc001"
+            );
+
+        using (activeRepo)
+        {
+            string repoDir = testRepo.WorkingDirectory;
+
+            this.SetupDotNetFilesAndBuild(repoDir: repoDir, projectFile: projectFile);
+
+            this._projectXmlRewriter.ReOrderPropertyGroups(Arg.Any<System.Xml.XmlDocument>(), Arg.Any<string>())
+                .Throws(new InvalidOperationException("Unexpected project structure"));
+
+            IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+            this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
+
+            await this.RunBulkUpdateAsync("https://github.com/test/cleanup-exception-repo.git");
+
+            this._trackingCache.Received(1)
+                .Set(repoUrl: "https://github.com/test/cleanup-exception-repo.git", value: "exc001");
+        }
     }
 }
