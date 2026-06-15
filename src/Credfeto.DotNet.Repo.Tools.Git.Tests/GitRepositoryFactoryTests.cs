@@ -89,7 +89,7 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
             .ToLowerInvariant();
     }
 
-    [Fact]
+    [Fact(Skip = "Requires network access to GitHub")]
     public Task CanCloneHttpsAsync()
     {
         return this.CloneTestCommonAsync(uri: Repositories.GitHubHttps, cancellationToken: this.CancellationToken());
