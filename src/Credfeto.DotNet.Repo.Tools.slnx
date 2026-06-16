@@ -36,6 +36,7 @@
   <Folder Name="/Git/">
     <Project Path="Credfeto.DotNet.Repo.Tools.Git.Integration.Tests/Credfeto.DotNet.Repo.Tools.Git.Integration.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.Git.Interfaces/Credfeto.DotNet.Repo.Tools.Git.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.Git.Interfaces.Tests/Credfeto.DotNet.Repo.Tools.Git.Interfaces.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.Git.Tests/Credfeto.DotNet.Repo.Tools.Git.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.Git/Credfeto.DotNet.Repo.Tools.Git.csproj" />
   </Folder>
