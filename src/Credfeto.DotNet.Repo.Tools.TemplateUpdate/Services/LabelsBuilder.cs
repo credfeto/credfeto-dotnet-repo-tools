@@ -205,7 +205,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
         {
             if (!firstLabel)
             {
-                labelsWithColour.AppendLine();
+                labelsWithColour = labelsWithColour.AppendLine();
             }
 
             firstLabel = false;

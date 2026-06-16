@@ -27,7 +27,7 @@ internal sealed class LabelsYamlBuilder
         {
             if (!first)
             {
-                sb.AppendLine();
+                sb = sb.AppendLine();
             }
 
             first = false;

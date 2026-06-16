@@ -27,8 +27,7 @@ internal sealed class LabelerYamlBuilder
         foreach ((string name, string[] paths) in this._entries)
         {
             string pathList = string.Join(separator: ", ", paths.Select(p => $"'{p}'"));
-            sb.AppendLine($"\"{name}\":");
-            sb.AppendLine($"  - any: [{pathList}]");
+            sb = sb.AppendLine($"\"{name}\":").AppendLine($"  - any: [{pathList}]");
         }
 
         return sb.ToString();
