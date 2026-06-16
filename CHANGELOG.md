@@ -8,6 +8,16 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.5.2] - 2026-06-16
+### Added
 - Tests for Credfeto.DotNet.Repo.Tools.Release.Interfaces to achieve 100% code coverage
 - Unit tests for Credfeto.DotNet.Repo.Tools.TemplateUpdate assembly to achieve 100% code coverage
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.DotNet assembly
@@ -21,12 +31,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - SDK - Updated DotNet SDK to 10.0.301
 - Add YAML comments to labeler.yml and labels.yml outputs explaining the file purpose and that the file is generated
 - Move labeler.yml and labels.yml YAML document header and trailing newline handling into the builder so ToString() produces the correct output directly
-### Deprecated
-### Removed
-### Deployment Changes
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
+
 ## [1.5.1] - 2026-06-04
 ### Added
 - Add 'never-close' label type to repo configuration
