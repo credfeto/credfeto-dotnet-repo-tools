@@ -393,6 +393,36 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task RemoveAllLocalBranches_WithRemoteTrackingBranches_DoesNotRemoveRemoteBranches()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+        string bareRemotePath = await this.CreateLocalBareRemoteAsync(
+            sourceRepoPath: repoPath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await RunGitAsync(
+            repoPath: repoPath,
+            arguments: $"remote add origin \"{bareRemotePath}\"",
+            cancellationToken: this.CancellationToken()
+        );
+        await RunGitAsync(repoPath: repoPath, arguments: "fetch origin", cancellationToken: this.CancellationToken());
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepositoryFactory>()
+        );
+
+        repo.RemoveAllLocalBranches();
+
+        IReadOnlyCollection<string> remoteBranches = repo.GetRemoteBranches("origin");
+
+        Assert.NotEmpty(remoteBranches);
+    }
+
+    [Fact]
     public async Task CommitAsync_WithUnstagedChanges_CommitsSuccessfully()
     {
         string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
@@ -609,6 +639,292 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
 
         using Repository libGitRepo = new(repoPath);
         Assert.Equal(expected: DEFAULT_BRANCH, actual: libGitRepo.Head.FriendlyName);
+    }
+
+    [Fact]
+    public async Task CommitAsync_WhenNothingToCommit_DoesNotThrow()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepositoryFactory>()
+        );
+
+        // Repo is clean - git commit fails with non-zero exit code; CommitAsync only logs, does not throw
+        await repo.CommitAsync(message: "Nothing to commit", cancellationToken: this.CancellationToken());
+    }
+
+    [Fact]
+    public async Task CommitAsync_InNonGitDirectory_DoesNotThrow()
+    {
+        string nonGitDir = Path.Combine(this.TempFolder, "non-git-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(nonGitDir);
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: nonGitDir,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepositoryFactory>()
+        );
+
+        // git add -A fails in a non-git directory (exitCode != 0); git commit also fails; neither throws
+        await repo.CommitAsync(message: "Test commit", cancellationToken: this.CancellationToken());
+    }
+
+    [Fact]
+    public async Task CommitNamedAsync_WithNonExistentFile_DoesNotThrow()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepositoryFactory>()
+        );
+
+        // git add nonexistent.txt fails (exitCode != 0); git commit also fails; neither throws
+        await repo.CommitNamedAsync(
+            message: "Test commit",
+            files: ["nonexistent.txt"],
+            cancellationToken: this.CancellationToken()
+        );
+    }
+
+    [Fact]
+    public async Task CreateBranchAsync_WhenBranchAlreadyExists_DoesNotThrow()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepositoryFactory>()
+        );
+
+        // Try to create a branch that already exists - git checkout -b fails (exitCode != 0); only logs, no throw
+        await repo.CreateBranchAsync(branchName: DEFAULT_BRANCH, cancellationToken: this.CancellationToken());
+    }
+
+    [Fact]
+    public async Task SwitchBranchAsync_ToNonExistentBranch_DoesNotThrow()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepositoryFactory>()
+        );
+
+        // git switch to a non-existent branch fails (exitCode != 0); only logs, no throw
+        await repo.SwitchBranchAsync(
+            branchName: "branch-that-does-not-exist",
+            cancellationToken: this.CancellationToken()
+        );
+    }
+
+    [Fact]
+    public async Task GetDefaultBranch_WhenRemoteHeadTargetIsNonStandard_ThrowsGitException()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+        string bareRemotePath = await this.CreateLocalBareRemoteAsync(
+            sourceRepoPath: repoPath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await RunGitAsync(
+            repoPath: repoPath,
+            arguments: $"remote add origin \"{bareRemotePath}\"",
+            cancellationToken: this.CancellationToken()
+        );
+        await RunGitAsync(repoPath: repoPath, arguments: "fetch origin", cancellationToken: this.CancellationToken());
+        await RunGitAsync(
+            repoPath: repoPath,
+            arguments: "remote set-head origin -a",
+            cancellationToken: this.CancellationToken()
+        );
+
+        // Override refs/remotes/origin/HEAD to point to a ref that does not start with refs/remotes/origin/
+        await RunGitAsync(
+            repoPath: repoPath,
+            arguments: "symbolic-ref refs/remotes/origin/HEAD refs/heads/nonstandard",
+            cancellationToken: this.CancellationToken()
+        );
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepositoryFactory>()
+        );
+
+        Assert.Throws<GitException>(() => repo.GetDefaultBranch("origin"));
+    }
+
+    [Fact]
+    public async Task GetRemoteBranches_WithLocalRemoteAndFetch_ReturnsNonEmptyCollection()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+        string bareRemotePath = await this.CreateLocalBareRemoteAsync(
+            sourceRepoPath: repoPath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await RunGitAsync(
+            repoPath: repoPath,
+            arguments: $"remote add origin \"{bareRemotePath}\"",
+            cancellationToken: this.CancellationToken()
+        );
+        await RunGitAsync(repoPath: repoPath, arguments: "fetch origin", cancellationToken: this.CancellationToken());
+        await RunGitAsync(
+            repoPath: repoPath,
+            arguments: "remote set-head origin -a",
+            cancellationToken: this.CancellationToken()
+        );
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepositoryFactory>()
+        );
+
+        IReadOnlyCollection<string> remoteBranches = repo.GetRemoteBranches("origin");
+
+        Assert.NotEmpty(remoteBranches);
+        Assert.Contains(DEFAULT_BRANCH, remoteBranches);
+        Assert.DoesNotContain("HEAD", remoteBranches);
+    }
+
+    [Fact]
+    public async Task RemoveBranchesForPrefixAsync_WhenNoRemoteConfigured_ThrowsGitException()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepositoryFactory>()
+        );
+
+        const string deletableBranch = "depends/old-dep";
+        await repo.CreateBranchAsync(branchName: deletableBranch, cancellationToken: this.CancellationToken());
+        await repo.SwitchBranchAsync(branchName: DEFAULT_BRANCH, cancellationToken: this.CancellationToken());
+
+        // No remote "origin" is configured; after deleting the local branch GetRemote("origin") throws
+        await Assert.ThrowsAsync<GitException>(() =>
+            repo.RemoveBranchesForPrefixAsync(
+                    branchForUpdate: "depends/new-dep",
+                    branchPrefix: "depends/",
+                    upstream: "origin",
+                    cancellationToken: this.CancellationToken()
+                )
+                .AsTask()
+        );
+    }
+
+    [Fact]
+    public async Task RemoveBranchesForPrefixAsync_WithRemoteTrackingBranchMatchingPrefix_DeletesRemoteBranch()
+    {
+        string bareRemotePath = await this.CreateBareRemoteWithDependenciesBranchAsync(this.CancellationToken());
+        string testRepoPath = await this.CloneBareRemoteAsync(
+            bareRemotePath: bareRemotePath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: testRepoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepositoryFactory>()
+        );
+
+        // origin/depends/old-dep is a remote tracking branch; RemoveBranchesForPrefixAsync detects it and calls DeleteRemoteBranchAsync
+        await repo.RemoveBranchesForPrefixAsync(
+            branchForUpdate: "depends/new-dep",
+            branchPrefix: "depends/",
+            upstream: "origin",
+            cancellationToken: this.CancellationToken()
+        );
+
+        IReadOnlyCollection<string> remoteBranches = repo.GetRemoteBranches("origin");
+
+        Assert.DoesNotContain("depends/old-dep", remoteBranches);
+    }
+
+    private async Task<string> CreateBareRemoteWithDependenciesBranchAsync(CancellationToken cancellationToken)
+    {
+        string sourceRepoPath = await this.CreateTempGitRepoAsync(cancellationToken);
+
+        await RunGitAsync(
+            repoPath: sourceRepoPath,
+            arguments: "checkout -b depends/old-dep",
+            cancellationToken: cancellationToken
+        );
+        await File.WriteAllTextAsync(
+            path: Path.Combine(sourceRepoPath, "dep-file.txt"),
+            contents: "content\n",
+            cancellationToken: cancellationToken
+        );
+        await RunGitAsync(repoPath: sourceRepoPath, arguments: "add -A", cancellationToken: cancellationToken);
+        await RunGitAsync(
+            repoPath: sourceRepoPath,
+            arguments: "commit -m \"Add dep file\"",
+            cancellationToken: cancellationToken
+        );
+        await RunGitAsync(
+            repoPath: sourceRepoPath,
+            arguments: $"checkout {DEFAULT_BRANCH}",
+            cancellationToken: cancellationToken
+        );
+
+        return await this.CreateLocalBareRemoteAsync(
+            sourceRepoPath: sourceRepoPath,
+            cancellationToken: cancellationToken
+        );
+    }
+
+    private async Task<string> CloneBareRemoteAsync(string bareRemotePath, CancellationToken cancellationToken)
+    {
+        string testRepoPath = Path.Combine(this.TempFolder, "test-repo-" + Guid.NewGuid().ToString("N")[..8]);
+
+        await RunGitAsync(
+            repoPath: this.TempFolder,
+            arguments: $"clone \"{bareRemotePath}\" \"{testRepoPath}\"",
+            cancellationToken: cancellationToken
+        );
+        await RunGitAsync(
+            repoPath: testRepoPath,
+            arguments: "config user.email \"test@example.com\"",
+            cancellationToken: cancellationToken
+        );
+        await RunGitAsync(
+            repoPath: testRepoPath,
+            arguments: "config user.name \"Test User\"",
+            cancellationToken: cancellationToken
+        );
+        await RunGitAsync(
+            repoPath: testRepoPath,
+            arguments: "config commit.gpgsign false",
+            cancellationToken: cancellationToken
+        );
+
+        string emptyHooksPath = Path.Combine(this.TempFolder, "empty-hooks");
+        Directory.CreateDirectory(emptyHooksPath);
+        await RunGitAsync(
+            repoPath: testRepoPath,
+            arguments: $"config core.hooksPath \"{emptyHooksPath}\"",
+            cancellationToken: cancellationToken
+        );
+
+        return testRepoPath;
     }
 
     private async Task<string> CreateLocalBareRemoteAsync(string sourceRepoPath, CancellationToken cancellationToken)
