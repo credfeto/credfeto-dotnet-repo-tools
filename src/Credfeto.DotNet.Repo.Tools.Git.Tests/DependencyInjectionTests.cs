@@ -1,4 +1,6 @@
+using System.Net.Http;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Git.Services;
 using FunFair.Test.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -26,6 +28,16 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
     public void GitRepositoryListLoaderMustBeRegistered()
     {
         this.RequireService<IGitRepositoryListLoader>();
+    }
+
+    [Fact]
+    public void GitRepositoryListLoaderHttpClientCanBeCreated()
+    {
+        IHttpClientFactory httpClientFactory = this.ServiceProvider.GetRequiredService<IHttpClientFactory>();
+
+        using HttpClient client = httpClientFactory.CreateClient(nameof(GitRepositoryListLoader));
+
+        Assert.NotNull(client);
     }
 
     private static IServiceCollection Configure(IServiceCollection services)
