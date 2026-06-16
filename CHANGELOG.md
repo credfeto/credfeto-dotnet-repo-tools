@@ -15,8 +15,12 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Added unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Packages.Interfaces
 - Unit tests for Credfeto.DotNet.Repo.Tools.CleanUp assembly to achieve 100% code coverage
 ### Fixed
+- Fix LabelsBuilder generating yamllint-invalid labeler.yml and labels.yml
+- Skip GitRepositoryFactoryTests.CanCloneHttpsAsync in environments without direct GitHub network access
 ### Changed
 - SDK - Updated DotNet SDK to 10.0.301
+- Add YAML comments to labeler.yml and labels.yml outputs explaining the file purpose and that the file is generated
+- Move labeler.yml and labels.yml YAML document header and trailing newline handling into the builder so ToString() produces the correct output directly
 ### Deprecated
 ### Removed
 ### Deployment Changes

@@ -112,14 +112,17 @@ public sealed class LabelsBuilderTests : LoggingTestBase
         this.Output.WriteLine(labelsYaml);
         this.Output.WriteLine(labelerYaml);
 
-        string expectedLabels = new LabelsYamlBuilder()
-            .Add("foo-bar-tests", "0e8a16", "Changes in Foo.Bar.Tests project")
-            .Build();
+        Assert.Contains(
+            "- name: \"foo-bar-tests\"\n  color: \"0e8a16\"\n  description: \"Changes in Foo.Bar.Tests project\"\n",
+            labelsYaml,
+            StringComparison.Ordinal
+        );
 
-        string expectedLabeler = new LabelerYamlBuilder().Add("foo-bar-tests", "src/Foo.Bar.Tests/**/*").Build();
-
-        Assert.Contains(expectedLabels, labelsYaml, StringComparison.Ordinal);
-        Assert.Contains(expectedLabeler, labelerYaml, StringComparison.Ordinal);
+        Assert.Contains(
+            "\"foo-bar-tests\":\n  - any: ['src/Foo.Bar.Tests/**/*']\n",
+            labelerYaml,
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
@@ -130,14 +133,17 @@ public sealed class LabelsBuilderTests : LoggingTestBase
         this.Output.WriteLine(labelsYaml);
         this.Output.WriteLine(labelerYaml);
 
-        string expectedLabels = new LabelsYamlBuilder()
-            .Add("foo-tests-mock", "0e8a16", "Changes in Foo.Tests.Mock project")
-            .Build();
+        Assert.Contains(
+            "- name: \"foo-tests-mock\"\n  color: \"0e8a16\"\n  description: \"Changes in Foo.Tests.Mock project\"\n",
+            labelsYaml,
+            StringComparison.Ordinal
+        );
 
-        string expectedLabeler = new LabelerYamlBuilder().Add("foo-tests-mock", "src/Foo.Tests.Mock/**/*").Build();
-
-        Assert.Contains(expectedLabels, labelsYaml, StringComparison.Ordinal);
-        Assert.Contains(expectedLabeler, labelerYaml, StringComparison.Ordinal);
+        Assert.Contains(
+            "\"foo-tests-mock\":\n  - any: ['src/Foo.Tests.Mock/**/*']\n",
+            labelerYaml,
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
@@ -148,14 +154,17 @@ public sealed class LabelsBuilderTests : LoggingTestBase
         this.Output.WriteLine(labelsYaml);
         this.Output.WriteLine(labelerYaml);
 
-        string expectedLabels = new LabelsYamlBuilder()
-            .Add("foo-bar-mocks", "0e8a16", "Changes in Foo.Bar.Mocks project")
-            .Build();
+        Assert.Contains(
+            "- name: \"foo-bar-mocks\"\n  color: \"0e8a16\"\n  description: \"Changes in Foo.Bar.Mocks project\"\n",
+            labelsYaml,
+            StringComparison.Ordinal
+        );
 
-        string expectedLabeler = new LabelerYamlBuilder().Add("foo-bar-mocks", "src/Foo.Bar.Mocks/**/*").Build();
-
-        Assert.Contains(expectedLabels, labelsYaml, StringComparison.Ordinal);
-        Assert.Contains(expectedLabeler, labelerYaml, StringComparison.Ordinal);
+        Assert.Contains(
+            "\"foo-bar-mocks\":\n  - any: ['src/Foo.Bar.Mocks/**/*']\n",
+            labelerYaml,
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
@@ -166,11 +175,12 @@ public sealed class LabelsBuilderTests : LoggingTestBase
         this.Output.WriteLine(labelsYaml);
         this.Output.WriteLine(labelerYaml);
 
-        string expectedLabels = new LabelsYamlBuilder().Add("foo-bar", "96f7d2", "Changes in Foo.Bar project").Build();
+        Assert.Contains(
+            "- name: \"foo-bar\"\n  color: \"96f7d2\"\n  description: \"Changes in Foo.Bar project\"\n",
+            labelsYaml,
+            StringComparison.Ordinal
+        );
 
-        string expectedLabeler = new LabelerYamlBuilder().Add("foo-bar", "src/Foo.Bar/**/*").Build();
-
-        Assert.Contains(expectedLabels, labelsYaml, StringComparison.Ordinal);
-        Assert.Contains(expectedLabeler, labelerYaml, StringComparison.Ordinal);
+        Assert.Contains("\"foo-bar\":\n  - any: ['src/Foo.Bar/**/*']\n", labelerYaml, StringComparison.Ordinal);
     }
 }
