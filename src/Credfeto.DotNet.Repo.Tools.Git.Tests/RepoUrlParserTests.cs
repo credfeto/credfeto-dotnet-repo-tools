@@ -28,6 +28,7 @@ public sealed class RepoUrlParserTests : LoggingTestBase
     [Theory]
     [InlineData("https://github.com/meziantou/Meziantou.Analyzer.git", "github.com", "meziantou/Meziantou.Analyzer")]
     [InlineData("https://gitlab.com/dwt1/wallpapers.git", "gitlab.com", "dwt1/wallpapers")]
+    [InlineData("https://github.com/meziantou/Meziantou.Analyzer", "github.com", "meziantou/Meziantou.Analyzer")]
     public void ShouldBeHttp(string path, string expectedHost, string expectedRepo)
     {
         bool ok = RepoUrlParser.TryParse(path: path, out GitUrlProtocol protocol, out string? host, out string? repo);
@@ -58,5 +59,19 @@ public sealed class RepoUrlParserTests : LoggingTestBase
             expectedRepo: expectedRepo,
             repo: repo
         );
+    }
+
+    [Theory]
+    [InlineData("ftp://example.com/repo.git")]
+    [InlineData("file:///local/path/repo.git")]
+    [InlineData("not-a-url")]
+    [InlineData("just some text")]
+    public void ShouldReturnFalseForUnparseable(string path)
+    {
+        bool ok = RepoUrlParser.TryParse(path: path, out GitUrlProtocol protocol, out string? host, out string? repo);
+        Assert.False(condition: ok, userMessage: "Should not have parsed");
+        Assert.Equal(expected: GitUrlProtocol.UNKNOWN, actual: protocol);
+        Assert.Null(host);
+        Assert.Null(repo);
     }
 }
