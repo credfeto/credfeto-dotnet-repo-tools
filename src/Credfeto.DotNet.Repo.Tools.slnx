@@ -30,6 +30,7 @@
   </Folder>
   <Folder Name="/DotNet/">
     <Project Path="Credfeto.DotNet.Repo.Tools.DotNet.Interfaces/Credfeto.DotNet.Repo.Tools.DotNet.Interfaces.csproj" />
+    <Project Path="Credfeto.DotNet.Repo.Tools.DotNet.Interfaces.Tests/Credfeto.DotNet.Repo.Tools.DotNet.Interfaces.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.DotNet.Tests/Credfeto.DotNet.Repo.Tools.DotNet.Tests.csproj" />
     <Project Path="Credfeto.DotNet.Repo.Tools.DotNet/Credfeto.DotNet.Repo.Tools.DotNet.csproj" />
   </Folder>
