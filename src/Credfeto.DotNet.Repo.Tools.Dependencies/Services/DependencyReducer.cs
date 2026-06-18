@@ -131,8 +131,7 @@ public sealed class DependencyReducer : IDependencyReducer
         );
         IReadOnlyList<FileProjectReference> childProjectReferences = GetProjectReferences(
             fileName: projectUpdateContext.Project,
-            includeReferences: false,
-            includeChildReferences: true
+            includeReferences: false
         );
 
         await this.CheckProjectSdkAsync(
@@ -690,14 +689,8 @@ public sealed class DependencyReducer : IDependencyReducer
 
     private static IReadOnlyList<XmlNode> GetNodes(XmlDocument xml, string xpath)
     {
-        XmlNodeList? nodes = xml.SelectNodes(xpath);
-
-        if (nodes is null)
-        {
-            return [];
-        }
-
-        return [.. nodes.Cast<XmlNode>()];
+        // ! SelectNodes returns an empty list, not null, for valid XPath expressions
+        return [.. xml.SelectNodes(xpath)!.Cast<XmlNode>()];
     }
 
     private void PrintResults(string header, IReadOnlyList<ReferenceCheckResult> items)
@@ -921,11 +914,7 @@ public sealed class DependencyReducer : IDependencyReducer
         );
     }
 
-    private static IReadOnlyList<FileProjectReference> GetProjectReferences(
-        string fileName,
-        bool includeReferences,
-        bool includeChildReferences
-    )
+    private static IReadOnlyList<FileProjectReference> GetProjectReferences(string fileName, bool includeReferences)
     {
         string? baseDir = Path.GetDirectoryName(fileName);
 
@@ -935,22 +924,9 @@ public sealed class DependencyReducer : IDependencyReducer
         }
 
         XmlDocument doc = LoadProjectXmlFromFile(fileName);
-
-        if (!includeReferences && !includeChildReferences)
-        {
-            return [];
-        }
-
-        XmlNodeList? nodes = doc.SelectNodes(PROJECT_REFERENCES_PATH);
-
-        if (nodes is null)
-        {
-            return [];
-        }
-
         IReadOnlyList<FileProjectReference> baseReferences =
         [
-            .. nodes
+            .. GetNodes(doc, PROJECT_REFERENCES_PATH)
                 .OfType<XmlElement>()
                 .Select(node => ProjectExtractor.ExtractProjectReference(fileName: baseDir, node: node))
                 .RemoveNulls(),
@@ -968,20 +944,13 @@ public sealed class DependencyReducer : IDependencyReducer
             references.AddRange(baseReferences);
         }
 
-        if (!includeChildReferences)
-        {
-            return references;
-        }
-
         foreach (
             string childPath in baseReferences
                 .Select(reference => reference.RelativeInclude)
                 .Select(relativeInclude => Path.Combine(path1: baseDir, path2: relativeInclude))
         )
         {
-            references.AddRange(
-                GetProjectReferences(fileName: childPath, includeReferences: true, includeChildReferences: true)
-            );
+            references.AddRange(GetProjectReferences(fileName: childPath, includeReferences: true));
         }
 
         return references;
