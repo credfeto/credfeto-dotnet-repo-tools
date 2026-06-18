@@ -8,6 +8,8 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+- Add unit tests for 100% code coverage: Credfeto.DotNet.Repo.Tools.Git
+- Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Dependencies
 ### Fixed
 ### Changed
 ### Deprecated
