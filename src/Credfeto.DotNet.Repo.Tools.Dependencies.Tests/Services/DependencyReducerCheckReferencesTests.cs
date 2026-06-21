@@ -926,4 +926,138 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             userMessage: "Non-csproj project reference with failed removal build should not be tracked for narrowing"
         );
     }
+
+    [Fact]
+    public async Task CheckReferencesAsyncWithChildProjectHavingDifferentPackageShouldBuildAndRemoveAsync()
+    {
+        string childDir = Path.Combine(path1: this.TempFolder, path2: "ChildDiffPkg");
+        Directory.CreateDirectory(childDir);
+
+        const string childXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"DifferentPackage\" Version=\"1.0.0\" /></ItemGroup></Project>";
+        string childFile = Path.Combine(path1: childDir, path2: "ChildDiffPkg.csproj");
+        await File.WriteAllTextAsync(path: childFile, contents: childXml, cancellationToken: this.CancellationToken());
+
+        const string parentXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"SomePackage\" Version=\"1.0.0\" /><ProjectReference Include=\"ChildDiffPkg/ChildDiffPkg.csproj\" /></ItemGroup></Project>";
+        string parentFile = await this.WriteProjectFileAsync(parentXml, fileName: "ParentDiffPkg.csproj");
+
+        DotNetFiles dotNetFiles = this.BuildDotNetFiles(parentFile);
+        ReferenceConfig config = BuildConfig();
+
+        bool result = await this._sut.CheckReferencesAsync(
+            dotNetFiles: dotNetFiles,
+            config: config,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.True(
+            condition: result,
+            userMessage: "Parent package not present in child should still be removable when build succeeds"
+        );
+    }
+
+    [Fact]
+    public async Task CheckReferencesAsyncWithProjectReferenceWithEmptyIncludeShouldBeIgnoredAsync()
+    {
+        const string projectXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><ProjectReference Include=\"\" /></ItemGroup></Project>";
+        string projectFile = await this.WriteProjectFileAsync(projectXml);
+
+        DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
+        ReferenceConfig config = BuildConfig();
+
+        bool result = await this._sut.CheckReferencesAsync(
+            dotNetFiles: dotNetFiles,
+            config: config,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.False(
+            condition: result,
+            userMessage: "Empty-Include project reference should be filtered out and produce no changes"
+        );
+    }
+
+    [Fact]
+    public async Task CheckReferencesAsyncWithWindowsStyleProjectReferencePathShouldNormalizeAndSucceedAsync()
+    {
+        string childDir = Path.Combine(path1: this.TempFolder, path2: "WinChild");
+        Directory.CreateDirectory(childDir);
+
+        const string childXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        string childFile = Path.Combine(path1: childDir, path2: "WinChild.csproj");
+        await File.WriteAllTextAsync(path: childFile, contents: childXml, cancellationToken: this.CancellationToken());
+
+        const string parentXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><ProjectReference Include=\"WinChild\\WinChild.csproj\" /></ItemGroup></Project>";
+        string parentFile = await this.WriteProjectFileAsync(parentXml, fileName: "ParentWinPath.csproj");
+
+        DotNetFiles dotNetFiles = this.BuildDotNetFiles(parentFile);
+        ReferenceConfig config = BuildConfig();
+
+        bool result = await this._sut.CheckReferencesAsync(
+            dotNetFiles: dotNetFiles,
+            config: config,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.True(
+            condition: result,
+            userMessage: "Windows-style backslash project reference path should be normalised on Linux and reference removed"
+        );
+    }
+
+    [Fact]
+    public async Task CheckReferencesAsyncWithChildProjectHavingEmptyIncludePackageReferenceShouldSkipPackageAsync()
+    {
+        string childDir = Path.Combine(path1: this.TempFolder, path2: "ChildEmptyPkg");
+        Directory.CreateDirectory(childDir);
+
+        const string childXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"\" Version=\"1.0.0\" /></ItemGroup></Project>";
+        string childFile = Path.Combine(path1: childDir, path2: "ChildEmptyPkg.csproj");
+        await File.WriteAllTextAsync(path: childFile, contents: childXml, cancellationToken: this.CancellationToken());
+
+        const string parentXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><ProjectReference Include=\"ChildEmptyPkg/ChildEmptyPkg.csproj\" /></ItemGroup></Project>";
+        string parentFile = await this.WriteProjectFileAsync(parentXml, fileName: "ParentEmptyPkg.csproj");
+
+        DotNetFiles dotNetFiles = this.BuildDotNetFiles(parentFile);
+        ReferenceConfig config = BuildConfig();
+
+        bool result = await this._sut.CheckReferencesAsync(
+            dotNetFiles: dotNetFiles,
+            config: config,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.True(
+            condition: result,
+            userMessage: "Child project with empty-Include PackageReference should have it filtered out; parent project reference should still be removable"
+        );
+    }
+
+    [Fact]
+    public async Task CheckReferencesAsyncWithNonProjectRootElementShouldSkipSdkCheckAndReturnFalseAsync()
+    {
+        const string projectXml =
+            "<Root Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Root>";
+        string projectFile = await this.WriteProjectFileAsync(projectXml);
+
+        DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
+        ReferenceConfig config = BuildConfig();
+
+        bool result = await this._sut.CheckReferencesAsync(
+            dotNetFiles: dotNetFiles,
+            config: config,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.False(
+            condition: result,
+            userMessage: "Project file with non-<Project> root element should skip SDK check and produce no changes"
+        );
+    }
 }
