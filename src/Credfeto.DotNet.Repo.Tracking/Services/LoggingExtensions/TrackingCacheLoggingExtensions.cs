@@ -40,4 +40,11 @@ internal static partial class TrackingCacheLoggingExtensions
         string existing,
         string version
     );
+
+    [LoggerMessage(
+        EventId = 4,
+        Level = LogLevel.Warning,
+        Message = "[TRACKING] Corrupt tracking file {fileName} - treating as empty"
+    )]
+    public static partial void CorruptTrackingFile(this ILogger<TrackingCache> logger, string fileName);
 }
