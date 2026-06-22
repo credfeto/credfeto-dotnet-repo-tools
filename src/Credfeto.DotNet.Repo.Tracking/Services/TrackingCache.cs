@@ -36,7 +36,19 @@ public sealed class TrackingCache : ITrackingCache
 
         string content = await File.ReadAllTextAsync(path: fileName, cancellationToken: cancellationToken);
 
-        TrackingItems? items = JsonSerializer.Deserialize(json: content, jsonTypeInfo: this._typeInfo);
+        TrackingItems? items;
+
+        try
+        {
+            items = JsonSerializer.Deserialize(json: content, jsonTypeInfo: this._typeInfo);
+        }
+        catch (JsonException)
+        {
+            this._logger.CorruptTrackingFile(fileName);
+            this._changed = true;
+
+            return;
+        }
 
         if (items is not null)
         {

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.DotNet.Repo.Tracking.Services;
@@ -225,7 +224,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task LoadJsonArrayThrowsAsync()
+    public async Task LoadJsonArrayTreatsAsEmptyAsync()
     {
         string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
         this.Output.WriteLine(trackingFile);
@@ -236,13 +235,14 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
             cancellationToken: this.CancellationToken()
         );
 
-        await Assert.ThrowsAsync<JsonException>(() =>
-            this._trackingCache.LoadAsync(fileName: trackingFile, this.CancellationToken()).AsTask()
-        );
+        await this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: this.CancellationToken());
+
+        string? result = this._trackingCache.Get("Test1");
+        Assert.Null(result);
     }
 
     [Fact]
-    public async Task LoadJsonWithNullValueThrowsAsync()
+    public async Task LoadJsonWithNullValueTreatsAsEmptyAsync()
     {
         string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
         this.Output.WriteLine(trackingFile);
@@ -253,8 +253,32 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
             cancellationToken: this.CancellationToken()
         );
 
-        await Assert.ThrowsAsync<JsonException>(() =>
-            this._trackingCache.LoadAsync(fileName: trackingFile, this.CancellationToken()).AsTask()
+        await this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: this.CancellationToken());
+
+        string? result = this._trackingCache.Get("key");
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task LoadCorruptJsonWritesValidFileOnNextSaveAsync()
+    {
+        string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
+        this.Output.WriteLine(trackingFile);
+
+        await File.WriteAllTextAsync(
+            path: trackingFile,
+            contents: "NOT VALID JSON",
+            cancellationToken: this.CancellationToken()
         );
+
+        await this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: this.CancellationToken());
+
+        string? result = this._trackingCache.Get("Test1");
+        Assert.Null(result);
+
+        await this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: this.CancellationToken());
+
+        string content = await File.ReadAllTextAsync(path: trackingFile, cancellationToken: this.CancellationToken());
+        Assert.Equal(expected: "{}", actual: content);
     }
 }
