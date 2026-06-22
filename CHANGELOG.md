@@ -8,9 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
-- Add unit tests for 100% code coverage: Credfeto.DotNet.Repo.Tools.Git
 ### Fixed
-- Corrupt tracking.json no longer causes fatal exit - it is now treated as empty
 ### Changed
 ### Deprecated
 ### Removed
@@ -18,6 +16,12 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.5.3] - 2026-06-22
+### Added
+- Add unit tests for 100% code coverage: Credfeto.DotNet.Repo.Tools.Git
+### Fixed
+- Corrupt tracking.json no longer causes fatal exit - it is now treated as empty
+
 ## [1.5.2] - 2026-06-16
 ### Added
 - Tests for Credfeto.DotNet.Repo.Tools.Release.Interfaces to achieve 100% code coverage
