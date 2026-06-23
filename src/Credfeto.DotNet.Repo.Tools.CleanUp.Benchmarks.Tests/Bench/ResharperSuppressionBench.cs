@@ -22,25 +22,25 @@ public class ResharperSuppressionBench
 
         namespace Example;
 
-        // ReSharper disable once ClassNeverInstantiated.Global
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "ClassNeverInstantiated.Global", Justification="TODO: Review")]
         public sealed class MyService
         {
-            // ReSharper disable once UnusedMember.Global
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "UnusedMember.Global", Justification="TODO: Review")]
             public void DoNothing() { }
 
-            // ReSharper disable once MemberCanBePrivate.Global
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "MemberCanBePrivate.Global", Justification="TODO: Review")]
             public string Name { get; set; } = string.Empty;
 
-            // ReSharper disable once InconsistentNaming
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "InconsistentNaming", Justification="TODO: Review")]
             private int _myField;
 
-            // ReSharper disable once UnusedType.Local
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "UnusedType.Local", Justification="TODO: Review")]
             private sealed class Inner { }
 
-            // ReSharper disable once HeapView.BoxingAllocation
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "HeapView.BoxingAllocation", Justification="TODO: Review")]
             public object Box(int x) => x;
 
-            // ReSharper disable once RedundantDefaultMemberInitializer
+            [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "RedundantDefaultMemberInitializer", Justification="TODO: Review")]
             private bool _flag = false;
         }
         """;
