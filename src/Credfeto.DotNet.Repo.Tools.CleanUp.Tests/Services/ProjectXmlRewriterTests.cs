@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading.Tasks;
 using System.Xml;
@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests.Services;
 
-[SuppressMessage(category: "Meziantou.Analyzer", checkId: "MA0051: Method is too long", Justification = "Unit tests")]
+
 public sealed partial class ProjectXmlRewriterTests : LoggingTestBase
 {
     private readonly IProjectXmlRewriter _projectXmlRewriter;
