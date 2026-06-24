@@ -342,8 +342,10 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         using LibGit2Sharp.Repository activeRepo = new(repoDir);
 
-        this._dotNetFilesDetector.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [], Projects: []));
+        MockIDotNetFilesDetectorFind(
+            this._dotNetFilesDetector,
+            new DotNetFiles(SourceDirectory: repoDir, Solutions: [], Projects: [])
+        );
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
@@ -382,8 +384,10 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         using LibGit2Sharp.Repository activeRepo = new(repoDir);
 
-        this._dotNetFilesDetector.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile]));
+        MockIDotNetFilesDetectorFind(
+            this._dotNetFilesDetector,
+            new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile])
+        );
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
@@ -421,9 +425,8 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         const string cloneUrl = "https://github.com/test/tracking-match-repo.git";
         const string existingHash = "abc123def456";
 
-        this._trackingCache.Get(cloneUrl).Returns(existingHash);
-        this._trackingHashGenerator.GenerateTrackingHashAsync(Arg.Any<RepoContext>(), Arg.Any<CancellationToken>())
-            .Returns(existingHash);
+        MockITrackingCacheGet(this._trackingCache, cloneUrl, existingHash);
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, existingHash);
 
         string trackingFile = Path.Combine(path1: this.TempFolder, path2: "tracking-match.json");
         await File.WriteAllTextAsync(path: trackingFile, contents: "{}", cancellationToken: this.CancellationToken());
@@ -469,10 +472,12 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         using LibGit2Sharp.Repository activeRepo = new(repoDir);
 
         const string cloneUrl = "https://github.com/test/tracking-null-repo.git";
-        this._trackingCache.Get(cloneUrl).Returns((string?)null);
+        MockITrackingCacheGet(this._trackingCache, cloneUrl, null);
 
-        this._dotNetFilesDetector.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile]));
+        MockIDotNetFilesDetectorFind(
+            this._dotNetFilesDetector,
+            new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile])
+        );
 
         string trackingFile = Path.Combine(path1: this.TempFolder, path2: "tracking-null.json");
         await File.WriteAllTextAsync(path: trackingFile, contents: "{}", cancellationToken: this.CancellationToken());
@@ -515,12 +520,13 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         using LibGit2Sharp.Repository activeRepo = new(repoDir);
 
         const string cloneUrl = "https://github.com/test/tracking-differ-repo.git";
-        this._trackingCache.Get(cloneUrl).Returns("old-hash-123");
-        this._trackingHashGenerator.GenerateTrackingHashAsync(Arg.Any<RepoContext>(), Arg.Any<CancellationToken>())
-            .Returns("new-hash-456");
+        MockITrackingCacheGet(this._trackingCache, cloneUrl, "old-hash-123");
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, "new-hash-456");
 
-        this._dotNetFilesDetector.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile]));
+        MockIDotNetFilesDetectorFind(
+            this._dotNetFilesDetector,
+            new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile])
+        );
 
         string trackingFile = Path.Combine(path1: this.TempFolder, path2: "tracking-differ.json");
         await File.WriteAllTextAsync(path: trackingFile, contents: "{}", cancellationToken: this.CancellationToken());
@@ -563,10 +569,12 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         using LibGit2Sharp.Repository activeRepo = new(repoDir);
 
         const string cloneUrl = "https://github.com/test/commit-tracking-repo.git";
-        this._trackingCache.Get(cloneUrl).Returns((string?)null);
+        MockITrackingCacheGet(this._trackingCache, cloneUrl, null);
 
-        this._dotNetFilesDetector.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile]));
+        MockIDotNetFilesDetectorFind(
+            this._dotNetFilesDetector,
+            new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile])
+        );
 
         string trackingFile = Path.Combine(path1: this.TempFolder, path2: "commit-tracking.json");
         await File.WriteAllTextAsync(path: trackingFile, contents: "{}", cancellationToken: this.CancellationToken());
@@ -580,16 +588,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
 
-        IBulkDependencyReducer sut = new BulkDependencyReducer(
-            trackingCache: this._trackingCache,
-            globalJson: this._globalJson,
-            dotNetVersion: this._dotNetVersion,
-            gitRepositoryFactory: this._gitRepositoryFactory,
-            dependencyReducer: new CallbackInvokingDependencyReducer(),
-            trackingHashGenerator: this._trackingHashGenerator,
-            dotNetFilesDetector: this._dotNetFilesDetector,
-            logger: this.GetTypedLogger<BulkDependencyReducer>()
-        );
+        IBulkDependencyReducer sut = this.BuildSutWithCallbackReducer();
 
         await sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
@@ -625,10 +624,11 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         using LibGit2Sharp.Repository activeRepo = new(repoDir);
 
-        this._dotNetFilesDetector.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile]));
-        this._trackingHashGenerator.GenerateTrackingHashAsync(Arg.Any<RepoContext>(), Arg.Any<CancellationToken>())
-            .Returns("hash-for-commit-test");
+        MockIDotNetFilesDetectorFind(
+            this._dotNetFilesDetector,
+            new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile])
+        );
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, "hash-for-commit-test");
 
         const string cloneUrl = "https://github.com/test/commit-callback-repo.git";
 
@@ -641,16 +641,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
 
-        IBulkDependencyReducer sut = new BulkDependencyReducer(
-            trackingCache: this._trackingCache,
-            globalJson: this._globalJson,
-            dotNetVersion: this._dotNetVersion,
-            gitRepositoryFactory: this._gitRepositoryFactory,
-            dependencyReducer: new CallbackInvokingDependencyReducer(),
-            trackingHashGenerator: this._trackingHashGenerator,
-            dotNetFilesDetector: this._dotNetFilesDetector,
-            logger: this.GetTypedLogger<BulkDependencyReducer>()
-        );
+        IBulkDependencyReducer sut = this.BuildSutWithCallbackReducer();
 
         await sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
@@ -664,6 +655,35 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             .Received(1)
             .CommitNamedAsync(Arg.Any<string>(), Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>());
         await testRepo.Received(1).PushAsync(Arg.Any<CancellationToken>());
+    }
+
+    private IBulkDependencyReducer BuildSutWithCallbackReducer()
+    {
+        return new BulkDependencyReducer(
+            trackingCache: this._trackingCache,
+            globalJson: this._globalJson,
+            dotNetVersion: this._dotNetVersion,
+            gitRepositoryFactory: this._gitRepositoryFactory,
+            dependencyReducer: new CallbackInvokingDependencyReducer(),
+            trackingHashGenerator: this._trackingHashGenerator,
+            dotNetFilesDetector: this._dotNetFilesDetector,
+            logger: this.GetTypedLogger<BulkDependencyReducer>()
+        );
+    }
+
+    private static void MockIDotNetFilesDetectorFind(IDotNetFilesDetector detector, in DotNetFiles result)
+    {
+        detector.FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(result);
+    }
+
+    private static void MockITrackingHashGeneratorGenerateTrackingHash(ITrackingHashGenerator generator, string hash)
+    {
+        generator.GenerateTrackingHashAsync(Arg.Any<RepoContext>(), Arg.Any<CancellationToken>()).Returns(hash);
+    }
+
+    private static void MockITrackingCacheGet(ITrackingCache cache, string cloneUrl, string? hash)
+    {
+        cache.Get(cloneUrl).Returns(hash);
     }
 
     private sealed class CallbackInvokingDependencyReducer : IDependencyReducer
