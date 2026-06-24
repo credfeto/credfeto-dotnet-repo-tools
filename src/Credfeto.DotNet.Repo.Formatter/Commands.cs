@@ -125,20 +125,14 @@ internal sealed class Commands
             buildRoot: buildRoot
         );
 
-        int updatedCount = await this.ProcessAllFilesAsync(
-            resolvedFiles: resolvedFiles,
-            buildContext: buildContext
-        );
+        int updatedCount = await this.ProcessAllFilesAsync(resolvedFiles: resolvedFiles, buildContext: buildContext);
 
         this._logger.LogCompleted(fileCount: resolvedFiles.Count, updatedCount: updatedCount);
 
         return Constants.ExitCodes.Success;
     }
 
-    private async Task<int> ProcessAllFilesAsync(
-        IReadOnlyList<string> resolvedFiles,
-        BuildContext? buildContext
-    )
+    private async Task<int> ProcessAllFilesAsync(IReadOnlyList<string> resolvedFiles, BuildContext? buildContext)
     {
         int updatedCount = 0;
 
@@ -152,10 +146,7 @@ internal sealed class Commands
             {
                 this._logger.LogProcessingFile(file);
 
-                bool updated = await this.ProcessFileAsync(
-                    filePath: file,
-                    buildContext: buildContext
-                );
+                bool updated = await this.ProcessFileAsync(filePath: file, buildContext: buildContext);
 
                 if (updated)
                 {
@@ -172,10 +163,7 @@ internal sealed class Commands
         return updatedCount;
     }
 
-    private async ValueTask<BuildContext?> BuildContextOrNullAsync(
-        bool removeSuppressions,
-        string? buildRoot
-    )
+    private async ValueTask<BuildContext?> BuildContextOrNullAsync(bool removeSuppressions, string? buildRoot)
     {
         if (!removeSuppressions || buildRoot is null)
         {
@@ -205,10 +193,7 @@ internal sealed class Commands
 
         if (StringComparer.OrdinalIgnoreCase.Equals(x: extension, y: ".cs"))
         {
-            return await this.ProcessCSharpFileAsync(
-                filePath: filePath,
-                buildContext: buildContext
-            );
+            return await this.ProcessCSharpFileAsync(filePath: filePath, buildContext: buildContext);
         }
 
         if (StringComparer.OrdinalIgnoreCase.Equals(x: extension, y: ".csproj"))
@@ -219,10 +204,7 @@ internal sealed class Commands
         return false;
     }
 
-    private async ValueTask<bool> ProcessCSharpFileAsync(
-        string filePath,
-        BuildContext? buildContext
-    )
+    private async ValueTask<bool> ProcessCSharpFileAsync(string filePath, BuildContext? buildContext)
     {
         string original = await File.ReadAllTextAsync(
             path: filePath,
@@ -275,15 +257,9 @@ internal sealed class Commands
         XmlDocument doc = new();
         doc.LoadXml(original);
 
-        bool changed = this._projectXmlRewriter.ReOrderPropertyGroups(
-            projectDocument: doc,
-            filename: filePath
-        );
+        bool changed = this._projectXmlRewriter.ReOrderPropertyGroups(projectDocument: doc, filename: filePath);
 
-        changed |= this._projectXmlRewriter.ReOrderIncludes(
-            projectDocument: doc,
-            filename: filePath
-        );
+        changed |= this._projectXmlRewriter.ReOrderIncludes(projectDocument: doc, filename: filePath);
 
         if (!changed)
         {
@@ -351,22 +327,13 @@ internal sealed class Commands
             }
         }
 
-        return
-        [
-            .. resolved
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Order(StringComparer.OrdinalIgnoreCase),
-        ];
+        return [.. resolved.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase)];
     }
 
     private static IEnumerable<string> ScanDirectory(string directory)
     {
         return Directory
-            .EnumerateFiles(
-                path: directory,
-                searchPattern: "*.*",
-                searchOption: SearchOption.AllDirectories
-            )
+            .EnumerateFiles(path: directory, searchPattern: "*.*", searchOption: SearchOption.AllDirectories)
             .Where(f =>
             {
                 string ext = Path.GetExtension(f);
@@ -383,8 +350,7 @@ internal sealed class Commands
         string baseDirectory = GetGlobBaseDirectory(glob);
         string pattern =
             glob.Length > baseDirectory.Length
-                ? glob[baseDirectory.Length..]
-                    .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                ? glob[baseDirectory.Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
                 : glob;
 
         Matcher matcher = new();
@@ -403,10 +369,9 @@ internal sealed class Commands
         }
 
         string beforeWildcard = glob[..firstWildcard];
-        int lastSeparator = beforeWildcard.LastIndexOfAny([
-            Path.DirectorySeparatorChar,
-            Path.AltDirectorySeparatorChar,
-        ]);
+        int lastSeparator = beforeWildcard.LastIndexOfAny(
+            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]
+        );
 
         return lastSeparator < 0 ? Directory.GetCurrentDirectory() : glob[..lastSeparator];
     }
