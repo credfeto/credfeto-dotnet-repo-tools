@@ -8,7 +8,6 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Benchmarks.Tests.Bench;
 
 [SimpleJob]
 [MemoryDiagnoser(false)]
-
 [SuppressMessage(
     category: "FunFair.CodeAnalysis",
     checkId: "FFS0012: Make sealed static or abstract",
