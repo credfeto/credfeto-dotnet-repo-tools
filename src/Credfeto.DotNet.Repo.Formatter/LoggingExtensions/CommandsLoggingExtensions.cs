@@ -4,18 +4,10 @@ namespace Credfeto.DotNet.Repo.Formatter.LoggingExtensions;
 
 internal static partial class CommandsLoggingExtensions
 {
-    [LoggerMessage(
-        EventId = 1,
-        Level = LogLevel.Information,
-        Message = "Processing file: {fileName}"
-    )]
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Processing file: {fileName}")]
     public static partial void LogProcessingFile(this ILogger logger, string fileName);
 
-    [LoggerMessage(
-        EventId = 2,
-        Level = LogLevel.Information,
-        Message = "File unchanged: {fileName}"
-    )]
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "File unchanged: {fileName}")]
     public static partial void LogFileUnchanged(this ILogger logger, string fileName);
 
     [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "File updated: {fileName}")]
@@ -35,11 +27,7 @@ internal static partial class CommandsLoggingExtensions
     )]
     public static partial void LogBuildRootRequired(this ILogger logger);
 
-    [LoggerMessage(
-        EventId = 6,
-        Level = LogLevel.Error,
-        Message = "Build root does not exist: {buildRoot}"
-    )]
+    [LoggerMessage(EventId = 6, Level = LogLevel.Error, Message = "Build root does not exist: {buildRoot}")]
     public static partial void LogBuildRootNotFound(this ILogger logger, string buildRoot);
 
     [LoggerMessage(EventId = 7, Level = LogLevel.Error, Message = "No input files specified")]
