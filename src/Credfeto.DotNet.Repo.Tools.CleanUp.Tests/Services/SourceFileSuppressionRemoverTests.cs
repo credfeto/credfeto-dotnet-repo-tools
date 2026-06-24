@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
@@ -23,19 +23,20 @@ public sealed class SourceFileSuppressionRemoverTests : LoggingFolderCleanupTest
     {
         this._buildContext = new(SourceDirectory: "/test", new([], [], Framework: null), new(PreRelease: true));
         this._dotNetBuild = GetSubstitute<IDotNetBuild>();
-        this._sourceFileSuppressionRemover = new SourceFileSuppressionRemover(dotNetBuild: this._dotNetBuild, this.GetTypedLogger<SourceFileSuppressionRemover>());
+        this._sourceFileSuppressionRemover = new SourceFileSuppressionRemover(
+            dotNetBuild: this._dotNetBuild,
+            this.GetTypedLogger<SourceFileSuppressionRemover>()
+        );
     }
 
     private ValueTask ReceivedBuildAsync(int times)
     {
-        return this._dotNetBuild.Received(times)
-                   .BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
+        return this._dotNetBuild.Received(times).BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
     }
 
     private ValueTask DidNotReceiveBuildAsync()
     {
-        return this._dotNetBuild.DidNotReceive()
-                   .BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
+        return this._dotNetBuild.DidNotReceive().BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
     }
 
     private void MockSuccessfulBuild()
@@ -49,21 +50,26 @@ public sealed class SourceFileSuppressionRemoverTests : LoggingFolderCleanupTest
         int execution = 0;
         this._dotNetBuild.When(async x => await x.BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>()))
             .Do(_ =>
-                {
-                    ++execution;
+            {
+                ++execution;
 
-                    if (execution == fail)
-                    {
-                        throw new DotNetBuildErrorException("Failed ");
-                    }
-                });
+                if (execution == fail)
+                {
+                    throw new DotNetBuildErrorException("Failed ");
+                }
+            });
     }
 
     private async Task<string> CleanupAsync(string source)
     {
         string fileName = Path.Combine(path1: this.TempFolder, path2: "example.cs");
 
-        string actual = await this._sourceFileSuppressionRemover.RemoveSuppressionsAsync(fileName: fileName, content: source, buildContext: this._buildContext, this.CancellationToken());
+        string actual = await this._sourceFileSuppressionRemover.RemoveSuppressionsAsync(
+            fileName: fileName,
+            content: source,
+            buildContext: this._buildContext,
+            this.CancellationToken()
+        );
 
         return actual;
     }
@@ -71,7 +77,8 @@ public sealed class SourceFileSuppressionRemoverTests : LoggingFolderCleanupTest
     [Fact]
     public async Task FileWithNoSuppressionsShouldNotBeChangedAsync()
     {
-        const string source = @"
+        const string source =
+            @"
 using System.Diagnostics;
 
 namespace Test;
@@ -94,7 +101,8 @@ public static class Test {
     [Fact]
     public async Task OneSuppressionShouldBeRemovedIfBuildSucceedsAsync()
     {
-        const string source = @"
+        const string source =
+            @"
 using System.Diagnostics;
 
 namespace Test;
@@ -108,14 +116,17 @@ public static class Test {
 }
 ";
 
-        string expected = @"
+        string expected =
+            @"
 using System.Diagnostics;
 
 namespace Test;
 
 public static class Test {
 
-" + Tab + @"
+"
+            + Tab
+            + @"
     public static void DoesNothing() {
           // Example
     }
@@ -134,7 +145,8 @@ public static class Test {
     [Fact]
     public async Task OneSuppressionShouldNotBeRemovedIfBuildFailsAsync()
     {
-        const string source = @"
+        const string source =
+            @"
 using System.Diagnostics;
 
 namespace Test;
@@ -160,7 +172,8 @@ public static class Test {
     [Fact]
     public async Task OneAssemblySuppressionShouldBeRemovedIfBuildSucceedsAsync()
     {
-        const string source = @"
+        const string source =
+            @"
 using System.Diagnostics;
 
 namespace Test;
@@ -175,7 +188,8 @@ public static class Test {
 }
 ";
 
-        const string expected = @"
+        const string expected =
+            @"
 using System.Diagnostics;
 
 namespace Test;
@@ -202,7 +216,8 @@ public static class Test {
     [Fact]
     public async Task OneAssemblySuppressionShouldNotBeRemovedIfBuildFailsAsync()
     {
-        const string source = @"
+        const string source =
+            @"
 using System.Diagnostics;
 
 namespace Test;
