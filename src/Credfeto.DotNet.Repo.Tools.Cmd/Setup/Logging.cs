@@ -26,7 +26,7 @@ internal static class Logging
     public static void InitializeLogging(ILoggerFactory loggerFactory)
     {
         // set up the logger factory
-        _=loggerFactory.AddSerilog(CreateLogger(), dispose: true);
+        _ = loggerFactory.AddSerilog(CreateLogger(), dispose: true);
     }
 
     private static Logger CreateLogger()
@@ -39,11 +39,10 @@ internal static class Logging
             .Enrich.WithThreadId()
             .Enrich.WithProperty(name: "ProcessName", value: VersionInformation.Product)
             .WriteTo.Console(
-                 outputTemplate:
-                 Debugger.IsAttached ?
-                     "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}"
-                 :"[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}"
-                )
+                outputTemplate: Debugger.IsAttached
+                    ? "[{Timestamp:HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+                    : "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+            )
             .CreateLogger();
     }
 }
