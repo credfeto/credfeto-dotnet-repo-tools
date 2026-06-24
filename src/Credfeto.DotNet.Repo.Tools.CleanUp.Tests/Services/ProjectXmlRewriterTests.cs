@@ -8,7 +8,6 @@ using Xunit;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests.Services;
 
-
 public sealed partial class ProjectXmlRewriterTests : LoggingTestBase
 {
     private readonly IProjectXmlRewriter _projectXmlRewriter;
