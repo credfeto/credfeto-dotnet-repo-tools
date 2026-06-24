@@ -415,7 +415,6 @@ public sealed class DependencyReducer : IDependencyReducer
             this._logger.CheckingProjectReference(projectReference.RelativeInclude);
 
             RemoveNodeFromProject(projectUpdateContext: projectUpdateContext, fileContent: fileContent, node: node);
-            fileContent.Xml.Save(projectUpdateContext.Project);
 
             bool needToBuild = this.ProjectDoesNotAlreadyIncludeProjectReferenceThroughChild(
                 projectUpdateContext: projectUpdateContext,
