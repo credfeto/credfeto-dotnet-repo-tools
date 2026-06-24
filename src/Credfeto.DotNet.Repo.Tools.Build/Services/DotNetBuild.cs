@@ -26,22 +26,19 @@ public sealed class DotNetBuild : IDotNetBuild
     [
         // MSB3243 - two assemblies of the same name, but different version
         // NU1802 - restoring from HTTP source
-        "NU1802"
+        "NU1802",
     ];
 
     private static readonly IReadOnlyList<string> NoWarnPreRelease =
     [
         // NU1901 - Package with low severity detected
         "NU1901",
-
         // NU1902 - Package with moderate severity detected
         "NU1902",
-
         // NU1903 - Package with high severity detected
         "NU1903",
-
         // NU1904 - Package with critical severity detected
-        "NU1904"
+        "NU1904",
     ];
 
     private readonly ILogger<DotNetBuild> _logger;
@@ -54,9 +51,7 @@ public sealed class DotNetBuild : IDotNetBuild
         this._logger = logger;
 
         this._projectLoader = projectLoader;
-        this._quotedPropertyEscape = OperatingSystem.IsLinux()
-            ? "'"
-            : "\\";
+        this._quotedPropertyEscape = OperatingSystem.IsLinux() ? "'" : "\\";
     }
 
     public async ValueTask BuildAsync(BuildContext buildContext, CancellationToken cancellationToken)
@@ -65,7 +60,9 @@ public sealed class DotNetBuild : IDotNetBuild
 
         await this.StopBuildServerAsync(buildContext: buildContext, cancellationToken: cancellationToken);
 
-        await using (await this.SetCodeAnalysisConfigAsync(buildContext: buildContext, cancellationToken: cancellationToken))
+        await using (
+            await this.SetCodeAnalysisConfigAsync(buildContext: buildContext, cancellationToken: cancellationToken)
+        )
         {
             try
             {
@@ -85,7 +82,11 @@ public sealed class DotNetBuild : IDotNetBuild
                 if (buildContext.BuildSettings.Publishable)
                 {
                     string? framework = buildContext.BuildSettings.Framework;
-                    await this.DotNetPublishAsync(buildContext: buildContext, framework: framework, cancellationToken: cancellationToken);
+                    await this.DotNetPublishAsync(
+                        buildContext: buildContext,
+                        framework: framework,
+                        cancellationToken: cancellationToken
+                    );
                 }
             }
             finally
@@ -95,28 +96,38 @@ public sealed class DotNetBuild : IDotNetBuild
         }
     }
 
-    public async ValueTask BuildAsync(string projectFileName, BuildContext buildContext, CancellationToken cancellationToken)
+    public async ValueTask BuildAsync(
+        string projectFileName,
+        BuildContext buildContext,
+        CancellationToken cancellationToken
+    )
     {
         this._logger.LogStartingBuild(buildContext.SourceDirectory);
 
         await this.StopBuildServerAsync(buildContext: buildContext, cancellationToken: cancellationToken);
 
-        await using (await this.SetCodeAnalysisConfigAsync(buildContext: buildContext, cancellationToken: cancellationToken))
+        await using (
+            await this.SetCodeAnalysisConfigAsync(buildContext: buildContext, cancellationToken: cancellationToken)
+        )
         {
             try
             {
                 string noWarn = this.BuildNoWarn(buildContext);
-                string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION),
-                                                               ("SolutionDir", buildContext.SourceDirectory),
-                                                               ("SuppressNETCoreSdkPreviewMessage", "True"),
-                                                               ("Optimize", "True"),
-                                                               ("ContinuousIntegrationBuild", "True"));
+                string parameters = BuildEnvironmentParameters(
+                    ("Version", BUILD_VERSION),
+                    ("SolutionDir", buildContext.SourceDirectory),
+                    ("SuppressNETCoreSdkPreviewMessage", "True"),
+                    ("Optimize", "True"),
+                    ("ContinuousIntegrationBuild", "True")
+                );
 
                 this._logger.LogBuilding();
 
-                await this.ExecRequireCleanAsync(buildContext: buildContext,
-                                                 $"build  {projectFileName} -warnAsError -nodeReuse:False --configuration:Release {parameters} {noWarn}",
-                                                 cancellationToken: cancellationToken);
+                await this.ExecRequireCleanAsync(
+                    buildContext: buildContext,
+                    $"build  {projectFileName} -warnAsError -nodeReuse:False --configuration:Release {parameters} {noWarn}",
+                    cancellationToken: cancellationToken
+                );
             }
             finally
             {
@@ -125,7 +136,10 @@ public sealed class DotNetBuild : IDotNetBuild
         }
     }
 
-    public async ValueTask<BuildSettings> LoadBuildSettingsAsync(IReadOnlyList<string> projects, CancellationToken cancellationToken)
+    public async ValueTask<BuildSettings> LoadBuildSettingsAsync(
+        IReadOnlyList<string> projects,
+        CancellationToken cancellationToken
+    )
     {
         List<string> packable = [];
         List<string> publishable = [];
@@ -135,13 +149,25 @@ public sealed class DotNetBuild : IDotNetBuild
         {
             XmlDocument doc = await this._projectLoader.LoadAsync(path: project, cancellationToken: cancellationToken);
 
-            this.CheckProjectSettings(project: project, doc: doc, packable: packable, publishable: publishable, framework: ref framework);
+            this.CheckProjectSettings(
+                project: project,
+                doc: doc,
+                packable: packable,
+                publishable: publishable,
+                framework: ref framework
+            );
         }
 
         return new([.. publishable], [.. packable], Framework: framework);
     }
 
-    private void CheckProjectSettings(string project, XmlDocument doc, List<string> packable, List<string> publishable, ref string? framework)
+    private void CheckProjectSettings(
+        string project,
+        XmlDocument doc,
+        List<string> packable,
+        List<string> publishable,
+        ref string? framework
+    )
     {
         XmlNode? outputTypeNode = doc.SelectSingleNode("/Project/PropertyGroup/OutputType");
 
@@ -191,7 +217,10 @@ public sealed class DotNetBuild : IDotNetBuild
         XmlNode? targetFrameworksNode = doc.SelectSingleNode("/Project/PropertyGroup/TargetFrameworks");
 
         return targetFrameworksNode is not null
-            ? targetFrameworksNode.InnerText.Split(separator: ';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            ? targetFrameworksNode.InnerText.Split(
+                separator: ';',
+                StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries
+            )
             : [];
     }
 
@@ -212,7 +241,8 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         XmlNode? packableNode = doc.SelectSingleNode(path);
 
-        return packableNode is not null && StringComparer.OrdinalIgnoreCase.Equals(x: packableNode.InnerText, y: "True");
+        return packableNode is not null
+            && StringComparer.OrdinalIgnoreCase.Equals(x: packableNode.InnerText, y: "True");
     }
 
     private static bool IsDotNetTool(XmlDocument doc)
@@ -260,40 +290,52 @@ public sealed class DotNetBuild : IDotNetBuild
         return string.Join(separator: ' ', parameters.Select(EnvironmentParameter));
     }
 
-    private async ValueTask DotNetPublishAsync(BuildContext buildContext, string? framework, CancellationToken cancellationToken)
+    private async ValueTask DotNetPublishAsync(
+        BuildContext buildContext,
+        string? framework,
+        CancellationToken cancellationToken
+    )
     {
         string noWarn = this.BuildNoWarn(buildContext);
 
         if (string.IsNullOrWhiteSpace(framework))
         {
-            string parameters = BuildEnvironmentParameters(("DisableSwagger", "False"),
-                                                           ("IncludeNativeLibrariesForSelfExtract", "false"),
-                                                           ("PublishReadyToRun", "False"),
-                                                           ("PublishReadyToRunShowWarnings", "True"),
-                                                           ("PublishSingleFile", "true"),
-                                                           ("PublishTrimmed", "False"),
-                                                           ("TreatWarningsAsErrors", "True"),
-                                                           ("Version", BUILD_VERSION));
+            string parameters = BuildEnvironmentParameters(
+                ("DisableSwagger", "False"),
+                ("IncludeNativeLibrariesForSelfExtract", "false"),
+                ("PublishReadyToRun", "False"),
+                ("PublishReadyToRunShowWarnings", "True"),
+                ("PublishSingleFile", "true"),
+                ("PublishTrimmed", "False"),
+                ("TreatWarningsAsErrors", "True"),
+                ("Version", BUILD_VERSION)
+            );
 
             this._logger.LogPublishingNoFramework();
-            await this.ExecRequireCleanAsync(buildContext: buildContext,
-                                             $"publish -warnaserror  --configuration:Release -r:linux-x64 --self-contained {parameters} -nodeReuse:False {noWarn}",
-                                             cancellationToken: cancellationToken);
+            await this.ExecRequireCleanAsync(
+                buildContext: buildContext,
+                $"publish -warnaserror  --configuration:Release -r:linux-x64 --self-contained {parameters} -nodeReuse:False {noWarn}",
+                cancellationToken: cancellationToken
+            );
         }
         else
         {
-            string parameters = BuildEnvironmentParameters(("DisableSwagger", "False"),
-                                                           ("IncludeNativeLibrariesForSelfExtract", "false"),
-                                                           ("PublishReadyToRun", "False"),
-                                                           ("PublishReadyToRunShowWarnings", "True"),
-                                                           ("PublishSingleFile", "true"),
-                                                           ("PublishTrimmed", "False"),
-                                                           ("TreatWarningsAsErrors", "True"),
-                                                           ("Version", BUILD_VERSION));
+            string parameters = BuildEnvironmentParameters(
+                ("DisableSwagger", "False"),
+                ("IncludeNativeLibrariesForSelfExtract", "false"),
+                ("PublishReadyToRun", "False"),
+                ("PublishReadyToRunShowWarnings", "True"),
+                ("PublishSingleFile", "true"),
+                ("PublishTrimmed", "False"),
+                ("TreatWarningsAsErrors", "True"),
+                ("Version", BUILD_VERSION)
+            );
             this._logger.LogPublishingWithFramework(framework);
-            await this.ExecRequireCleanAsync(buildContext: buildContext,
-                                             $"publish -warnaserror --configuration:Release -r:linux-x64 --framework:{framework} --self-contained {parameters} -nodeReuse:False {noWarn}",
-                                             cancellationToken: cancellationToken);
+            await this.ExecRequireCleanAsync(
+                buildContext: buildContext,
+                $"publish -warnaserror --configuration:Release -r:linux-x64 --framework:{framework} --self-contained {parameters} -nodeReuse:False {noWarn}",
+                cancellationToken: cancellationToken
+            );
         }
     }
 
@@ -301,10 +343,7 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         if (buildContext.BuildOverride.PreRelease)
         {
-            return Build([
-                .. NoWarnPreRelease.Concat(NoWarnAll)
-                                   .Distinct(StringComparer.Ordinal)
-            ]);
+            return Build([.. NoWarnPreRelease.Concat(NoWarnAll).Distinct(StringComparer.Ordinal)]);
         }
 
         return Build(NoWarnAll);
@@ -318,7 +357,10 @@ public sealed class DotNetBuild : IDotNetBuild
             {
                 0 => string.Empty,
                 1 => string.Concat(parameter, items[0]),
-                _ => string.Concat(parameter, $"{this._quotedPropertyEscape}\"{string.Join(separator: separator, items.Order(comparer: StringComparer.Ordinal))}\"{this._quotedPropertyEscape}")
+                _ => string.Concat(
+                    parameter,
+                    $"{this._quotedPropertyEscape}\"{string.Join(separator: separator, items.Order(comparer: StringComparer.Ordinal))}\"{this._quotedPropertyEscape}"
+                ),
             };
         }
     }
@@ -327,32 +369,57 @@ public sealed class DotNetBuild : IDotNetBuild
     {
         string noWarn = this.BuildNoWarn(buildContext);
 
-        string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION), ("SuppressNETCoreSdkPreviewMessage", "True"), ("Optimize", "True"), ("ContinuousIntegrationBuild", "True"));
+        string parameters = BuildEnvironmentParameters(
+            ("Version", BUILD_VERSION),
+            ("SuppressNETCoreSdkPreviewMessage", "True"),
+            ("Optimize", "True"),
+            ("ContinuousIntegrationBuild", "True")
+        );
 
         this._logger.LogPacking();
 
-        return this.ExecRequireCleanAsync(buildContext: buildContext, $"pack -nodeReuse:False --configuration:Release {parameters} {noWarn}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(
+            buildContext: buildContext,
+            $"pack -nodeReuse:False --configuration:Release {parameters} {noWarn}",
+            cancellationToken: cancellationToken
+        );
     }
 
     private ValueTask DotNetTestAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
     {
-        string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION), ("SuppressNETCoreSdkPreviewMessage", "True"), ("Optimize", "True"), ("ContinuousIntegrationBuild", "True"));
+        string parameters = BuildEnvironmentParameters(
+            ("Version", BUILD_VERSION),
+            ("SuppressNETCoreSdkPreviewMessage", "True"),
+            ("Optimize", "True"),
+            ("ContinuousIntegrationBuild", "True")
+        );
 
         this._logger.LogTesting();
 
-        return this.ExecRequireCleanAsync(buildContext: buildContext, $"test --no-build --no-restore --configuration:Release --long-running 10 --filter-not-namespace \"*.BenchMark.Tests\" --filter-not-namespace \"*.BenchMark.Tests.*\" --filter-not-namespace \"*.Integration.Tests\" --filter-not-namespace \"*.Integration.Tests.*\" --parallel-algorithm aggressive --ignore-exit-code 8 {parameters}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(
+            buildContext: buildContext,
+            $"test --no-build --no-restore --configuration:Release --long-running 10 --filter-not-namespace \"*.BenchMark.Tests\" --filter-not-namespace \"*.BenchMark.Tests.*\" --filter-not-namespace \"*.Integration.Tests\" --filter-not-namespace \"*.Integration.Tests.*\" --parallel-algorithm aggressive --ignore-exit-code 8 {parameters}",
+            cancellationToken: cancellationToken
+        );
     }
 
     private ValueTask DotNetBuildAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
     {
         string noWarn = this.BuildNoWarn(buildContext);
-        string parameters = BuildEnvironmentParameters(("Version", BUILD_VERSION), ("SuppressNETCoreSdkPreviewMessage", "True"), ("Optimize", "True"), ("ContinuousIntegrationBuild", "True"));
+        string parameters = BuildEnvironmentParameters(
+            ("Version", BUILD_VERSION),
+            ("SuppressNETCoreSdkPreviewMessage", "True"),
+            ("Optimize", "True"),
+            ("ContinuousIntegrationBuild", "True")
+        );
 
         this._logger.LogBuilding();
 
-        return this.ExecRequireCleanAsync(buildContext: buildContext,
-                                          $"build --no-restore -warnAsError -nodeReuse:False --configuration:Release {parameters} {noWarn}",
-                                          cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(
+            buildContext: buildContext,
+            $"build --no-restore -warnAsError -nodeReuse:False --configuration:Release {parameters} {noWarn}",
+            cancellationToken: cancellationToken
+        );
     }
 
     private ValueTask DotNetRestoreAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
@@ -361,7 +428,11 @@ public sealed class DotNetBuild : IDotNetBuild
 
         this._logger.LogRestoring();
 
-        return this.ExecRequireCleanAsync(buildContext: buildContext, $"restore -nodeReuse:False -r:linux-x64 {noWarn}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(
+            buildContext: buildContext,
+            $"restore -nodeReuse:False -r:linux-x64 {noWarn}",
+            cancellationToken: cancellationToken
+        );
     }
 
     private ValueTask DotNetCleanAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
@@ -370,19 +441,35 @@ public sealed class DotNetBuild : IDotNetBuild
 
         this._logger.LogCleaning();
 
-        return this.ExecRequireCleanAsync(buildContext: buildContext, $"clean --configuration:Release -nodeReuse:False {noWarn}", cancellationToken: cancellationToken);
+        return this.ExecRequireCleanAsync(
+            buildContext: buildContext,
+            $"clean --configuration:Release -nodeReuse:False {noWarn}",
+            cancellationToken: cancellationToken
+        );
     }
 
     private async ValueTask StopBuildServerAsync(BuildContext buildContext, CancellationToken cancellationToken)
     {
         this._logger.LogStoppingBuildServer();
-        await ExecAsync(buildContext: buildContext, arguments: "build-server shutdown", cancellationToken: cancellationToken);
+        await ExecAsync(
+            buildContext: buildContext,
+            arguments: "build-server shutdown",
+            cancellationToken: cancellationToken
+        );
         this._logger.LogStoppedBuildServer();
     }
 
-    private async ValueTask ExecRequireCleanAsync(BuildContext buildContext, string arguments, CancellationToken cancellationToken)
+    private async ValueTask ExecRequireCleanAsync(
+        BuildContext buildContext,
+        string arguments,
+        CancellationToken cancellationToken
+    )
     {
-        (string[] results, int exitCode) = await ExecAsync(buildContext: buildContext, arguments: arguments, cancellationToken: cancellationToken);
+        (string[] results, int exitCode) = await ExecAsync(
+            buildContext: buildContext,
+            arguments: arguments,
+            cancellationToken: cancellationToken
+        );
 
         if (exitCode != 0)
         {
@@ -407,27 +494,31 @@ public sealed class DotNetBuild : IDotNetBuild
         }
     }
 
-    private static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(BuildContext buildContext, string arguments, CancellationToken cancellationToken)
+    private static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(
+        BuildContext buildContext,
+        string arguments,
+        CancellationToken cancellationToken
+    )
     {
         ProcessStartInfo psi = new()
-                               {
-                                   FileName = "dotnet",
-                                   WorkingDirectory = buildContext.SourceDirectory,
-                                   Arguments = arguments,
-                                   RedirectStandardOutput = true,
-                                   RedirectStandardError = true,
-                                   UseShellExecute = false,
-                                   CreateNoWindow = true,
-                                   Environment =
-                                   {
-                                       ["DOTNET_NOLOGO"] = "true",
-                                       ["DOTNET_PRINT_TELEMETRY_MESSAGE"] = "0",
-                                       ["DOTNET_ReadyToRun"] = "0",
-                                       ["DOTNET_TC_QuickJitForLoops"] = "1",
-                                       ["DOTNET_TieredPGO"] = "1",
-                                       ["MSBUILDTERMINALLOGGER"] = "false"
-                                   }
-                               };
+        {
+            FileName = "dotnet",
+            WorkingDirectory = buildContext.SourceDirectory,
+            Arguments = arguments,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            Environment =
+            {
+                ["DOTNET_NOLOGO"] = "true",
+                ["DOTNET_PRINT_TELEMETRY_MESSAGE"] = "0",
+                ["DOTNET_ReadyToRun"] = "0",
+                ["DOTNET_TC_QuickJitForLoops"] = "1",
+                ["DOTNET_TieredPGO"] = "1",
+                ["MSBUILDTERMINALLOGGER"] = "false",
+            },
+        };
 
         using (Process? process = Process.Start(psi))
         {
@@ -450,11 +541,17 @@ public sealed class DotNetBuild : IDotNetBuild
 
             string result = string.Join(separator: Environment.NewLine, output, error);
 
-            return (result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries), process.ExitCode);
+            return (
+                result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries),
+                process.ExitCode
+            );
         }
     }
 
-    private static bool TryGetCodeAnalysisFileName(in BuildContext buildContext, [NotNullWhen(true)] out string? fileName)
+    private static bool TryGetCodeAnalysisFileName(
+        in BuildContext buildContext,
+        [NotNullWhen(true)] out string? fileName
+    )
     {
         string rulesetFileName = Path.Combine(path1: buildContext.SourceDirectory, path2: "CodeAnalysis.ruleset");
 
@@ -470,12 +567,15 @@ public sealed class DotNetBuild : IDotNetBuild
         return true;
     }
 
-    private static bool TryGetCodeAnalysisOverrideFileName(in BuildContext buildContext, [NotNullWhen(true)] out string? fileName)
+    private static bool TryGetCodeAnalysisOverrideFileName(
+        in BuildContext buildContext,
+        [NotNullWhen(true)] out string? fileName
+    )
     {
-        string rulesetOverridesFileName = Path.Combine(path1: buildContext.SourceDirectory,
-                                                       buildContext.BuildOverride.PreRelease
-                                                           ? "pre-release.rule-settings.json"
-                                                           : "release.rule-settings.json");
+        string rulesetOverridesFileName = Path.Combine(
+            path1: buildContext.SourceDirectory,
+            buildContext.BuildOverride.PreRelease ? "pre-release.rule-settings.json" : "release.rule-settings.json"
+        );
 
         if (!File.Exists(rulesetOverridesFileName))
         {
@@ -496,14 +596,23 @@ public sealed class DotNetBuild : IDotNetBuild
         foreach (RuleChange change in changes)
         {
             this._logger.ChangingState(ruleSet: change.RuleSet, rule: change.Rule, state: change.State);
-            bool hasChanged = ruleSet.ChangeValue(ruleSet: change.RuleSet, rule: change.Rule, name: change.Description, newState: change.State, logger: this._logger);
+            bool hasChanged = ruleSet.ChangeValue(
+                ruleSet: change.RuleSet,
+                rule: change.Rule,
+                name: change.Description,
+                newState: change.State,
+                logger: this._logger
+            );
             changed |= hasChanged;
         }
 
         return changed;
     }
 
-    private async ValueTask<IAsyncDisposable?> SetCodeAnalysisConfigAsync(BuildContext buildContext, CancellationToken cancellationToken)
+    private async ValueTask<IAsyncDisposable?> SetCodeAnalysisConfigAsync(
+        BuildContext buildContext,
+        CancellationToken cancellationToken
+    )
     {
         if (!TryGetCodeAnalysisFileName(buildContext: buildContext, out string? rulesetFileName))
         {
@@ -515,7 +624,10 @@ public sealed class DotNetBuild : IDotNetBuild
             return null;
         }
 
-        IReadOnlyList<RuleChange> changes = await ChangeSet.LoadAsync(changesFileName: rulesetOverridesFileName, cancellationToken: cancellationToken);
+        IReadOnlyList<RuleChange> changes = await ChangeSet.LoadAsync(
+            changesFileName: rulesetOverridesFileName,
+            cancellationToken: cancellationToken
+        );
 
         if (changes is not [])
         {
@@ -523,7 +635,10 @@ public sealed class DotNetBuild : IDotNetBuild
 
             if (this.ApplyChanges(ruleSet: ruleSet, changes: changes))
             {
-                byte[] originalContents = await File.ReadAllBytesAsync(path: rulesetFileName, cancellationToken: cancellationToken);
+                byte[] originalContents = await File.ReadAllBytesAsync(
+                    path: rulesetFileName,
+                    cancellationToken: cancellationToken
+                );
                 await RuleSet.SaveAsync(project: rulesetFileName, doc: ruleSet);
 
                 return new FileRestorer(fileName: rulesetFileName, content: originalContents);
@@ -546,7 +661,11 @@ public sealed class DotNetBuild : IDotNetBuild
 
         public async ValueTask DisposeAsync()
         {
-            await File.WriteAllBytesAsync(path: this._fileName, bytes: this._content, cancellationToken: CancellationToken.None);
+            await File.WriteAllBytesAsync(
+                path: this._fileName,
+                bytes: this._content,
+                cancellationToken: CancellationToken.None
+            );
         }
     }
 }
