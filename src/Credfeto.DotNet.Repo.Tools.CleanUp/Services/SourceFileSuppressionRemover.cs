@@ -22,10 +22,14 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
         this._logger = logger;
     }
 
-    public async ValueTask<string> RemoveSuppressionsAsync(string fileName, string content, BuildContext buildContext, CancellationToken cancellationToken)
+    public async ValueTask<string> RemoveSuppressionsAsync(
+        string fileName,
+        string content,
+        BuildContext buildContext,
+        CancellationToken cancellationToken
+    )
     {
-        MatchCollection matches = SuppressMessages()
-            .Matches(content);
+        MatchCollection matches = SuppressMessages().Matches(content);
 
         string successfulBuild = content;
 
@@ -34,7 +38,12 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
         {
             string testSource = RemoveSuppressionFromMatch(match: match, source: successfulBuild);
 
-            await File.WriteAllTextAsync(path: fileName, contents: testSource, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
+            await File.WriteAllTextAsync(
+                path: fileName,
+                contents: testSource,
+                encoding: Encoding.UTF8,
+                cancellationToken: cancellationToken
+            );
 
             try
             {
@@ -44,7 +53,12 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
             catch (Exception exception)
             {
                 // Revert to the last successful build on disk
-                await File.WriteAllTextAsync(path: fileName, contents: successfulBuild, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
+                await File.WriteAllTextAsync(
+                    path: fileName,
+                    contents: successfulBuild,
+                    encoding: Encoding.UTF8,
+                    cancellationToken: cancellationToken
+                );
 
                 // build failed without this suppression, so skip it the revert
                 this._logger.FailedToBuild(filename: fileName, message: exception.Message, exception: exception);
@@ -65,8 +79,10 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
         return testSource;
     }
 
-    [GeneratedRegex(pattern: "\\[\\s*(assembly:)?\\s*SuppressMessage\\(.*?\\)\\s*\\]",
-                    RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline | RegexOptions.ExplicitCapture,
-                    matchTimeoutMilliseconds: 5000)]
+    [GeneratedRegex(
+        pattern: "\\[\\s*(assembly:)?\\s*SuppressMessage\\(.*?\\)\\s*\\]",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline | RegexOptions.ExplicitCapture,
+        matchTimeoutMilliseconds: 5000
+    )]
     private static partial Regex SuppressMessages();
 }
