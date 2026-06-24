@@ -193,5 +193,10 @@ internal static partial class BulkCodeCleanUpLoggingExtensions
     public static partial void CleaningFileDifferent(this ILogger<BulkCodeCleanUp> logger, string filename);
 
     [LoggerMessage(EventId = 26, Level = LogLevel.Error, Message = "Skipping repo as {repo} is locked: {message}")]
-    public static partial void LogRepoLocked(this ILogger<BulkCodeCleanUp> logger, string repo, string message, Exception exception);
+    public static partial void LogRepoLocked(
+        this ILogger<BulkCodeCleanUp> logger,
+        string repo,
+        string message,
+        Exception exception
+    );
 }
