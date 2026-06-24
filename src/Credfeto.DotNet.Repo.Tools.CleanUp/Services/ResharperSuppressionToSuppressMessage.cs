@@ -34,15 +34,14 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
         "PrivateFieldCanBeConvertedToLocalVariable",
     ];
 
-    private static readonly FrozenDictionary<string, string> ReplacementMap =
-        Replacements.ToFrozenDictionary(
-            keySelector: r => r,
-            elementSelector: r =>
-                "[System.Diagnostics.CodeAnalysis.SuppressMessage(\"ReSharper\", \""
-                + r
-                + "\", Justification=\"TODO: Review\")]",
-            comparer: StringComparer.Ordinal
-        );
+    private static readonly FrozenDictionary<string, string> ReplacementMap = Replacements.ToFrozenDictionary(
+        keySelector: r => r,
+        elementSelector: r =>
+            "[System.Diagnostics.CodeAnalysis.SuppressMessage(\"ReSharper\", \""
+            + r
+            + "\", Justification=\"TODO: Review\")]",
+        comparer: StringComparer.Ordinal
+    );
 
     private static readonly Regex CombinedRegex = new(
         pattern: "//\\s+ReSharper\\s+disable\\s+once\\s+(?<Rule>"
@@ -60,9 +59,7 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
         return CombinedRegex.Replace(
             input: content,
             evaluator: m =>
-                ReplacementMap.TryGetValue(key: m.Groups["Rule"].Value, out string? replacement)
-                    ? replacement
-                    : m.Value
+                ReplacementMap.TryGetValue(key: m.Groups["Rule"].Value, out string? replacement) ? replacement : m.Value
         );
     }
 }
