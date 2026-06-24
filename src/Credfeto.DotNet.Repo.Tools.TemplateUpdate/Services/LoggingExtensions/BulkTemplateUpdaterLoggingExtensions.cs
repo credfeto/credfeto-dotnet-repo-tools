@@ -175,16 +175,39 @@ internal static partial class BulkTemplateUpdaterLoggingExtensions
     );
 
     [LoggerMessage(EventId = 18, Level = LogLevel.Error, Message = "Skipping repo as {repo} is locked: {message}")]
-    public static partial void LogRepoLocked(this ILogger<BulkTemplateUpdater> logger, string repo, string message, Exception exception);
+    public static partial void LogRepoLocked(
+        this ILogger<BulkTemplateUpdater> logger,
+        string repo,
+        string message,
+        Exception exception
+    );
 
+    [LoggerMessage(
+        EventId = 19,
+        Level = LogLevel.Information,
+        Message = "Comparing SDK Versions: {sourceVersion} -> {targetVersion}"
+    )]
+    public static partial void ComparingSdkVersions(
+        this ILogger<BulkTemplateUpdater> logger,
+        NuGetVersion sourceVersion,
+        NuGetVersion targetVersion
+    );
 
-    [LoggerMessage(EventId = 19, Level = LogLevel.Information, Message = "Comparing SDK Versions: {sourceVersion} -> {targetVersion}")]
-    public static partial void ComparingSdkVersions(this ILogger<BulkTemplateUpdater> logger, NuGetVersion sourceVersion, NuGetVersion targetVersion);
+    [LoggerMessage(
+        EventId = 20,
+        Level = LogLevel.Error,
+        Message = "Configured partial file '{fileName}' is missing from the template. Expected source file: '{sourceFileName}'."
+    )]
+    public static partial void LogMissingPartialFileInTemplate(
+        this ILogger<BulkTemplateUpdater> logger,
+        string fileName,
+        string sourceFileName
+    );
 
-    [LoggerMessage(EventId = 20, Level = LogLevel.Error, Message = "Configured partial file '{fileName}' is missing from the template. Expected source file: '{sourceFileName}'.")]
-    public static partial void LogMissingPartialFileInTemplate(this ILogger<BulkTemplateUpdater> logger, string fileName, string sourceFileName);
-
-    [LoggerMessage(EventId = 21, Level = LogLevel.Error, Message = "Template config conflict: '{fileName}' is listed in cleanup.files but still exists in the template. Remove it from the template or from cleanup.files to prevent repeated add/remove cycles.")]
+    [LoggerMessage(
+        EventId = 21,
+        Level = LogLevel.Error,
+        Message = "Template config conflict: '{fileName}' is listed in cleanup.files but still exists in the template. Remove it from the template or from cleanup.files to prevent repeated add/remove cycles."
+    )]
     public static partial void LogCleanupConflict(this ILogger<BulkTemplateUpdater> logger, string fileName);
-
 }
