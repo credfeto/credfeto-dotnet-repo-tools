@@ -21,7 +21,10 @@ public sealed class DotNetFilesDetectorTests : LoggingFolderCleanupTestBase
     [Fact]
     public async Task ShouldNotHaveAnyFilesAsync()
     {
-        DotNetFiles result = await this._dotNetFilesDetector.FindAsync(baseFolder: this.TempFolder, this.CancellationToken());
+        DotNetFiles result = await this._dotNetFilesDetector.FindAsync(
+            baseFolder: this.TempFolder,
+            this.CancellationToken()
+        );
         Assert.Equal(expected: this.TempFolder, actual: result.SourceDirectory);
         Assert.False(condition: result.HasSolutions, userMessage: "Should not have solutions");
         Assert.False(condition: result.HasProjects, userMessage: "Should not have projects");
@@ -39,14 +42,27 @@ public sealed class DotNetFilesDetectorTests : LoggingFolderCleanupTestBase
         string solution = Path.Combine(path1: baseFolder, path2: "Test.sln");
         string project = Path.Combine(path1: baseFolder, path2: "Test.csproj");
 
-        return this.CheckShouldHaveSolutionFilesCommonAsync(sourceDirectory: baseFolder, solution: solution, project: project, cancellationToken: cancellationToken);
+        return this.CheckShouldHaveSolutionFilesCommonAsync(
+            sourceDirectory: baseFolder,
+            solution: solution,
+            project: project,
+            cancellationToken: cancellationToken
+        );
     }
 
-    private async Task CheckShouldHaveSolutionFilesCommonAsync(string sourceDirectory, string solution, string project, CancellationToken cancellationToken)
+    private async Task CheckShouldHaveSolutionFilesCommonAsync(
+        string sourceDirectory,
+        string solution,
+        string project,
+        CancellationToken cancellationToken
+    )
     {
         await File.WriteAllTextAsync(path: solution, contents: "Solution", cancellationToken: cancellationToken);
         await File.WriteAllTextAsync(path: project, contents: "Project", cancellationToken: cancellationToken);
-        DotNetFiles result = await this._dotNetFilesDetector.FindAsync(baseFolder: this.TempFolder, cancellationToken: cancellationToken);
+        DotNetFiles result = await this._dotNetFilesDetector.FindAsync(
+            baseFolder: this.TempFolder,
+            cancellationToken: cancellationToken
+        );
 
         Assert.Equal(expected: sourceDirectory, actual: result.SourceDirectory);
         Assert.True(condition: result.HasSolutions, userMessage: "Should have solutions");
@@ -68,7 +84,12 @@ public sealed class DotNetFilesDetectorTests : LoggingFolderCleanupTestBase
         string solution = Path.Combine(path1: baseFolder, path2: "Test.slnx");
         string project = Path.Combine(path1: baseFolder, path2: "Test.csproj");
 
-        return this.CheckShouldHaveSolutionFilesCommonAsync(sourceDirectory: baseFolder, solution: solution, project: project, cancellationToken: cancellationToken);
+        return this.CheckShouldHaveSolutionFilesCommonAsync(
+            sourceDirectory: baseFolder,
+            solution: solution,
+            project: project,
+            cancellationToken: cancellationToken
+        );
     }
 
     [Fact]
@@ -76,9 +97,20 @@ public sealed class DotNetFilesDetectorTests : LoggingFolderCleanupTestBase
     {
         CancellationToken cancellationToken = this.CancellationToken();
 
-        await File.WriteAllTextAsync(Path.Combine(path1: this.TempFolder, path2: "Test.sln"), contents: "Solution", cancellationToken: cancellationToken);
-        await File.WriteAllTextAsync(Path.Combine(path1: this.TempFolder, path2: "Test.csproj"), contents: "Solution", cancellationToken: cancellationToken);
-        DotNetFiles result = await this._dotNetFilesDetector.FindAsync(baseFolder: this.TempFolder, cancellationToken: cancellationToken);
+        await File.WriteAllTextAsync(
+            Path.Combine(path1: this.TempFolder, path2: "Test.sln"),
+            contents: "Solution",
+            cancellationToken: cancellationToken
+        );
+        await File.WriteAllTextAsync(
+            Path.Combine(path1: this.TempFolder, path2: "Test.csproj"),
+            contents: "Solution",
+            cancellationToken: cancellationToken
+        );
+        DotNetFiles result = await this._dotNetFilesDetector.FindAsync(
+            baseFolder: this.TempFolder,
+            cancellationToken: cancellationToken
+        );
         Assert.Equal(expected: this.TempFolder, actual: result.SourceDirectory);
         Assert.False(condition: result.HasSolutions, userMessage: "Should not have solutions");
         Assert.False(condition: result.HasProjects, userMessage: "Should not have projects");
