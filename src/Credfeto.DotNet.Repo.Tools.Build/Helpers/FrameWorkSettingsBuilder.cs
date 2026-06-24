@@ -8,7 +8,10 @@ namespace Credfeto.DotNet.Repo.Tools.Build.Helpers;
 
 public static class FrameWorkSettingsBuilder
 {
-    public static IFrameworkSettings DefineFrameworkSettings(in DotNetVersionSettings repositoryDotNetSettings, in DotNetVersionSettings templateDotNetSettings)
+    public static IFrameworkSettings DefineFrameworkSettings(
+        in DotNetVersionSettings repositoryDotNetSettings,
+        in DotNetVersionSettings templateDotNetSettings
+    )
     {
         if (string.IsNullOrEmpty(repositoryDotNetSettings.SdkVersion))
         {
@@ -20,14 +23,20 @@ public static class FrameWorkSettingsBuilder
             return new FrameworkSettings(repositoryDotNetSettings);
         }
 
-        DotNetVersionSettings dotNetSettings = IsRepositoryFrameworkNewerPreReleaseReleaseCandiate(new(repositoryDotNetSettings.SdkVersion), new(templateDotNetSettings.SdkVersion))
+        DotNetVersionSettings dotNetSettings = IsRepositoryFrameworkNewerPreReleaseReleaseCandiate(
+            new(repositoryDotNetSettings.SdkVersion),
+            new(templateDotNetSettings.SdkVersion)
+        )
             ? repositoryDotNetSettings
             : templateDotNetSettings;
 
         return new FrameworkSettings(dotNetSettings);
     }
 
-    private static bool IsRepositoryFrameworkNewerPreReleaseReleaseCandiate(NuGetVersion repositoryFramework, NuGetVersion templateFramework)
+    private static bool IsRepositoryFrameworkNewerPreReleaseReleaseCandiate(
+        NuGetVersion repositoryFramework,
+        NuGetVersion templateFramework
+    )
     {
         if (repositoryFramework.IsPrerelease)
         {
@@ -43,7 +52,10 @@ public static class FrameWorkSettingsBuilder
 
                     if (repositoryFramework.Version == templateFramework.Version)
                     {
-                        if (StringComparer.Ordinal.Compare(x: repositoryFramework.Release, y: templateFramework.Release) > 0)
+                        if (
+                            StringComparer.Ordinal.Compare(x: repositoryFramework.Release, y: templateFramework.Release)
+                            > 0
+                        )
                         {
                             // repo Pre-Release is newer or same as template
                             return true;
@@ -77,6 +89,7 @@ public static class FrameWorkSettingsBuilder
 
     private static bool IsReleaseCandidate(NuGetVersion repositoryFramework)
     {
-        return repositoryFramework.IsPrerelease && repositoryFramework.Release.StartsWith(value: "rc.", comparisonType: StringComparison.Ordinal);
+        return repositoryFramework.IsPrerelease
+            && repositoryFramework.Release.StartsWith(value: "rc.", comparisonType: StringComparison.Ordinal);
     }
 }
