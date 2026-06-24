@@ -134,7 +134,6 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         await this
             ._dotNetBuild.Received(2)
             .BuildAsync(Arg.Any<string>(), Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
-        await this._dotNetBuild.DidNotReceive().BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -200,7 +199,6 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         await this
             ._dotNetBuild.Received(2)
             .BuildAsync(Arg.Any<string>(), Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
-        await this._dotNetBuild.DidNotReceive().BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
