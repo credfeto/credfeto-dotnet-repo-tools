@@ -99,5 +99,10 @@ internal static partial class BulkDependencyUpdaterLoggingExtensions
     );
 
     [LoggerMessage(EventId = 22, Level = LogLevel.Error, Message = "Skipping repo as {repo} is locked: {message}")]
-    public static partial void LogRepoLocked(this ILogger<IBulkDependencyReducer> logger, string repo, string message, Exception exception);
+    public static partial void LogRepoLocked(
+        this ILogger<IBulkDependencyReducer> logger,
+        string repo,
+        string message,
+        Exception exception
+    );
 }
