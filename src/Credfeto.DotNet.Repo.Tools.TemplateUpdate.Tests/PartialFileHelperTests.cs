@@ -24,7 +24,10 @@ public sealed class PartialFileHelperTests : TestBase
 
         string result = PartialFileHelper.BuildContent(globalContent: globalContent, existingTargetContent: null);
 
-        int globalMarkerPos = result.IndexOf(PartialFileHelper.DefaultGloballyMaintainedMarker, StringComparison.Ordinal);
+        int globalMarkerPos = result.IndexOf(
+            PartialFileHelper.DefaultGloballyMaintainedMarker,
+            StringComparison.Ordinal
+        );
         int globalContentPos = result.IndexOf(globalContent, StringComparison.Ordinal);
         int localMarkerPos = result.IndexOf(PartialFileHelper.DefaultLocallyMaintainedMarker, StringComparison.Ordinal);
 
@@ -37,12 +40,13 @@ public sealed class PartialFileHelperTests : TestBase
     {
         const string globalContent = "New global content";
         const string localContent = "My local notes";
-        const string existingTarget = "<!-- Globally Maintained -->\n" +
-                                     "Old global content\n" +
-                                     "<!-- Locally Maintained -->\n" +
-                                     localContent;
+        const string existingTarget =
+            "<!-- Globally Maintained -->\n" + "Old global content\n" + "<!-- Locally Maintained -->\n" + localContent;
 
-        string result = PartialFileHelper.BuildContent(globalContent: globalContent, existingTargetContent: existingTarget);
+        string result = PartialFileHelper.BuildContent(
+            globalContent: globalContent,
+            existingTargetContent: existingTarget
+        );
 
         Assert.Contains(localContent, result, StringComparison.Ordinal);
         Assert.Contains(globalContent, result, StringComparison.Ordinal);
@@ -53,12 +57,16 @@ public sealed class PartialFileHelperTests : TestBase
     {
         const string globalContent = "New global content";
         const string oldGlobalContent = "Old global content";
-        const string existingTarget = "<!-- Globally Maintained -->\n" +
-                                     "Old global content\n" +
-                                     "<!-- Locally Maintained -->\n" +
-                                     "My local notes";
+        const string existingTarget =
+            "<!-- Globally Maintained -->\n"
+            + "Old global content\n"
+            + "<!-- Locally Maintained -->\n"
+            + "My local notes";
 
-        string result = PartialFileHelper.BuildContent(globalContent: globalContent, existingTargetContent: existingTarget);
+        string result = PartialFileHelper.BuildContent(
+            globalContent: globalContent,
+            existingTargetContent: existingTarget
+        );
 
         Assert.DoesNotContain(oldGlobalContent, result, StringComparison.Ordinal);
         Assert.Contains(globalContent, result, StringComparison.Ordinal);
@@ -70,7 +78,10 @@ public sealed class PartialFileHelperTests : TestBase
         const string globalContent = "Some global content";
         string firstResult = PartialFileHelper.BuildContent(globalContent: globalContent, existingTargetContent: null);
 
-        string secondResult = PartialFileHelper.BuildContent(globalContent: globalContent, existingTargetContent: firstResult);
+        string secondResult = PartialFileHelper.BuildContent(
+            globalContent: globalContent,
+            existingTargetContent: firstResult
+        );
 
         Assert.Equal(expected: firstResult, actual: secondResult);
     }
@@ -82,7 +93,10 @@ public sealed class PartialFileHelperTests : TestBase
         const string existingTarget = "Some unstructured content without markers";
         const string expected = "<!-- Globally Maintained -->\nSome global content\n<!-- Locally Maintained -->\n";
 
-        string result = PartialFileHelper.BuildContent(globalContent: globalContent, existingTargetContent: existingTarget);
+        string result = PartialFileHelper.BuildContent(
+            globalContent: globalContent,
+            existingTargetContent: existingTarget
+        );
 
         Assert.Equal(expected: expected, actual: result);
     }
@@ -95,10 +109,12 @@ public sealed class PartialFileHelperTests : TestBase
         const string endMarker = "<!-- END GLOBAL -->";
         const string expected = "<!-- BEGIN GLOBAL -->\nSome global content\n<!-- END GLOBAL -->\n";
 
-        string result = PartialFileHelper.BuildContent(globalContent: globalContent,
-                                                       existingTargetContent: null,
-                                                       globallyMaintainedMarker: beginMarker,
-                                                       locallyMaintainedMarker: endMarker);
+        string result = PartialFileHelper.BuildContent(
+            globalContent: globalContent,
+            existingTargetContent: null,
+            globallyMaintainedMarker: beginMarker,
+            locallyMaintainedMarker: endMarker
+        );
 
         Assert.Equal(expected: expected, actual: result);
     }
@@ -110,15 +126,15 @@ public sealed class PartialFileHelperTests : TestBase
         const string localContent = "My local notes";
         const string beginMarker = "<!-- BEGIN GLOBAL -->";
         const string endMarker = "<!-- END GLOBAL -->";
-        const string existingTarget = "<!-- BEGIN GLOBAL -->\n" +
-                                     "Old global content\n" +
-                                     "<!-- END GLOBAL -->\n" +
-                                     localContent;
+        const string existingTarget =
+            "<!-- BEGIN GLOBAL -->\n" + "Old global content\n" + "<!-- END GLOBAL -->\n" + localContent;
 
-        string result = PartialFileHelper.BuildContent(globalContent: globalContent,
-                                                       existingTargetContent: existingTarget,
-                                                       globallyMaintainedMarker: beginMarker,
-                                                       locallyMaintainedMarker: endMarker);
+        string result = PartialFileHelper.BuildContent(
+            globalContent: globalContent,
+            existingTargetContent: existingTarget,
+            globallyMaintainedMarker: beginMarker,
+            locallyMaintainedMarker: endMarker
+        );
 
         Assert.Contains(localContent, result, StringComparison.Ordinal);
         Assert.Contains(globalContent, result, StringComparison.Ordinal);
@@ -130,15 +146,19 @@ public sealed class PartialFileHelperTests : TestBase
         const string globalContent = "Some global content";
         const string beginMarker = "<!-- BEGIN GLOBAL -->";
         const string endMarker = "<!-- END GLOBAL -->";
-        string firstResult = PartialFileHelper.BuildContent(globalContent: globalContent,
-                                                            existingTargetContent: null,
-                                                            globallyMaintainedMarker: beginMarker,
-                                                            locallyMaintainedMarker: endMarker);
+        string firstResult = PartialFileHelper.BuildContent(
+            globalContent: globalContent,
+            existingTargetContent: null,
+            globallyMaintainedMarker: beginMarker,
+            locallyMaintainedMarker: endMarker
+        );
 
-        string secondResult = PartialFileHelper.BuildContent(globalContent: globalContent,
-                                                             existingTargetContent: firstResult,
-                                                             globallyMaintainedMarker: beginMarker,
-                                                             locallyMaintainedMarker: endMarker);
+        string secondResult = PartialFileHelper.BuildContent(
+            globalContent: globalContent,
+            existingTargetContent: firstResult,
+            globallyMaintainedMarker: beginMarker,
+            locallyMaintainedMarker: endMarker
+        );
 
         Assert.Equal(expected: firstResult, actual: secondResult);
     }
@@ -146,14 +166,19 @@ public sealed class PartialFileHelperTests : TestBase
     [Fact]
     public void BuildContent_WhenSourceContainsMarkers_DoesNotDuplicateMarkers()
     {
-        const string sourceContent = "<!-- Globally Maintained -->\n" +
-                                     "# Local instructions\n" +
-                                     "<!-- Locally Maintained -->\n";
+        const string sourceContent =
+            "<!-- Globally Maintained -->\n" + "# Local instructions\n" + "<!-- Locally Maintained -->\n";
 
         string result = PartialFileHelper.BuildContent(globalContent: sourceContent, existingTargetContent: null);
 
-        Assert.Equal(expected: 1, actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultGloballyMaintainedMarker));
-        Assert.Equal(expected: 1, actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultLocallyMaintainedMarker));
+        Assert.Equal(
+            expected: 1,
+            actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultGloballyMaintainedMarker)
+        );
+        Assert.Equal(
+            expected: 1,
+            actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultLocallyMaintainedMarker)
+        );
         Assert.Contains("# Local instructions", result, StringComparison.Ordinal);
     }
 
@@ -161,38 +186,49 @@ public sealed class PartialFileHelperTests : TestBase
     public void BuildContent_WhenTargetHasRepeatedLocalMarkers_StripsDuplicateLocalMarkers()
     {
         const string globalContent = "New global content";
-        const string existingTarget = "<!-- Globally Maintained -->\n" +
-                                      "Old global content\n" +
-                                      "<!-- Locally Maintained -->\n" +
-                                      "<!-- Locally Maintained -->\n" +
-                                      "<!-- Locally Maintained -->\n";
+        const string existingTarget =
+            "<!-- Globally Maintained -->\n"
+            + "Old global content\n"
+            + "<!-- Locally Maintained -->\n"
+            + "<!-- Locally Maintained -->\n"
+            + "<!-- Locally Maintained -->\n";
 
-        string result = PartialFileHelper.BuildContent(globalContent: globalContent, existingTargetContent: existingTarget);
+        string result = PartialFileHelper.BuildContent(
+            globalContent: globalContent,
+            existingTargetContent: existingTarget
+        );
 
-        Assert.Equal(expected: 1, actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultLocallyMaintainedMarker));
+        Assert.Equal(
+            expected: 1,
+            actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultLocallyMaintainedMarker)
+        );
     }
 
     [Fact]
     public void BuildContent_WhenSourceOnlyHasGlobalMarker_DoesNotReintroduceGlobalMarker()
     {
-        const string sourceContent = "<!-- Globally Maintained -->\n" +
-                                     "# Local instructions\n";
+        const string sourceContent = "<!-- Globally Maintained -->\n" + "# Local instructions\n";
 
         string result = PartialFileHelper.BuildContent(globalContent: sourceContent, existingTargetContent: null);
 
-        Assert.Equal(expected: 1, actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultGloballyMaintainedMarker));
+        Assert.Equal(
+            expected: 1,
+            actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultGloballyMaintainedMarker)
+        );
         Assert.Contains("# Local instructions", result, StringComparison.Ordinal);
     }
 
     [Fact]
     public void BuildContent_WhenSourceOnlyHasLocalMarker_DoesNotReintroduceLocalMarker()
     {
-        const string sourceContent = "# Local instructions\n" +
-                                     "<!-- Locally Maintained -->\n";
+        const string sourceContent = "# Local instructions\n" + "<!-- Locally Maintained -->\n";
 
         string result = PartialFileHelper.BuildContent(globalContent: sourceContent, existingTargetContent: null);
 
-        Assert.Equal(expected: 1, actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultLocallyMaintainedMarker));
+        Assert.Equal(
+            expected: 1,
+            actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultLocallyMaintainedMarker)
+        );
         Assert.Contains("# Local instructions", result, StringComparison.Ordinal);
     }
 
@@ -203,7 +239,11 @@ public sealed class PartialFileHelperTests : TestBase
 
         while (true)
         {
-            int markerIndex = result.IndexOf(value: marker, startIndex: startIndex, comparisonType: StringComparison.Ordinal);
+            int markerIndex = result.IndexOf(
+                value: marker,
+                startIndex: startIndex,
+                comparisonType: StringComparison.Ordinal
+            );
 
             if (markerIndex < 0)
             {
