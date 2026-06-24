@@ -128,19 +128,6 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             });
     }
 
-    private Task RunBulkUpdateAsync(string repoUrl)
-    {
-        return this
-            ._sut.BulkUpdateAsync(
-                templateRepository: "https://github.com/template/repo.git",
-                trackingFileName: string.Empty,
-                workFolder: this.TempFolder,
-                repositories: [repoUrl],
-                cancellationToken: this.CancellationToken()
-            )
-            .AsTask();
-    }
-
     private Task RunBulkUpdateWithTrackingAsync(string repoUrl, string trackingFileName)
     {
         return this
@@ -256,7 +243,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             new GitRepositoryLockedException("Repository is locked")
         );
 
-        return this.RunBulkUpdateAsync("https://github.com/test/locked-repo.git");
+        return this.RunBulkUpdateWithTrackingAsync("https://github.com/test/locked-repo.git", string.Empty);
     }
 
     [Fact]
@@ -268,7 +255,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             new SolutionCheckFailedException("Solution check failed")
         );
 
-        return this.RunBulkUpdateAsync("https://github.com/test/failing-solution-repo.git");
+        return this.RunBulkUpdateWithTrackingAsync("https://github.com/test/failing-solution-repo.git", string.Empty);
     }
 
     [Fact]
@@ -280,7 +267,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             new DotNetBuildErrorException("Build failed")
         );
 
-        return this.RunBulkUpdateAsync("https://github.com/test/build-error-repo.git");
+        return this.RunBulkUpdateWithTrackingAsync("https://github.com/test/build-error-repo.git", string.Empty);
     }
 
     [Fact]
@@ -325,7 +312,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
 
-        await this.RunBulkUpdateAsync("https://github.com/test/noop-repo.git");
+        await this.RunBulkUpdateWithTrackingAsync("https://github.com/test/noop-repo.git", string.Empty);
     }
 
     [Fact]
@@ -356,7 +343,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
 
-        await this.RunBulkUpdateAsync("https://github.com/test/changelog-nodotnet-repo.git");
+        await this.RunBulkUpdateWithTrackingAsync("https://github.com/test/changelog-nodotnet-repo.git", string.Empty);
 
         await testRepo
             .Received(1)
@@ -398,7 +385,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
 
-        await this.RunBulkUpdateAsync("https://github.com/test/dotnet-repo.git");
+        await this.RunBulkUpdateWithTrackingAsync("https://github.com/test/dotnet-repo.git", string.Empty);
 
         await this
             ._dependencyReducer.Received(1)
