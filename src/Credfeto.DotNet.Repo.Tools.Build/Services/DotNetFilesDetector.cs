@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
@@ -32,7 +32,9 @@ public sealed class DotNetFilesDetector : IDotNetFilesDetector
 
         IReadOnlyList<string> foundProjects = GetFiles(basePath: sourceFolder, searchPattern: "*.csproj");
 
-        return ValueTask.FromResult(new DotNetFiles(SourceDirectory: sourceFolder, Solutions: foundSolutions, Projects: foundProjects));
+        return ValueTask.FromResult(
+            new DotNetFiles(SourceDirectory: sourceFolder, Solutions: foundSolutions, Projects: foundProjects)
+        );
     }
 
     private static string BuildSourceFolder(string baseFolder)
@@ -40,7 +42,11 @@ public sealed class DotNetFilesDetector : IDotNetFilesDetector
         return Path.Combine(path1: baseFolder, path2: "src");
     }
 
-    [SuppressMessage(category: "Roslynator.Analyzers", checkId: "RCS1231: Spans should be ref read-only", Justification = "Except when they're in a params parameter")]
+    [SuppressMessage(
+        category: "Roslynator.Analyzers",
+        checkId: "RCS1231: Spans should be ref read-only",
+        Justification = "Except when they're in a params parameter"
+    )]
     private static IReadOnlyList<string> GetFiles(string basePath, params ReadOnlySpan<string> searchPatterns)
     {
         ImmutableArray<string> result = [];
@@ -60,6 +66,10 @@ public sealed class DotNetFilesDetector : IDotNetFilesDetector
 
     private static IReadOnlyList<string> GetFiles(string basePath, string searchPattern)
     {
-        return Directory.GetFiles(path: basePath, searchPattern: searchPattern, searchOption: SearchOption.AllDirectories);
+        return Directory.GetFiles(
+            path: basePath,
+            searchPattern: searchPattern,
+            searchOption: SearchOption.AllDirectories
+        );
     }
 }
