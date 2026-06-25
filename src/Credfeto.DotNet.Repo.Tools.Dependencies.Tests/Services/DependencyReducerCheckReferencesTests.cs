@@ -70,15 +70,40 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         );
     }
 
-    private void MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(int nth, string message)
+    private static void MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+        IDotNetBuild dotNetBuild,
+        int nth,
+        string message
+    )
     {
         int callCount = 0;
-        this._dotNetBuild.When(async b =>
+        dotNetBuild
+            .When(async b =>
                 await b.BuildAsync(Arg.Any<string>(), Arg.Any<BuildContext>(), Arg.Any<CancellationToken>())
             )
             .Do(_ =>
             {
                 if (++callCount == nth)
+                {
+                    throw new DotNetBuildErrorException(message);
+                }
+            });
+    }
+
+    private static void MockIDotNetBuildBuildAsyncThrowFromNthProjectBuildOnwards(
+        IDotNetBuild dotNetBuild,
+        int nth,
+        string message
+    )
+    {
+        int callCount = 0;
+        dotNetBuild
+            .When(async b =>
+                await b.BuildAsync(Arg.Any<string>(), Arg.Any<BuildContext>(), Arg.Any<CancellationToken>())
+            )
+            .Do(_ =>
+            {
+                if (++callCount >= nth)
                 {
                     throw new DotNetBuildErrorException(message);
                 }
@@ -271,7 +296,11 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             "<Project Sdk=\"Microsoft.NET.Sdk.Web\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
-        this.MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(nth: 2, message: "Build failed with minimal SDK");
+        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+            dotNetBuild: this._dotNetBuild,
+            nth: 2,
+            message: "Build failed with minimal SDK"
+        );
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
         ReferenceConfig config = BuildConfig();
@@ -425,7 +454,11 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
-        this.MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(nth: 2, message: "Final build failed");
+        MockIDotNetBuildBuildAsyncThrowFromNthProjectBuildOnwards(
+            dotNetBuild: this._dotNetBuild,
+            nth: 2,
+            message: "Final build failed"
+        );
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
         ReferenceConfig config = BuildConfig();
@@ -537,7 +570,11 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"SomePackage\" Version=\"1.0.0\" /></ItemGroup></Project>";
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
-        this.MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(nth: 2, message: "Package removal build failed");
+        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+            dotNetBuild: this._dotNetBuild,
+            nth: 2,
+            message: "Package removal build failed"
+        );
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
         ReferenceConfig config = BuildConfig();
@@ -561,7 +598,11 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"FunFair.SomeThing\" Version=\"1.0.0\" /></ItemGroup></Project>";
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
-        this.MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(nth: 2, message: "Package removal build failed");
+        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+            dotNetBuild: this._dotNetBuild,
+            nth: 2,
+            message: "Package removal build failed"
+        );
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
         ReferenceConfig config = BuildConfig();
@@ -592,7 +633,11 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             cancellationToken: this.CancellationToken()
         );
 
-        this.MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(nth: 2, message: "Package removal build failed");
+        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+            dotNetBuild: this._dotNetBuild,
+            nth: 2,
+            message: "Package removal build failed"
+        );
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
         ReferenceConfig config = BuildConfig();
@@ -623,7 +668,11 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             cancellationToken: this.CancellationToken()
         );
 
-        this.MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(nth: 2, message: "Package removal build failed");
+        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+            dotNetBuild: this._dotNetBuild,
+            nth: 2,
+            message: "Package removal build failed"
+        );
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
         ReferenceConfig config = BuildConfig();
@@ -647,7 +696,11 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"FunFair.Something.All\" Version=\"1.0.0\" /></ItemGroup></Project>";
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
-        this.MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(nth: 2, message: "Package removal build failed");
+        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+            dotNetBuild: this._dotNetBuild,
+            nth: 2,
+            message: "Package removal build failed"
+        );
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
         ReferenceConfig config = BuildConfig();
@@ -679,7 +732,11 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><ProjectReference Include=\"ChildProjFail/ChildProjFail.csproj\" /></ItemGroup></Project>";
         string parentFile = await this.WriteProjectFileAsync(parentXml, fileName: "ParentProjFail.csproj");
 
-        this.MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(nth: 2, message: "Project ref removal build failed");
+        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+            dotNetBuild: this._dotNetBuild,
+            nth: 2,
+            message: "Project ref removal build failed"
+        );
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(parentFile);
         ReferenceConfig config = BuildConfig();
@@ -782,7 +839,11 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             cancellationToken: this.CancellationToken()
         );
 
-        this.MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(nth: 2, message: "Project ref removal build failed");
+        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+            dotNetBuild: this._dotNetBuild,
+            nth: 2,
+            message: "Project ref removal build failed"
+        );
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(parentFile);
         ReferenceConfig config = BuildConfig();
@@ -811,7 +872,11 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
 
         await File.WriteAllTextAsync(path: propsFile, contents: propsXml, cancellationToken: this.CancellationToken());
 
-        this.MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(nth: 2, message: "Project ref removal build failed");
+        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+            dotNetBuild: this._dotNetBuild,
+            nth: 2,
+            message: "Project ref removal build failed"
+        );
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(parentFile);
         ReferenceConfig config = BuildConfig();
