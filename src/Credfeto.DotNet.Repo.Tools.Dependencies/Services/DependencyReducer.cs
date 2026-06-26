@@ -734,7 +734,6 @@ public sealed class DependencyReducer : IDependencyReducer
     {
         try
         {
-            // $results = dotnet build $FileName -warnAsError -nodeReuse:False /p:SolutionDir=$solutionDirectory
             await this._dotNetBuild.BuildAsync(
                 projectFileName: projectUpdateContext.Project,
                 buildContext: projectUpdateContext.BuildContext,
