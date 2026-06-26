@@ -846,12 +846,7 @@ public sealed class DependencyReducer : IDependencyReducer
         string baseDir
     )
     {
-        XmlNodeList? packageReferenceNodes = doc.SelectNodes(PACKAGE_REFERENCES_PATH);
-
-        if (packageReferenceNodes is null)
-        {
-            return;
-        }
+        IReadOnlyList<XmlNode> packageReferenceNodes = GetNodes(doc, PACKAGE_REFERENCES_PATH);
 
         IncludeReferencedPackages(allPackageIds: allPackageIds, packageReferenceNodes: packageReferenceNodes);
 
@@ -900,7 +895,10 @@ public sealed class DependencyReducer : IDependencyReducer
         return fileName;
     }
 
-    private static void IncludeReferencedPackages(List<string> allPackageIds, XmlNodeList packageReferenceNodes)
+    private static void IncludeReferencedPackages(
+        List<string> allPackageIds,
+        IReadOnlyList<XmlNode> packageReferenceNodes
+    )
     {
         allPackageIds.AddRange(
             packageReferenceNodes
