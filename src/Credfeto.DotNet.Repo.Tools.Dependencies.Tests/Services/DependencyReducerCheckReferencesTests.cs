@@ -756,26 +756,22 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async Task CheckReferencesAsyncWithProjectAlsoInGrandchildShouldSkipBuildForCoveredReferenceAsync()
     {
-        string grandChildDir = Path.Combine(path1: this.TempFolder, path2: "GrandChild");
-        Directory.CreateDirectory(grandChildDir);
         const string grandChildXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
-        string grandChildFile = Path.Combine(path1: grandChildDir, path2: "GrandChild.csproj");
+        string grandChildFile = Path.Combine(path1: this.TempFolder, path2: "GrandChild.csproj");
         await File.WriteAllTextAsync(
             path: grandChildFile,
             contents: grandChildXml,
             cancellationToken: this.CancellationToken()
         );
 
-        string childDir = Path.Combine(path1: this.TempFolder, path2: "Child");
-        Directory.CreateDirectory(childDir);
         const string childXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><ProjectReference Include=\"../GrandChild/GrandChild.csproj\" /></ItemGroup></Project>";
-        string childFile = Path.Combine(path1: childDir, path2: "Child.csproj");
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><ProjectReference Include=\"GrandChild.csproj\" /></ItemGroup></Project>";
+        string childFile = Path.Combine(path1: this.TempFolder, path2: "Child.csproj");
         await File.WriteAllTextAsync(path: childFile, contents: childXml, cancellationToken: this.CancellationToken());
 
         const string parentXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><ProjectReference Include=\"Child/Child.csproj\" /><ProjectReference Include=\"GrandChild/GrandChild.csproj\" /></ItemGroup></Project>";
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><ProjectReference Include=\"Child.csproj\" /><ProjectReference Include=\"GrandChild.csproj\" /></ItemGroup></Project>";
         string parentFile = await this.WriteProjectFileAsync(parentXml, fileName: "ParentThreeLevels.csproj");
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(parentFile);
@@ -788,6 +784,9 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         );
 
         Assert.True(condition: result, userMessage: "Parent with grandchild-covered project ref should report changes");
+        await this
+            ._dotNetBuild.Received(3)
+            .BuildAsync(Arg.Any<string>(), Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
