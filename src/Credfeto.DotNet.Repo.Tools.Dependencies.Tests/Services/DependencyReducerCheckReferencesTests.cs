@@ -49,7 +49,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         return new ReferenceConfig(onSuccessfulRemoval: NoOpRemovalAsync);
     }
 
-    private async Task<string> WriteProjectFileAsync(string projectXml, string? fileName = null)
+    private async ValueTask<string> WriteProjectFileAsync(string projectXml, string? fileName = null)
     {
         string projectFile = Path.Combine(path1: this.TempFolder, path2: fileName ?? "TestProject.csproj");
         await File.WriteAllTextAsync(
