@@ -35,11 +35,6 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     private readonly ITrackingCache _trackingCache;
     private readonly ITrackingHashGenerator _trackingHashGenerator;
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        category: "Microsoft.Reliability",
-        checkId: "CA2012: Use ValueTasks correctly",
-        Justification = "NSubstitute setup"
-    )]
     public BulkDependencyReducerTests(ITestOutputHelper output)
         : base(output)
     {
@@ -51,15 +46,9 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         this._dotNetFilesDetector = GetSubstitute<IDotNetFilesDetector>();
         this._trackingHashGenerator = GetSubstitute<ITrackingHashGenerator>();
 
-        this._globalJson.LoadGlobalJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(DotNetSettings);
-        this._dotNetVersion.GetInstalledSdksAsync(Arg.Any<CancellationToken>())
-            .Returns<IReadOnlyList<System.Version>>([]);
-        this._dependencyReducer.CheckReferencesAsync(
-                Arg.Any<DotNetFiles>(),
-                Arg.Any<ReferenceConfig>(),
-                Arg.Any<CancellationToken>()
-            )
-            .Returns(false);
+        MockIGlobalJsonLoadGlobalJson(this._globalJson, DotNetSettings);
+        MockIDotNetVersionGetInstalledSdks(this._dotNetVersion, []);
+        MockIDependencyReducerCheckReferences(this._dependencyReducer, false);
 
         this._sut = new BulkDependencyReducer(
             trackingCache: this._trackingCache,
@@ -205,18 +194,14 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             .SaveAsync(fileName: trackingFile, cancellationToken: Arg.Any<CancellationToken>());
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        category: "Microsoft.Reliability",
-        checkId: "CA2012: Use ValueTasks correctly",
-        Justification = "NSubstitute setup"
-    )]
     [Fact]
     public Task BulkUpdateAsyncShouldThrowWhenSdkVersionNotInstalledAsync()
     {
-        this._globalJson.LoadGlobalJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(new DotNetVersionSettings(SdkVersion: "99.0.0", AllowPreRelease: false, RollForward: "major"));
-        this._dotNetVersion.GetInstalledSdksAsync(Arg.Any<CancellationToken>())
-            .Returns<IReadOnlyList<System.Version>>([new System.Version(10, 0, 0)]);
+        MockIGlobalJsonLoadGlobalJson(
+            this._globalJson,
+            new DotNetVersionSettings(SdkVersion: "99.0.0", AllowPreRelease: false, RollForward: "major")
+        );
+        MockIDotNetVersionGetInstalledSdks(this._dotNetVersion, [new System.Version(10, 0, 0)]);
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         this.SetupTemplateRepo(templateRepo);
@@ -656,6 +641,26 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             dotNetFilesDetector: this._dotNetFilesDetector,
             logger: this.GetTypedLogger<BulkDependencyReducer>()
         );
+    }
+
+    private static void MockIGlobalJsonLoadGlobalJson(IGlobalJson globalJson, in DotNetVersionSettings value)
+    {
+        globalJson.LoadGlobalJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(value);
+    }
+
+    private static void MockIDotNetVersionGetInstalledSdks(
+        IDotNetVersion dotNetVersion,
+        IReadOnlyList<System.Version> value
+    )
+    {
+        dotNetVersion.GetInstalledSdksAsync(Arg.Any<CancellationToken>()).Returns(value);
+    }
+
+    private static void MockIDependencyReducerCheckReferences(IDependencyReducer dependencyReducer, bool value)
+    {
+        dependencyReducer
+            .CheckReferencesAsync(Arg.Any<DotNetFiles>(), Arg.Any<ReferenceConfig>(), Arg.Any<CancellationToken>())
+            .Returns(value);
     }
 
     private static void MockIDotNetFilesDetectorFind(IDotNetFilesDetector detector, in DotNetFiles result)
