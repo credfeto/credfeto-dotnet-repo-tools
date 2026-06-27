@@ -82,10 +82,11 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     )
         where TException : Exception
     {
-        templateRepo.WorkingDirectory.Returns(workingDirectory);
-        factory
-            .OpenOrCloneAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(templateRepo);
+        MockIGitRepositoryFactoryOpenOrClone(
+            factory: factory,
+            templateRepo: templateRepo,
+            workingDirectory: workingDirectory
+        );
 
         int callCount = 0;
         factory
@@ -321,9 +322,12 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        testRepo.Active.Returns(activeRepo);
-        testRepo.ClonePath.Returns("https://github.com/test/noop-repo.git");
-        testRepo.WorkingDirectory.Returns(repoDir);
+        MockIGitRepositorySetupBasicProperties(
+            testRepo: testRepo,
+            activeRepo: activeRepo,
+            cloneUrl: "https://github.com/test/noop-repo.git",
+            workingDirectory: repoDir
+        );
 
         MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
