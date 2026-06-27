@@ -114,6 +114,19 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             .Returns(templateRepo, testRepo);
     }
 
+    private static void MockIGitRepositorySetupBasicProperties(
+        IGitRepository testRepo,
+        LibGit2Sharp.Repository activeRepo,
+        string cloneUrl,
+        string workingDirectory
+    )
+    {
+        testRepo.Active.Returns(activeRepo);
+        testRepo.ClonePath.Returns(cloneUrl);
+        testRepo.WorkingDirectory.Returns(workingDirectory);
+        testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
+    }
+
     private ValueTask RunBulkUpdateWithTrackingAsync(string repoUrl, string trackingFileName)
     {
         return this._sut.BulkUpdateAsync(
@@ -343,10 +356,12 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        testRepo.Active.Returns(activeRepo);
-        testRepo.ClonePath.Returns("https://github.com/test/changelog-nodotnet-repo.git");
-        testRepo.WorkingDirectory.Returns(repoDir);
-        testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
+        MockIGitRepositorySetupBasicProperties(
+            testRepo: testRepo,
+            activeRepo: activeRepo,
+            cloneUrl: "https://github.com/test/changelog-nodotnet-repo.git",
+            workingDirectory: repoDir
+        );
 
         MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
@@ -390,10 +405,12 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        testRepo.Active.Returns(activeRepo);
-        testRepo.ClonePath.Returns("https://github.com/test/dotnet-repo.git");
-        testRepo.WorkingDirectory.Returns(repoDir);
-        testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
+        MockIGitRepositorySetupBasicProperties(
+            testRepo: testRepo,
+            activeRepo: activeRepo,
+            cloneUrl: "https://github.com/test/dotnet-repo.git",
+            workingDirectory: repoDir
+        );
 
         MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
@@ -437,10 +454,12 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        testRepo.Active.Returns(activeRepo);
-        testRepo.ClonePath.Returns(cloneUrl);
-        testRepo.WorkingDirectory.Returns(repoDir);
-        testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
+        MockIGitRepositorySetupBasicProperties(
+            testRepo: testRepo,
+            activeRepo: activeRepo,
+            cloneUrl: cloneUrl,
+            workingDirectory: repoDir
+        );
 
         MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
@@ -493,10 +512,12 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        testRepo.Active.Returns(activeRepo);
-        testRepo.ClonePath.Returns(cloneUrl);
-        testRepo.WorkingDirectory.Returns(repoDir);
-        testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
+        MockIGitRepositorySetupBasicProperties(
+            testRepo: testRepo,
+            activeRepo: activeRepo,
+            cloneUrl: cloneUrl,
+            workingDirectory: repoDir
+        );
 
         MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
@@ -550,10 +571,12 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        testRepo.Active.Returns(activeRepo);
-        testRepo.ClonePath.Returns(cloneUrl);
-        testRepo.WorkingDirectory.Returns(repoDir);
-        testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
+        MockIGitRepositorySetupBasicProperties(
+            testRepo: testRepo,
+            activeRepo: activeRepo,
+            cloneUrl: cloneUrl,
+            workingDirectory: repoDir
+        );
 
         MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
@@ -603,10 +626,12 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        testRepo.Active.Returns(activeRepo);
-        testRepo.ClonePath.Returns(cloneUrl);
-        testRepo.WorkingDirectory.Returns(repoDir);
-        testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
+        MockIGitRepositorySetupBasicProperties(
+            testRepo: testRepo,
+            activeRepo: activeRepo,
+            cloneUrl: cloneUrl,
+            workingDirectory: repoDir
+        );
 
         MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
@@ -662,10 +687,12 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        testRepo.Active.Returns(activeRepo);
-        testRepo.ClonePath.Returns(cloneUrl);
-        testRepo.WorkingDirectory.Returns(repoDir);
-        testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
+        MockIGitRepositorySetupBasicProperties(
+            testRepo: testRepo,
+            activeRepo: activeRepo,
+            cloneUrl: cloneUrl,
+            workingDirectory: repoDir
+        );
 
         MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
