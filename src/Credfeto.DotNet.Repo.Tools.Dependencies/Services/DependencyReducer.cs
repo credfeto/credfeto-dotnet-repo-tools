@@ -814,17 +814,10 @@ public sealed class DependencyReducer : IDependencyReducer
 
         XmlDocument doc = LoadProjectXmlFromFile(fileName);
         List<FilePackageReference> references = [];
-        List<string> allPackageIds = [];
 
         if (includeReferences)
         {
-            AddDirectPackageReferences(
-                references: references,
-                allPackageIds: allPackageIds,
-                doc: doc,
-                config: config,
-                baseDir: baseDir
-            );
+            AddDirectPackageReferences(references: references, doc: doc, config: config, baseDir: baseDir);
         }
 
         foreach (
@@ -846,12 +839,12 @@ public sealed class DependencyReducer : IDependencyReducer
 
     private static void AddDirectPackageReferences(
         List<FilePackageReference> references,
-        List<string> allPackageIds,
         XmlDocument doc,
         ReferenceConfig config,
         string baseDir
     )
     {
+        List<string> allPackageIds = [];
         List<XmlElement> packageReferenceElements = [.. GetNodes(doc, PACKAGE_REFERENCES_PATH).OfType<XmlElement>()];
 
         IncludeReferencedPackages(allPackageIds: allPackageIds, packageReferenceElements: packageReferenceElements);
