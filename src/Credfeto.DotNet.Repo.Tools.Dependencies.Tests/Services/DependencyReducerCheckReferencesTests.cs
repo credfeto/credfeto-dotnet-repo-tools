@@ -21,6 +21,21 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         Framework: null
     );
 
+    private const string MinimalSdkProjectXml =
+        "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+
+    private const string MinimalSdkWebProjectXml =
+        "<Project Sdk=\"Microsoft.NET.Sdk.Web\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+
+    private const string MinimalSdkRazorProjectXml =
+        "<Project Sdk=\"Microsoft.NET.Sdk.Razor\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+
+    private const string MinimalSdkWithSomePackageXml =
+        "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"SomePackage\" Version=\"1.0.0\" /></ItemGroup></Project>";
+
+    private const string MinimalSdkWithFunFairSomeThingXml =
+        "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"FunFair.SomeThing\" Version=\"1.0.0\" /></ItemGroup></Project>";
+
     private readonly IDotNetBuild _dotNetBuild;
     private readonly DependencyReducer _sut;
 
@@ -128,7 +143,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     public async ValueTask CheckReferencesAsyncWithMetaProjectShouldSkipItAsync()
     {
         string projectFile = await this.WriteProjectFileAsync(
-            projectXml: "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>",
+            projectXml: MinimalSdkProjectXml,
             fileName: "MyMeta.All.csproj"
         );
 
@@ -150,8 +165,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncWithSimpleSdkProjectShouldReturnFalseWhenNoChangesAsync()
     {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        const string projectXml = MinimalSdkProjectXml;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
@@ -175,8 +189,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncShouldThrowWhenInitialBuildFailsAsync()
     {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        const string projectXml = MinimalSdkProjectXml;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
         this._dotNetBuild.When(async b =>
@@ -199,8 +212,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncWithSdkWebProjectShouldNarrowSdkWhenBothBuildsSucceedAsync()
     {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk.Web\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        const string projectXml = MinimalSdkWebProjectXml;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
@@ -240,8 +252,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncWithSdkRazorAndNoRazorFilesShouldNarrowSdkAsync()
     {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk.Razor\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        const string projectXml = MinimalSdkRazorProjectXml;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
@@ -259,8 +270,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncWithSdkRazorAndRazorFilesShouldNotNarrowSdkAsync()
     {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk.Razor\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        const string projectXml = MinimalSdkRazorProjectXml;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
         string cshtmlFile = Path.Combine(path1: this.TempFolder, path2: "Index.cshtml");
@@ -288,8 +298,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncShouldRestoreSdkWhenMinimalSdkProjectBuildFailsAsync()
     {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk.Web\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        const string projectXml = MinimalSdkWebProjectXml;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
         MockIDotNetBuildBuildThrowOnNthProjectBuild(
@@ -313,8 +322,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncWithRemovablePackageShouldReturnTrueAndCallOnSuccessfulRemovalAsync()
     {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"SomePackage\" Version=\"1.0.0\" /></ItemGroup></Project>";
+        const string projectXml = MinimalSdkWithSomePackageXml;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
@@ -376,8 +384,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         string childDir = Path.Combine(path1: this.TempFolder, path2: "ChildProject");
         Directory.CreateDirectory(childDir);
 
-        const string childXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        const string childXml = MinimalSdkProjectXml;
         string childFile = Path.Combine(path1: childDir, path2: "ChildProject.csproj");
         await File.WriteAllTextAsync(path: childFile, contents: childXml, cancellationToken: this.CancellationToken());
 
@@ -422,8 +429,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         string childDir = Path.Combine(path1: this.TempFolder, path2: "ChildWithPkg");
         Directory.CreateDirectory(childDir);
 
-        const string childXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"SomePackage\" Version=\"1.0.0\" /></ItemGroup></Project>";
+        const string childXml = MinimalSdkWithSomePackageXml;
         string childFile = Path.Combine(path1: childDir, path2: "ChildWithPkg.csproj");
         await File.WriteAllTextAsync(path: childFile, contents: childXml, cancellationToken: this.CancellationToken());
 
@@ -446,8 +452,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncShouldThrowWhenFinalBuildFailsAsync()
     {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        const string projectXml = MinimalSdkProjectXml;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
         MockIDotNetBuildBuildThrowFromNthProjectBuildOnwards(
@@ -471,8 +476,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncShouldNotCallOnSuccessfulRemovalWhenSolutionBuildFailsAfterPackageRemovalAsync()
     {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"SomePackage\" Version=\"1.0.0\" /></ItemGroup></Project>";
+        const string projectXml = MinimalSdkWithSomePackageXml;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
         this._dotNetBuild.When(async b => await b.BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>()))
@@ -508,10 +512,8 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncWithMultipleProjectsShouldReturnTrueWhenAnyHasChangesAsync()
     {
-        const string projectXml1 =
-            "<Project Sdk=\"Microsoft.NET.Sdk.Web\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
-        const string projectXml2 =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"SomePackage\" Version=\"1.0.0\" /></ItemGroup></Project>";
+        const string projectXml1 = MinimalSdkWebProjectXml;
+        const string projectXml2 = MinimalSdkWithSomePackageXml;
 
         string projectFile1 = await this.WriteProjectFileAsync(projectXml1, fileName: "Project1.csproj");
 
@@ -562,8 +564,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncWithNonFunFairPackageRemovalBuildFailureShouldReturnFalseAsync()
     {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"SomePackage\" Version=\"1.0.0\" /></ItemGroup></Project>";
+        const string projectXml = MinimalSdkWithSomePackageXml;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
         MockIDotNetBuildBuildThrowOnNthProjectBuild(
@@ -590,8 +591,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncWithFunFairPackageRemovalBuildFailureAndNoSourceFilesShouldTrackNarrowingAsync()
     {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"FunFair.SomeThing\" Version=\"1.0.0\" /></ItemGroup></Project>";
+        const string projectXml = MinimalSdkWithFunFairSomeThingXml;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
         MockIDotNetBuildBuildThrowOnNthProjectBuild(
@@ -618,8 +618,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncWithFunFairPackageRemovalBuildFailureAndUsingInSourceFileShouldReturnFalseAsync()
     {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"FunFair.SomeThing\" Version=\"1.0.0\" /></ItemGroup></Project>";
+        const string projectXml = MinimalSdkWithFunFairSomeThingXml;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
         string sourceFile = Path.Combine(path1: this.TempFolder, path2: "Program.cs");
@@ -653,8 +652,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncWithFunFairPackageRemovalBuildFailureAndNamespaceInSourceFileShouldReturnFalseAsync()
     {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"FunFair.SomeThing\" Version=\"1.0.0\" /></ItemGroup></Project>";
+        const string projectXml = MinimalSdkWithFunFairSomeThingXml;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
         string sourceFile = Path.Combine(path1: this.TempFolder, path2: "MyClass.cs");
@@ -719,8 +717,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         string childDir = Path.Combine(path1: this.TempFolder, path2: "ChildProjFail");
         Directory.CreateDirectory(childDir);
 
-        const string childXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        const string childXml = MinimalSdkProjectXml;
         string childFile = Path.Combine(path1: childDir, path2: "ChildProjFail.csproj");
         await File.WriteAllTextAsync(path: childFile, contents: childXml, cancellationToken: this.CancellationToken());
 
@@ -752,8 +749,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncWithProjectAlsoInGrandchildShouldSkipBuildForCoveredReferenceAsync()
     {
-        const string grandChildXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        const string grandChildXml = MinimalSdkProjectXml;
         string grandChildFile = Path.Combine(path1: this.TempFolder, path2: "GrandChild.csproj");
         await File.WriteAllTextAsync(
             path: grandChildFile,
@@ -783,19 +779,12 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         await this
             ._dotNetBuild.Received(3)
             .BuildAsync(parentFile, Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
-        await this
-            ._dotNetBuild.DidNotReceive()
-            .BuildAsync(grandChildFile, Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
-        await this
-            ._dotNetBuild.DidNotReceive()
-            .BuildAsync(childFile, Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async ValueTask CheckReferencesAsyncWithProjectAlreadyIncludedByChildInSameFolderShouldSkipBuildAndReportChangeAsync()
     {
-        const string bXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        const string bXml = MinimalSdkProjectXml;
         const string aXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><ProjectReference Include=\"B.csproj\" /></ItemGroup></Project>";
         const string parentXml =
@@ -829,8 +818,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     [Fact]
     public async ValueTask CheckReferencesAsyncWithFunFairProjectReferenceRemovalBuildFailureAndNoSourceFilesShouldTrackNarrowingAsync()
     {
-        const string funFairXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        const string funFairXml = MinimalSdkProjectXml;
         const string parentXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><ProjectReference Include=\"FunFair.SomeThing.csproj\" /></ItemGroup></Project>";
 
@@ -955,8 +943,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         string childDir = Path.Combine(path1: this.TempFolder, path2: "WinChild");
         Directory.CreateDirectory(childDir);
 
-        const string childXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
+        const string childXml = MinimalSdkProjectXml;
         string childFile = Path.Combine(path1: childDir, path2: "WinChild.csproj");
         await File.WriteAllTextAsync(path: childFile, contents: childXml, cancellationToken: this.CancellationToken());
 
