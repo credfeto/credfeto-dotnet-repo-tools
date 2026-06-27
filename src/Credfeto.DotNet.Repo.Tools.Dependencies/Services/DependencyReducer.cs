@@ -769,13 +769,11 @@ public sealed class DependencyReducer : IDependencyReducer
 
     private static string? ExtractProjectFromReference(string reference)
     {
-        // Validate input
         if (string.IsNullOrWhiteSpace(reference))
         {
             return null;
         }
 
-        // Get just the filename (e.g., "MyApp.csproj")
         string filename = Path.GetFileName(reference);
 
         if (string.IsNullOrEmpty(filename))
@@ -783,10 +781,8 @@ public sealed class DependencyReducer : IDependencyReducer
             return null;
         }
 
-        // Ensure it's a .csproj file
         if (filename.EndsWith(value: ".csproj", comparisonType: StringComparison.OrdinalIgnoreCase))
         {
-            // Strip the extension and return
             return Path.GetFileNameWithoutExtension(filename);
         }
 
