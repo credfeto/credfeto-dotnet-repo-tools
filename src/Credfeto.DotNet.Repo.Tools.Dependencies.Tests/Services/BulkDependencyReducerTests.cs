@@ -62,7 +62,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         );
     }
 
-    private static void SetupTemplateRepo(
+    private static void MockIGitRepositoryFactoryOpenOrClone(
         IGitRepositoryFactory factory,
         IGitRepository templateRepo,
         string workingDirectory
@@ -74,7 +74,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             .Returns(templateRepo);
     }
 
-    private static void SetupTemplateRepoThrowingOnSubsequentCalls<TException>(
+    private static void MockIGitRepositoryFactoryOpenOrCloneThrowsAfterFirst<TException>(
         IGitRepositoryFactory factory,
         IGitRepository templateRepo,
         string workingDirectory,
@@ -101,7 +101,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             });
     }
 
-    private static void SetupTwoRepos(
+    private static void MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
         IGitRepositoryFactory factory,
         IGitRepository templateRepo,
         IGitRepository testRepo,
@@ -111,63 +111,44 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         templateRepo.WorkingDirectory.Returns(workingDirectory);
         factory
             .OpenOrCloneAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(templateRepo);
-
-        int callCount = 0;
-        factory
-            .When(f => f.OpenOrCloneAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>()))
-            .Do(_ =>
-            {
-                ++callCount;
-
-                if (callCount == 2)
-                {
-                    factory
-                        .OpenOrCloneAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-                        .Returns(testRepo);
-                }
-            });
+            .Returns(templateRepo, testRepo);
     }
 
-    private Task RunBulkUpdateWithTrackingAsync(string repoUrl, string trackingFileName)
+    private ValueTask RunBulkUpdateWithTrackingAsync(string repoUrl, string trackingFileName)
     {
-        return this
-            ._sut.BulkUpdateAsync(
-                templateRepository: "https://github.com/template/repo.git",
-                trackingFileName: trackingFileName,
-                workFolder: this.TempFolder,
-                repositories: [repoUrl],
-                cancellationToken: this.CancellationToken()
-            )
-            .AsTask();
+        return this._sut.BulkUpdateAsync(
+            templateRepository: "https://github.com/template/repo.git",
+            trackingFileName: trackingFileName,
+            workFolder: this.TempFolder,
+            repositories: [repoUrl],
+            cancellationToken: this.CancellationToken()
+        );
     }
 
     [Fact]
-    public Task BulkUpdateAsyncWithNoRepositoriesShouldSucceedAsync()
+    public ValueTask BulkUpdateAsyncWithNoRepositoriesShouldSucceedAsync()
     {
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
-        SetupTemplateRepo(
+        MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             workingDirectory: this.TempFolder
         );
 
-        return this
-            ._sut.BulkUpdateAsync(
-                templateRepository: "https://github.com/template/repo.git",
-                trackingFileName: string.Empty,
-                workFolder: this.TempFolder,
-                repositories: [],
-                cancellationToken: this.CancellationToken()
-            )
-            .AsTask();
+        return this._sut.BulkUpdateAsync(
+            templateRepository: "https://github.com/template/repo.git",
+            trackingFileName: string.Empty,
+            workFolder: this.TempFolder,
+            repositories: [],
+            cancellationToken: this.CancellationToken()
+        );
     }
 
     [Fact]
     public async Task BulkUpdateAsyncShouldLoadAndSaveTrackingCacheWhenFileExistsAsync()
     {
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
-        SetupTemplateRepo(
+        MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             workingDirectory: this.TempFolder
@@ -196,7 +177,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     public async Task BulkUpdateAsyncShouldNotLoadTrackingCacheWhenFileDoesNotExistAsync()
     {
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
-        SetupTemplateRepo(
+        MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             workingDirectory: this.TempFolder
@@ -228,7 +209,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         MockIDotNetVersionGetInstalledSdks(this._dotNetVersion, [new System.Version(10, 0, 0)]);
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
-        SetupTemplateRepo(
+        MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             workingDirectory: this.TempFolder
@@ -248,10 +229,10 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public Task BulkUpdateAsyncShouldHandleGitRepositoryLockedExceptionAsync()
+    public ValueTask BulkUpdateAsyncShouldHandleGitRepositoryLockedExceptionAsync()
     {
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
-        SetupTemplateRepoThrowingOnSubsequentCalls(
+        MockIGitRepositoryFactoryOpenOrCloneThrowsAfterFirst(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             workingDirectory: this.TempFolder,
@@ -262,10 +243,10 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public Task BulkUpdateAsyncShouldHandleSolutionCheckFailedExceptionAsync()
+    public ValueTask BulkUpdateAsyncShouldHandleSolutionCheckFailedExceptionAsync()
     {
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
-        SetupTemplateRepoThrowingOnSubsequentCalls(
+        MockIGitRepositoryFactoryOpenOrCloneThrowsAfterFirst(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             workingDirectory: this.TempFolder,
@@ -276,10 +257,10 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public Task BulkUpdateAsyncShouldHandleDotNetBuildErrorExceptionAsync()
+    public ValueTask BulkUpdateAsyncShouldHandleDotNetBuildErrorExceptionAsync()
     {
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
-        SetupTemplateRepoThrowingOnSubsequentCalls(
+        MockIGitRepositoryFactoryOpenOrCloneThrowsAfterFirst(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             workingDirectory: this.TempFolder,
@@ -293,7 +274,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     public async Task BulkUpdateAsyncShouldSaveTrackingFileAfterLockedRepoExceptionAsync()
     {
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
-        SetupTemplateRepoThrowingOnSubsequentCalls(
+        MockIGitRepositoryFactoryOpenOrCloneThrowsAfterFirst(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             workingDirectory: this.TempFolder,
@@ -331,7 +312,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         testRepo.ClonePath.Returns("https://github.com/test/noop-repo.git");
         testRepo.WorkingDirectory.Returns(repoDir);
 
-        SetupTwoRepos(
+        MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             testRepo: testRepo,
@@ -367,7 +348,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         testRepo.WorkingDirectory.Returns(repoDir);
         testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
 
-        SetupTwoRepos(
+        MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             testRepo: testRepo,
@@ -414,7 +395,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         testRepo.WorkingDirectory.Returns(repoDir);
         testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
 
-        SetupTwoRepos(
+        MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             testRepo: testRepo,
@@ -461,7 +442,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         testRepo.WorkingDirectory.Returns(repoDir);
         testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
 
-        SetupTwoRepos(
+        MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             testRepo: testRepo,
@@ -517,7 +498,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         testRepo.WorkingDirectory.Returns(repoDir);
         testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
 
-        SetupTwoRepos(
+        MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             testRepo: testRepo,
@@ -574,7 +555,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         testRepo.WorkingDirectory.Returns(repoDir);
         testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
 
-        SetupTwoRepos(
+        MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             testRepo: testRepo,
@@ -627,7 +608,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         testRepo.WorkingDirectory.Returns(repoDir);
         testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
 
-        SetupTwoRepos(
+        MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             testRepo: testRepo,
@@ -686,7 +667,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         testRepo.WorkingDirectory.Returns(repoDir);
         testRepo.GetDefaultBranch(GitConstants.Upstream).Returns("main");
 
-        SetupTwoRepos(
+        MockIGitRepositoryFactoryOpenOrCloneReturnsTwoRepos(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             testRepo: testRepo,
