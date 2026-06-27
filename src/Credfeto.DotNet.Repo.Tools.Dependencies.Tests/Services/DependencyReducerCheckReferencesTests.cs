@@ -782,7 +782,13 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         Assert.True(condition: result, userMessage: "Parent with grandchild-covered project ref should report changes");
         await this
             ._dotNetBuild.Received(3)
-            .BuildAsync(Arg.Any<string>(), Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
+            .BuildAsync(parentFile, Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
+        await this
+            ._dotNetBuild.DidNotReceive()
+            .BuildAsync(grandChildFile, Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
+        await this
+            ._dotNetBuild.DidNotReceive()
+            .BuildAsync(childFile, Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
