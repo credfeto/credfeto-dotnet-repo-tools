@@ -815,6 +815,9 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             condition: result,
             userMessage: "Parent with B.csproj also included by A.csproj should report changes without building for B"
         );
+        await this
+            ._dotNetBuild.Received(3)
+            .BuildAsync(Arg.Any<string>(), Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
