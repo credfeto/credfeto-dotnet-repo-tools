@@ -840,13 +840,12 @@ public sealed class DependencyReducer : IDependencyReducer
         string baseDir
     )
     {
-        IReadOnlyList<XmlNode> packageReferenceNodes = GetNodes(doc, PACKAGE_REFERENCES_PATH);
+        List<XmlElement> packageReferenceElements = [.. GetNodes(doc, PACKAGE_REFERENCES_PATH).OfType<XmlElement>()];
 
-        IncludeReferencedPackages(allPackageIds: allPackageIds, packageReferenceNodes: packageReferenceNodes);
+        IncludeReferencedPackages(allPackageIds: allPackageIds, packageReferenceElements: packageReferenceElements);
 
         references.AddRange(
-            packageReferenceNodes
-                .OfType<XmlElement>()
+            packageReferenceElements
                 .Select(node =>
                     PackageExtractor.ExtractPackageReference(
                         config: config,
@@ -889,19 +888,13 @@ public sealed class DependencyReducer : IDependencyReducer
         return fileName;
     }
 
-    private static void IncludeReferencedPackages(
-        List<string> allPackageIds,
-        IReadOnlyList<XmlNode> packageReferenceNodes
-    )
+    private static void IncludeReferencedPackages(List<string> allPackageIds, List<XmlElement> packageReferenceElements)
     {
+        HashSet<string> seen = new(allPackageIds, StringComparer.OrdinalIgnoreCase);
         allPackageIds.AddRange(
-            packageReferenceNodes
-                .OfType<XmlElement>()
+            packageReferenceElements
                 .Select(node => node.GetAttribute("Include"))
-                .Where(include =>
-                    !string.IsNullOrEmpty(include)
-                    && !allPackageIds.Contains(value: include, comparer: StringComparer.OrdinalIgnoreCase)
-                )
+                .Where(include => !string.IsNullOrEmpty(include) && seen.Add(include))
         );
     }
 
