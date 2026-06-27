@@ -687,8 +687,9 @@ public sealed class DependencyReducer : IDependencyReducer
 
     private static IReadOnlyList<XmlNode> GetNodes(XmlDocument xml, string xpath)
     {
-        // ! SelectNodes returns an empty list, not null, for valid XPath expressions
-        return [.. xml.SelectNodes(xpath)!.Cast<XmlNode>()];
+        XmlNodeList? nodes = xml.SelectNodes(xpath);
+
+        return nodes is null ? [] : [.. nodes.Cast<XmlNode>()];
     }
 
     private void PrintResults(string header, IReadOnlyList<ReferenceCheckResult> items)
@@ -792,7 +793,8 @@ public sealed class DependencyReducer : IDependencyReducer
     private static IReadOnlyList<FilePackageReference> GetPackageReferences(
         string fileName,
         bool includeReferences,
-        ReferenceConfig config
+        ReferenceConfig config,
+        HashSet<string>? visited = null
     )
     {
         string? baseDir = Path.GetDirectoryName(fileName);
@@ -800,6 +802,14 @@ public sealed class DependencyReducer : IDependencyReducer
         if (string.IsNullOrEmpty(baseDir))
         {
             throw new FileNotFoundException(message: "Unable to find project file.", fileName: fileName);
+        }
+
+        string canonicalPath = Path.GetFullPath(GetPlatformFileName(fileName));
+        visited ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (!visited.Add(canonicalPath))
+        {
+            return [];
         }
 
         XmlDocument doc = LoadProjectXmlFromFile(fileName);
@@ -826,7 +836,9 @@ public sealed class DependencyReducer : IDependencyReducer
                 .Select(relativeInclude => Path.Combine(path1: baseDir, path2: relativeInclude))
         )
         {
-            references.AddRange(GetPackageReferences(fileName: childPath, includeReferences: true, config: config));
+            references.AddRange(
+                GetPackageReferences(fileName: childPath, includeReferences: true, config: config, visited: visited)
+            );
         }
 
         return references;
@@ -891,20 +903,37 @@ public sealed class DependencyReducer : IDependencyReducer
     private static void IncludeReferencedPackages(List<string> allPackageIds, List<XmlElement> packageReferenceElements)
     {
         HashSet<string> seen = new(allPackageIds, StringComparer.OrdinalIgnoreCase);
-        allPackageIds.AddRange(
-            packageReferenceElements
-                .Select(node => node.GetAttribute("Include"))
-                .Where(include => !string.IsNullOrEmpty(include) && seen.Add(include))
-        );
+
+        foreach (XmlElement node in packageReferenceElements)
+        {
+            string include = node.GetAttribute("Include");
+
+            if (!string.IsNullOrEmpty(include) && seen.Add(include))
+            {
+                allPackageIds.Add(include);
+            }
+        }
     }
 
-    private static IReadOnlyList<FileProjectReference> GetProjectReferences(string fileName, bool includeReferences)
+    private static IReadOnlyList<FileProjectReference> GetProjectReferences(
+        string fileName,
+        bool includeReferences,
+        HashSet<string>? visited = null
+    )
     {
         string? baseDir = Path.GetDirectoryName(fileName);
 
         if (string.IsNullOrEmpty(baseDir))
         {
             throw new FileNotFoundException(message: "Unable to find project file.", fileName: fileName);
+        }
+
+        string canonicalPath = Path.GetFullPath(GetPlatformFileName(fileName));
+        visited ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        if (!visited.Add(canonicalPath))
+        {
+            return [];
         }
 
         XmlDocument doc = LoadProjectXmlFromFile(fileName);
@@ -934,7 +963,7 @@ public sealed class DependencyReducer : IDependencyReducer
                 .Select(relativeInclude => Path.Combine(path1: baseDir, path2: relativeInclude))
         )
         {
-            references.AddRange(GetProjectReferences(fileName: childPath, includeReferences: true));
+            references.AddRange(GetProjectReferences(fileName: childPath, includeReferences: true, visited: visited));
         }
 
         return references;
