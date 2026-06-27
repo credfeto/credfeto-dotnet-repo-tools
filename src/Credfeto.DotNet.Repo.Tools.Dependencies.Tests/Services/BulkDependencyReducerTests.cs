@@ -145,7 +145,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task BulkUpdateAsyncShouldLoadAndSaveTrackingCacheWhenFileExistsAsync()
+    public async ValueTask BulkUpdateAsyncShouldLoadAndSaveTrackingCacheWhenFileExistsAsync()
     {
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         MockIGitRepositoryFactoryOpenOrClone(
@@ -174,7 +174,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task BulkUpdateAsyncShouldNotLoadTrackingCacheWhenFileDoesNotExistAsync()
+    public async ValueTask BulkUpdateAsyncShouldNotLoadTrackingCacheWhenFileDoesNotExistAsync()
     {
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         MockIGitRepositoryFactoryOpenOrClone(
@@ -200,7 +200,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public Task BulkUpdateAsyncShouldThrowWhenSdkVersionNotInstalledAsync()
+    public async ValueTask BulkUpdateAsyncShouldThrowWhenSdkVersionNotInstalledAsync()
     {
         MockIGlobalJsonLoadGlobalJson(
             this._globalJson,
@@ -215,7 +215,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             workingDirectory: this.TempFolder
         );
 
-        return Assert.ThrowsAsync<DotNetBuildErrorException>(() =>
+        await Assert.ThrowsAsync<DotNetBuildErrorException>(() =>
             this
                 ._sut.BulkUpdateAsync(
                     templateRepository: "https://github.com/template/repo.git",
@@ -271,7 +271,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task BulkUpdateAsyncShouldSaveTrackingFileAfterLockedRepoExceptionAsync()
+    public async ValueTask BulkUpdateAsyncShouldSaveTrackingFileAfterLockedRepoExceptionAsync()
     {
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         MockIGitRepositoryFactoryOpenOrCloneThrowsAfterFirst(
@@ -298,7 +298,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task BulkUpdateAsyncShouldProcessRepoWithNoChangelogAsync()
+    public async ValueTask BulkUpdateAsyncShouldProcessRepoWithNoChangelogAsync()
     {
         string repoDir = Path.Combine(path1: this.TempFolder, path2: "gitrepo-nochangelog");
         Directory.CreateDirectory(repoDir);
@@ -323,7 +323,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task BulkUpdateAsyncShouldProcessRepoWithChangelogButNoDotNetFilesAsync()
+    public async ValueTask BulkUpdateAsyncShouldProcessRepoWithChangelogButNoDotNetFilesAsync()
     {
         string repoDir = Path.Combine(path1: this.TempFolder, path2: "gitrepo-changelog-nodotnet");
         Directory.CreateDirectory(repoDir);
@@ -363,7 +363,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task BulkUpdateAsyncShouldProcessRepoWithChangelogAndDotNetFilesAsync()
+    public async ValueTask BulkUpdateAsyncShouldProcessRepoWithChangelogAndDotNetFilesAsync()
     {
         string repoDir = Path.Combine(path1: this.TempFolder, path2: "gitrepo-dotnet");
         Directory.CreateDirectory(repoDir);
@@ -413,7 +413,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task BulkUpdateAsyncShouldSkipProcessingWhenTrackingShowsNoChangesAsync()
+    public async ValueTask BulkUpdateAsyncShouldSkipProcessingWhenTrackingShowsNoChangesAsync()
     {
         string repoDir = Path.Combine(path1: this.TempFolder, path2: "gitrepo-tracking-match");
         Directory.CreateDirectory(repoDir);
@@ -460,7 +460,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task BulkUpdateAsyncShouldProcessWhenPreviousTrackingHashIsNullAsync()
+    public async ValueTask BulkUpdateAsyncShouldProcessWhenPreviousTrackingHashIsNullAsync()
     {
         string repoDir = Path.Combine(path1: this.TempFolder, path2: "gitrepo-tracking-null");
         Directory.CreateDirectory(repoDir);
@@ -516,7 +516,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task BulkUpdateAsyncShouldProcessWhenTrackingHashDiffersAsync()
+    public async ValueTask BulkUpdateAsyncShouldProcessWhenTrackingHashDiffersAsync()
     {
         string repoDir = Path.Combine(path1: this.TempFolder, path2: "gitrepo-tracking-differ");
         Directory.CreateDirectory(repoDir);
@@ -570,7 +570,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task BulkUpdateAsyncShouldSkipUpdateTrackingCacheWhenTrackingFileNameIsNonEmptyAsync()
+    public async ValueTask BulkUpdateAsyncShouldSkipUpdateTrackingCacheWhenTrackingFileNameIsNonEmptyAsync()
     {
         string repoDir = Path.Combine(path1: this.TempFolder, path2: "gitrepo-commit-with-tracking");
         Directory.CreateDirectory(repoDir);
@@ -632,7 +632,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task BulkUpdateAsyncShouldInvokeCommitAsyncWhenCheckReferencesInvokesCallbackAsync()
+    public async ValueTask BulkUpdateAsyncShouldInvokeCommitAsyncWhenCheckReferencesInvokesCallbackAsync()
     {
         string repoDir = Path.Combine(path1: this.TempFolder, path2: "gitrepo-commit-callback");
         Directory.CreateDirectory(repoDir);

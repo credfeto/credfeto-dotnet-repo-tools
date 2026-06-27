@@ -70,11 +70,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         );
     }
 
-    private static void MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
-        IDotNetBuild dotNetBuild,
-        int nth,
-        string message
-    )
+    private static void MockIDotNetBuildBuildThrowOnNthProjectBuild(IDotNetBuild dotNetBuild, int nth, string message)
     {
         int callCount = 0;
         dotNetBuild
@@ -90,7 +86,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             });
     }
 
-    private static void MockIDotNetBuildBuildAsyncThrowFromNthProjectBuildOnwards(
+    private static void MockIDotNetBuildBuildThrowFromNthProjectBuildOnwards(
         IDotNetBuild dotNetBuild,
         int nth,
         string message
@@ -111,7 +107,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithNoProjectsShouldReturnFalseAsync()
+    public async ValueTask CheckReferencesAsyncWithNoProjectsShouldReturnFalseAsync()
     {
         DotNetFiles dotNetFiles = new(SourceDirectory: this.TempFolder, Solutions: [], Projects: []);
         ReferenceConfig config = BuildConfig();
@@ -129,7 +125,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithMetaProjectShouldSkipItAsync()
+    public async ValueTask CheckReferencesAsyncWithMetaProjectShouldSkipItAsync()
     {
         string projectFile = await this.WriteProjectFileAsync(
             projectXml: "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>",
@@ -152,7 +148,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithSimpleSdkProjectShouldReturnFalseWhenNoChangesAsync()
+    public async ValueTask CheckReferencesAsyncWithSimpleSdkProjectShouldReturnFalseWhenNoChangesAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
@@ -177,7 +173,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncShouldThrowWhenInitialBuildFailsAsync()
+    public async ValueTask CheckReferencesAsyncShouldThrowWhenInitialBuildFailsAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
@@ -201,7 +197,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithSdkWebProjectShouldNarrowSdkWhenBothBuildsSucceedAsync()
+    public async ValueTask CheckReferencesAsyncWithSdkWebProjectShouldNarrowSdkWhenBothBuildsSucceedAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk.Web\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
@@ -220,7 +216,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithSdkWebAndOutputTypeExeShouldNotNarrowSdkAsync()
+    public async ValueTask CheckReferencesAsyncWithSdkWebAndOutputTypeExeShouldNotNarrowSdkAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk.Web\"><PropertyGroup><TargetFramework>net10.0</TargetFramework><OutputType>Exe</OutputType></PropertyGroup></Project>";
@@ -242,7 +238,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithSdkRazorAndNoRazorFilesShouldNarrowSdkAsync()
+    public async ValueTask CheckReferencesAsyncWithSdkRazorAndNoRazorFilesShouldNarrowSdkAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk.Razor\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
@@ -261,7 +257,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithSdkRazorAndRazorFilesShouldNotNarrowSdkAsync()
+    public async ValueTask CheckReferencesAsyncWithSdkRazorAndRazorFilesShouldNotNarrowSdkAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk.Razor\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
@@ -290,13 +286,13 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncShouldRestoreSdkWhenMinimalSdkProjectBuildFailsAsync()
+    public async ValueTask CheckReferencesAsyncShouldRestoreSdkWhenMinimalSdkProjectBuildFailsAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk.Web\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
-        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+        MockIDotNetBuildBuildThrowOnNthProjectBuild(
             dotNetBuild: this._dotNetBuild,
             nth: 2,
             message: "Build failed with minimal SDK"
@@ -315,7 +311,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithRemovablePackageShouldReturnTrueAndCallOnSuccessfulRemovalAsync()
+    public async ValueTask CheckReferencesAsyncWithRemovablePackageShouldReturnTrueAndCallOnSuccessfulRemovalAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"SomePackage\" Version=\"1.0.0\" /></ItemGroup></Project>";
@@ -353,7 +349,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithDoNotRemovePackageShouldSkipAndReturnFalseAsync()
+    public async ValueTask CheckReferencesAsyncWithDoNotRemovePackageShouldSkipAndReturnFalseAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"xunit\" Version=\"2.9.0\" /></ItemGroup></Project>";
@@ -375,7 +371,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithRemovableProjectReferenceShouldReturnTrueAndCallOnSuccessfulRemovalAsync()
+    public async ValueTask CheckReferencesAsyncWithRemovableProjectReferenceShouldReturnTrueAndCallOnSuccessfulRemovalAsync()
     {
         string childDir = Path.Combine(path1: this.TempFolder, path2: "ChildProject");
         Directory.CreateDirectory(childDir);
@@ -421,7 +417,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithPackageAlsoInChildProjectShouldRemoveWithoutSeparateBuildAsync()
+    public async ValueTask CheckReferencesAsyncWithPackageAlsoInChildProjectShouldRemoveWithoutSeparateBuildAsync()
     {
         string childDir = Path.Combine(path1: this.TempFolder, path2: "ChildWithPkg");
         Directory.CreateDirectory(childDir);
@@ -448,13 +444,13 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncShouldThrowWhenFinalBuildFailsAsync()
+    public async ValueTask CheckReferencesAsyncShouldThrowWhenFinalBuildFailsAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
-        MockIDotNetBuildBuildAsyncThrowFromNthProjectBuildOnwards(
+        MockIDotNetBuildBuildThrowFromNthProjectBuildOnwards(
             dotNetBuild: this._dotNetBuild,
             nth: 2,
             message: "Final build failed"
@@ -473,7 +469,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncShouldNotCallOnSuccessfulRemovalWhenSolutionBuildFailsAfterPackageRemovalAsync()
+    public async ValueTask CheckReferencesAsyncShouldNotCallOnSuccessfulRemovalWhenSolutionBuildFailsAfterPackageRemovalAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"SomePackage\" Version=\"1.0.0\" /></ItemGroup></Project>";
@@ -510,7 +506,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithMultipleProjectsShouldReturnTrueWhenAnyHasChangesAsync()
+    public async ValueTask CheckReferencesAsyncWithMultipleProjectsShouldReturnTrueWhenAnyHasChangesAsync()
     {
         const string projectXml1 =
             "<Project Sdk=\"Microsoft.NET.Sdk.Web\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
@@ -545,7 +541,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithProjectWithoutSdkAttributeShouldReturnFalseAsync()
+    public async ValueTask CheckReferencesAsyncWithProjectWithoutSdkAttributeShouldReturnFalseAsync()
     {
         const string projectXml =
             "<Project><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
@@ -564,13 +560,13 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithNonFunFairPackageRemovalBuildFailureShouldReturnFalseAsync()
+    public async ValueTask CheckReferencesAsyncWithNonFunFairPackageRemovalBuildFailureShouldReturnFalseAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"SomePackage\" Version=\"1.0.0\" /></ItemGroup></Project>";
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
-        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+        MockIDotNetBuildBuildThrowOnNthProjectBuild(
             dotNetBuild: this._dotNetBuild,
             nth: 2,
             message: "Package removal build failed"
@@ -592,13 +588,13 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithFunFairPackageRemovalBuildFailureAndNoSourceFilesShouldTrackNarrowingAsync()
+    public async ValueTask CheckReferencesAsyncWithFunFairPackageRemovalBuildFailureAndNoSourceFilesShouldTrackNarrowingAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"FunFair.SomeThing\" Version=\"1.0.0\" /></ItemGroup></Project>";
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
-        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+        MockIDotNetBuildBuildThrowOnNthProjectBuild(
             dotNetBuild: this._dotNetBuild,
             nth: 2,
             message: "Package removal build failed"
@@ -620,7 +616,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithFunFairPackageRemovalBuildFailureAndUsingInSourceFileShouldReturnFalseAsync()
+    public async ValueTask CheckReferencesAsyncWithFunFairPackageRemovalBuildFailureAndUsingInSourceFileShouldReturnFalseAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"FunFair.SomeThing\" Version=\"1.0.0\" /></ItemGroup></Project>";
@@ -633,7 +629,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             cancellationToken: this.CancellationToken()
         );
 
-        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+        MockIDotNetBuildBuildThrowOnNthProjectBuild(
             dotNetBuild: this._dotNetBuild,
             nth: 2,
             message: "Package removal build failed"
@@ -655,7 +651,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithFunFairPackageRemovalBuildFailureAndNamespaceInSourceFileShouldReturnFalseAsync()
+    public async ValueTask CheckReferencesAsyncWithFunFairPackageRemovalBuildFailureAndNamespaceInSourceFileShouldReturnFalseAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"FunFair.SomeThing\" Version=\"1.0.0\" /></ItemGroup></Project>";
@@ -668,7 +664,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             cancellationToken: this.CancellationToken()
         );
 
-        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+        MockIDotNetBuildBuildThrowOnNthProjectBuild(
             dotNetBuild: this._dotNetBuild,
             nth: 2,
             message: "Package removal build failed"
@@ -690,13 +686,13 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithFunFairAllPackageRemovalBuildFailureShouldReturnFalseAsync()
+    public async ValueTask CheckReferencesAsyncWithFunFairAllPackageRemovalBuildFailureShouldReturnFalseAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"FunFair.Something.All\" Version=\"1.0.0\" /></ItemGroup></Project>";
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
-        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+        MockIDotNetBuildBuildThrowOnNthProjectBuild(
             dotNetBuild: this._dotNetBuild,
             nth: 2,
             message: "Package removal build failed"
@@ -718,7 +714,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithProjectReferenceRemovalBuildFailureShouldRestoreAsync()
+    public async ValueTask CheckReferencesAsyncWithProjectReferenceRemovalBuildFailureShouldRestoreAsync()
     {
         string childDir = Path.Combine(path1: this.TempFolder, path2: "ChildProjFail");
         Directory.CreateDirectory(childDir);
@@ -732,7 +728,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><ProjectReference Include=\"ChildProjFail/ChildProjFail.csproj\" /></ItemGroup></Project>";
         string parentFile = await this.WriteProjectFileAsync(parentXml, fileName: "ParentProjFail.csproj");
 
-        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+        MockIDotNetBuildBuildThrowOnNthProjectBuild(
             dotNetBuild: this._dotNetBuild,
             nth: 2,
             message: "Project ref removal build failed"
@@ -754,7 +750,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithProjectAlsoInGrandchildShouldSkipBuildForCoveredReferenceAsync()
+    public async ValueTask CheckReferencesAsyncWithProjectAlsoInGrandchildShouldSkipBuildForCoveredReferenceAsync()
     {
         const string grandChildXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
@@ -790,7 +786,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithProjectAlreadyIncludedByChildInSameFolderShouldSkipBuildAndReportChangeAsync()
+    public async ValueTask CheckReferencesAsyncWithProjectAlreadyIncludedByChildInSameFolderShouldSkipBuildAndReportChangeAsync()
     {
         const string bXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
@@ -822,7 +818,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithFunFairProjectReferenceRemovalBuildFailureAndNoSourceFilesShouldTrackNarrowingAsync()
+    public async ValueTask CheckReferencesAsyncWithFunFairProjectReferenceRemovalBuildFailureAndNoSourceFilesShouldTrackNarrowingAsync()
     {
         const string funFairXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
@@ -838,7 +834,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             cancellationToken: this.CancellationToken()
         );
 
-        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+        MockIDotNetBuildBuildThrowOnNthProjectBuild(
             dotNetBuild: this._dotNetBuild,
             nth: 2,
             message: "Project ref removal build failed"
@@ -860,7 +856,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithNonCsprojProjectReferenceRemovalBuildFailureShouldNotTrackNarrowingAsync()
+    public async ValueTask CheckReferencesAsyncWithNonCsprojProjectReferenceRemovalBuildFailureShouldNotTrackNarrowingAsync()
     {
         const string propsXml = "<Project />";
         const string parentXml =
@@ -871,7 +867,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
 
         await File.WriteAllTextAsync(path: propsFile, contents: propsXml, cancellationToken: this.CancellationToken());
 
-        MockIDotNetBuildBuildAsyncThrowOnNthProjectBuild(
+        MockIDotNetBuildBuildThrowOnNthProjectBuild(
             dotNetBuild: this._dotNetBuild,
             nth: 2,
             message: "Project ref removal build failed"
@@ -893,7 +889,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithChildProjectHavingDifferentPackageShouldBuildAndRemoveAsync()
+    public async ValueTask CheckReferencesAsyncWithChildProjectHavingDifferentPackageShouldBuildAndRemoveAsync()
     {
         string childDir = Path.Combine(path1: this.TempFolder, path2: "ChildDiffPkg");
         Directory.CreateDirectory(childDir);
@@ -923,7 +919,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithProjectReferenceWithEmptyIncludeShouldBeIgnoredAsync()
+    public async ValueTask CheckReferencesAsyncWithProjectReferenceWithEmptyIncludeShouldBeIgnoredAsync()
     {
         const string projectXml =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><ProjectReference Include=\"\" /></ItemGroup></Project>";
@@ -945,7 +941,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithWindowsStyleProjectReferencePathShouldNormalizeAndSucceedAsync()
+    public async ValueTask CheckReferencesAsyncWithWindowsStyleProjectReferencePathShouldNormalizeAndSucceedAsync()
     {
         string childDir = Path.Combine(path1: this.TempFolder, path2: "WinChild");
         Directory.CreateDirectory(childDir);
@@ -975,7 +971,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithChildProjectHavingEmptyIncludePackageReferenceShouldSkipPackageAsync()
+    public async ValueTask CheckReferencesAsyncWithChildProjectHavingEmptyIncludePackageReferenceShouldSkipPackageAsync()
     {
         string childDir = Path.Combine(path1: this.TempFolder, path2: "ChildEmptyPkg");
         Directory.CreateDirectory(childDir);
@@ -1005,7 +1001,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
-    public async Task CheckReferencesAsyncWithNonProjectRootElementShouldSkipSdkCheckAndReturnFalseAsync()
+    public async ValueTask CheckReferencesAsyncWithNonProjectRootElementShouldSkipSdkCheckAndReturnFalseAsync()
     {
         const string projectXml =
             "<Root Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Root>";
