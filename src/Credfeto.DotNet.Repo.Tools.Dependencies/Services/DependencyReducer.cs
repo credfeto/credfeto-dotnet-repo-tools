@@ -133,22 +133,10 @@ public sealed class DependencyReducer : IDependencyReducer
             includeReferences: false
         );
 
-        await this.CheckProjectSdkAsync(
-            projectUpdateContext: projectUpdateContext,
-            fileContent: fileContent,
-            cancellationToken: cancellationToken
-        );
-
-        await this.CheckProjectReferenceAsync(
-            projectUpdateContext: projectUpdateContext,
-            childProjectReferences: childProjectReferences,
-            fileContent: fileContent,
-            cancellationToken: cancellationToken
-        );
-
-        await this.CheckPackageReferenceAsync(
+        await this.CheckProjectContentsAsync(
             projectUpdateContext: projectUpdateContext,
             childPackageReferences: childPackageReferences,
+            childProjectReferences: childProjectReferences,
             fileContent: fileContent,
             cancellationToken: cancellationToken
         );
@@ -162,6 +150,42 @@ public sealed class DependencyReducer : IDependencyReducer
             projectInstance: projectUpdateContext.ProjectInstance,
             projectCount: projectUpdateContext.ProjectCount,
             project: projectUpdateContext.Project
+        );
+    }
+
+    private async ValueTask CheckProjectContentsAsync(
+        ProjectUpdateContext projectUpdateContext,
+        IReadOnlyList<FilePackageReference> childPackageReferences,
+        IReadOnlyList<FileProjectReference> childProjectReferences,
+        FileContent fileContent,
+        CancellationToken cancellationToken
+    )
+    {
+        await this.CheckProjectSdkAsync(
+            projectUpdateContext: projectUpdateContext,
+            fileContent: fileContent,
+            cancellationToken: cancellationToken
+        );
+
+        IReadOnlyList<string> projectSourceFileContents = await ReadProjectSourceFilesAsync(
+            projectFolder: projectUpdateContext.ProjectDirectory,
+            cancellationToken: cancellationToken
+        );
+
+        await this.CheckProjectReferenceAsync(
+            projectUpdateContext: projectUpdateContext,
+            childProjectReferences: childProjectReferences,
+            fileContent: fileContent,
+            projectSourceFileContents: projectSourceFileContents,
+            cancellationToken: cancellationToken
+        );
+
+        await this.CheckPackageReferenceAsync(
+            projectUpdateContext: projectUpdateContext,
+            childPackageReferences: childPackageReferences,
+            fileContent: fileContent,
+            projectSourceFileContents: projectSourceFileContents,
+            cancellationToken: cancellationToken
         );
     }
 
@@ -203,6 +227,7 @@ public sealed class DependencyReducer : IDependencyReducer
         ProjectUpdateContext projectUpdateContext,
         IReadOnlyList<FilePackageReference> childPackageReferences,
         FileContent fileContent,
+        IReadOnlyList<string> projectSourceFileContents,
         CancellationToken cancellationToken
     )
     {
@@ -238,6 +263,7 @@ public sealed class DependencyReducer : IDependencyReducer
                 fileContent: fileContent,
                 packageReference: packageReference,
                 node: node,
+                projectSourceFileContents: projectSourceFileContents,
                 cancellationToken: cancellationToken
             );
 
@@ -268,6 +294,7 @@ public sealed class DependencyReducer : IDependencyReducer
         FileContent fileContent,
         PackageReference packageReference,
         XmlElement node,
+        IReadOnlyList<string> projectSourceFileContents,
         CancellationToken cancellationToken
     )
     {
@@ -311,10 +338,10 @@ public sealed class DependencyReducer : IDependencyReducer
         }
 
         if (
-            await ShouldHaveNarrowerPackageReferenceAsync(
-                projectFolder: projectUpdateContext.ProjectDirectory,
+            ShouldHaveNarrowerPackageReference(
+                projectSourceFileContents: projectSourceFileContents,
                 packageId: packageReference.PackageId,
-                cancellationToken: cancellationToken
+                logger: this._logger
             )
         )
         {
@@ -397,6 +424,7 @@ public sealed class DependencyReducer : IDependencyReducer
         ProjectUpdateContext projectUpdateContext,
         IReadOnlyList<FileProjectReference> childProjectReferences,
         FileContent fileContent,
+        IReadOnlyList<string> projectSourceFileContents,
         CancellationToken cancellationToken
     )
     {
@@ -426,6 +454,7 @@ public sealed class DependencyReducer : IDependencyReducer
                 projectUpdateContext: projectUpdateContext,
                 needToBuild: needToBuild,
                 projectReference: projectReference,
+                projectSourceFileContents: projectSourceFileContents,
                 cancellationToken: cancellationToken
             );
 
@@ -454,6 +483,7 @@ public sealed class DependencyReducer : IDependencyReducer
         ProjectUpdateContext projectUpdateContext,
         bool needToBuild,
         ProjectReference projectReference,
+        IReadOnlyList<string> projectSourceFileContents,
         CancellationToken cancellationToken
     )
     {
@@ -489,10 +519,10 @@ public sealed class DependencyReducer : IDependencyReducer
 
         if (
             !string.IsNullOrEmpty(packageId)
-            && await ShouldHaveNarrowerPackageReferenceAsync(
-                projectFolder: projectUpdateContext.ProjectDirectory,
+            && ShouldHaveNarrowerPackageReference(
+                projectSourceFileContents: projectSourceFileContents,
                 packageId: packageId,
-                cancellationToken: cancellationToken
+                logger: this._logger
             )
         )
         {
@@ -965,37 +995,53 @@ public sealed class DependencyReducer : IDependencyReducer
         return references;
     }
 
-    private static async ValueTask<bool> ShouldHaveNarrowerPackageReferenceAsync(
+    private static async ValueTask<IReadOnlyList<string>> ReadProjectSourceFilesAsync(
         string projectFolder,
-        string packageId,
         CancellationToken cancellationToken
     )
     {
-        if (!packageId.StartsWith(value: "FunFair.", comparisonType: StringComparison.Ordinal))
-        {
-            // Not a package we control
-            return false;
-        }
-
-        if (packageId.EndsWith(value: ".All", comparisonType: StringComparison.Ordinal))
-        {
-            // This is explicitly a grouping package
-            return false;
-        }
-
-        IEnumerable<string> sourceFiles = Directory.EnumerateFiles(
+        string[] files = Directory.GetFiles(
             path: projectFolder,
             searchPattern: "*.cs",
             searchOption: SearchOption.AllDirectories
         );
 
+        if (files.Length == 0)
+        {
+            return [];
+        }
+
+        List<string> contents = new(capacity: files.Length);
+
+        foreach (string file in files)
+        {
+            contents.Add(await File.ReadAllTextAsync(path: file, cancellationToken: cancellationToken));
+        }
+
+        return contents;
+    }
+
+    private static bool ShouldHaveNarrowerPackageReference(
+        IReadOnlyList<string> projectSourceFileContents,
+        string packageId,
+        ILogger<DependencyReducer> logger
+    )
+    {
+        if (!packageId.StartsWith(value: "FunFair.", comparisonType: StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        if (packageId.EndsWith(value: ".All", comparisonType: StringComparison.Ordinal))
+        {
+            return false;
+        }
+
         string searchUsing = $"using {packageId}";
         string searchNamespace = $"namespace {packageId}.";
 
-        foreach (string file in sourceFiles)
+        foreach (string content in projectSourceFileContents)
         {
-            string content = await File.ReadAllTextAsync(path: file, cancellationToken: cancellationToken);
-
             if (content.Contains(value: searchUsing, comparisonType: StringComparison.Ordinal))
             {
                 return false;
@@ -1007,7 +1053,7 @@ public sealed class DependencyReducer : IDependencyReducer
             }
         }
 
-        Console.WriteLine($"  - Did not Find {packageId} source reference in project");
+        logger.DidNotFindPackageSourceReference(packageId);
 
         return true;
     }
