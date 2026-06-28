@@ -153,8 +153,6 @@ public sealed class DependencyReducer : IDependencyReducer
             cancellationToken: cancellationToken
         );
 
-        await fileContent.SaveAsync(cancellationToken: cancellationToken);
-
         await this.VerifyFinalBuildAsync(
             projectUpdateContext: projectUpdateContext,
             cancellationToken: cancellationToken
@@ -820,7 +818,7 @@ public sealed class DependencyReducer : IDependencyReducer
             return [];
         }
 
-        XmlDocument doc = LoadProjectXmlFromFile(fileName);
+        XmlDocument doc = LoadProjectXmlFromFile(canonicalPath);
         List<FilePackageReference> references = [];
 
         if (includeReferences)
@@ -903,7 +901,7 @@ public sealed class DependencyReducer : IDependencyReducer
 
     private static void IncludeReferencedPackages(List<string> allPackageIds, List<XmlElement> packageReferenceElements)
     {
-        HashSet<string> seen = new(allPackageIds, StringComparer.OrdinalIgnoreCase);
+        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
 
         foreach (XmlElement node in packageReferenceElements)
         {
@@ -937,7 +935,7 @@ public sealed class DependencyReducer : IDependencyReducer
             return [];
         }
 
-        XmlDocument doc = LoadProjectXmlFromFile(fileName);
+        XmlDocument doc = LoadProjectXmlFromFile(canonicalPath);
         IReadOnlyList<FileProjectReference> baseReferences =
         [
             .. GetNodes(doc, PROJECT_REFERENCES_PATH)
@@ -1099,15 +1097,6 @@ public sealed class DependencyReducer : IDependencyReducer
         {
             this._source = await File.ReadAllBytesAsync(path: this._fileName, cancellationToken: cancellationToken);
             this.Xml = await LoadProjectXmlAsync(source: this._source, cancellationToken: cancellationToken);
-        }
-
-        public async ValueTask SaveAsync(CancellationToken cancellationToken)
-        {
-            await File.WriteAllBytesAsync(
-                path: this._fileName,
-                bytes: this._source,
-                cancellationToken: cancellationToken
-            );
         }
 
         public static async ValueTask<FileContent> LoadAsync(string fileName, CancellationToken cancellationToken)
