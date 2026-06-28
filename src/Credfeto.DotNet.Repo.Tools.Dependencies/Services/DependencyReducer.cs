@@ -212,9 +212,11 @@ public sealed class DependencyReducer : IDependencyReducer
 
         IReadOnlyList<string> allPackageIds = ExtractPackageIds(packageReferences);
 
+        IReadOnlyList<XmlNode> xmlPackageNodes = GetNodes(xml: fileContent.Xml, xpath: PACKAGE_REFERENCES_PATH);
+
         foreach (PackageReference packageReference in packageReferences)
         {
-            XmlElement? node = FindPackageReference(xml: fileContent.Xml, packageReference: packageReference);
+            XmlElement? node = FindPackageReference(xmlNodes: xmlPackageNodes, packageReference: packageReference);
 
             if (node is null)
             {
@@ -257,6 +259,8 @@ public sealed class DependencyReducer : IDependencyReducer
 
                 await fileContent.ReloadAsync(cancellationToken: cancellationToken);
             }
+
+            xmlPackageNodes = GetNodes(xml: fileContent.Xml, xpath: PACKAGE_REFERENCES_PATH);
         }
     }
 
@@ -336,11 +340,9 @@ public sealed class DependencyReducer : IDependencyReducer
         fileContent.Xml.Save(projectUpdateContext.Project);
     }
 
-    private static XmlElement? FindPackageReference(XmlDocument xml, PackageReference packageReference)
+    private static XmlElement? FindPackageReference(IReadOnlyList<XmlNode> xmlNodes, PackageReference packageReference)
     {
-        IReadOnlyList<XmlNode> xmlPackageReferences = GetNodes(xml: xml, xpath: PACKAGE_REFERENCES_PATH);
-
-        return xmlPackageReferences
+        return xmlNodes
             .OfType<XmlElement>()
             .FirstOrDefault(element =>
             {
@@ -402,9 +404,11 @@ public sealed class DependencyReducer : IDependencyReducer
     {
         IReadOnlyList<ProjectReference> projectReferences = GetProjectReferencesFromFileContent(fileContent);
 
+        IReadOnlyList<XmlNode> xmlProjectNodes = GetNodes(xml: fileContent.Xml, xpath: PROJECT_REFERENCES_PATH);
+
         foreach (ProjectReference projectReference in projectReferences)
         {
-            XmlElement? node = FindProjectReference(xml: fileContent.Xml, projectReference: projectReference);
+            XmlElement? node = FindProjectReference(xmlNodes: xmlProjectNodes, projectReference: projectReference);
 
             if (node is null)
             {
@@ -444,6 +448,8 @@ public sealed class DependencyReducer : IDependencyReducer
 
                 await fileContent.ReloadAsync(cancellationToken: cancellationToken);
             }
+
+            xmlProjectNodes = GetNodes(xml: fileContent.Xml, xpath: PROJECT_REFERENCES_PATH);
         }
     }
 
@@ -530,11 +536,9 @@ public sealed class DependencyReducer : IDependencyReducer
         return false;
     }
 
-    private static XmlElement? FindProjectReference(XmlDocument xml, ProjectReference projectReference)
+    private static XmlElement? FindProjectReference(IReadOnlyList<XmlNode> xmlNodes, ProjectReference projectReference)
     {
-        IReadOnlyList<XmlNode> projectReferences = GetNodes(xml: xml, xpath: PROJECT_REFERENCES_PATH);
-
-        return projectReferences
+        return xmlNodes
             .OfType<XmlElement>()
             .FirstOrDefault(element =>
             {
