@@ -185,10 +185,12 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         const string projectXml = MINIMAL_SDK_PROJECT_XML;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
-        this._dotNetBuild.When(async b =>
-                await b.BuildAsync(Arg.Any<string>(), Arg.Any<BuildContext>(), Arg.Any<CancellationToken>())
-            )
-            .Do(_ => throw new DotNetBuildErrorException("Build failed"));
+        MockIDotNetBuildBuild(
+            dotNetBuild: this._dotNetBuild,
+            nthToThrow: 1,
+            message: "Build failed",
+            fromNthOnwards: true
+        );
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
         ReferenceConfig config = BuildConfig();
