@@ -803,14 +803,14 @@ public sealed class DependencyReducer : IDependencyReducer
         HashSet<string>? visited = null
     )
     {
-        string? baseDir = Path.GetDirectoryName(fileName);
+        string canonicalPath = Path.GetFullPath(GetPlatformFileName(fileName));
+        string? baseDir = Path.GetDirectoryName(canonicalPath);
 
         if (string.IsNullOrEmpty(baseDir))
         {
             throw new FileNotFoundException(message: "Unable to find project file.", fileName: fileName);
         }
 
-        string canonicalPath = Path.GetFullPath(GetPlatformFileName(fileName));
         visited ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         if (!visited.Add(canonicalPath))
@@ -920,14 +920,14 @@ public sealed class DependencyReducer : IDependencyReducer
         HashSet<string>? visited = null
     )
     {
-        string? baseDir = Path.GetDirectoryName(fileName);
+        string canonicalPath = Path.GetFullPath(GetPlatformFileName(fileName));
+        string? baseDir = Path.GetDirectoryName(canonicalPath);
 
         if (string.IsNullOrEmpty(baseDir))
         {
             throw new FileNotFoundException(message: "Unable to find project file.", fileName: fileName);
         }
 
-        string canonicalPath = Path.GetFullPath(GetPlatformFileName(fileName));
         visited ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         if (!visited.Add(canonicalPath))
