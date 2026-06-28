@@ -733,46 +733,42 @@ public sealed class DependencyReducer : IDependencyReducer
         }
     }
 
-    private async ValueTask<bool> BuildProjectAsync(
-        ProjectUpdateContext projectUpdateContext,
-        CancellationToken cancellationToken
-    )
+    private static async ValueTask<bool> TryBuildAsync(Func<ValueTask> buildAction)
     {
         try
         {
-            await this._dotNetBuild.BuildAsync(
+            await buildAction();
+
+            return true;
+        }
+        catch (DotNetBuildErrorException)
+        {
+            return false;
+        }
+    }
+
+    private ValueTask<bool> BuildProjectAsync(
+        ProjectUpdateContext projectUpdateContext,
+        CancellationToken cancellationToken
+    ) =>
+        TryBuildAsync(() =>
+            this._dotNetBuild.BuildAsync(
                 projectFileName: projectUpdateContext.Project,
                 buildContext: projectUpdateContext.BuildContext,
                 cancellationToken: cancellationToken
-            );
+            )
+        );
 
-            return true;
-        }
-        catch (DotNetBuildErrorException)
-        {
-            return false;
-        }
-    }
-
-    private async ValueTask<bool> BuildSolutionAsync(
+    private ValueTask<bool> BuildSolutionAsync(
         ProjectUpdateContext projectUpdateContext,
         CancellationToken cancellationToken
-    )
-    {
-        try
-        {
-            await this._dotNetBuild.BuildAsync(
+    ) =>
+        TryBuildAsync(() =>
+            this._dotNetBuild.BuildAsync(
                 buildContext: projectUpdateContext.BuildContext,
                 cancellationToken: cancellationToken
-            );
-
-            return true;
-        }
-        catch (DotNetBuildErrorException)
-        {
-            return false;
-        }
-    }
+            )
+        );
 
     private static string? ExtractProjectFromReference(string reference)
     {
