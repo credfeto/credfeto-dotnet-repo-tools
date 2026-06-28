@@ -491,7 +491,6 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             cancellationToken: this.CancellationToken()
         );
 
-        // Package removal IS tracked (AddObsolete was called before solution build failed)
         Assert.True(condition: result, userMessage: "Package removal should be tracked even when solution build fails");
         Assert.False(
             condition: onSuccessfulRemovalCalled,
