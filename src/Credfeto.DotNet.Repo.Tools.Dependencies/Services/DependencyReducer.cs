@@ -208,11 +208,10 @@ public sealed class DependencyReducer : IDependencyReducer
         CancellationToken cancellationToken
     )
     {
-        IReadOnlyList<PackageReference> packageReferences = GetPackageReferencesFromFileContent(fileContent);
+        IReadOnlyList<XmlNode> xmlPackageNodes = GetNodes(xml: fileContent.Xml, xpath: PACKAGE_REFERENCES_PATH);
+        IReadOnlyList<PackageReference> packageReferences = GetPackageReferencesFromNodes(xmlPackageNodes);
 
         IReadOnlyList<string> allPackageIds = ExtractPackageIds(packageReferences);
-
-        IReadOnlyList<XmlNode> xmlPackageNodes = GetNodes(xml: fileContent.Xml, xpath: PACKAGE_REFERENCES_PATH);
 
         foreach (PackageReference packageReference in packageReferences)
         {
@@ -292,19 +291,24 @@ public sealed class DependencyReducer : IDependencyReducer
 
         if (buildOk)
         {
-            projectUpdateContext.Tracking.AddObsolete(
-                new(
-                    ProjectFileName: projectUpdateContext.Project,
-                    Type: ReferenceType.PACKAGE,
-                    Name: packageReference.PackageId,
-                    Version: packageReference.Version
-                )
-            );
-
-            return !await this.BuildSolutionAsync(
+            bool solutionBuildOk = await this.BuildSolutionAsync(
                 projectUpdateContext: projectUpdateContext,
                 cancellationToken: cancellationToken
             );
+
+            if (solutionBuildOk)
+            {
+                projectUpdateContext.Tracking.AddObsolete(
+                    new(
+                        ProjectFileName: projectUpdateContext.Project,
+                        Type: ReferenceType.PACKAGE,
+                        Name: packageReference.PackageId,
+                        Version: packageReference.Version
+                    )
+                );
+            }
+
+            return !solutionBuildOk;
         }
 
         if (
@@ -385,14 +389,9 @@ public sealed class DependencyReducer : IDependencyReducer
         return false;
     }
 
-    private static IReadOnlyList<PackageReference> GetPackageReferencesFromFileContent(FileContent fileContent)
+    private static IReadOnlyList<PackageReference> GetPackageReferencesFromNodes(IReadOnlyList<XmlNode> xmlNodes)
     {
-        IReadOnlyList<XmlNode> xmlPackageReferences = GetNodes(xml: fileContent.Xml, xpath: PACKAGE_REFERENCES_PATH);
-
-        return
-        [
-            .. xmlPackageReferences.OfType<XmlElement>().Select(PackageExtractor.ExtractPackageReference).RemoveNulls(),
-        ];
+        return [.. xmlNodes.OfType<XmlElement>().Select(PackageExtractor.ExtractPackageReference).RemoveNulls()];
     }
 
     private async ValueTask CheckProjectReferenceAsync(
@@ -402,9 +401,8 @@ public sealed class DependencyReducer : IDependencyReducer
         CancellationToken cancellationToken
     )
     {
-        IReadOnlyList<ProjectReference> projectReferences = GetProjectReferencesFromFileContent(fileContent);
-
         IReadOnlyList<XmlNode> xmlProjectNodes = GetNodes(xml: fileContent.Xml, xpath: PROJECT_REFERENCES_PATH);
+        IReadOnlyList<ProjectReference> projectReferences = GetProjectReferencesFromNodes(xmlProjectNodes);
 
         foreach (ProjectReference projectReference in projectReferences)
         {
@@ -469,18 +467,23 @@ public sealed class DependencyReducer : IDependencyReducer
 
         if (buildOk)
         {
-            projectUpdateContext.Tracking.AddObsolete(
-                new(
-                    ProjectFileName: projectUpdateContext.Project,
-                    Type: ReferenceType.PROJECT,
-                    Name: projectReference.RelativeInclude
-                )
-            );
-
-            return !await this.BuildSolutionAsync(
+            bool solutionBuildOk = await this.BuildSolutionAsync(
                 projectUpdateContext: projectUpdateContext,
                 cancellationToken: cancellationToken
             );
+
+            if (solutionBuildOk)
+            {
+                projectUpdateContext.Tracking.AddObsolete(
+                    new(
+                        ProjectFileName: projectUpdateContext.Project,
+                        Type: ReferenceType.PROJECT,
+                        Name: projectReference.RelativeInclude
+                    )
+                );
+            }
+
+            return !solutionBuildOk;
         }
 
         string? packageId = ExtractProjectFromReference(projectReference.RelativeInclude);
@@ -548,14 +551,9 @@ public sealed class DependencyReducer : IDependencyReducer
             });
     }
 
-    private static IReadOnlyList<ProjectReference> GetProjectReferencesFromFileContent(FileContent fileContent)
+    private static IReadOnlyList<ProjectReference> GetProjectReferencesFromNodes(IReadOnlyList<XmlNode> xmlNodes)
     {
-        IReadOnlyList<XmlNode> projectReferences = GetNodes(xml: fileContent.Xml, xpath: PROJECT_REFERENCES_PATH);
-
-        return
-        [
-            .. projectReferences.OfType<XmlElement>().Select(ProjectExtractor.ExtractProjectReference).RemoveNulls(),
-        ];
+        return [.. xmlNodes.OfType<XmlElement>().Select(ProjectExtractor.ExtractProjectReference).RemoveNulls()];
     }
 
     private async ValueTask CheckProjectSdkAsync(
@@ -626,14 +624,19 @@ public sealed class DependencyReducer : IDependencyReducer
 
         if (buildOk)
         {
-            projectUpdateContext.Tracking.AddChangeSdk(
-                new(ProjectFileName: projectUpdateContext.Project, Type: ReferenceType.SDK, Name: sdk)
-            );
-
-            return !await this.BuildSolutionAsync(
+            bool solutionBuildOk = await this.BuildSolutionAsync(
                 projectUpdateContext: projectUpdateContext,
                 cancellationToken: cancellationToken
             );
+
+            if (solutionBuildOk)
+            {
+                projectUpdateContext.Tracking.AddChangeSdk(
+                    new(ProjectFileName: projectUpdateContext.Project, Type: ReferenceType.SDK, Name: sdk)
+                );
+            }
+
+            return !solutionBuildOk;
         }
 
         return true;
