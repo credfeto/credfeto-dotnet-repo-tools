@@ -803,7 +803,7 @@ public sealed class DependencyReducer : IDependencyReducer
         HashSet<string>? visited = null
     )
     {
-        string canonicalPath = Path.GetFullPath(GetPlatformFileName(fileName));
+        string canonicalPath = GetCanonicalPath(fileName);
         string? baseDir = Path.GetDirectoryName(canonicalPath);
 
         if (string.IsNullOrEmpty(baseDir))
@@ -869,14 +869,15 @@ public sealed class DependencyReducer : IDependencyReducer
         );
     }
 
-    private static XmlDocument LoadProjectXmlFromFile(string fileName)
+    private static XmlDocument LoadProjectXmlFromFile(string canonicalPath)
     {
-        string projectFileName = GetPlatformFileName(fileName);
         XmlDocument doc = new();
-        doc.Load(projectFileName);
+        doc.Load(canonicalPath);
 
         return doc;
     }
+
+    private static string GetCanonicalPath(string fileName) => Path.GetFullPath(GetPlatformFileName(fileName));
 
     private static string GetPlatformFileName(string fileName)
     {
@@ -920,7 +921,7 @@ public sealed class DependencyReducer : IDependencyReducer
         HashSet<string>? visited = null
     )
     {
-        string canonicalPath = Path.GetFullPath(GetPlatformFileName(fileName));
+        string canonicalPath = GetCanonicalPath(fileName);
         string? baseDir = Path.GetDirectoryName(canonicalPath);
 
         if (string.IsNullOrEmpty(baseDir))
