@@ -740,7 +740,6 @@ public sealed class DependencyReducer : IDependencyReducer
                 if (!StringComparer.Ordinal.Equals(x: previousFile, y: item.ProjectFileName))
                 {
                     this._logger.LogProject(item.ProjectFileName);
-                    Console.WriteLine($"\nProject: {item.ProjectFileName}");
                 }
 
                 switch (item.Type)
