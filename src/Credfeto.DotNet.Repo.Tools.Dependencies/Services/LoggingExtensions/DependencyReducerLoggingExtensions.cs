@@ -196,4 +196,14 @@ internal static partial class DependencyReducerLoggingExtensions
 
     [LoggerMessage(EventId = 26, Level = LogLevel.Information, Message = "{project}: check narrowing of {sdk}")]
     public static partial void ProjectSdkReference(this ILogger<DependencyReducer> logger, string project, string sdk);
+
+    [LoggerMessage(
+        EventId = 27,
+        Level = LogLevel.Information,
+        Message = "  - Did not Find {packageId} source reference in project"
+    )]
+    public static partial void DidNotFindPackageSourceReference(
+        this ILogger<DependencyReducer> logger,
+        string packageId
+    );
 }
