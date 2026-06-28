@@ -709,31 +709,16 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
     private IBulkDependencyReducer BuildSutWithCallbackReducer()
     {
-        IDependencyReducer callbackReducer = GetSubstitute<IDependencyReducer>();
-        MockIDependencyReducerCheckReferencesWithCallback(callbackReducer);
-
         return new BulkDependencyReducer(
             trackingCache: this._trackingCache,
             globalJson: this._globalJson,
             dotNetVersion: this._dotNetVersion,
             gitRepositoryFactory: this._gitRepositoryFactory,
-            dependencyReducer: callbackReducer,
+            dependencyReducer: new CallbackInvokingDependencyReducer(),
             trackingHashGenerator: this._trackingHashGenerator,
             dotNetFilesDetector: this._dotNetFilesDetector,
             logger: this.GetTypedLogger<BulkDependencyReducer>()
         );
-    }
-
-    private static void MockIDependencyReducerCheckReferencesWithCallback(IDependencyReducer dependencyReducer)
-    {
-        dependencyReducer
-            .CheckReferencesAsync(Arg.Any<DotNetFiles>(), Arg.Any<ReferenceConfig>(), Arg.Any<CancellationToken>())
-            .Returns(ci =>
-                ci.Arg<ReferenceConfig>()
-                    .OnSuccessfulRemoval("Test.csproj", "Removed redundant dependency", ci.Arg<CancellationToken>())
-                    .AsTask()
-                    .IsCompletedSuccessfully
-            );
     }
 
     private static void MockIGlobalJsonLoadGlobalJson(IGlobalJson globalJson, in DotNetVersionSettings value)
@@ -769,5 +754,19 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     private static void MockITrackingCacheGet(ITrackingCache cache, string cloneUrl, string? hash)
     {
         cache.Get(cloneUrl).Returns(hash);
+    }
+
+    private sealed class CallbackInvokingDependencyReducer : IDependencyReducer
+    {
+        public async ValueTask<bool> CheckReferencesAsync(
+            DotNetFiles dotNetFiles,
+            ReferenceConfig config,
+            CancellationToken cancellationToken
+        )
+        {
+            await config.OnSuccessfulRemoval("Test.csproj", "Removed redundant dependency", cancellationToken);
+
+            return true;
+        }
     }
 }
