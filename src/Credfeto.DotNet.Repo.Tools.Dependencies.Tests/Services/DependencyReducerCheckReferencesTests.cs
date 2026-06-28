@@ -491,7 +491,10 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             cancellationToken: this.CancellationToken()
         );
 
-        Assert.True(condition: result, userMessage: "Package removal should be tracked even when solution build fails");
+        Assert.False(
+            condition: result,
+            userMessage: "Package removal should not be tracked when solution build fails (removal was restored)"
+        );
         Assert.False(
             condition: onSuccessfulRemovalCalled,
             userMessage: "OnSuccessfulRemoval should not be called when solution build fails"
