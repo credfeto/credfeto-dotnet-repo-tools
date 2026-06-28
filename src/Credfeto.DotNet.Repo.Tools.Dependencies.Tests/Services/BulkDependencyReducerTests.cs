@@ -136,7 +136,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         repo.WorkingDirectory.Returns(workingDirectory);
     }
 
-    private static void MockIGitRepositorySetupTestRepo(
+    private static void SetupTestGitRepository(
         IGitRepository repo,
         LibGit2Sharp.Repository activeRepo,
         string repoDir,
@@ -343,7 +343,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        MockIGitRepositorySetupTestRepo(testRepo, activeRepo, repoDir, "https://github.com/test/noop-repo.git");
+        SetupTestGitRepository(testRepo, activeRepo, repoDir, "https://github.com/test/noop-repo.git");
 
         MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
@@ -376,12 +376,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        MockIGitRepositorySetupTestRepo(
-            testRepo,
-            activeRepo,
-            repoDir,
-            "https://github.com/test/changelog-nodotnet-repo.git"
-        );
+        SetupTestGitRepository(testRepo, activeRepo, repoDir, "https://github.com/test/changelog-nodotnet-repo.git");
 
         MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
@@ -425,7 +420,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        MockIGitRepositorySetupTestRepo(testRepo, activeRepo, repoDir, "https://github.com/test/dotnet-repo.git");
+        SetupTestGitRepository(testRepo, activeRepo, repoDir, "https://github.com/test/dotnet-repo.git");
 
         MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
@@ -469,7 +464,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        MockIGitRepositorySetupTestRepo(testRepo, activeRepo, repoDir, cloneUrl);
+        SetupTestGitRepository(testRepo, activeRepo, repoDir, cloneUrl);
 
         MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
@@ -522,7 +517,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        MockIGitRepositorySetupTestRepo(testRepo, activeRepo, repoDir, cloneUrl);
+        SetupTestGitRepository(testRepo, activeRepo, repoDir, cloneUrl);
 
         MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
@@ -576,7 +571,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        MockIGitRepositorySetupTestRepo(testRepo, activeRepo, repoDir, cloneUrl);
+        SetupTestGitRepository(testRepo, activeRepo, repoDir, cloneUrl);
 
         MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
@@ -626,7 +621,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        MockIGitRepositorySetupTestRepo(testRepo, activeRepo, repoDir, cloneUrl);
+        SetupTestGitRepository(testRepo, activeRepo, repoDir, cloneUrl);
 
         MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
@@ -682,7 +677,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        MockIGitRepositorySetupTestRepo(testRepo, activeRepo, repoDir, cloneUrl);
+        SetupTestGitRepository(testRepo, activeRepo, repoDir, cloneUrl);
 
         MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
