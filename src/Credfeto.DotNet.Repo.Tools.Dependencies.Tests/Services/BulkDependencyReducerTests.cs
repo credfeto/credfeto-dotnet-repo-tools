@@ -588,7 +588,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async ValueTask BulkUpdateAsyncShouldSkipUpdateTrackingCacheWhenTrackingFileNameIsNonEmptyAsync()
+    public async ValueTask BulkUpdateAsyncShouldUpdateTrackingCacheWhenTrackingFileNameIsNonEmptyAsync()
     {
         string repoDir = Path.Combine(path1: this.TempFolder, path2: "gitrepo-commit-with-tracking");
         Directory.CreateDirectory(repoDir);
@@ -610,6 +610,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         const string cloneUrl = "https://github.com/test/commit-tracking-repo.git";
         MockITrackingCacheGet(this._trackingCache, cloneUrl, null);
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, "commit-tracking-hash");
 
         MockIDotNetFilesDetectorFind(
             this._dotNetFilesDetector,
@@ -643,7 +644,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         await testRepo
             .Received(1)
             .CommitNamedAsync(Arg.Any<string>(), Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>());
-        this._trackingCache.DidNotReceive().Set(Arg.Any<string>(), Arg.Any<string?>());
+        this._trackingCache.Received(1).Set(Arg.Any<string>(), Arg.Any<string?>());
     }
 
     [Fact]
