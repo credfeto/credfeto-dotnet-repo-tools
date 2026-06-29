@@ -237,7 +237,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         CancellationToken cancellationToken
     )
     {
-        if (!string.IsNullOrWhiteSpace(updateContext.TrackingFileName))
+        if (string.IsNullOrWhiteSpace(updateContext.TrackingFileName))
         {
             return;
         }
