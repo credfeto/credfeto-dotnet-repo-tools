@@ -934,11 +934,13 @@ public sealed class DependencyReducer : IDependencyReducer
 
     private static void IncludeReferencedPackages(List<string> allPackageIds, List<XmlElement> packageReferenceElements)
     {
+        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
+
         foreach (XmlElement node in packageReferenceElements)
         {
             string include = node.GetAttribute("Include");
 
-            if (!string.IsNullOrEmpty(include) && !allPackageIds.Contains(include, StringComparer.OrdinalIgnoreCase))
+            if (!string.IsNullOrEmpty(include) && seen.Add(include))
             {
                 allPackageIds.Add(include);
             }
