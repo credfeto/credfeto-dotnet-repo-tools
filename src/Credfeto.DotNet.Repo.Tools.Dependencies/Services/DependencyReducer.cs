@@ -430,9 +430,16 @@ public sealed class DependencyReducer : IDependencyReducer
     {
         IReadOnlyList<XmlNode> xmlProjectNodes = GetNodes(xml: fileContent.Xml, xpath: PROJECT_REFERENCES_PATH);
         IReadOnlyList<ProjectReference> projectReferences = GetProjectReferencesFromNodes(xmlProjectNodes);
+        bool needsRefresh = false;
 
         foreach (ProjectReference projectReference in projectReferences)
         {
+            if (needsRefresh)
+            {
+                xmlProjectNodes = GetNodes(xml: fileContent.Xml, xpath: PROJECT_REFERENCES_PATH);
+                needsRefresh = false;
+            }
+
             XmlElement? node = FindProjectReference(xmlNodes: xmlProjectNodes, projectReference: projectReference);
 
             if (node is null)
@@ -475,7 +482,7 @@ public sealed class DependencyReducer : IDependencyReducer
                 await fileContent.ReloadAsync(cancellationToken: cancellationToken);
             }
 
-            xmlProjectNodes = GetNodes(xml: fileContent.Xml, xpath: PROJECT_REFERENCES_PATH);
+            needsRefresh = true;
         }
     }
 
@@ -927,13 +934,11 @@ public sealed class DependencyReducer : IDependencyReducer
 
     private static void IncludeReferencedPackages(List<string> allPackageIds, List<XmlElement> packageReferenceElements)
     {
-        HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
-
         foreach (XmlElement node in packageReferenceElements)
         {
             string include = node.GetAttribute("Include");
 
-            if (!string.IsNullOrEmpty(include) && seen.Add(include))
+            if (!string.IsNullOrEmpty(include) && !allPackageIds.Contains(include, StringComparer.OrdinalIgnoreCase))
             {
                 allPackageIds.Add(include);
             }
