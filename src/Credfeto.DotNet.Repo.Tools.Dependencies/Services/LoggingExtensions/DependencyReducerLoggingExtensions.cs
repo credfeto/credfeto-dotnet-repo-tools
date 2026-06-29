@@ -198,7 +198,7 @@ internal static partial class DependencyReducerLoggingExtensions
     public static partial void ProjectSdkReference(this ILogger<DependencyReducer> logger, string project, string sdk);
 
     [LoggerMessage(
-        EventId = 27,
+        EventId = 28,
         Level = LogLevel.Information,
         Message = "  - Did not Find {packageId} source reference in project"
     )]
