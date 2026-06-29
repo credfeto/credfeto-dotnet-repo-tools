@@ -702,20 +702,6 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         await testRepo.Received(1).PushAsync(Arg.Any<CancellationToken>());
     }
 
-    private IBulkDependencyReducer BuildSutWithCallbackReducer()
-    {
-        return new BulkDependencyReducer(
-            trackingCache: this._trackingCache,
-            globalJson: this._globalJson,
-            dotNetVersion: this._dotNetVersion,
-            gitRepositoryFactory: this._gitRepositoryFactory,
-            dependencyReducer: new CallbackInvokingDependencyReducer(),
-            trackingHashGenerator: this._trackingHashGenerator,
-            dotNetFilesDetector: this._dotNetFilesDetector,
-            logger: this.GetTypedLogger<BulkDependencyReducer>()
-        );
-    }
-
     private static void MockIGlobalJsonLoadGlobalJson(IGlobalJson globalJson, in DotNetVersionSettings value)
     {
         globalJson.LoadGlobalJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(value);
@@ -751,17 +737,17 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         cache.Get(cloneUrl).Returns(hash);
     }
 
-    private sealed class CallbackInvokingDependencyReducer : IDependencyReducer
+    private IBulkDependencyReducer BuildSutWithCallbackReducer()
     {
-        public async ValueTask<bool> CheckReferencesAsync(
-            DotNetFiles dotNetFiles,
-            ReferenceConfig config,
-            CancellationToken cancellationToken
-        )
-        {
-            await config.OnSuccessfulRemoval("Test.csproj", "Removed redundant dependency", cancellationToken);
-
-            return true;
-        }
+        return new BulkDependencyReducer(
+            trackingCache: this._trackingCache,
+            globalJson: this._globalJson,
+            dotNetVersion: this._dotNetVersion,
+            gitRepositoryFactory: this._gitRepositoryFactory,
+            dependencyReducer: new CallbackInvokingDependencyReducer(),
+            trackingHashGenerator: this._trackingHashGenerator,
+            dotNetFilesDetector: this._dotNetFilesDetector,
+            logger: this.GetTypedLogger<BulkDependencyReducer>()
+        );
     }
 }
