@@ -79,6 +79,13 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             });
     }
 
+    private static void MockIDotNetBuildSolutionBuild(IDotNetBuild dotNetBuild, string message)
+    {
+        dotNetBuild
+            .When(async b => await b.BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>()))
+            .Do(_ => throw new DotNetBuildErrorException(message));
+    }
+
     private static ValueTask NoOpRemovalAsync(
         string projectFileName,
         string message,
@@ -471,8 +478,10 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         const string projectXml = MINIMAL_SDK_WITH_SOME_PACKAGE_XML;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
 
-        this._dotNetBuild.When(async b => await b.BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>()))
-            .Do(_ => throw new DotNetBuildErrorException("Solution build failed after package removal"));
+        MockIDotNetBuildSolutionBuild(
+            dotNetBuild: this._dotNetBuild,
+            message: "Solution build failed after package removal"
+        );
 
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
 
