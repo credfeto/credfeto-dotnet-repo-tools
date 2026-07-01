@@ -65,7 +65,7 @@ public sealed class ReferenceConfig
                     comparer: StringComparer.OrdinalIgnoreCase
                 )
                 || allPackageIds.Contains(
-                    value: "Microsoft.AspNetCore.Authentication.JwtBearer",
+                    value: "System.IdentityModel.Tokens.Jwt",
                     comparer: StringComparer.OrdinalIgnoreCase
                 );
         }
