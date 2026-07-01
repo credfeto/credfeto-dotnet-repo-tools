@@ -1079,7 +1079,18 @@ public sealed class DependencyReducer : IDependencyReducer
                 searchOption: SearchOption.AllDirectories
             );
 
-            return cshtmlFiles.Length == 0;
+            if (cshtmlFiles.Length != 0)
+            {
+                return false;
+            }
+
+            string[] razorFiles = Directory.GetFiles(
+                path: projectFolder,
+                searchPattern: "*.razor",
+                searchOption: SearchOption.AllDirectories
+            );
+
+            return razorFiles.Length == 0;
         }
 
         if (StringComparer.Ordinal.Equals(x: sdk, y: "Microsoft.NET.Sdk.Web"))

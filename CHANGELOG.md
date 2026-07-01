@@ -10,6 +10,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Dependencies
 ### Fixed
+- Also check for .razor files when determining if project needs Microsoft.NET.Sdk.Razor SDK
 ### Changed
 ### Deprecated
 ### Removed

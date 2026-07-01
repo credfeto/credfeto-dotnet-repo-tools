@@ -274,7 +274,10 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             cancellationToken: this.CancellationToken()
         );
 
-        Assert.True(condition: result, userMessage: "SDK.Razor project with no .cshtml files should narrow SDK");
+        Assert.True(
+            condition: result,
+            userMessage: "SDK.Razor project with no .cshtml or .razor files should narrow SDK"
+        );
     }
 
     [Fact]
@@ -300,6 +303,34 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         );
 
         Assert.False(condition: result, userMessage: "SDK.Razor project with .cshtml files should not narrow SDK");
+        await this
+            ._dotNetBuild.Received(2)
+            .BuildAsync(Arg.Any<string>(), Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async ValueTask CheckReferencesAsyncWithSdkRazorAndDotRazorFilesOnlyShouldNotNarrowSdkAsync()
+    {
+        const string projectXml = MINIMAL_SDK_RAZOR_PROJECT_XML;
+        string projectFile = await this.WriteProjectFileAsync(projectXml);
+
+        string razorFile = Path.Combine(path1: this.TempFolder, path2: "Component.razor");
+        await File.WriteAllTextAsync(
+            path: razorFile,
+            contents: "@page \"/\"",
+            cancellationToken: this.CancellationToken()
+        );
+
+        DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
+        ReferenceConfig config = BuildConfig();
+
+        bool result = await this._sut.CheckReferencesAsync(
+            dotNetFiles: dotNetFiles,
+            config: config,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.False(condition: result, userMessage: "SDK.Razor project with .razor files should not narrow SDK");
         await this
             ._dotNetBuild.Received(2)
             .BuildAsync(Arg.Any<string>(), Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
