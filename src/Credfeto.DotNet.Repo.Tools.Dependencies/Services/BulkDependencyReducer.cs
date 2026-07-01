@@ -132,7 +132,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         }
     }
 
-    private async Task UpdateRepositoryAsync(
+    private async ValueTask UpdateRepositoryAsync(
         DependencyReductionUpdateContext updateContext,
         string repo,
         CancellationToken cancellationToken
