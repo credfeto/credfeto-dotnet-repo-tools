@@ -1079,12 +1079,7 @@ public sealed class DependencyReducer : IDependencyReducer
                 searchOption: SearchOption.AllDirectories
             );
 
-            if (cshtmlFiles.Length == 0)
-            {
-                return true;
-            }
-
-            return false;
+            return cshtmlFiles.Length == 0;
         }
 
         if (StringComparer.Ordinal.Equals(x: sdk, y: "Microsoft.NET.Sdk.Web"))
