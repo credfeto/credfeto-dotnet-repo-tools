@@ -263,46 +263,26 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         );
     }
 
-    [Fact]
-    public ValueTask BulkUpdateAsyncShouldHandleGitRepositoryLockedExceptionAsync()
+    public static IEnumerable<object[]> HandledExceptions =>
+        [
+            [new GitRepositoryLockedException("Repository is locked")],
+            [new SolutionCheckFailedException("Solution check failed")],
+            [new DotNetBuildErrorException("Build failed")],
+        ];
+
+    [Theory]
+    [MemberData(nameof(HandledExceptions))]
+    public ValueTask BulkUpdateAsyncShouldHandleExpectedExceptionWithoutThrowingAsync(Exception ex)
     {
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
             templateRepo: templateRepo,
             workingDirectory: this.TempFolder,
-            ex: new GitRepositoryLockedException("Repository is locked")
+            ex: ex
         );
 
-        return this.RunBulkUpdateWithTrackingAsync("https://github.com/test/locked-repo.git", string.Empty);
-    }
-
-    [Fact]
-    public ValueTask BulkUpdateAsyncShouldHandleSolutionCheckFailedExceptionAsync()
-    {
-        IGitRepository templateRepo = GetSubstitute<IGitRepository>();
-        MockIGitRepositoryFactoryOpenOrClone(
-            factory: this._gitRepositoryFactory,
-            templateRepo: templateRepo,
-            workingDirectory: this.TempFolder,
-            ex: new SolutionCheckFailedException("Solution check failed")
-        );
-
-        return this.RunBulkUpdateWithTrackingAsync("https://github.com/test/failing-solution-repo.git", string.Empty);
-    }
-
-    [Fact]
-    public ValueTask BulkUpdateAsyncShouldHandleDotNetBuildErrorExceptionAsync()
-    {
-        IGitRepository templateRepo = GetSubstitute<IGitRepository>();
-        MockIGitRepositoryFactoryOpenOrClone(
-            factory: this._gitRepositoryFactory,
-            templateRepo: templateRepo,
-            workingDirectory: this.TempFolder,
-            ex: new DotNetBuildErrorException("Build failed")
-        );
-
-        return this.RunBulkUpdateWithTrackingAsync("https://github.com/test/build-error-repo.git", string.Empty);
+        return this.RunBulkUpdateWithTrackingAsync("https://github.com/test/error-repo.git", string.Empty);
     }
 
     [Fact]
