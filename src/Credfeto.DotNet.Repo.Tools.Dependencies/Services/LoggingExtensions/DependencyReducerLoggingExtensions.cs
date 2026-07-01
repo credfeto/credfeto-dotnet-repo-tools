@@ -100,7 +100,7 @@ internal static partial class DependencyReducerLoggingExtensions
     [LoggerMessage(
         EventId = 14,
         Level = LogLevel.Information,
-        Message = "= {project} references package {relativeInclude} also in child project {childProject}"
+        Message = "= {project} references project {relativeInclude} also in child project {childProject}"
     )]
     public static partial void ChildProjectReferencesProject(
         this ILogger<DependencyReducer> logger,

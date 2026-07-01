@@ -111,7 +111,22 @@ public sealed class ReferenceConfigTests : TestBase
     }
 
     [Fact]
-    public void JwtBearerWithItselfInListShouldReturnTrue()
+    public void JwtBearerWithSystemIdentityModelTokensJwtShouldReturnTrue()
+    {
+        ReferenceConfig config = BuildConfig();
+        IReadOnlyList<string> allPackageIds = ["System.IdentityModel.Tokens.Jwt"];
+        bool result = config.IsDoNotRemovePackage(
+            packageId: "Microsoft.AspNetCore.Authentication.JwtBearer",
+            allPackageIds: allPackageIds
+        );
+        Assert.True(
+            condition: result,
+            userMessage: "JwtBearer should not be removed when System.IdentityModel.Tokens.Jwt is present"
+        );
+    }
+
+    [Fact]
+    public void JwtBearerAloneWithoutRelatedPackagesShouldReturnFalse()
     {
         ReferenceConfig config = BuildConfig();
         IReadOnlyList<string> allPackageIds = ["Microsoft.AspNetCore.Authentication.JwtBearer"];
@@ -119,7 +134,10 @@ public sealed class ReferenceConfigTests : TestBase
             packageId: "Microsoft.AspNetCore.Authentication.JwtBearer",
             allPackageIds: allPackageIds
         );
-        Assert.True(condition: result, userMessage: "JwtBearer should not be removed when it's in the list");
+        Assert.False(
+            condition: result,
+            userMessage: "JwtBearer alone (without related identity packages) should be removable"
+        );
     }
 
     [Fact]
