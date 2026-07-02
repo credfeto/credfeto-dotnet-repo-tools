@@ -36,6 +36,9 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     private const string MINIMAL_SDK_WITH_FUN_FAIR_SOME_THING_XML =
         "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"FunFair.SomeThing\" Version=\"1.0.0\" /></ItemGroup></Project>";
 
+    private const string MINIMAL_SDK_WITH_FUN_FAIR_SOMETHING_ALL_XML =
+        "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"FunFair.Something.All\" Version=\"1.0.0\" /></ItemGroup></Project>";
+
     private readonly IDotNetBuild _dotNetBuild;
     private readonly DependencyReducer _sut;
 
@@ -210,12 +213,14 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
         ReferenceConfig config = BuildConfig();
 
-        await Assert.ThrowsAsync<DotNetBuildErrorException>(async () =>
-            await this._sut.CheckReferencesAsync(
-                dotNetFiles: dotNetFiles,
-                config: config,
-                cancellationToken: this.CancellationToken()
-            )
+        await Assert.ThrowsAsync<DotNetBuildErrorException>(() =>
+            this
+                ._sut.CheckReferencesAsync(
+                    dotNetFiles: dotNetFiles,
+                    config: config,
+                    cancellationToken: this.CancellationToken()
+                )
+                .AsTask()
         );
     }
 
@@ -501,12 +506,14 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
         ReferenceConfig config = BuildConfig();
 
-        await Assert.ThrowsAsync<DotNetBuildErrorException>(async () =>
-            await this._sut.CheckReferencesAsync(
-                dotNetFiles: dotNetFiles,
-                config: config,
-                cancellationToken: this.CancellationToken()
-            )
+        await Assert.ThrowsAsync<DotNetBuildErrorException>(() =>
+            this
+                ._sut.CheckReferencesAsync(
+                    dotNetFiles: dotNetFiles,
+                    config: config,
+                    cancellationToken: this.CancellationToken()
+                )
+                .AsTask()
         );
     }
 
@@ -602,11 +609,66 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         Assert.False(condition: result, userMessage: "Project without Sdk attribute should produce no changes");
     }
 
-    [Fact]
-    public async ValueTask CheckReferencesAsyncWithNonFunFairPackageRemovalBuildFailureShouldReturnFalseAsync()
+    public static IEnumerable<object?[]> PackageRemovalBuildFailureCases =>
+        [
+            [
+                MINIMAL_SDK_WITH_SOME_PACKAGE_XML,
+                null,
+                null,
+                false,
+                "Non-FunFair package with removal build failure should report no narrowing",
+            ],
+            [
+                MINIMAL_SDK_WITH_FUN_FAIR_SOME_THING_XML,
+                null,
+                null,
+                true,
+                "FunFair package with no source files should be tracked for narrowing",
+            ],
+            [
+                MINIMAL_SDK_WITH_FUN_FAIR_SOME_THING_XML,
+                "Program.cs",
+                "using FunFair.SomeThing;\nclass Program { }",
+                false,
+                "FunFair package referenced in source via using should not be tracked for narrowing",
+            ],
+            [
+                MINIMAL_SDK_WITH_FUN_FAIR_SOME_THING_XML,
+                "MyClass.cs",
+                "namespace FunFair.SomeThing.SubNamespace;\nclass MyClass { }",
+                false,
+                "FunFair package referenced in source via namespace should not be tracked for narrowing",
+            ],
+            [
+                MINIMAL_SDK_WITH_FUN_FAIR_SOMETHING_ALL_XML,
+                null,
+                null,
+                false,
+                "FunFair grouping package (.All) should not be tracked for narrowing",
+            ],
+        ];
+
+    [Theory]
+    [MemberData(nameof(PackageRemovalBuildFailureCases))]
+    public async ValueTask CheckReferencesAsyncWithPackageRemovalBuildFailureShouldMatchExpectedResultAsync(
+        string projectXml,
+        string? sourceFileName,
+        string? sourceFileContent,
+        bool expectedResult,
+        string userMessage
+    )
     {
-        const string projectXml = MINIMAL_SDK_WITH_SOME_PACKAGE_XML;
         string projectFile = await this.WriteProjectFileAsync(projectXml);
+
+        if (sourceFileName is not null && sourceFileContent is not null)
+        {
+            string sourceFile = Path.Combine(path1: this.TempFolder, path2: sourceFileName);
+            await File.WriteAllTextAsync(
+                path: sourceFile,
+                contents: sourceFileContent,
+                cancellationToken: this.CancellationToken()
+            );
+        }
 
         MockIDotNetBuildBuildFailOnNthOnly(
             dotNetBuild: this._dotNetBuild,
@@ -623,133 +685,14 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             cancellationToken: this.CancellationToken()
         );
 
-        Assert.False(
-            condition: result,
-            userMessage: "Non-FunFair package with removal build failure should report no narrowing"
-        );
-    }
-
-    [Fact]
-    public async ValueTask CheckReferencesAsyncWithFunFairPackageRemovalBuildFailureAndNoSourceFilesShouldTrackNarrowingAsync()
-    {
-        const string projectXml = MINIMAL_SDK_WITH_FUN_FAIR_SOME_THING_XML;
-        string projectFile = await this.WriteProjectFileAsync(projectXml);
-
-        MockIDotNetBuildBuildFailOnNthOnly(
-            dotNetBuild: this._dotNetBuild,
-            nthToThrow: 2,
-            message: "Package removal build failed"
-        );
-
-        DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
-        ReferenceConfig config = BuildConfig();
-
-        bool result = await this._sut.CheckReferencesAsync(
-            dotNetFiles: dotNetFiles,
-            config: config,
-            cancellationToken: this.CancellationToken()
-        );
-
-        Assert.True(
-            condition: result,
-            userMessage: "FunFair package with no source files should be tracked for narrowing"
-        );
-    }
-
-    [Fact]
-    public async ValueTask CheckReferencesAsyncWithFunFairPackageRemovalBuildFailureAndUsingInSourceFileShouldReturnFalseAsync()
-    {
-        const string projectXml = MINIMAL_SDK_WITH_FUN_FAIR_SOME_THING_XML;
-        string projectFile = await this.WriteProjectFileAsync(projectXml);
-
-        string sourceFile = Path.Combine(path1: this.TempFolder, path2: "Program.cs");
-        await File.WriteAllTextAsync(
-            path: sourceFile,
-            contents: "using FunFair.SomeThing;\nclass Program { }",
-            cancellationToken: this.CancellationToken()
-        );
-
-        MockIDotNetBuildBuildFailOnNthOnly(
-            dotNetBuild: this._dotNetBuild,
-            nthToThrow: 2,
-            message: "Package removal build failed"
-        );
-
-        DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
-        ReferenceConfig config = BuildConfig();
-
-        bool result = await this._sut.CheckReferencesAsync(
-            dotNetFiles: dotNetFiles,
-            config: config,
-            cancellationToken: this.CancellationToken()
-        );
-
-        Assert.False(
-            condition: result,
-            userMessage: "FunFair package referenced in source via using should not be tracked for narrowing"
-        );
-    }
-
-    [Fact]
-    public async ValueTask CheckReferencesAsyncWithFunFairPackageRemovalBuildFailureAndNamespaceInSourceFileShouldReturnFalseAsync()
-    {
-        const string projectXml = MINIMAL_SDK_WITH_FUN_FAIR_SOME_THING_XML;
-        string projectFile = await this.WriteProjectFileAsync(projectXml);
-
-        string sourceFile = Path.Combine(path1: this.TempFolder, path2: "MyClass.cs");
-        await File.WriteAllTextAsync(
-            path: sourceFile,
-            contents: "namespace FunFair.SomeThing.SubNamespace;\nclass MyClass { }",
-            cancellationToken: this.CancellationToken()
-        );
-
-        MockIDotNetBuildBuildFailOnNthOnly(
-            dotNetBuild: this._dotNetBuild,
-            nthToThrow: 2,
-            message: "Package removal build failed"
-        );
-
-        DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
-        ReferenceConfig config = BuildConfig();
-
-        bool result = await this._sut.CheckReferencesAsync(
-            dotNetFiles: dotNetFiles,
-            config: config,
-            cancellationToken: this.CancellationToken()
-        );
-
-        Assert.False(
-            condition: result,
-            userMessage: "FunFair package referenced in source via namespace should not be tracked for narrowing"
-        );
-    }
-
-    [Fact]
-    public async ValueTask CheckReferencesAsyncWithFunFairAllPackageRemovalBuildFailureShouldReturnFalseAsync()
-    {
-        const string projectXml =
-            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"FunFair.Something.All\" Version=\"1.0.0\" /></ItemGroup></Project>";
-        string projectFile = await this.WriteProjectFileAsync(projectXml);
-
-        MockIDotNetBuildBuildFailOnNthOnly(
-            dotNetBuild: this._dotNetBuild,
-            nthToThrow: 2,
-            message: "Package removal build failed"
-        );
-
-        DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
-        ReferenceConfig config = BuildConfig();
-
-        bool result = await this._sut.CheckReferencesAsync(
-            dotNetFiles: dotNetFiles,
-            config: config,
-            cancellationToken: this.CancellationToken()
-        );
-
-        Assert.False(
-            condition: result,
-            userMessage: "FunFair grouping package (.All) should not be tracked for narrowing"
-        );
+        if (expectedResult)
+        {
+            Assert.True(condition: result, userMessage: userMessage);
+        }
+        else
+        {
+            Assert.False(condition: result, userMessage: userMessage);
+        }
     }
 
     [Fact]
