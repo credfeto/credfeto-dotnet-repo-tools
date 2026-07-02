@@ -100,7 +100,7 @@ internal static partial class DependencyReducerLoggingExtensions
     [LoggerMessage(
         EventId = 14,
         Level = LogLevel.Information,
-        Message = "= {project} references package {relativeInclude} also in child project {childProject}"
+        Message = "= {project} references project {relativeInclude} also in child project {childProject}"
     )]
     public static partial void ChildProjectReferencesProject(
         this ILogger<DependencyReducer> logger,
@@ -197,6 +197,13 @@ internal static partial class DependencyReducerLoggingExtensions
     [LoggerMessage(EventId = 26, Level = LogLevel.Information, Message = "{project}: check narrowing of {sdk}")]
     public static partial void ProjectSdkReference(this ILogger<DependencyReducer> logger, string project, string sdk);
 
-    [LoggerMessage(EventId = 27, Level = LogLevel.Information, Message = "{project}: check unknown {context}")]
-    public static partial void UnknownReference(this ILogger<DependencyReducer> logger, string project, string context);
+    [LoggerMessage(
+        EventId = 28,
+        Level = LogLevel.Information,
+        Message = "  - Did not Find {packageId} source reference in project"
+    )]
+    public static partial void DidNotFindPackageSourceReference(
+        this ILogger<DependencyReducer> logger,
+        string packageId
+    );
 }

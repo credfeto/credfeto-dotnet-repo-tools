@@ -132,7 +132,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         }
     }
 
-    private async Task UpdateRepositoryAsync(
+    private async ValueTask UpdateRepositoryAsync(
         DependencyReductionUpdateContext updateContext,
         string repo,
         CancellationToken cancellationToken
@@ -237,7 +237,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         CancellationToken cancellationToken
     )
     {
-        if (!string.IsNullOrWhiteSpace(updateContext.TrackingFileName))
+        if (string.IsNullOrWhiteSpace(updateContext.TrackingFileName))
         {
             return;
         }
