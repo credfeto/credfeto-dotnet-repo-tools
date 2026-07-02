@@ -284,7 +284,6 @@ public sealed class DependencyReducer : IDependencyReducer
             }
 
             xmlPackageNodes = GetNodes(xml: fileContent.Xml, xpath: PACKAGE_REFERENCES_PATH);
-            allPackageIds = ExtractPackageIds(GetPackageReferencesFromNodes(xmlPackageNodes));
         }
     }
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -99,7 +100,9 @@ public sealed class ReferenceConfig
 
     public bool IsIgnoreProject(string projectName)
     {
-        if (this._ignoreProjects.Contains(value: projectName, comparer: StringComparer.OrdinalIgnoreCase))
+        string projectFileName = Path.GetFileName(projectName);
+
+        if (this._ignoreProjects.Contains(value: projectFileName, comparer: StringComparer.OrdinalIgnoreCase))
         {
             return true;
         }
