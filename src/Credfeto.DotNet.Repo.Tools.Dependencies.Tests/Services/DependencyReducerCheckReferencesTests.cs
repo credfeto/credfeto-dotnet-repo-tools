@@ -611,41 +611,21 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
 
     public static IEnumerable<object?[]> PackageRemovalBuildFailureCases =>
         [
-            [
-                MINIMAL_SDK_WITH_SOME_PACKAGE_XML,
-                null,
-                null,
-                false,
-                "Non-FunFair package with removal build failure should report no narrowing",
-            ],
-            [
-                MINIMAL_SDK_WITH_FUN_FAIR_SOME_THING_XML,
-                null,
-                null,
-                true,
-                "FunFair package with no source files should be tracked for narrowing",
-            ],
+            [MINIMAL_SDK_WITH_SOME_PACKAGE_XML, null, null, false],
+            [MINIMAL_SDK_WITH_FUN_FAIR_SOME_THING_XML, null, null, true],
             [
                 MINIMAL_SDK_WITH_FUN_FAIR_SOME_THING_XML,
                 "Program.cs",
                 "using FunFair.SomeThing;\nclass Program { }",
                 false,
-                "FunFair package referenced in source via using should not be tracked for narrowing",
             ],
             [
                 MINIMAL_SDK_WITH_FUN_FAIR_SOME_THING_XML,
                 "MyClass.cs",
                 "namespace FunFair.SomeThing.SubNamespace;\nclass MyClass { }",
                 false,
-                "FunFair package referenced in source via namespace should not be tracked for narrowing",
             ],
-            [
-                MINIMAL_SDK_WITH_FUN_FAIR_SOMETHING_ALL_XML,
-                null,
-                null,
-                false,
-                "FunFair grouping package (.All) should not be tracked for narrowing",
-            ],
+            [MINIMAL_SDK_WITH_FUN_FAIR_SOMETHING_ALL_XML, null, null, false],
         ];
 
     [Theory]
@@ -654,8 +634,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         string projectXml,
         string? sourceFileName,
         string? sourceFileContent,
-        bool expectedResult,
-        string userMessage
+        bool expectedResult
     )
     {
         string projectFile = await this.WriteProjectFileAsync(projectXml);
@@ -685,14 +664,7 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
             cancellationToken: this.CancellationToken()
         );
 
-        if (expectedResult)
-        {
-            Assert.True(condition: result, userMessage: userMessage);
-        }
-        else
-        {
-            Assert.False(condition: result, userMessage: userMessage);
-        }
+        Assert.Equal(expected: expectedResult, actual: result);
     }
 
     [Fact]

@@ -123,14 +123,18 @@ public sealed class DependencyReducer : IDependencyReducer
             cancellationToken: cancellationToken
         );
 
+        Dictionary<string, XmlDocument> xmlCache = new(StringComparer.OrdinalIgnoreCase);
+
         IReadOnlyList<FilePackageReference> childPackageReferences = GetPackageReferences(
             fileName: projectUpdateContext.Project,
             includeReferences: false,
-            config: projectUpdateContext.Config
+            config: projectUpdateContext.Config,
+            xmlCache: xmlCache
         );
         IReadOnlyList<FileProjectReference> childProjectReferences = GetProjectReferences(
             fileName: projectUpdateContext.Project,
-            includeReferences: false
+            includeReferences: false,
+            xmlCache: xmlCache
         );
 
         await this.CheckProjectContentsAsync(
@@ -827,11 +831,13 @@ public sealed class DependencyReducer : IDependencyReducer
         return null;
     }
 
-    private static IReadOnlyList<FilePackageReference> GetPackageReferences(
+    [DebuggerDisplay("{CanonicalPath}")]
+    private sealed record ProjectFileContext(string CanonicalPath, string BaseDir, XmlDocument Document);
+
+    private static ProjectFileContext? TryPrepareProjectFile(
         string fileName,
-        bool includeReferences,
-        ReferenceConfig config,
-        HashSet<string>? visited = null
+        HashSet<string> visited,
+        Dictionary<string, XmlDocument> xmlCache
     )
     {
         string canonicalPath = GetCanonicalPath(fileName);
@@ -842,14 +848,38 @@ public sealed class DependencyReducer : IDependencyReducer
             throw new FileNotFoundException(message: "Unable to find project file.", fileName: fileName);
         }
 
-        visited ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
         if (!visited.Add(canonicalPath))
+        {
+            return null;
+        }
+
+        return new ProjectFileContext(
+            CanonicalPath: canonicalPath,
+            BaseDir: baseDir,
+            Document: GetOrLoadXml(canonicalPath: canonicalPath, xmlCache: xmlCache)
+        );
+    }
+
+    private static IReadOnlyList<FilePackageReference> GetPackageReferences(
+        string fileName,
+        bool includeReferences,
+        ReferenceConfig config,
+        HashSet<string>? visited = null,
+        Dictionary<string, XmlDocument>? xmlCache = null
+    )
+    {
+        visited ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        xmlCache ??= new Dictionary<string, XmlDocument>(StringComparer.OrdinalIgnoreCase);
+
+        ProjectFileContext? context = TryPrepareProjectFile(fileName: fileName, visited: visited, xmlCache: xmlCache);
+
+        if (context is null)
         {
             return [];
         }
 
-        XmlDocument doc = LoadProjectXmlFromFile(canonicalPath);
+        string baseDir = context.BaseDir;
+        XmlDocument doc = context.Document;
         List<FilePackageReference> references = [];
 
         if (includeReferences)
@@ -867,7 +897,13 @@ public sealed class DependencyReducer : IDependencyReducer
         )
         {
             references.AddRange(
-                GetPackageReferences(fileName: childPath, includeReferences: true, config: config, visited: visited)
+                GetPackageReferences(
+                    fileName: childPath,
+                    includeReferences: true,
+                    config: config,
+                    visited: visited,
+                    xmlCache: xmlCache
+                )
             );
         }
 
@@ -898,6 +934,17 @@ public sealed class DependencyReducer : IDependencyReducer
                 )
                 .RemoveNulls()
         );
+    }
+
+    private static XmlDocument GetOrLoadXml(string canonicalPath, Dictionary<string, XmlDocument> xmlCache)
+    {
+        if (!xmlCache.TryGetValue(key: canonicalPath, value: out XmlDocument? doc))
+        {
+            doc = LoadProjectXmlFromFile(canonicalPath);
+            xmlCache[canonicalPath] = doc;
+        }
+
+        return doc;
     }
 
     private static XmlDocument LoadProjectXmlFromFile(string canonicalPath)
@@ -949,25 +996,22 @@ public sealed class DependencyReducer : IDependencyReducer
     private static IReadOnlyList<FileProjectReference> GetProjectReferences(
         string fileName,
         bool includeReferences,
-        HashSet<string>? visited = null
+        HashSet<string>? visited = null,
+        Dictionary<string, XmlDocument>? xmlCache = null
     )
     {
-        string canonicalPath = GetCanonicalPath(fileName);
-        string? baseDir = Path.GetDirectoryName(canonicalPath);
-
-        if (string.IsNullOrEmpty(baseDir))
-        {
-            throw new FileNotFoundException(message: "Unable to find project file.", fileName: fileName);
-        }
-
         visited ??= new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        xmlCache ??= new Dictionary<string, XmlDocument>(StringComparer.OrdinalIgnoreCase);
 
-        if (!visited.Add(canonicalPath))
+        ProjectFileContext? context = TryPrepareProjectFile(fileName: fileName, visited: visited, xmlCache: xmlCache);
+
+        if (context is null)
         {
             return [];
         }
 
-        XmlDocument doc = LoadProjectXmlFromFile(canonicalPath);
+        string baseDir = context.BaseDir;
+        XmlDocument doc = context.Document;
         IReadOnlyList<FileProjectReference> baseReferences =
         [
             .. GetNodes(doc, PROJECT_REFERENCES_PATH)
@@ -994,7 +1038,9 @@ public sealed class DependencyReducer : IDependencyReducer
                 .Select(relativeInclude => Path.Combine(path1: baseDir, path2: relativeInclude))
         )
         {
-            references.AddRange(GetProjectReferences(fileName: childPath, includeReferences: true, visited: visited));
+            references.AddRange(
+                GetProjectReferences(fileName: childPath, includeReferences: true, visited: visited, xmlCache: xmlCache)
+            );
         }
 
         return references;
