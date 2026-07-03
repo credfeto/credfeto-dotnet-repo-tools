@@ -200,7 +200,7 @@ internal static partial class DependencyReducerLoggingExtensions
     [LoggerMessage(
         EventId = 28,
         Level = LogLevel.Information,
-        Message = "  - Did not Find {packageId} source reference in project"
+        Message = "  - Did not find {packageId} source reference in project"
     )]
     public static partial void DidNotFindPackageSourceReference(
         this ILogger<DependencyReducer> logger,
