@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Services;
 using FunFair.Test.Common;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;
 
@@ -24,7 +25,8 @@ public sealed class GitRepositoryFactoryIntegrationTests : LoggingFolderCleanupT
 
         this._gitRepositoryFactory = new GitRepositoryFactory(
             locator: gitRepositoryLocator,
-            this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance,
+            logger: this.GetTypedLogger<GitRepositoryFactory>()
         );
     }
 

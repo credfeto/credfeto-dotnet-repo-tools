@@ -11,7 +11,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Dependencies
 ### Fixed
 - Also check for .razor files when determining if project needs Microsoft.NET.Sdk.Razor SDK
-- Moved InternalsVisibleTo attribute for Credfeto.DotNet.Repo.Tools.Git to AssemblyInfo.cs to comply with build check policy
+- Made GitCommandLine and GitRepository public in Credfeto.DotNet.Repo.Tools.Git to remove InternalsVisibleTo usage
 ### Changed
 ### Deprecated
 ### Removed
