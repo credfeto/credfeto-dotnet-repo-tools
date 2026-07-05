@@ -9,7 +9,7 @@ using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 
 namespace Credfeto.DotNet.Repo.Tools.Git.Helpers;
 
-internal static class GitCommandLine
+public static class GitCommandLine
 {
     public static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(
         string clonePath,

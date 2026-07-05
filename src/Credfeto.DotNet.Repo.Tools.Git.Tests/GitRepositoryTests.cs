@@ -8,6 +8,7 @@ using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Git.Services;
 using FunFair.Test.Common;
 using LibGit2Sharp;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Credfeto.DotNet.Repo.Tools.Git.Tests;
@@ -28,7 +29,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         Assert.Equal(expected: "https://example.com/repo.git", actual: repo.ClonePath);
@@ -44,7 +45,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         repo.Dispose();
@@ -59,7 +60,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         _ = repo.HeadRev;
@@ -76,7 +77,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         Repository active = repo.Active;
@@ -93,7 +94,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         string headRev = repo.HeadRev;
@@ -111,7 +112,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         Assert.False(condition: repo.HasSubmodules, userMessage: "Should have no submodules");
@@ -126,7 +127,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         Assert.False(condition: repo.HasUncommittedChanges(), userMessage: "Should have no uncommitted changes");
@@ -147,7 +148,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         Assert.True(condition: repo.HasUncommittedChanges(), userMessage: "Should have uncommitted changes");
@@ -162,7 +163,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         Assert.True(
@@ -180,7 +181,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         Assert.False(
@@ -198,7 +199,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         DateTimeOffset lastCommitDate = repo.GetLastCommitDate();
@@ -216,7 +217,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         IReadOnlyCollection<string> branches = repo.GetRemoteBranches("origin");
@@ -233,7 +234,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         Assert.Throws<GitException>(() => repo.GetDefaultBranch("origin"));
@@ -248,7 +249,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         await Assert.ThrowsAsync<GitException>(() =>
@@ -281,7 +282,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         string defaultBranch = repo.GetDefaultBranch("origin");
@@ -319,7 +320,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         await repo.ResetToDefaultBranchAsync(upstream: "origin", cancellationToken: this.CancellationToken());
@@ -339,7 +340,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         repo.RemoveAllLocalBranches();
@@ -354,7 +355,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         const string newBranch = "feature/unit-test-branch";
@@ -376,7 +377,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         const string extraBranch = "feature/extra-branch";
@@ -412,7 +413,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         repo.RemoveAllLocalBranches();
@@ -437,7 +438,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         await repo.CommitAsync(message: "Test commit", cancellationToken: this.CancellationToken());
@@ -464,7 +465,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         await repo.CommitNamedAsync(
@@ -488,7 +489,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         await repo.PushAsync(cancellationToken: this.CancellationToken());
@@ -503,7 +504,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         await repo.PushOriginAsync(
@@ -522,7 +523,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         await repo.RemoveBranchesForPrefixAsync(
@@ -542,7 +543,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         const string branchForUpdate = "depends/exact-match";
@@ -573,7 +574,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         const string deletableBranch = "depends/old-dep";
@@ -603,7 +604,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         await repo.CreateBranchAsync(branchName: "depends/current-branch", cancellationToken: this.CancellationToken());
@@ -630,7 +631,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         await repo.CreateBranchAsync(branchName: "feature/switch-test", cancellationToken: this.CancellationToken());
@@ -650,7 +651,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         // Repo is clean - git commit fails with non-zero exit code; CommitAsync only logs, does not throw
@@ -667,7 +668,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: nonGitDir,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         // git add -A fails in a non-git directory (exitCode != 0); git commit also fails; neither throws
@@ -683,7 +684,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         // git add nonexistent.txt fails (exitCode != 0); git commit also fails; neither throws
@@ -703,7 +704,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         // Try to create a branch that already exists - git checkout -b fails (exitCode != 0); only logs, no throw
@@ -719,7 +720,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         // git switch to a non-existent branch fails (exitCode != 0); only logs, no throw
@@ -761,7 +762,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         Assert.Throws<GitException>(() => repo.GetDefaultBranch("origin"));
@@ -792,7 +793,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         IReadOnlyCollection<string> remoteBranches = repo.GetRemoteBranches("origin");
@@ -811,7 +812,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: repoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         const string deletableBranch = "depends/old-dep";
@@ -843,7 +844,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             clonePath: "https://example.com/repo.git",
             workingDirectory: testRepoPath,
             repo: null,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance
         );
 
         // origin/depends/old-dep is a remote tracking branch; RemoveBranchesForPrefixAsync detects it and calls DeleteRemoteBranchAsync
