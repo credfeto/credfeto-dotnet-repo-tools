@@ -23,10 +23,16 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
 
     private readonly IGitRepositoryLocator _locator;
     private readonly ILogger<GitRepositoryFactory> _logger;
+    private readonly ILoggerFactory _loggerFactory;
 
-    public GitRepositoryFactory(IGitRepositoryLocator locator, ILogger<GitRepositoryFactory> logger)
+    public GitRepositoryFactory(
+        IGitRepositoryLocator locator,
+        ILoggerFactory loggerFactory,
+        ILogger<GitRepositoryFactory> logger
+    )
     {
         this._locator = locator;
+        this._loggerFactory = loggerFactory;
         this._logger = logger;
     }
 
@@ -80,7 +86,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
                 clonePath: repoUrl,
                 workingDirectory: workingDirectory,
                 new(Repository.Discover(workingDirectory)),
-                logger: this._logger
+                loggerFactory: this._loggerFactory
             );
 
             await repo.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
@@ -125,7 +131,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
             clonePath: repoUrl,
             workingDirectory: destinationPath,
             new(Repository.Discover(path)),
-            logger: this._logger
+            loggerFactory: this._loggerFactory
         );
     }
 

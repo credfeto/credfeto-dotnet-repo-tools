@@ -8,6 +8,7 @@ using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Git.Services;
 using FunFair.Test.Common;
+using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;
 
@@ -27,7 +28,8 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
 
         this._gitRepositoryFactory = new GitRepositoryFactory(
             locator: gitRepositoryLocator,
-            this.GetTypedLogger<GitRepositoryFactory>()
+            loggerFactory: NullLoggerFactory.Instance,
+            logger: this.GetTypedLogger<GitRepositoryFactory>()
         );
     }
 
