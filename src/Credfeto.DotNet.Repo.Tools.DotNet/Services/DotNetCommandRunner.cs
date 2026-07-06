@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Credfeto.DotNet.Repo.Tools.DotNet.Services;
 
-internal sealed class DotNetCommandRunner : IDotNetCommandRunner
+public sealed class DotNetCommandRunner : IDotNetCommandRunner
 {
     public async ValueTask<(string[] Output, int ExitCode)> RunAsync(
         string arguments,
