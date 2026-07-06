@@ -1,6 +1,6 @@
 namespace Credfeto.DotNet.Repo.Tools.Dependencies.Models;
 
-internal enum ReferenceType
+public enum ReferenceType
 {
     SDK,
     PACKAGE,

@@ -5,7 +5,7 @@ using Credfeto.DotNet.Repo.Tools.Dependencies.Services;
 
 namespace Credfeto.DotNet.Repo.Tools.Dependencies.Helpers;
 
-internal static class PackageExtractor
+public static class PackageExtractor
 {
     public static PackageReference? ExtractPackageReference(XmlElement node)
     {

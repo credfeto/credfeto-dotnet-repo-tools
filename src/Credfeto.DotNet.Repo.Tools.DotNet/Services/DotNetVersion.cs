@@ -18,7 +18,7 @@ public sealed class DotNetVersion : IDotNetVersion
         this._commandRunner = new DotNetCommandRunner();
     }
 
-    internal DotNetVersion(IDotNetCommandRunner commandRunner)
+    public DotNetVersion(IDotNetCommandRunner commandRunner)
     {
         this._commandRunner = commandRunner;
     }

@@ -11,7 +11,9 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Dependencies
 ### Fixed
 - Also check for .razor files when determining if project needs Microsoft.NET.Sdk.Razor SDK
+- Removed InternalsVisibleTo usage (banned by new FFS0051 analyzer rule) by making test-exercised internal types public and retiring redundant tests of source-generated JSON serializer contexts
 ### Changed
+- Updated FunFair.CodeAnalysis to 7.2.6.2145 across all projects
 ### Deprecated
 ### Removed
 ### Deployment Changes
