@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services.LoggingExtensions;
 
-internal static partial class BulkCodeCleanUpLoggingExtensions
+public static partial class BulkCodeCleanUpLoggingExtensions
 {
     [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Solution check failed")]
     public static partial void LogSolutionCheckFailed(this ILogger<BulkCodeCleanUp> logger, Exception exception);

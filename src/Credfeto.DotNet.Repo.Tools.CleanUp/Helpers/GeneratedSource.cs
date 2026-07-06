@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Helpers;
 
-internal static class GeneratedSource
+public static class GeneratedSource
 {
     private static readonly IReadOnlyList<string> Markers =
     [
