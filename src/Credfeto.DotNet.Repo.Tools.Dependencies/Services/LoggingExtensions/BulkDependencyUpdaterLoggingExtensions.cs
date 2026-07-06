@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.Dependencies.Services.LoggingExtensions;
 
-internal static partial class BulkDependencyUpdaterLoggingExtensions
+public static partial class BulkDependencyUpdaterLoggingExtensions
 {
     [LoggerMessage(EventId = 1, Level = LogLevel.Error, Message = "Solution check failed")]
     public static partial void LogSolutionCheckFailed(this ILogger<BulkDependencyReducer> logger, Exception exception);

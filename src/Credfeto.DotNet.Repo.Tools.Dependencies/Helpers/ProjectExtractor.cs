@@ -3,7 +3,7 @@ using Credfeto.DotNet.Repo.Tools.Dependencies.Models;
 
 namespace Credfeto.DotNet.Repo.Tools.Dependencies.Helpers;
 
-internal static class ProjectExtractor
+public static class ProjectExtractor
 {
     public static ProjectReference? ExtractProjectReference(XmlElement node)
     {
