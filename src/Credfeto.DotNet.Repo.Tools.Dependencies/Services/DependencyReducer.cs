@@ -789,25 +789,29 @@ public sealed class DependencyReducer : IDependencyReducer
     private ValueTask<bool> BuildProjectAsync(
         ProjectUpdateContext projectUpdateContext,
         CancellationToken cancellationToken
-    ) =>
-        TryBuildAsync(() =>
+    )
+    {
+        return TryBuildAsync(() =>
             this._dotNetBuild.BuildAsync(
                 projectFileName: projectUpdateContext.Project,
                 buildContext: projectUpdateContext.BuildContext,
                 cancellationToken: cancellationToken
             )
         );
+    }
 
     private ValueTask<bool> BuildSolutionAsync(
         ProjectUpdateContext projectUpdateContext,
         CancellationToken cancellationToken
-    ) =>
-        TryBuildAsync(() =>
+    )
+    {
+        return TryBuildAsync(() =>
             this._dotNetBuild.BuildAsync(
                 buildContext: projectUpdateContext.BuildContext,
                 cancellationToken: cancellationToken
             )
         );
+    }
 
     private static string? ExtractProjectFromReference(string reference)
     {
@@ -955,7 +959,10 @@ public sealed class DependencyReducer : IDependencyReducer
         return doc;
     }
 
-    private static string GetCanonicalPath(string fileName) => Path.GetFullPath(GetPlatformFileName(fileName));
+    private static string GetCanonicalPath(string fileName)
+    {
+        return Path.GetFullPath(GetPlatformFileName(fileName));
+    }
 
     private static string GetPlatformFileName(string fileName)
     {

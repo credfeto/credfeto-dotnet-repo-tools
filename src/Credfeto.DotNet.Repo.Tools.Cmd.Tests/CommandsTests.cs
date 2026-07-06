@@ -29,13 +29,13 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     public CommandsTests(ITestOutputHelper output)
         : base(output)
     {
-        this._gitRepositoryListLoader = Substitute.For<IGitRepositoryListLoader>();
-        this._bulkCodeCleanUp = Substitute.For<IBulkCodeCleanUp>();
-        this._bulkPackageUpdater = Substitute.For<IBulkPackageUpdater>();
-        this._bulkTemplateUpdater = Substitute.For<IBulkTemplateUpdater>();
-        this._bulkDependencyReducer = Substitute.For<IBulkDependencyReducer>();
-        this._dependencyReducer = Substitute.For<IDependencyReducer>();
-        this._dotNetFilesDetector = Substitute.For<IDotNetFilesDetector>();
+        this._gitRepositoryListLoader = GetSubstitute<IGitRepositoryListLoader>();
+        this._bulkCodeCleanUp = GetSubstitute<IBulkCodeCleanUp>();
+        this._bulkPackageUpdater = GetSubstitute<IBulkPackageUpdater>();
+        this._bulkTemplateUpdater = GetSubstitute<IBulkTemplateUpdater>();
+        this._bulkDependencyReducer = GetSubstitute<IBulkDependencyReducer>();
+        this._dependencyReducer = GetSubstitute<IDependencyReducer>();
+        this._dotNetFilesDetector = GetSubstitute<IDotNetFilesDetector>();
         this._commands = new Commands(
             gitRepositoryListLoader: this._gitRepositoryListLoader,
             bulkCodeCleanUp: this._bulkCodeCleanUp,
@@ -62,8 +62,9 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         this.SetupRepositories(["https://repo1.git"]);
     }
 
-    private ValueTask ReceivedBulkPackageUpdateAsync(int times) =>
-        this
+    private ValueTask ReceivedBulkPackageUpdateAsync(int times)
+    {
+        return this
             ._bulkPackageUpdater.ReceivedWithAnyArgs(times)
             .BulkUpdateAsync(
                 string.Empty,
@@ -76,9 +77,11 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
                 [],
                 default
             );
+    }
 
-    private ValueTask ReceivedBulkTemplateUpdateAsync(int times) =>
-        this
+    private ValueTask ReceivedBulkTemplateUpdateAsync(int times)
+    {
+        return this
             ._bulkTemplateUpdater.ReceivedWithAnyArgs(times)
             .BulkUpdateAsync(
                 string.Empty,
@@ -90,22 +93,30 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
                 [],
                 default
             );
+    }
 
-    private ValueTask ReceivedBulkCodeCleanUpAsync(int times) =>
-        this
+    private ValueTask ReceivedBulkCodeCleanUpAsync(int times)
+    {
+        return this
             ._bulkCodeCleanUp.ReceivedWithAnyArgs(times)
             .BulkUpdateAsync(string.Empty, string.Empty, string.Empty, string.Empty, string.Empty, [], default);
+    }
 
-    private ValueTask ReceivedBulkDependencyReduceAsync(int times) =>
-        this
+    private ValueTask ReceivedBulkDependencyReduceAsync(int times)
+    {
+        return this
             ._bulkDependencyReducer.ReceivedWithAnyArgs(times)
             .BulkUpdateAsync(string.Empty, string.Empty, string.Empty, [], default);
+    }
 
-    private ValueTask<DotNetFiles> ReceivedFindAsync(int times) =>
-        this._dotNetFilesDetector.ReceivedWithAnyArgs(times).FindAsync(string.Empty, default);
+    private ValueTask<DotNetFiles> ReceivedFindAsync(int times)
+    {
+        return this._dotNetFilesDetector.ReceivedWithAnyArgs(times).FindAsync(string.Empty, default);
+    }
 
-    private ValueTask ReceivedBulkPackageUpdateWithSingleRepoAsync(string expectedRepo) =>
-        this
+    private ValueTask ReceivedBulkPackageUpdateWithSingleRepoAsync(string expectedRepo)
+    {
+        return this
             ._bulkPackageUpdater.Received(1)
             .BulkUpdateAsync(
                 templateRepository: Arg.Any<string>(),
@@ -118,6 +129,7 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
                 repositories: Arg.Is<IReadOnlyList<string>>(r => r.Count == 1 && r[0] == expectedRepo),
                 cancellationToken: Arg.Any<CancellationToken>()
             );
+    }
 
     [Fact]
     public async Task UpdatePackagesWithNullSourceCallsBulkPackageUpdaterAsync()

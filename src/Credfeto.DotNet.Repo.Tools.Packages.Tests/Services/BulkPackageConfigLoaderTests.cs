@@ -17,10 +17,10 @@ namespace Credfeto.DotNet.Repo.Tools.Packages.Tests.Services;
 
 public sealed class BulkPackageConfigLoaderTests : LoggingFolderCleanupTestBase
 {
-    private const string ValidPackageJson =
+    private const string VALID_PACKAGE_JSON =
         """[{"packageId":"Test.Package","type":"nuget","exact-match":false,"version-bump-package":false,"prohibit-version-bump-when-referenced":false}]""";
 
-    private const string EmptyPackageJson = "[]";
+    private const string EMPTY_PACKAGE_JSON = "[]";
 
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IBulkPackageConfigLoader _loader;
@@ -69,7 +69,7 @@ public sealed class BulkPackageConfigLoaderTests : LoggingFolderCleanupTestBase
         string fileName = Path.Combine(path1: this.TempFolder, path2: "packages.json");
         await File.WriteAllTextAsync(
             path: fileName,
-            contents: ValidPackageJson,
+            contents: VALID_PACKAGE_JSON,
             encoding: new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
             cancellationToken: this.CancellationToken()
         );
@@ -88,7 +88,7 @@ public sealed class BulkPackageConfigLoaderTests : LoggingFolderCleanupTestBase
         string fileName = Path.Combine(path1: this.TempFolder, path2: "packages.json");
         await File.WriteAllTextAsync(
             path: fileName,
-            contents: ValidPackageJson,
+            contents: VALID_PACKAGE_JSON,
             encoding: new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
             cancellationToken: this.CancellationToken()
         );
@@ -107,7 +107,7 @@ public sealed class BulkPackageConfigLoaderTests : LoggingFolderCleanupTestBase
         string fileName = Path.Combine(path1: this.TempFolder, path2: "packages-empty.json");
         await File.WriteAllTextAsync(
             path: fileName,
-            contents: EmptyPackageJson,
+            contents: EMPTY_PACKAGE_JSON,
             encoding: new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
             cancellationToken: this.CancellationToken()
         );
@@ -145,7 +145,7 @@ public sealed class BulkPackageConfigLoaderTests : LoggingFolderCleanupTestBase
     [Fact]
     public async Task LoadFromHttpWithValidContentReturnsPackagesAsync()
     {
-        using MockHttpMessageHandler handler = new(ValidPackageJson);
+        using MockHttpMessageHandler handler = new(VALID_PACKAGE_JSON);
         using HttpClient httpClient = new(handler);
         this._httpClientFactory.CreateClient(name: nameof(BulkPackageConfigLoader)).Returns(httpClient);
 
@@ -160,7 +160,7 @@ public sealed class BulkPackageConfigLoaderTests : LoggingFolderCleanupTestBase
     [Fact]
     public async Task LoadFromHttpWithEmptyArrayThrowsInvalidOperationExceptionAsync()
     {
-        using MockHttpMessageHandler handler = new(EmptyPackageJson);
+        using MockHttpMessageHandler handler = new(EMPTY_PACKAGE_JSON);
         using HttpClient httpClient = new(handler);
         this._httpClientFactory.CreateClient(name: nameof(BulkPackageConfigLoader)).Returns(httpClient);
 
