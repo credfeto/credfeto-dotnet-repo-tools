@@ -15,7 +15,7 @@ public class ResharperSuppressionBench
 {
     private readonly ResharperSuppressionToSuppressMessage _service = new();
 
-    private const string SampleContent = """
+    private const string SAMPLE_CONTENT = """
         using System;
         using System.Collections.Generic;
 
@@ -47,6 +47,6 @@ public class ResharperSuppressionBench
     [Benchmark]
     public string Replace()
     {
-        return this._service.Replace(SampleContent);
+        return this._service.Replace(SAMPLE_CONTENT);
     }
 }

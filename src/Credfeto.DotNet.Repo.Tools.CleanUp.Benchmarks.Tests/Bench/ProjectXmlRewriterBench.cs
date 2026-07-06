@@ -17,7 +17,7 @@ public class ProjectXmlRewriterBench
 {
     private readonly ProjectXmlRewriter _rewriter = new(NullLogger<ProjectXmlRewriter>.Instance);
 
-    private const string SampleCsproj = """
+    private const string SAMPLE_CSPROJ = """
         <Project Sdk="Microsoft.NET.Sdk">
           <PropertyGroup>
             <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
@@ -44,7 +44,7 @@ public class ProjectXmlRewriterBench
     public bool ReOrderPropertyGroups()
     {
         XmlDocument doc = new();
-        doc.LoadXml(SampleCsproj);
+        doc.LoadXml(SAMPLE_CSPROJ);
 
         return this._rewriter.ReOrderPropertyGroups(projectDocument: doc, filename: "test.csproj");
     }
@@ -53,7 +53,7 @@ public class ProjectXmlRewriterBench
     public bool ReOrderIncludes()
     {
         XmlDocument doc = new();
-        doc.LoadXml(SampleCsproj);
+        doc.LoadXml(SAMPLE_CSPROJ);
 
         return this._rewriter.ReOrderIncludes(projectDocument: doc, filename: "test.csproj");
     }
