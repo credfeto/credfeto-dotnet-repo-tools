@@ -86,7 +86,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
                 clonePath: repoUrl,
                 workingDirectory: workingDirectory,
                 new(Repository.Discover(workingDirectory)),
-                loggerFactory: this._loggerFactory
+                logger: this._loggerFactory.CreateLogger<GitRepository>()
             );
 
             await repo.ResetToDefaultBranchAsync(upstream: GitConstants.Upstream, cancellationToken: cancellationToken);
@@ -131,7 +131,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
             clonePath: repoUrl,
             workingDirectory: destinationPath,
             new(Repository.Discover(path)),
-            loggerFactory: this._loggerFactory
+            logger: this._loggerFactory.CreateLogger<GitRepository>()
         );
     }
 

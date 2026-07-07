@@ -21,12 +21,12 @@ public sealed class GitRepository : IGitRepository
 
     private Repository? _repo;
 
-    public GitRepository(string clonePath, string workingDirectory, Repository? repo, ILoggerFactory loggerFactory)
+    public GitRepository(string clonePath, string workingDirectory, Repository? repo, ILogger<GitRepository> logger)
     {
         this.ClonePath = clonePath;
         this.WorkingDirectory = workingDirectory;
         this._repo = repo;
-        this._logger = loggerFactory.CreateLogger<GitRepository>();
+        this._logger = logger;
     }
 
     public Repository Active => this._repo ?? OpenRepository(workDir: this.WorkingDirectory);
