@@ -15,13 +15,13 @@ using Microsoft.Extensions.Logging;
 namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 
 [DebuggerDisplay("{ClonePath}: {WorkingDirectory}")]
-internal sealed class GitRepository : IGitRepository
+public sealed class GitRepository : IGitRepository
 {
-    private readonly ILogger _logger;
+    private readonly ILogger<GitRepository> _logger;
 
     private Repository? _repo;
 
-    internal GitRepository(string clonePath, string workingDirectory, Repository? repo, ILogger logger)
+    public GitRepository(string clonePath, string workingDirectory, Repository? repo, ILogger<GitRepository> logger)
     {
         this.ClonePath = clonePath;
         this.WorkingDirectory = workingDirectory;
