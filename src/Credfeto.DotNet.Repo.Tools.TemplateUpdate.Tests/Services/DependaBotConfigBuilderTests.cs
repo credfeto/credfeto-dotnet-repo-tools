@@ -116,6 +116,56 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
     }
 
     [Fact]
+    public async Task GeneratesYamllintConformingDocument()
+    {
+        IGitRepository repository = this.CreateRepository();
+        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
+
+        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
+            repoContext: repoContext,
+            templateFolder: this._tempFolder,
+            dotNetFiles: DotNetFilesWithSolutionsAndProjects(),
+            packages: [ExactPackage("FunFair.Test.Common"), WildcardPackage("Meziantou")],
+            cancellationToken: this.CancellationToken()
+        );
+
+        this.Output.WriteLine(result);
+
+        string expected = string.Join(
+            separator: Environment.NewLine,
+            values:
+            [
+                "---",
+                "version: 2",
+                "updates:",
+                "",
+                "  - package-ecosystem: nuget",
+                "    directory: \"/\"",
+                "    schedule:",
+                "      interval: daily",
+                "      time: \"03:00\"",
+                "      timezone: \"Europe/London\"",
+                "    open-pull-requests-limit: 99",
+                "    assignees:",
+                "      - credfeto",
+                "    commit-message:",
+                "      prefix: \"[Dependencies]\"",
+                "    labels:",
+                "      - \"nuget\"",
+                "      - \"dependencies\"",
+                "      - \"Changelog Not Required\"",
+                "    allow:",
+                "      - dependency-type: all",
+                "    ignore:",
+                "      - dependency-name: \"FunFair.Test.Common\"",
+                "      - dependency-name: \"Meziantou.*\"",
+            ]
+        );
+
+        Assert.Equal(expected: expected, actual: result, StringComparer.Ordinal);
+    }
+
+    [Fact]
     public async Task WithSubmodulesGeneratesGitSubmoduleSection()
     {
         IGitRepository repository = this.CreateRepository(hasSubmodules: true);

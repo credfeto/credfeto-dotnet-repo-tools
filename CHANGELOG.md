@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Also check for .razor files when determining if project needs Microsoft.NET.Sdk.Razor SDK
 - Removed InternalsVisibleTo usage (banned by new FFS0051 analyzer rule) by making test-exercised internal types public and retiring redundant tests of source-generated JSON serializer contexts
 - Made GitCommandLine and GitRepository public in Credfeto.DotNet.Repo.Tools.Git to remove InternalsVisibleTo usage
+- Generate .github/dependabot.yml with yamllint-conforming YAML (document-start marker and indented block sequences) so the file no longer fights the linter on every commit
 ### Changed
 - Updated FunFair.CodeAnalysis to 7.2.6.2145 across all projects
 ### Deprecated
