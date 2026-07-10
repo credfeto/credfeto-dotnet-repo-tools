@@ -8,6 +8,16 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.5.4] - 2026-07-10
+### Added
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Dependencies
 ### Fixed
 - Also check for .razor files when determining if project needs Microsoft.NET.Sdk.Razor SDK
@@ -16,12 +26,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Generate .github/dependabot.yml with yamllint-conforming YAML (document-start marker and indented block sequences) so the file no longer fights the linter on every commit
 ### Changed
 - Updated FunFair.CodeAnalysis to 7.2.6.2145 across all projects
-### Deprecated
-### Removed
-### Deployment Changes
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
+
 ## [1.5.3] - 2026-06-22
 ### Added
 - Add unit tests for 100% code coverage: Credfeto.DotNet.Repo.Tools.Git
