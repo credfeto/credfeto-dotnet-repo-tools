@@ -82,7 +82,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
             this.AddEcosystemSection(config: config, ecoSystem: "pip", directory: "/", packageTypeLabel: "python");
         }
 
-        return ValueTask.FromResult(string.Join(separator: Environment.NewLine, values: config));
+        return ValueTask.FromResult(string.Join(separator: Environment.NewLine, values: config) + Environment.NewLine);
     }
 
     private void AddEcosystemSection(List<string> config, string ecoSystem, string directory, string packageTypeLabel)
