@@ -9,6 +9,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Fixed HasNonStandardGithubActions comparing a repo's workflows directory against itself instead of the template's, so extra workflows now correctly enable the github-actions Dependabot section
 ### Changed
 ### Deprecated
 ### Removed

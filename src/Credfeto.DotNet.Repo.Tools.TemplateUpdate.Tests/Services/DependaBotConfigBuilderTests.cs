@@ -336,6 +336,70 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
         Assert.Contains("- package-ecosystem: github-actions", result, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task WithNonStandardWorkflowGeneratesGithubActionsSection()
+    {
+        IGitRepository repository = this.CreateRepository();
+        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
+
+        string workflowsDir = Path.Combine(this._tempFolder, ".github", "workflows");
+        Directory.CreateDirectory(workflowsDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(workflowsDir, "custom.yml"),
+            contents: "name: custom workflow",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string templateFolder = Path.Combine(this._tempFolder, "template");
+        Directory.CreateDirectory(templateFolder);
+
+        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
+            repoContext: repoContext,
+            templateFolder: templateFolder,
+            dotNetFiles: EmptyDotNetFiles(),
+            packages: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        this.Output.WriteLine(result);
+        Assert.Contains("- package-ecosystem: github-actions", result, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WithOnlyTemplateWorkflowDoesNotGenerateGithubActionsSection()
+    {
+        IGitRepository repository = this.CreateRepository();
+        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
+
+        string workflowsDir = Path.Combine(this._tempFolder, ".github", "workflows");
+        Directory.CreateDirectory(workflowsDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(workflowsDir, "standard.yml"),
+            contents: "name: standard workflow",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string templateFolder = Path.Combine(this._tempFolder, "template");
+        string templateWorkflowsDir = Path.Combine(templateFolder, ".github", "workflows");
+        Directory.CreateDirectory(templateWorkflowsDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(templateWorkflowsDir, "standard.yml"),
+            contents: "name: standard workflow",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
+            repoContext: repoContext,
+            templateFolder: templateFolder,
+            dotNetFiles: EmptyDotNetFiles(),
+            packages: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        this.Output.WriteLine(result);
+        Assert.DoesNotContain("- package-ecosystem: github-actions", result, StringComparison.Ordinal);
+    }
+
     private IGitRepository CreateRepository(bool hasSubmodules = false)
     {
         IGitRepository repository = GetSubstitute<IGitRepository>();
