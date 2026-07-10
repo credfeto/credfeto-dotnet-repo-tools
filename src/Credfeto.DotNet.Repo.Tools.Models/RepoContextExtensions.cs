@@ -34,11 +34,7 @@ public static class RepoContextExtensions
         string templateActionsPath = Path.Combine(path1: templatePath, path2: ".github", path3: "actions");
         string repoActionsPath = Path.Combine(path1: repoContext.WorkingDirectory, path2: ".github", path3: "actions");
 
-        string templateWorkflowsPath = Path.Combine(
-            path1: repoContext.WorkingDirectory,
-            path2: ".github",
-            path3: "workflows"
-        );
+        string templateWorkflowsPath = Path.Combine(path1: templatePath, path2: ".github", path3: "workflows");
         string repoWorkflowsPath = Path.Combine(
             path1: repoContext.WorkingDirectory,
             path2: ".github",
