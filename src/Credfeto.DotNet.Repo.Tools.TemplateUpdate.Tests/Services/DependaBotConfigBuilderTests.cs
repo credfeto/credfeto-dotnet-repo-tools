@@ -131,36 +131,37 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 
         this.Output.WriteLine(result);
 
-        string expected = string.Join(
-            separator: Environment.NewLine,
-            values:
-            [
-                "---",
-                "version: 2",
-                "updates:",
-                "",
-                "  - package-ecosystem: nuget",
-                "    directory: \"/\"",
-                "    schedule:",
-                "      interval: daily",
-                "      time: \"03:00\"",
-                "      timezone: \"Europe/London\"",
-                "    open-pull-requests-limit: 99",
-                "    assignees:",
-                "      - credfeto",
-                "    commit-message:",
-                "      prefix: \"[Dependencies]\"",
-                "    labels:",
-                "      - \"nuget\"",
-                "      - \"dependencies\"",
-                "      - \"Changelog Not Required\"",
-                "    allow:",
-                "      - dependency-type: all",
-                "    ignore:",
-                "      - dependency-name: \"FunFair.Test.Common\"",
-                "      - dependency-name: \"Meziantou.*\"",
-            ]
-        );
+        string expected =
+            string.Join(
+                separator: Environment.NewLine,
+                values:
+                [
+                    "---",
+                    "version: 2",
+                    "updates:",
+                    "",
+                    "  - package-ecosystem: nuget",
+                    "    directory: \"/\"",
+                    "    schedule:",
+                    "      interval: daily",
+                    "      time: \"03:00\"",
+                    "      timezone: \"Europe/London\"",
+                    "    open-pull-requests-limit: 99",
+                    "    assignees:",
+                    "      - credfeto",
+                    "    commit-message:",
+                    "      prefix: \"[Dependencies]\"",
+                    "    labels:",
+                    "      - \"nuget\"",
+                    "      - \"dependencies\"",
+                    "      - \"Changelog Not Required\"",
+                    "    allow:",
+                    "      - dependency-type: all",
+                    "    ignore:",
+                    "      - dependency-name: \"FunFair.Test.Common\"",
+                    "      - dependency-name: \"Meziantou.*\"",
+                ]
+            ) + Environment.NewLine;
 
         Assert.Equal(expected: expected, actual: result, StringComparer.Ordinal);
     }

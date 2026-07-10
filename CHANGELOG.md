@@ -9,6 +9,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Generate .github/dependabot.yml with a trailing newline so it no longer gets rewritten by pre-commit's end-of-file-fixer on every commit
 ### Changed
 ### Deprecated
 ### Removed
