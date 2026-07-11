@@ -9,7 +9,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
-- Removed the stray blank line generated after `updates:` before the first dependabot ecosystem entry, which failed yamllint
 ### Changed
 ### Deprecated
 ### Removed
@@ -17,6 +16,10 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+## [1.5.6] - 2026-07-11
+### Fixed
+- Removed the stray blank line generated after `updates:` before the first dependabot ecosystem entry, which failed yamllint
+
 ## [1.5.5] - 2026-07-10
 ### Fixed
 - Generate .github/dependabot.yml with a trailing newline so it no longer gets rewritten by pre-commit's end-of-file-fixer on every commit
