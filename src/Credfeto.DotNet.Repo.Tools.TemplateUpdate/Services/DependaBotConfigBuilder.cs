@@ -199,9 +199,13 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
     {
         this._logger.LogAddingConfigForEcosystem(ecoSystem: ecoSystem, directory: directory);
 
+        if (!StringComparer.Ordinal.Equals(x: config[^1], y: "updates:"))
+        {
+            config.Add("");
+        }
+
         config.AddRange(
             [
-                "",
                 $"  - package-ecosystem: {ecoSystem}",
                 $"    directory: \"{directory}\"",
                 "    schedule:",

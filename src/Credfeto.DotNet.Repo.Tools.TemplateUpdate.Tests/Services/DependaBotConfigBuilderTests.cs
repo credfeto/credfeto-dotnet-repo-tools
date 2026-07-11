@@ -139,7 +139,6 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
                     "---",
                     "version: 2",
                     "updates:",
-                    "",
                     "  - package-ecosystem: nuget",
                     "    directory: \"/\"",
                     "    schedule:",
@@ -182,6 +181,61 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 
         this.Output.WriteLine(result);
         Assert.Contains("- package-ecosystem: gitsubmodule", result, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WithMultipleEcosystemsOmitsBlankLineAfterUpdatesButKeepsBlankLineBetweenSections()
+    {
+        IGitRepository repository = this.CreateRepository(hasSubmodules: true);
+        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
+        await File.WriteAllTextAsync(
+            path: Path.Combine(this._tempFolder, "Dockerfile"),
+            contents: "FROM ubuntu:latest",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
+            repoContext: repoContext,
+            templateFolder: this._tempFolder,
+            dotNetFiles: EmptyDotNetFiles(),
+            packages: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        this.Output.WriteLine(result);
+
+        List<string> lines = ["---", "version: 2", "updates:"];
+        lines.AddRange(EcosystemBlock(ecoSystem: "gitsubmodule", packageTypeLabel: "submodule"));
+        lines.Add("");
+        lines.AddRange(EcosystemBlock(ecoSystem: "docker", packageTypeLabel: "docker"));
+
+        string expected = string.Join(separator: Environment.NewLine, values: lines) + Environment.NewLine;
+
+        Assert.Equal(expected: expected, actual: result, StringComparer.Ordinal);
+    }
+
+    private static IEnumerable<string> EcosystemBlock(string ecoSystem, string packageTypeLabel)
+    {
+        return
+        [
+            $"  - package-ecosystem: {ecoSystem}",
+            "    directory: \"/\"",
+            "    schedule:",
+            "      interval: daily",
+            "      time: \"03:00\"",
+            "      timezone: \"Europe/London\"",
+            "    open-pull-requests-limit: 99",
+            "    assignees:",
+            "      - credfeto",
+            "    commit-message:",
+            "      prefix: \"[Dependencies]\"",
+            "    labels:",
+            $"      - \"{packageTypeLabel}\"",
+            "      - \"dependencies\"",
+            "      - \"Changelog Not Required\"",
+            "    allow:",
+            "      - dependency-type: all",
+        ];
     }
 
     [Fact]
