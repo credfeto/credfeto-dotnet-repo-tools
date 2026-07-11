@@ -9,6 +9,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Removed the stray blank line generated after `updates:` before the first dependabot ecosystem entry, which failed yamllint
 ### Changed
 ### Deprecated
 ### Removed
