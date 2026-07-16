@@ -14,6 +14,7 @@ using Credfeto.DotNet.Repo.Tools.CleanUp.Helpers;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Extensions;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Models;
@@ -708,7 +709,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                 return false;
             }
 
-            await SaveProjectAsync(project: project, doc: doc);
+            await SaveProjectAsync(project: project, doc: doc, cancellationToken: cancellationToken);
 
             string contentAfter = await LoadProjectTextAsync(path: project, cancellationToken: cancellationToken);
 
@@ -746,22 +747,13 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         return changes != 0;
     }
 
-    private static async ValueTask SaveProjectAsync(string project, XmlDocument doc)
+    private static ValueTask SaveProjectAsync(string project, XmlDocument doc, in CancellationToken cancellationToken)
     {
-        XmlWriterSettings settings = new()
-        {
-            Indent = true,
-            IndentChars = "  ",
-            NewLineOnAttributes = false,
-            OmitXmlDeclaration = true,
-            Async = true,
-        };
-
-        await using (XmlWriter xmlWriter = XmlWriter.Create(outputFileName: project, settings: settings))
-        {
-            doc.Save(xmlWriter);
-            await ValueTask.CompletedTask;
-        }
+        return ProjectXmlSerializer.SaveAsync(
+            document: doc,
+            filePath: project,
+            cancellationToken: cancellationToken
+        );
     }
 
     private static async ValueTask<(XmlDocument doc, string content)> LoadProjectAsync(
