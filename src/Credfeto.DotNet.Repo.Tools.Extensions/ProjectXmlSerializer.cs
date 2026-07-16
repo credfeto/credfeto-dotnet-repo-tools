@@ -9,18 +9,7 @@ namespace Credfeto.DotNet.Repo.Tools.Extensions;
 
 public static class ProjectXmlSerializer
 {
-    public static readonly Encoding Utf8NoBom = new UTF8Encoding(
-        encoderShouldEmitUTF8Identifier: false
-    );
-
-    private static readonly XmlWriterSettings Settings = new()
-    {
-        Indent = true,
-        IndentChars = "  ",
-        NewLineOnAttributes = false,
-        OmitXmlDeclaration = true,
-        Async = false,
-    };
+    public static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
     public static string ToProjectFileText(XmlDocument document)
     {
@@ -28,12 +17,16 @@ public static class ProjectXmlSerializer
 
         StringBuilder builder = new();
 
-        using (XmlWriter xmlWriter = XmlWriter.Create(output: builder, settings: Settings))
+        using (XmlWriter xmlWriter = XmlWriter.Create(output: builder, settings: CreateSettings(isAsync: false)))
         {
             document.Save(xmlWriter);
+
+            // XmlDocument never writes anything after the root element's closing tag, so this is
+            // always the file's last character - no need to check for or trim any existing trailing newline.
+            xmlWriter.WriteWhitespace("\n");
         }
 
-        return EnsureSingleTrailingNewLine(builder.ToString());
+        return builder.ToString();
     }
 
     public static async ValueTask WriteAsync(
@@ -53,25 +46,49 @@ public static class ProjectXmlSerializer
         );
     }
 
-    public static ValueTask SaveAsync(
+    public static async ValueTask SaveAsync(
         XmlDocument document,
         string filePath,
         Encoding encoding,
-        in CancellationToken cancellationToken
+        CancellationToken cancellationToken
     )
     {
-        string content = ToProjectFileText(document);
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(encoding);
 
-        return WriteAsync(
-            filePath: filePath,
-            content: content,
-            encoding: encoding,
-            cancellationToken: cancellationToken
-        );
+        XmlWriterSettings settings = CreateSettings(isAsync: true);
+        settings.Encoding = encoding;
+
+        await using (MemoryStream stream = new())
+        {
+            await using (XmlWriter xmlWriter = XmlWriter.Create(output: stream, settings: settings))
+            {
+                document.Save(xmlWriter);
+
+                // XmlDocument never writes anything after the root element's closing tag, so this is
+                // always the file's last byte - no need to check for or trim any existing trailing newline.
+                await xmlWriter.WriteWhitespaceAsync("\n");
+            }
+
+            // Render fully in memory first, so a serialization failure can never truncate an
+            // already-good file on disk.
+            await File.WriteAllBytesAsync(
+                path: filePath,
+                bytes: stream.ToArray(),
+                cancellationToken: cancellationToken
+            );
+        }
     }
 
-    private static string EnsureSingleTrailingNewLine(string content)
+    private static XmlWriterSettings CreateSettings(bool isAsync)
     {
-        return content.TrimEnd('\r', '\n') + "\n";
+        return new XmlWriterSettings
+        {
+            Indent = true,
+            IndentChars = "  ",
+            NewLineOnAttributes = false,
+            OmitXmlDeclaration = true,
+            Async = isAsync,
+        };
     }
 }
