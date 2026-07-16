@@ -36,20 +36,23 @@ public sealed class ProjectXmlSerializerTests : LoggingTestBase, IDisposable
     }
 
     [Fact]
-    public void ToProjectFileTextEndsWithExactlyOneTrailingNewLine()
+    public async Task ToProjectFileTextAsyncEndsWithExactlyOneTrailingNewLine()
     {
         XmlDocument document = LoadProject(
             "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n  </PropertyGroup>\n</Project>"
         );
 
-        string result = ProjectXmlSerializer.ToProjectFileText(document);
+        string result = await ProjectXmlSerializer.ToProjectFileTextAsync(
+            document: document,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.EndsWith(expectedEndString: "</Project>\n", actualString: result, StringComparison.Ordinal);
         Assert.False(result.EndsWith("\n\n", StringComparison.Ordinal), "Should not have more than one trailing newline");
     }
 
     [Fact]
-    public void ToProjectFileTextAfterRemovingNodeStillEndsWithExactlyOneTrailingNewLine()
+    public async Task ToProjectFileTextAsyncAfterRemovingNodeStillEndsWithExactlyOneTrailingNewLine()
     {
         XmlDocument document = LoadProject(
             "<Project Sdk=\"Microsoft.NET.Sdk\">\n"
@@ -65,20 +68,26 @@ public sealed class ProjectXmlSerializerTests : LoggingTestBase, IDisposable
         // ! Node is guaranteed to exist and have a parent given the document above
         node!.ParentNode!.RemoveChild(node);
 
-        string result = ProjectXmlSerializer.ToProjectFileText(document);
+        string result = await ProjectXmlSerializer.ToProjectFileTextAsync(
+            document: document,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.EndsWith(expectedEndString: "</Project>\n", actualString: result, StringComparison.Ordinal);
         Assert.DoesNotContain(expectedSubstring: "Bar", actualString: result, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void ToProjectFileTextUsesTwoSpaceIndentAndOmitsXmlDeclaration()
+    public async Task ToProjectFileTextAsyncUsesTwoSpaceIndentAndOmitsXmlDeclaration()
     {
         XmlDocument document = LoadProject(
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>"
         );
 
-        string result = ProjectXmlSerializer.ToProjectFileText(document);
+        string result = await ProjectXmlSerializer.ToProjectFileTextAsync(
+            document: document,
+            cancellationToken: this.CancellationToken()
+        );
 
         const string expected = "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n  </PropertyGroup>\n</Project>\n";
 
