@@ -271,7 +271,6 @@ internal sealed class Commands
         await ProjectXmlSerializer.WriteAsync(
             filePath: filePath,
             content: rewritten,
-            encoding: Utf8NoBom,
             cancellationToken: this._cancellationToken
         );
 
