@@ -258,7 +258,10 @@ internal sealed class Commands
             return false;
         }
 
-        string rewritten = ProjectXmlSerializer.ToProjectFileText(doc);
+        string rewritten = await ProjectXmlSerializer.ToProjectFileTextAsync(
+            document: doc,
+            cancellationToken: this._cancellationToken
+        );
 
         if (StringComparer.Ordinal.Equals(x: original, y: rewritten))
         {
