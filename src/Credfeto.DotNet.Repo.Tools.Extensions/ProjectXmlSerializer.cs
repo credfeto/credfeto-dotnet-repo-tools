@@ -11,6 +11,19 @@ public static class ProjectXmlSerializer
 {
     public static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
+    private static readonly XmlWriterSettings WriterSettings = new()
+                                                               {
+                                                                   Async = true,
+                                                                   Indent = true,
+                                                                   IndentChars = "  ",
+                                                                   OmitXmlDeclaration = true,
+                                                                   Encoding = Encoding.UTF8,
+                                                                   NewLineHandling = NewLineHandling.None,
+                                                                   NewLineOnAttributes = false,
+                                                                   NamespaceHandling = NamespaceHandling.OmitDuplicates,
+                                                                   CloseOutput = true,
+                                                               };
+
     public static async ValueTask<string> ToProjectFileTextAsync(
         XmlDocument document,
         CancellationToken cancellationToken
@@ -21,16 +34,21 @@ public static class ProjectXmlSerializer
 
         StringBuilder builder = new();
 
-        await using (XmlWriter xmlWriter = XmlWriter.Create(output: builder, settings: CreateSettings()))
+        await using (XmlWriter xmlWriter = XmlWriter.Create(output: builder, settings: WriterSettings))
         {
-            document.Save(xmlWriter);
-
-            // XmlDocument never writes anything after the root element's closing tag, so this is
-            // always the file's last character - no need to check for or trim any existing trailing newline.
-            await xmlWriter.WriteWhitespaceAsync("\n");
+            await WriteCommonAsync(document: document, xmlWriter: xmlWriter);
         }
 
         return builder.ToString();
+    }
+
+    private static Task WriteCommonAsync(XmlDocument document, XmlWriter xmlWriter)
+    {
+        document.Save(xmlWriter);
+
+        // XmlDocument never writes anything after the root element's closing tag, so this is
+        // always the file's last character - no need to check for or trim any existing trailing newline.
+        return xmlWriter.WriteWhitespaceAsync("\n");
     }
 
     public static async ValueTask WriteAsync(
@@ -53,31 +71,19 @@ public static class ProjectXmlSerializer
     public static async ValueTask SaveAsync(
         XmlDocument document,
         string filePath,
-        Encoding encoding,
         CancellationToken cancellationToken
     )
     {
-        // Fully rendered in memory first, so a serialization failure can never truncate an
-        // already-good file on disk.
-        string content = await ToProjectFileTextAsync(document: document, cancellationToken: cancellationToken);
-
-        await WriteAsync(
-            filePath: filePath,
-            content: content,
-            encoding: encoding,
-            cancellationToken: cancellationToken
-        );
-    }
-
-    private static XmlWriterSettings CreateSettings()
-    {
-        return new XmlWriterSettings
+        await using (MemoryStream stream = new())
         {
-            Indent = true,
-            IndentChars = "  ",
-            NewLineOnAttributes = false,
-            OmitXmlDeclaration = true,
-            Async = true,
-        };
+            await using (XmlWriter writer = XmlWriter.Create(output: stream, settings: WriterSettings))
+            {
+                await WriteCommonAsync(document: document, xmlWriter: writer);
+            }
+
+            // Render fully in memory first, so a serialisation failure can never truncate an
+            // already-good file on disk.
+            await File.WriteAllBytesAsync(path: filePath, bytes: stream.ToArray(), cancellationToken: cancellationToken);
+        }
     }
 }

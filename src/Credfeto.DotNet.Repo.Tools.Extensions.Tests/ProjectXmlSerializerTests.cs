@@ -146,7 +146,6 @@ public sealed class ProjectXmlSerializerTests : LoggingTestBase, IDisposable
         await ProjectXmlSerializer.SaveAsync(
             document: document,
             filePath: path,
-            encoding: ProjectXmlSerializer.Utf8NoBom,
             cancellationToken: this.CancellationToken()
         );
 
