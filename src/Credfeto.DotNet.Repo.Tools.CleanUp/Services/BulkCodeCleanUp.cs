@@ -752,7 +752,6 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         return ProjectXmlSerializer.SaveAsync(
             document: doc,
             filePath: project,
-            encoding: Encoding.UTF8,
             cancellationToken: cancellationToken
         );
     }
