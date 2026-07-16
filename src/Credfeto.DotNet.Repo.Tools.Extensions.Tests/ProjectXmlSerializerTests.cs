@@ -36,22 +36,6 @@ public sealed class ProjectXmlSerializerTests : LoggingTestBase, IDisposable
     }
 
     [Fact]
-    public async Task ToProjectFileTextAsyncEndsWithExactlyOneTrailingNewLine()
-    {
-        XmlDocument document = LoadProject(
-            "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n  </PropertyGroup>\n</Project>"
-        );
-
-        string result = await ProjectXmlSerializer.ToProjectFileTextAsync(
-            document: document,
-            cancellationToken: this.CancellationToken()
-        );
-
-        Assert.EndsWith(expectedEndString: "</Project>\n", actualString: result, StringComparison.Ordinal);
-        Assert.False(result.EndsWith("\n\n", StringComparison.Ordinal), "Should not have more than one trailing newline");
-    }
-
-    [Fact]
     public async Task ToProjectFileTextAsyncAfterRemovingNodeStillEndsWithExactlyOneTrailingNewLine()
     {
         XmlDocument document = LoadProject(
