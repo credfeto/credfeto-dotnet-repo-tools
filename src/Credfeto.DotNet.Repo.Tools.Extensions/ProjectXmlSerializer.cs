@@ -40,13 +40,13 @@ public static class ProjectXmlSerializer
         return builder.ToString();
     }
 
-    private static Task WriteCommonAsync(XmlDocument document, XmlWriter xmlWriter)
+    private static ValueTask WriteCommonAsync(XmlDocument document, XmlWriter xmlWriter)
     {
         document.Save(xmlWriter);
 
         // XmlDocument never writes anything after the root element's closing tag, so this is
         // always the file's last character - no need to check for or trim any existing trailing newline.
-        return xmlWriter.WriteWhitespaceAsync("\n");
+        return new ValueTask(xmlWriter.WriteWhitespaceAsync("\n"));
     }
 
     public static async ValueTask WriteAsync(string filePath, string content, CancellationToken cancellationToken)
