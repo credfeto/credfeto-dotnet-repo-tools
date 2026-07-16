@@ -16,6 +16,7 @@ public static class ProjectXmlSerializer
                                                                    IndentChars = "  ",
                                                                    OmitXmlDeclaration = true,
                                                                    Encoding = Encoding.UTF8,
+                                                                   NewLineChars = "\n",
                                                                    NewLineHandling = NewLineHandling.None,
                                                                    NewLineOnAttributes = false,
                                                                    NamespaceHandling = NamespaceHandling.OmitDuplicates,
