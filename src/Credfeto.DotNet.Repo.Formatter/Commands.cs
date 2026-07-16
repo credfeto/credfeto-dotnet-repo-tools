@@ -12,6 +12,7 @@ using Cocona;
 using Credfeto.DotNet.Repo.Formatter.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp;
+using Credfeto.DotNet.Repo.Tools.Extensions;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
 
@@ -31,15 +32,6 @@ internal sealed class Commands
     );
 
     private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
-
-    private static readonly XmlWriterSettings XmlSettings = new()
-    {
-        Indent = true,
-        IndentChars = "  ",
-        NewLineOnAttributes = false,
-        OmitXmlDeclaration = true,
-        Async = false,
-    };
 
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
@@ -266,22 +258,16 @@ internal sealed class Commands
             return false;
         }
 
-        StringBuilder sb = new(capacity: original.Length);
-        await using (XmlWriter xmlWriter = XmlWriter.Create(output: sb, settings: XmlSettings))
-        {
-            doc.Save(xmlWriter);
-        }
-
-        string rewritten = sb.ToString();
+        string rewritten = ProjectXmlSerializer.ToProjectFileText(doc);
 
         if (StringComparer.Ordinal.Equals(x: original, y: rewritten))
         {
             return false;
         }
 
-        await File.WriteAllTextAsync(
-            path: filePath,
-            contents: rewritten,
+        await ProjectXmlSerializer.WriteAsync(
+            filePath: filePath,
+            content: rewritten,
             encoding: Utf8NoBom,
             cancellationToken: this._cancellationToken
         );

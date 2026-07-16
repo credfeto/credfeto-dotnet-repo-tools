@@ -12,6 +12,7 @@ using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Helpers;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Models;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Services.LoggingExtensions;
+using Credfeto.DotNet.Repo.Tools.Extensions;
 using Credfeto.Extensions.Linq;
 using Microsoft.Extensions.Logging;
 
@@ -303,7 +304,12 @@ public sealed class DependencyReducer : IDependencyReducer
     {
         this._logger.CheckingPackage(packageId: packageReference.PackageId, version: packageReference.Version);
 
-        RemoveNodeFromProject(projectUpdateContext: projectUpdateContext, fileContent: fileContent, node: node);
+        await RemoveNodeFromProjectAsync(
+            projectUpdateContext: projectUpdateContext,
+            fileContent: fileContent,
+            node: node,
+            cancellationToken: cancellationToken
+        );
 
         bool needToBuild = this.ProjectDoesNotAlreadyIncludePackageThroughChild(
             projectUpdateContext: projectUpdateContext,
@@ -327,14 +333,7 @@ public sealed class DependencyReducer : IDependencyReducer
 
             if (solutionBuildOk)
             {
-                projectUpdateContext.Tracking.AddObsolete(
-                    new(
-                        ProjectFileName: projectUpdateContext.Project,
-                        Type: ReferenceType.PACKAGE,
-                        Name: packageReference.PackageId,
-                        Version: packageReference.Version
-                    )
-                );
+                TrackObsoletePackage(projectUpdateContext: projectUpdateContext, packageReference: packageReference);
             }
 
             return !solutionBuildOk;
@@ -361,16 +360,34 @@ public sealed class DependencyReducer : IDependencyReducer
         return true;
     }
 
-    private static void RemoveNodeFromProject(
+    private static ValueTask RemoveNodeFromProjectAsync(
         in ProjectUpdateContext projectUpdateContext,
         FileContent fileContent,
-        XmlElement node
+        XmlElement node,
+        in CancellationToken cancellationToken
     )
     {
         XmlNode? parentNode = node.ParentNode;
         parentNode?.RemoveChild(node);
 
-        fileContent.Xml.Save(projectUpdateContext.Project);
+        return ProjectXmlSerializer.SaveAsync(
+            document: fileContent.Xml,
+            filePath: projectUpdateContext.Project,
+            encoding: ProjectXmlSerializer.Utf8NoBom,
+            cancellationToken: cancellationToken
+        );
+    }
+
+    private static void TrackObsoletePackage(in ProjectUpdateContext projectUpdateContext, PackageReference packageReference)
+    {
+        projectUpdateContext.Tracking.AddObsolete(
+            new(
+                ProjectFileName: projectUpdateContext.Project,
+                Type: ReferenceType.PACKAGE,
+                Name: packageReference.PackageId,
+                Version: packageReference.Version
+            )
+        );
     }
 
     private static XmlElement? FindPackageReference(IReadOnlyList<XmlNode> xmlNodes, PackageReference packageReference)
@@ -452,7 +469,12 @@ public sealed class DependencyReducer : IDependencyReducer
 
             this._logger.CheckingProjectReference(projectReference.RelativeInclude);
 
-            RemoveNodeFromProject(projectUpdateContext: projectUpdateContext, fileContent: fileContent, node: node);
+            await RemoveNodeFromProjectAsync(
+                projectUpdateContext: projectUpdateContext,
+                fileContent: fileContent,
+                node: node,
+                cancellationToken: cancellationToken
+            );
 
             bool needToBuild = this.ProjectDoesNotAlreadyIncludeProjectReferenceThroughChild(
                 projectUpdateContext: projectUpdateContext,
@@ -474,11 +496,9 @@ public sealed class DependencyReducer : IDependencyReducer
             }
             else
             {
-                string projectBeingRemoved = Path.GetFileNameWithoutExtension(projectReference.RelativeInclude);
-                string commitMessage = $"Removed reference to {projectBeingRemoved}";
                 await projectUpdateContext.Config.OnSuccessfulRemoval(
                     arg1: projectUpdateContext.Project,
-                    arg2: commitMessage,
+                    arg2: $"Removed reference to {Path.GetFileNameWithoutExtension(projectReference.RelativeInclude)}",
                     arg3: cancellationToken
                 );
 
@@ -615,7 +635,12 @@ public sealed class DependencyReducer : IDependencyReducer
         if (ShouldCheckSdk(sdk: sdk, projectFolder: projectUpdateContext.ProjectDirectory, xml: fileContent.Xml))
         {
             sdkAttr.Value = MINIMAL_SDK;
-            fileContent.Xml.Save(projectUpdateContext.Project);
+            await ProjectXmlSerializer.SaveAsync(
+                document: fileContent.Xml,
+                filePath: projectUpdateContext.Project,
+                encoding: ProjectXmlSerializer.Utf8NoBom,
+                cancellationToken: cancellationToken
+            );
 
             bool restore = await this.TestProjectMinimalSdkChangeAsync(
                 projectUpdateContext: projectUpdateContext,
