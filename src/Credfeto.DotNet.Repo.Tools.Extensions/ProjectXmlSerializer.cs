@@ -9,8 +9,6 @@ namespace Credfeto.DotNet.Repo.Tools.Extensions;
 
 public static class ProjectXmlSerializer
 {
-    public static readonly Encoding Utf8NoBom = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
-
     private static readonly XmlWriterSettings WriterSettings = new()
                                                                {
                                                                    Async = true,
