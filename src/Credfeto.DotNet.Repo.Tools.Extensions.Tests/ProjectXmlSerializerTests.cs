@@ -95,12 +95,6 @@ public sealed class ProjectXmlSerializerTests : LoggingTestBase, IDisposable
     }
 
     [Fact]
-    public void Utf8NoBomHasNoPreamble()
-    {
-        Assert.Empty(ProjectXmlSerializer.Utf8NoBom.GetPreamble());
-    }
-
-    [Fact]
     public async Task WriteAsyncWithNoBomEncodingWritesFileWithoutPreamble()
     {
         string path = Path.Combine(this._baseFolder, "test.csproj");
@@ -108,7 +102,7 @@ public sealed class ProjectXmlSerializerTests : LoggingTestBase, IDisposable
         await ProjectXmlSerializer.WriteAsync(
             filePath: path,
             content: "<Project />\n",
-            encoding: ProjectXmlSerializer.Utf8NoBom,
+            encoding: new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
             cancellationToken: this.CancellationToken()
         );
 
