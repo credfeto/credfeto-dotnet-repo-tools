@@ -373,7 +373,6 @@ public sealed class DependencyReducer : IDependencyReducer
         return ProjectXmlSerializer.SaveAsync(
             document: fileContent.Xml,
             filePath: projectUpdateContext.Project,
-            encoding: ProjectXmlSerializer.Utf8NoBom,
             cancellationToken: cancellationToken
         );
     }
@@ -638,7 +637,6 @@ public sealed class DependencyReducer : IDependencyReducer
             await ProjectXmlSerializer.SaveAsync(
                 document: fileContent.Xml,
                 filePath: projectUpdateContext.Project,
-                encoding: ProjectXmlSerializer.Utf8NoBom,
                 cancellationToken: cancellationToken
             );
 
