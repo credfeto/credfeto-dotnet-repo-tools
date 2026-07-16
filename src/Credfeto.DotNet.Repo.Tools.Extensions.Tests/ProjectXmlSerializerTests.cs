@@ -95,31 +95,13 @@ public sealed class ProjectXmlSerializerTests : LoggingTestBase, IDisposable
     }
 
     [Fact]
-    public async Task WriteAsyncWithNoBomEncodingWritesFileWithoutPreamble()
+    public async Task WriteAsyncWritesFileWithBomPreamble()
     {
         string path = Path.Combine(this._baseFolder, "test.csproj");
 
         await ProjectXmlSerializer.WriteAsync(
             filePath: path,
             content: "<Project />\n",
-            encoding: new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
-            cancellationToken: this.CancellationToken()
-        );
-
-        byte[] bytes = await File.ReadAllBytesAsync(path: path, cancellationToken: this.CancellationToken());
-
-        Assert.Equal(expected: (byte)'<', actual: bytes[0]);
-    }
-
-    [Fact]
-    public async Task WriteAsyncWithBomEncodingWritesFileWithPreamble()
-    {
-        string path = Path.Combine(this._baseFolder, "test.csproj");
-
-        await ProjectXmlSerializer.WriteAsync(
-            filePath: path,
-            content: "<Project />\n",
-            encoding: Encoding.UTF8,
             cancellationToken: this.CancellationToken()
         );
 

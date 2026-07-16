@@ -49,19 +49,12 @@ public static class ProjectXmlSerializer
         return xmlWriter.WriteWhitespaceAsync("\n");
     }
 
-    public static async ValueTask WriteAsync(
-        string filePath,
-        string content,
-        Encoding encoding,
-        CancellationToken cancellationToken
-    )
+    public static async ValueTask WriteAsync(string filePath, string content, CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(encoding);
-
         await File.WriteAllTextAsync(
             path: filePath,
             contents: content,
-            encoding: encoding,
+            encoding: WriterSettings.Encoding,
             cancellationToken: cancellationToken
         );
     }
