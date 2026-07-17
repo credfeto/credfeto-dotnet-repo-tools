@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Ensured csproj files written by CleanUp, Formatter, and Dependency reduction always end with a single trailing newline, using a shared serializer
 ### Changed
 - SDK - Updated DotNet SDK to 10.0.302
+- Dropped support for net9.0; all projects now target net10.0 only
 ### Deprecated
 ### Removed
 ### Deployment Changes
