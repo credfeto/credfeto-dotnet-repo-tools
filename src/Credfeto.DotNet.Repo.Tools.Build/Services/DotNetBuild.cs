@@ -290,10 +290,10 @@ public sealed class DotNetBuild : IDotNetBuild
         return string.Join(separator: ' ', parameters.Select(EnvironmentParameter));
     }
 
-    private async ValueTask DotNetPublishAsync(
-        BuildContext buildContext,
+    private ValueTask DotNetPublishAsync(
+        in BuildContext buildContext,
         string? framework,
-        CancellationToken cancellationToken
+        in CancellationToken cancellationToken
     )
     {
         string noWarn = this.BuildNoWarn(buildContext);
@@ -312,7 +312,7 @@ public sealed class DotNetBuild : IDotNetBuild
             );
 
             this._logger.LogPublishingNoFramework();
-            await this.ExecRequireCleanAsync(
+            return this.ExecRequireCleanAsync(
                 buildContext: buildContext,
                 $"publish -warnaserror  --configuration:Release -r:linux-x64 --self-contained {parameters} -nodeReuse:False {noWarn}",
                 cancellationToken: cancellationToken
@@ -331,7 +331,7 @@ public sealed class DotNetBuild : IDotNetBuild
                 ("Version", BUILD_VERSION)
             );
             this._logger.LogPublishingWithFramework(framework);
-            await this.ExecRequireCleanAsync(
+            return this.ExecRequireCleanAsync(
                 buildContext: buildContext,
                 $"publish -warnaserror --configuration:Release -r:linux-x64 --framework:{framework} --self-contained {parameters} -nodeReuse:False {noWarn}",
                 cancellationToken: cancellationToken
@@ -494,6 +494,11 @@ public sealed class DotNetBuild : IDotNetBuild
         }
     }
 
+    [SuppressMessage(
+        category: "SonarAnalyzer.CSharp",
+        checkId: "S4036: Use an absolute path for this command",
+        Justification = "Relies on dotnet being resolved via PATH"
+    )]
     private static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(
         BuildContext buildContext,
         string arguments,

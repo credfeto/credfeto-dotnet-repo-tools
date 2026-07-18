@@ -4,6 +4,7 @@ using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using FunFair.Test.Common;
+using FunFair.Test.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 

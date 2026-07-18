@@ -234,7 +234,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
             ._repository.Received(1)
             .RemoveBranchesForPrefixAsync(
                 branchForUpdate: Arg.Any<string>(),
-                branchPrefix: Arg.Is<string>(s => s.Contains("test.package")),
+                branchPrefix: Arg.Is<string>(s => s is object && s.Contains("test.package")),
                 upstream: GitConstants.Upstream,
                 cancellationToken: Arg.Any<CancellationToken>()
             );

@@ -1,5 +1,6 @@
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using FunFair.Test.Common;
+using FunFair.Test.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 

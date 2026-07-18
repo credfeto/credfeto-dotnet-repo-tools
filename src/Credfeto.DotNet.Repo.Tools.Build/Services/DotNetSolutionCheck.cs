@@ -17,13 +17,13 @@ public sealed class DotNetSolutionCheck : IDotNetSolutionCheck
     private static readonly IProjectClassifier ProjectClassifier = new ProjectClassifier();
 
     private static readonly ICheckConfiguration PreReleaseCheckConfiguration = new CheckConfiguration(
-        preReleaseBuild: true,
-        allowPackageVersionMismatch: true
+        PreReleaseBuild: true,
+        AllowPackageVersionMismatch: true
     );
 
     private static readonly ICheckConfiguration ReleaseCheckConfiguration = new CheckConfiguration(
-        preReleaseBuild: false,
-        allowPackageVersionMismatch: false
+        PreReleaseBuild: false,
+        AllowPackageVersionMismatch: false
     );
 
     private readonly ILogger<DotNetSolutionCheck> _logger;
