@@ -60,8 +60,10 @@
   </ItemGroup>
   <Import Project="$(SolutionDir)UnitTests.props" Condition="Exists('$(SolutionDir)UnitTests.props')"/>
   <ItemGroup>
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Formatter\Credfeto.DotNet.Repo.Formatter.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build\Credfeto.DotNet.Repo.Tools.Build.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.CleanUp\Credfeto.DotNet.Repo.Tools.CleanUp.csproj" />
+    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Extensions\Credfeto.DotNet.Repo.Tools.Extensions.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FunFair.Test.Common" Version="6.2.4.1830"/>

@@ -18,12 +18,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Formatter;
 
-[SuppressMessage(
-    category: "Microsoft.Performance",
-    checkId: "CA1812:AvoidUninstantiatedInternalClasses",
-    Justification = "Instantiated by Cocona"
-)]
-internal sealed class Commands
+public sealed class Commands
 {
     private static readonly FrozenSet<string> SupportedExtensions = FrozenSet.Create(
         StringComparer.OrdinalIgnoreCase,
@@ -70,6 +65,11 @@ internal sealed class Commands
     }
 
     [Command(Description = "Format C# source files and project files")]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0109: Consider adding an overload with a Span<T> or Memory<T>",
+        Justification = "string[] is required for Cocona to bind CLI positional arguments"
+    )]
     public async Task<int> CleanupAsync(
         [Argument(Description = "Files, globs, or folders to process")] string[] inputs,
         [Option(
