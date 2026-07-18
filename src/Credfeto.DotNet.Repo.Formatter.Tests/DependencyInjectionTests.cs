@@ -1,7 +1,6 @@
-using Credfeto.DotNet.Repo.Tools.Build;
+using Credfeto.DotNet.Repo.Formatter.Setup;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp;
-using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using FunFair.Test.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -57,6 +56,6 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
 
     private static IServiceCollection Configure(IServiceCollection services)
     {
-        return services.AddBuild().AddCleanUp();
+        return services.AddServices();
     }
 }
