@@ -9,7 +9,7 @@ using Credfeto.DotNet.Repo.Tools.Release.Extensions;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Services;
 using FunFair.Test.Common;
-using FunFair.Test.Common.Extensions;
+using FunFair.Test.Infrastructure.Extensions;
 using Xunit;
 using MatchType = Credfeto.DotNet.Repo.Tools.Release.Interfaces.MatchType;
 

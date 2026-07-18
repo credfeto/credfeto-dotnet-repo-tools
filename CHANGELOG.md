@@ -15,6 +15,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - SDK - Updated DotNet SDK to 10.0.302
 - Dropped support for net9.0; all projects now target net10.0 only
+- Updated NuGet package dependencies (analyzers, test tooling, CSharpier) and fixed resulting build breakages
 ### Deprecated
 ### Removed
 ### Deployment Changes

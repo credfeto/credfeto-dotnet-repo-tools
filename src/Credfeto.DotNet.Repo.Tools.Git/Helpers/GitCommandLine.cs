@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -11,6 +12,11 @@ namespace Credfeto.DotNet.Repo.Tools.Git.Helpers;
 
 public static class GitCommandLine
 {
+    [SuppressMessage(
+        category: "SonarAnalyzer.CSharp",
+        checkId: "S4036: Use an absolute path for this command",
+        Justification = "Relies on git being resolved via PATH"
+    )]
     public static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(
         string clonePath,
         string repoPath,

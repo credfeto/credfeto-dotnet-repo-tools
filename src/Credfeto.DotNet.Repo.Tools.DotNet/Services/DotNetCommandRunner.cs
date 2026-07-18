@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,6 +8,11 @@ namespace Credfeto.DotNet.Repo.Tools.DotNet.Services;
 
 public sealed class DotNetCommandRunner : IDotNetCommandRunner
 {
+    [SuppressMessage(
+        category: "SonarAnalyzer.CSharp",
+        checkId: "S4036: Use an absolute path for this command",
+        Justification = "Relies on dotnet being resolved via PATH"
+    )]
     public async ValueTask<(string[] Output, int ExitCode)> RunAsync(
         string arguments,
         CancellationToken cancellationToken
