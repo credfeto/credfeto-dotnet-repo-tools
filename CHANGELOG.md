@@ -8,6 +8,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+- Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Formatter
 ### Fixed
 - Fixed HasNonStandardGithubActions comparing a repo's workflows directory against itself instead of the template's, so extra workflows now correctly enable the github-actions Dependabot section
 - Ensured csproj files written by CleanUp, Formatter, and Dependency reduction always end with a single trailing newline, using a shared serializer
