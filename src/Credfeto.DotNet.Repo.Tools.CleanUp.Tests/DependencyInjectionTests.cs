@@ -6,6 +6,7 @@ using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.Tsql.Formatter;
 using FunFair.Test.Common;
+using FunFair.Test.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 

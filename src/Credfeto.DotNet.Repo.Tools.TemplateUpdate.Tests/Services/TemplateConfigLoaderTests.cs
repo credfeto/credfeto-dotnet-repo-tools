@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 using FunFair.Test.Common;
-using FunFair.Test.Common.Extensions;
+using FunFair.Test.Infrastructure.Extensions;
 using Xunit;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests.Services;

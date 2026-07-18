@@ -38,7 +38,7 @@ public sealed class SourceFileReformatter : ISourceFileReformatter
                 cancellationToken: cancellationToken
             );
 
-            IReadOnlyList<Diagnostic> errors = [.. formatted.CompilationErrors];
+            IReadOnlyList<Diagnostic> errors = [.. formatted.ErrorDiagnostics];
 
             if (errors is [])
             {

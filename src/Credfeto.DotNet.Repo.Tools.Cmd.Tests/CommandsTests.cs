@@ -126,7 +126,7 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
                 workFolder: Arg.Any<string>(),
                 releaseConfigFileName: Arg.Any<string>(),
                 additionalNugetSources: Arg.Any<IReadOnlyList<string>>(),
-                repositories: Arg.Is<IReadOnlyList<string>>(r => r.Count == 1 && r[0] == expectedRepo),
+                repositories: Arg.Is<IReadOnlyList<string>>(r => r is object && r.Count == 1 && r[0] == expectedRepo),
                 cancellationToken: Arg.Any<CancellationToken>()
             );
     }
