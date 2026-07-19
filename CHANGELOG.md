@@ -8,6 +8,16 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.5.7] - 2026-07-19
+### Added
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Formatter
 ### Fixed
 - Fixed HasNonStandardGithubActions comparing a repo's workflows directory against itself instead of the template's, so extra workflows now correctly enable the github-actions Dependabot section
@@ -16,12 +26,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - SDK - Updated DotNet SDK to 10.0.302
 - Dropped support for net9.0; all projects now target net10.0 only
 - Updated NuGet package dependencies (analyzers, test tooling, CSharpier) and fixed resulting build breakages
-### Deprecated
-### Removed
-### Deployment Changes
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
+
 ## [1.5.6] - 2026-07-11
 ### Fixed
 - Removed the stray blank line generated after `updates:` before the first dependabot ecosystem entry, which failed yamllint
