@@ -10,13 +10,7 @@ namespace Credfeto.DotNet.Repo.Tools.Build.Tests.Services;
 
 public sealed class DotNetSolutionCheckTests : TestBase
 {
-    private static readonly DotNetVersionSettings RepositoryDotNetSettings = new(
-        SdkVersion: "10.0.100",
-        AllowPreRelease: false,
-        RollForward: "latestPatch"
-    );
-
-    private static readonly DotNetVersionSettings TemplateDotNetSettings = new(
+    private static readonly DotNetVersionSettings DotNetSettings = new(
         SdkVersion: "10.0.100",
         AllowPreRelease: false,
         RollForward: "latestPatch"
@@ -39,8 +33,8 @@ public sealed class DotNetSolutionCheckTests : TestBase
 
         await this._dotNetSolutionCheck.PreCheckAsync(
             [],
-            repositoryDotNetSettings: RepositoryDotNetSettings,
-            templateDotNetSettings: TemplateDotNetSettings,
+            repositoryDotNetSettings: DotNetSettings,
+            templateDotNetSettings: DotNetSettings,
             cancellationToken: cancellationToken
         );
     }
@@ -52,7 +46,7 @@ public sealed class DotNetSolutionCheckTests : TestBase
 
         await this._dotNetSolutionCheck.ReleaseCheckAsync(
             [],
-            repositoryDotNetSettings: RepositoryDotNetSettings,
+            repositoryDotNetSettings: DotNetSettings,
             cancellationToken: cancellationToken
         );
     }
@@ -64,8 +58,8 @@ public sealed class DotNetSolutionCheckTests : TestBase
 
         bool result = await this._dotNetSolutionCheck.PostCheckAsync(
             [],
-            repositoryDotNetSettings: RepositoryDotNetSettings,
-            templateDotNetSettings: TemplateDotNetSettings,
+            repositoryDotNetSettings: DotNetSettings,
+            templateDotNetSettings: DotNetSettings,
             cancellationToken: cancellationToken
         );
 
