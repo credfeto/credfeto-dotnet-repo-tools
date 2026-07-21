@@ -93,6 +93,31 @@ public sealed class DotNetFilesDetectorTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task ShouldNotHaveSolutionsWhenOnlyProjectFileExistsAsync()
+    {
+        CancellationToken cancellationToken = this.CancellationToken();
+
+        string baseFolder = Path.Combine(path1: this.TempFolder, path2: "src");
+        Directory.CreateDirectory(baseFolder);
+
+        await File.WriteAllTextAsync(
+            Path.Combine(path1: baseFolder, path2: "Test.csproj"),
+            contents: "Project",
+            cancellationToken: cancellationToken
+        );
+
+        DotNetFiles result = await this._dotNetFilesDetector.FindAsync(
+            baseFolder: this.TempFolder,
+            cancellationToken: cancellationToken
+        );
+
+        Assert.Equal(expected: baseFolder, actual: result.SourceDirectory);
+        Assert.False(condition: result.HasSolutions, userMessage: "Should not have solutions");
+        Assert.False(condition: result.HasProjects, userMessage: "Should not have projects");
+        Assert.False(condition: result.HasSolutionsAndProjects, userMessage: "Should not have projects");
+    }
+
+    [Fact]
     public async Task ShouldNotHaveDotNetWithoutSourceFolderAsync()
     {
         CancellationToken cancellationToken = this.CancellationToken();
