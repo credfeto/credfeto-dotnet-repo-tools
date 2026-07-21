@@ -114,7 +114,7 @@ public sealed class DotNetFilesDetectorTests : LoggingFolderCleanupTestBase
         Assert.Equal(expected: baseFolder, actual: result.SourceDirectory);
         Assert.False(condition: result.HasSolutions, userMessage: "Should not have solutions");
         Assert.False(condition: result.HasProjects, userMessage: "Should not have projects");
-        Assert.False(condition: result.HasSolutionsAndProjects, userMessage: "Should not have projects");
+        Assert.False(condition: result.HasSolutionsAndProjects, userMessage: "Should not have solutions and projects");
     }
 
     [Fact]

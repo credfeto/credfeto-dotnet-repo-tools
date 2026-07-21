@@ -1,7 +1,8 @@
-using System;
-using Credfeto.DotNet.Repo.Tools.Build.Services;
+using Credfeto.DotNet.Repo.Tools.Build.Helpers;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
+using FunFair.BuildCheck.Interfaces;
 using FunFair.Test.Common;
+using FunFair.Test.Common.Helpers;
 using Xunit;
 
 namespace Credfeto.DotNet.Repo.Tools.Build.Tests.Services;
@@ -11,7 +12,7 @@ public sealed class FrameworkSettingsTests : TestBase
     [Theory]
     [InlineData(true, "true")]
     [InlineData(false, "false")]
-    public void Constructor(bool allowPreRelease, string expectedDotNetAllowPreReleaseSdk)
+    public void ExposesSdkVersionAndAllowPreRelease(bool allowPreRelease, string expectedDotNetAllowPreReleaseSdk)
     {
         DotNetVersionSettings dotNetSettings = new(
             SdkVersion: "10.0.100",
@@ -19,7 +20,7 @@ public sealed class FrameworkSettingsTests : TestBase
             RollForward: "latestPatch"
         );
 
-        FrameworkSettings settings = new(dotNetSettings);
+        IFrameworkSettings settings = CreateSettings(dotNetSettings);
 
         Assert.Equal(expected: "10.0.100", actual: settings.DotNetSdkVersion);
         Assert.Equal(expected: expectedDotNetAllowPreReleaseSdk, actual: settings.DotNetAllowPreReleaseSdk);
@@ -28,7 +29,9 @@ public sealed class FrameworkSettingsTests : TestBase
     [Fact]
     public void IsNullableGloballyEnforcedIsAlwaysTrue()
     {
-        FrameworkSettings settings = new(new(SdkVersion: null, AllowPreRelease: false, RollForward: "latestPatch"));
+        IFrameworkSettings settings = CreateSettings(
+            new(SdkVersion: "10.0.100", AllowPreRelease: false, RollForward: "latestPatch")
+        );
 
         Assert.True(
             condition: settings.IsNullableGloballyEnforced,
@@ -36,124 +39,56 @@ public sealed class FrameworkSettingsTests : TestBase
         );
     }
 
-    [Fact]
-    public void ProjectImportReturnsEmptyStringWhenEnvironmentVariableNotSet()
+    [Theory]
+    [InlineData(null, "")]
+    [InlineData("Import.props", "Import.props")]
+    public void ProjectImport(string? value, string expected)
     {
-        WithEnvironmentVariable(
-            variable: "DOTNET_PACK_PROJECT_METADATA_IMPORT",
-            value: null,
-            action: static () =>
-            {
-                FrameworkSettings settings = CreateSettings();
+        using (new EnvironmentVariableScope(variableName: "DOTNET_PACK_PROJECT_METADATA_IMPORT", value: value))
+        {
+            IFrameworkSettings settings = CreateSettings();
 
-                Assert.Equal(expected: string.Empty, actual: settings.ProjectImport);
-            }
-        );
+            Assert.Equal(expected: expected, actual: settings.ProjectImport);
+        }
     }
 
-    [Fact]
-    public void ProjectImportReturnsEnvironmentVariableWhenSet()
+    [Theory]
+    [InlineData("true", "true")]
+    [InlineData(null, null)]
+    public void DotnetPackable(string? value, string? expected)
     {
-        WithEnvironmentVariable(
-            variable: "DOTNET_PACK_PROJECT_METADATA_IMPORT",
-            value: "Import.props",
-            action: static () =>
-            {
-                FrameworkSettings settings = CreateSettings();
+        using (new EnvironmentVariableScope(variableName: "DOTNET_PACKABLE", value: value))
+        {
+            IFrameworkSettings settings = CreateSettings();
 
-                Assert.Equal(expected: "Import.props", actual: settings.ProjectImport);
-            }
-        );
+            Assert.Equal(expected: expected, actual: settings.DotnetPackable);
+        }
     }
 
-    [Fact]
-    public void DotnetPackableReturnsEnvironmentVariable()
+    [Theory]
+    [InlineData("true", "true")]
+    [InlineData(null, null)]
+    public void DotnetPublishable(string? value, string? expected)
     {
-        WithEnvironmentVariable(
-            variable: "DOTNET_PACKABLE",
-            value: "true",
-            action: static () =>
-            {
-                FrameworkSettings settings = CreateSettings();
+        using (new EnvironmentVariableScope(variableName: "DOTNET_PUBLISHABLE", value: value))
+        {
+            IFrameworkSettings settings = CreateSettings();
 
-                Assert.Equal(expected: "true", actual: settings.DotnetPackable);
-            }
-        );
+            Assert.Equal(expected: expected, actual: settings.DotnetPublishable);
+        }
     }
 
-    [Fact]
-    public void DotnetPackableReturnsNullWhenNotSet()
+    [Theory]
+    [InlineData("net10.0", "net10.0")]
+    [InlineData(null, null)]
+    public void DotnetTargetFramework(string? value, string? expected)
     {
-        WithEnvironmentVariable(
-            variable: "DOTNET_PACKABLE",
-            value: null,
-            action: static () =>
-            {
-                FrameworkSettings settings = CreateSettings();
+        using (new EnvironmentVariableScope(variableName: "DOTNET_CORE_APP_TARGET_FRAMEWORK", value: value))
+        {
+            IFrameworkSettings settings = CreateSettings();
 
-                Assert.Null(settings.DotnetPackable);
-            }
-        );
-    }
-
-    [Fact]
-    public void DotnetPublishableReturnsEnvironmentVariable()
-    {
-        WithEnvironmentVariable(
-            variable: "DOTNET_PUBLISHABLE",
-            value: "true",
-            action: static () =>
-            {
-                FrameworkSettings settings = CreateSettings();
-
-                Assert.Equal(expected: "true", actual: settings.DotnetPublishable);
-            }
-        );
-    }
-
-    [Fact]
-    public void DotnetPublishableReturnsNullWhenNotSet()
-    {
-        WithEnvironmentVariable(
-            variable: "DOTNET_PUBLISHABLE",
-            value: null,
-            action: static () =>
-            {
-                FrameworkSettings settings = CreateSettings();
-
-                Assert.Null(settings.DotnetPublishable);
-            }
-        );
-    }
-
-    [Fact]
-    public void DotnetTargetFrameworkReturnsEnvironmentVariable()
-    {
-        WithEnvironmentVariable(
-            variable: "DOTNET_CORE_APP_TARGET_FRAMEWORK",
-            value: "net10.0",
-            action: static () =>
-            {
-                FrameworkSettings settings = CreateSettings();
-
-                Assert.Equal(expected: "net10.0", actual: settings.DotnetTargetFramework);
-            }
-        );
-    }
-
-    [Fact]
-    public void DotnetTargetFrameworkReturnsNullWhenNotSet()
-    {
-        WithEnvironmentVariable(
-            variable: "DOTNET_CORE_APP_TARGET_FRAMEWORK",
-            value: null,
-            action: static () =>
-            {
-                FrameworkSettings settings = CreateSettings();
-
-                Assert.Null(settings.DotnetTargetFramework);
-            }
-        );
+            Assert.Equal(expected: expected, actual: settings.DotnetTargetFramework);
+        }
     }
 
     [Theory]
@@ -162,36 +97,24 @@ public sealed class FrameworkSettingsTests : TestBase
     [InlineData(null, false)]
     public void XmlDocumentationRequired(string? value, bool expected)
     {
-        WithEnvironmentVariable(
-            variable: "XML_DOCUMENTATION",
-            value: value,
-            action: () =>
-            {
-                FrameworkSettings settings = CreateSettings();
+        using (new EnvironmentVariableScope(variableName: "XML_DOCUMENTATION", value: value))
+        {
+            IFrameworkSettings settings = CreateSettings();
 
-                Assert.Equal(expected: expected, actual: settings.XmlDocumentationRequired);
-            }
+            Assert.Equal(expected: expected, actual: settings.XmlDocumentationRequired);
+        }
+    }
+
+    private static IFrameworkSettings CreateSettings()
+    {
+        return CreateSettings(new(SdkVersion: "10.0.100", AllowPreRelease: false, RollForward: "latestPatch"));
+    }
+
+    private static IFrameworkSettings CreateSettings(in DotNetVersionSettings dotNetSettings)
+    {
+        return FrameWorkSettingsBuilder.DefineFrameworkSettings(
+            repositoryDotNetSettings: dotNetSettings,
+            templateDotNetSettings: new(SdkVersion: null, AllowPreRelease: false, RollForward: "latestPatch")
         );
-    }
-
-    private static FrameworkSettings CreateSettings()
-    {
-        return new(new(SdkVersion: "10.0.100", AllowPreRelease: false, RollForward: "latestPatch"));
-    }
-
-    private static void WithEnvironmentVariable(string variable, string? value, Action action)
-    {
-        string? previous = Environment.GetEnvironmentVariable(variable);
-
-        try
-        {
-            Environment.SetEnvironmentVariable(variable: variable, value: value);
-
-            action();
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable(variable: variable, value: previous);
-        }
     }
 }

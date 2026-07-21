@@ -4,7 +4,7 @@ using FunFair.BuildCheck.Interfaces;
 
 namespace Credfeto.DotNet.Repo.Tools.Build.Services;
 
-public sealed class FrameworkSettings : IFrameworkSettings
+internal sealed class FrameworkSettings : IFrameworkSettings
 {
     public FrameworkSettings(in DotNetVersionSettings dotNetSettings)
     {

@@ -10,11 +10,6 @@ public sealed class ProjectClassifierTests : TestBase
 {
     private static readonly IReadOnlyList<SolutionProject> NoProjects = [];
 
-    private static readonly IReadOnlyList<SolutionProject> OtherProjects =
-    [
-        new(FileName: "Other.csproj", DisplayName: "Other"),
-    ];
-
     private readonly IProjectClassifier _projectClassifier = new ProjectClassifier();
 
     [Theory]
@@ -33,15 +28,6 @@ public sealed class ProjectClassifierTests : TestBase
         Assert.False(
             condition: this._projectClassifier.IsCodeAnalysisSolution(NoProjects),
             userMessage: "Should not match when there are no projects"
-        );
-    }
-
-    [Fact]
-    public void IsCodeAnalysisSolutionWhenNoMatchingProject()
-    {
-        Assert.False(
-            condition: this._projectClassifier.IsCodeAnalysisSolution(OtherProjects),
-            userMessage: "Should not match when no project has the expected name"
         );
     }
 
@@ -64,15 +50,6 @@ public sealed class ProjectClassifierTests : TestBase
         );
     }
 
-    [Fact]
-    public void IsUnitTestBaseWhenNoMatchingProject()
-    {
-        Assert.False(
-            condition: this._projectClassifier.IsUnitTestBase(OtherProjects),
-            userMessage: "Should not match when no project has the expected name"
-        );
-    }
-
     [Theory]
     [InlineData("Credfeto.Enumeration.Source.Generation", true)]
     [InlineData("Other", false)]
@@ -92,15 +69,6 @@ public sealed class ProjectClassifierTests : TestBase
         Assert.False(
             condition: this._projectClassifier.MustHaveEnumSourceGeneratorAnalyzerPackage(NoProjects),
             userMessage: "Should not match when there are no projects"
-        );
-    }
-
-    [Fact]
-    public void MustHaveEnumSourceGeneratorAnalyzerPackageWhenNoMatchingProject()
-    {
-        Assert.False(
-            condition: this._projectClassifier.MustHaveEnumSourceGeneratorAnalyzerPackage(OtherProjects),
-            userMessage: "Should not match when no project has the expected name"
         );
     }
 }
