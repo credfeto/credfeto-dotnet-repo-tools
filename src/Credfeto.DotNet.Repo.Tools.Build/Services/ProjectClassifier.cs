@@ -5,7 +5,7 @@ using FunFair.BuildCheck.Interfaces;
 
 namespace Credfeto.DotNet.Repo.Tools.Build.Services;
 
-internal sealed class ProjectClassifier : IProjectClassifier
+public sealed class ProjectClassifier : IProjectClassifier
 {
     public bool IsCodeAnalysisSolution(IReadOnlyList<SolutionProject> projects)
     {

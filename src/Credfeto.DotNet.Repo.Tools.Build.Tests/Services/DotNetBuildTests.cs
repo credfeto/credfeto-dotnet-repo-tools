@@ -28,6 +28,8 @@ public sealed class DotNetBuildTests : TestBase
     [InlineData(nameof(Projects.PackablePublishableDotNetTool), true, true, "net9.0")]
     [InlineData(nameof(Projects.NonPackableLibrary), false, false, null)]
     [InlineData(nameof(Projects.NonPublishableExe), false, false, null)]
+    [InlineData(nameof(Projects.NoOutputType), false, false, null)]
+    [InlineData(nameof(Projects.PublishableExeSingleTargetFramework), false, true, "net10.0")]
     public async Task LoadBuildSettingsAsync(string project, bool packable, bool publishable, string? framework)
     {
         this.MockLoadProject(path: project);
@@ -87,6 +89,8 @@ public sealed class DotNetBuildTests : TestBase
             nameof(Projects.PublishableExe) => Projects.PublishableExe,
             nameof(Projects.NonPackableLibrary) => Projects.NonPackableLibrary,
             nameof(Projects.NonPublishableExe) => Projects.NonPublishableExe,
+            nameof(Projects.NoOutputType) => Projects.NoOutputType,
+            nameof(Projects.PublishableExeSingleTargetFramework) => Projects.PublishableExeSingleTargetFramework,
             _ => throw new FileNotFoundException(message: "No such file", fileName: path),
         };
 
@@ -109,5 +113,11 @@ public sealed class DotNetBuildTests : TestBase
 
         public const string NonPublishableExe =
             "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><IsPackable>false</IsPackable><IsPublishable>false</IsPublishable><OutputType>Exe</OutputType><PackAsTool>false</PackAsTool><TargetFrameworks>net9.0;net10.0</TargetFrameworks></PropertyGroup></Project>";
+
+        public const string NoOutputType =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><IsPackable>true</IsPackable><IsPublishable>true</IsPublishable><PackAsTool>false</PackAsTool></PropertyGroup></Project>";
+
+        public const string PublishableExeSingleTargetFramework =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><IsPackable>false</IsPackable><IsPublishable>true</IsPublishable><OutputType>Exe</OutputType><PackAsTool>false</PackAsTool><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>";
     }
 }
