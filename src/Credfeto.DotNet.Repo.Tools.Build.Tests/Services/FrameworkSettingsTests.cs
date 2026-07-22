@@ -9,16 +9,18 @@ namespace Credfeto.DotNet.Repo.Tools.Build.Tests.Services;
 
 public sealed class FrameworkSettingsTests : TestBase
 {
+    private static readonly DotNetVersionSettings DefaultDotNetSettings = new(
+        SdkVersion: "10.0.100",
+        AllowPreRelease: false,
+        RollForward: "latestPatch"
+    );
+
     [Theory]
     [InlineData(true, "true")]
     [InlineData(false, "false")]
     public void ExposesSdkVersionAndAllowPreRelease(bool allowPreRelease, string expectedDotNetAllowPreReleaseSdk)
     {
-        DotNetVersionSettings dotNetSettings = new(
-            SdkVersion: "10.0.100",
-            AllowPreRelease: allowPreRelease,
-            RollForward: "latestPatch"
-        );
+        DotNetVersionSettings dotNetSettings = DefaultDotNetSettings with { AllowPreRelease = allowPreRelease };
 
         IFrameworkSettings settings = CreateSettings(dotNetSettings);
 
@@ -29,9 +31,7 @@ public sealed class FrameworkSettingsTests : TestBase
     [Fact]
     public void IsNullableGloballyEnforcedIsAlwaysTrue()
     {
-        IFrameworkSettings settings = CreateSettings(
-            new(SdkVersion: "10.0.100", AllowPreRelease: false, RollForward: "latestPatch")
-        );
+        IFrameworkSettings settings = CreateSettings(DefaultDotNetSettings);
 
         Assert.True(
             condition: settings.IsNullableGloballyEnforced,
@@ -46,7 +46,7 @@ public sealed class FrameworkSettingsTests : TestBase
     {
         using (new EnvironmentVariableScope(variableName: "DOTNET_PACK_PROJECT_METADATA_IMPORT", value: value))
         {
-            IFrameworkSettings settings = CreateSettings();
+            IFrameworkSettings settings = CreateSettings(DefaultDotNetSettings);
 
             Assert.Equal(expected: expected, actual: settings.ProjectImport);
         }
@@ -59,7 +59,7 @@ public sealed class FrameworkSettingsTests : TestBase
     {
         using (new EnvironmentVariableScope(variableName: "DOTNET_PACKABLE", value: value))
         {
-            IFrameworkSettings settings = CreateSettings();
+            IFrameworkSettings settings = CreateSettings(DefaultDotNetSettings);
 
             Assert.Equal(expected: expected, actual: settings.DotnetPackable);
         }
@@ -72,7 +72,7 @@ public sealed class FrameworkSettingsTests : TestBase
     {
         using (new EnvironmentVariableScope(variableName: "DOTNET_PUBLISHABLE", value: value))
         {
-            IFrameworkSettings settings = CreateSettings();
+            IFrameworkSettings settings = CreateSettings(DefaultDotNetSettings);
 
             Assert.Equal(expected: expected, actual: settings.DotnetPublishable);
         }
@@ -85,7 +85,7 @@ public sealed class FrameworkSettingsTests : TestBase
     {
         using (new EnvironmentVariableScope(variableName: "DOTNET_CORE_APP_TARGET_FRAMEWORK", value: value))
         {
-            IFrameworkSettings settings = CreateSettings();
+            IFrameworkSettings settings = CreateSettings(DefaultDotNetSettings);
 
             Assert.Equal(expected: expected, actual: settings.DotnetTargetFramework);
         }
@@ -99,15 +99,10 @@ public sealed class FrameworkSettingsTests : TestBase
     {
         using (new EnvironmentVariableScope(variableName: "XML_DOCUMENTATION", value: value))
         {
-            IFrameworkSettings settings = CreateSettings();
+            IFrameworkSettings settings = CreateSettings(DefaultDotNetSettings);
 
             Assert.Equal(expected: expected, actual: settings.XmlDocumentationRequired);
         }
-    }
-
-    private static IFrameworkSettings CreateSettings()
-    {
-        return CreateSettings(new(SdkVersion: "10.0.100", AllowPreRelease: false, RollForward: "latestPatch"));
     }
 
     private static IFrameworkSettings CreateSettings(in DotNetVersionSettings dotNetSettings)

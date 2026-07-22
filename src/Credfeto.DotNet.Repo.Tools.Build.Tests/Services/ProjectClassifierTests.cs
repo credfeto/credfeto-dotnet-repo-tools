@@ -17,9 +17,10 @@ public sealed class ProjectClassifierTests : TestBase
     [InlineData("Other", false)]
     public void IsCodeAnalysisSolution(string displayName, bool expected)
     {
-        IReadOnlyList<SolutionProject> projects = [new(FileName: $"{displayName}.csproj", DisplayName: displayName)];
-
-        Assert.Equal(expected: expected, actual: this._projectClassifier.IsCodeAnalysisSolution(projects));
+        Assert.Equal(
+            expected: expected,
+            actual: this._projectClassifier.IsCodeAnalysisSolution(SingleProject(displayName))
+        );
     }
 
     [Fact]
@@ -36,9 +37,7 @@ public sealed class ProjectClassifierTests : TestBase
     [InlineData("Other", false)]
     public void IsUnitTestBase(string displayName, bool expected)
     {
-        IReadOnlyList<SolutionProject> projects = [new(FileName: $"{displayName}.csproj", DisplayName: displayName)];
-
-        Assert.Equal(expected: expected, actual: this._projectClassifier.IsUnitTestBase(projects));
+        Assert.Equal(expected: expected, actual: this._projectClassifier.IsUnitTestBase(SingleProject(displayName)));
     }
 
     [Fact]
@@ -55,11 +54,9 @@ public sealed class ProjectClassifierTests : TestBase
     [InlineData("Other", false)]
     public void MustHaveEnumSourceGeneratorAnalyzerPackage(string displayName, bool expected)
     {
-        IReadOnlyList<SolutionProject> projects = [new(FileName: $"{displayName}.csproj", DisplayName: displayName)];
-
         Assert.Equal(
             expected: expected,
-            actual: this._projectClassifier.MustHaveEnumSourceGeneratorAnalyzerPackage(projects)
+            actual: this._projectClassifier.MustHaveEnumSourceGeneratorAnalyzerPackage(SingleProject(displayName))
         );
     }
 
@@ -70,5 +67,10 @@ public sealed class ProjectClassifierTests : TestBase
             condition: this._projectClassifier.MustHaveEnumSourceGeneratorAnalyzerPackage(NoProjects),
             userMessage: "Should not match when there are no projects"
         );
+    }
+
+    private static IReadOnlyList<SolutionProject> SingleProject(string displayName)
+    {
+        return [new(FileName: $"{displayName}.csproj", DisplayName: displayName)];
     }
 }
