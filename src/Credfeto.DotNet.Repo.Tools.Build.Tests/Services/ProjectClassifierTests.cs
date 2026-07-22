@@ -14,6 +14,7 @@ public sealed class ProjectClassifierTests : TestBase
 
     [Theory]
     [InlineData("FunFair.CodeAnalysis", true)]
+    [InlineData("funfair.codeanalysis", true)]
     [InlineData("Other", false)]
     public void IsCodeAnalysisSolution(string displayName, bool expected)
     {
