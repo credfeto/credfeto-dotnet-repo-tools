@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Build
+- Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Extensions
 ### Fixed
 ### Changed
 ### Deprecated
