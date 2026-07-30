@@ -7,19 +7,13 @@ namespace Credfeto.DotNet.Repo.Tools.Extensions.Tests;
 public sealed class UriExtensionsTests : TestBase
 {
     [Theory]
-    [InlineData("http://example.com")]
-    [InlineData("https://example.com")]
-    public void IsHttpReturnsTrueForHttpSchemes(string uri)
+    [InlineData("http://example.com", true)]
+    [InlineData("https://example.com", true)]
+    [InlineData("ftp://example.com", false)]
+    [InlineData("file:///path", false)]
+    [InlineData("git://github.com/repo", false)]
+    public void IsHttp(string uri, bool expected)
     {
-        Assert.True(new Uri(uri).IsHttp(), $"Expected {uri} to be recognised as HTTP(S)");
-    }
-
-    [Theory]
-    [InlineData("ftp://example.com")]
-    [InlineData("file:///path")]
-    [InlineData("git://github.com/repo")]
-    public void IsHttpReturnsFalseForNonHttpSchemes(string uri)
-    {
-        Assert.False(new Uri(uri).IsHttp(), $"Expected {uri} to not be recognised as HTTP(S)");
+        Assert.Equal(expected: expected, actual: new Uri(uri).IsHttp());
     }
 }
