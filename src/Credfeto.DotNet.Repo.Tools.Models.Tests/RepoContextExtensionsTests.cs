@@ -36,47 +36,64 @@ public sealed class RepoContextExtensionsTests : LoggingFolderCleanupTestBase
         Assert.Equal(expected: hasSubmodules, actual: context.HasSubModules());
     }
 
-    [Fact]
-    public void HasDockerFilesReturnsFalseWhenNoDockerfilePresent()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void HasDockerFilesDelegatesToDockerfilePresence(bool dockerfilePresent)
     {
+        if (dockerfilePresent)
+        {
+            File.WriteAllText(
+                path: Path.Combine(path1: this.TempFolder, path2: "Dockerfile"),
+                contents: "FROM scratch"
+            );
+        }
+
         RepoContext context = this.CreateContext();
 
-        Assert.False(condition: context.HasDockerFiles(), userMessage: "Should not have docker files");
+        Assert.Equal(expected: dockerfilePresent, actual: context.HasDockerFiles());
     }
 
-    [Fact]
-    public void HasDockerFilesReturnsTrueWhenDockerfilePresent()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void HasPythonDelegatesToRequirementsPresence(bool requirementsPresent)
     {
-        File.WriteAllText(path: Path.Combine(path1: this.TempFolder, path2: "Dockerfile"), contents: "FROM scratch");
+        if (requirementsPresent)
+        {
+            File.WriteAllText(path: Path.Combine(path1: this.TempFolder, path2: "requirements.txt"), contents: "");
+        }
 
         RepoContext context = this.CreateContext();
 
-        Assert.True(condition: context.HasDockerFiles(), userMessage: "Should have docker files");
+        Assert.Equal(expected: requirementsPresent, actual: context.HasPython());
     }
 
-    [Fact]
-    public void HasPythonReturnsFalseWhenNoRequirementsPresent()
+    private (string RepoDir, string TemplateDir) CreateRepoAndTemplateDirs()
     {
-        RepoContext context = this.CreateContext();
-
-        Assert.False(condition: context.HasPython(), userMessage: "Should not have python");
+        return (
+            Path.Combine(path1: this.TempFolder, path2: "repo"),
+            Path.Combine(path1: this.TempFolder, path2: "template")
+        );
     }
 
-    [Fact]
-    public void HasPythonReturnsTrueWhenRequirementsPresent()
+    private static (string RepoActionsDir, string TemplateActionsDir) CreateActionsDirs(
+        string repoDir,
+        string templateDir
+    )
     {
-        File.WriteAllText(path: Path.Combine(path1: this.TempFolder, path2: "requirements.txt"), contents: "");
+        string repoActionsDir = Path.Combine(repoDir, ".github", "actions");
+        string templateActionsDir = Path.Combine(templateDir, ".github", "actions");
+        Directory.CreateDirectory(repoActionsDir);
+        Directory.CreateDirectory(templateActionsDir);
 
-        RepoContext context = this.CreateContext();
-
-        Assert.True(condition: context.HasPython(), userMessage: "Should have python");
+        return (repoActionsDir, templateActionsDir);
     }
 
     [Fact]
     public void HasNonStandardGithubActionsReturnsFalseWhenRepoDirectoryAbsent()
     {
-        string repoDir = Path.Combine(path1: this.TempFolder, path2: "repo");
-        string templateDir = Path.Combine(path1: this.TempFolder, path2: "template");
+        (string repoDir, string templateDir) = this.CreateRepoAndTemplateDirs();
         Directory.CreateDirectory(repoDir);
 
         RepoContext context = this.CreateContext(workingDirectory: repoDir);
@@ -90,8 +107,7 @@ public sealed class RepoContextExtensionsTests : LoggingFolderCleanupTestBase
     [Fact]
     public void HasNonStandardGithubActionsReturnsTrueWhenTemplateDirectoryAbsent()
     {
-        string repoDir = Path.Combine(path1: this.TempFolder, path2: "repo");
-        string templateDir = Path.Combine(path1: this.TempFolder, path2: "template");
+        (string repoDir, string templateDir) = this.CreateRepoAndTemplateDirs();
         string repoActionsDir = Path.Combine(repoDir, ".github", "actions");
         Directory.CreateDirectory(repoActionsDir);
         File.WriteAllText(path: Path.Combine(path1: repoActionsDir, path2: "custom.yml"), contents: "name: custom");
@@ -107,12 +123,11 @@ public sealed class RepoContextExtensionsTests : LoggingFolderCleanupTestBase
     [Fact]
     public void HasNonStandardGithubActionsReturnsTrueWhenRepoHasExtraFiles()
     {
-        string repoDir = Path.Combine(path1: this.TempFolder, path2: "repo");
-        string templateDir = Path.Combine(path1: this.TempFolder, path2: "template");
-        string repoActionsDir = Path.Combine(repoDir, ".github", "actions");
-        string templateActionsDir = Path.Combine(templateDir, ".github", "actions");
-        Directory.CreateDirectory(repoActionsDir);
-        Directory.CreateDirectory(templateActionsDir);
+        (string repoDir, string templateDir) = this.CreateRepoAndTemplateDirs();
+        (string repoActionsDir, string templateActionsDir) = CreateActionsDirs(
+            repoDir: repoDir,
+            templateDir: templateDir
+        );
         File.WriteAllText(path: Path.Combine(path1: repoActionsDir, path2: "common.yml"), contents: "name: common");
         File.WriteAllText(path: Path.Combine(path1: templateActionsDir, path2: "common.yml"), contents: "name: common");
         File.WriteAllText(path: Path.Combine(path1: repoActionsDir, path2: "extra.yml"), contents: "name: extra");
@@ -128,12 +143,11 @@ public sealed class RepoContextExtensionsTests : LoggingFolderCleanupTestBase
     [Fact]
     public void HasNonStandardGithubActionsReturnsFalseWhenNoExtraFiles()
     {
-        string repoDir = Path.Combine(path1: this.TempFolder, path2: "repo");
-        string templateDir = Path.Combine(path1: this.TempFolder, path2: "template");
-        string repoActionsDir = Path.Combine(repoDir, ".github", "actions");
-        string templateActionsDir = Path.Combine(templateDir, ".github", "actions");
-        Directory.CreateDirectory(repoActionsDir);
-        Directory.CreateDirectory(templateActionsDir);
+        (string repoDir, string templateDir) = this.CreateRepoAndTemplateDirs();
+        (string repoActionsDir, string templateActionsDir) = CreateActionsDirs(
+            repoDir: repoDir,
+            templateDir: templateDir
+        );
         File.WriteAllText(path: Path.Combine(path1: repoActionsDir, path2: "common.yml"), contents: "name: common");
         File.WriteAllText(path: Path.Combine(path1: templateActionsDir, path2: "common.yml"), contents: "name: common");
 

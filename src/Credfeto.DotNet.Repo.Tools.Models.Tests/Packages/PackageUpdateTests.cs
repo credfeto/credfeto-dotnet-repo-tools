@@ -7,16 +7,22 @@ namespace Credfeto.DotNet.Repo.Tools.Models.Tests.Packages;
 
 public sealed class PackageUpdateTests : TestBase
 {
-    [Fact]
-    public void ConstructorSetsPropertiesWhenExcludeIsNull()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ConstructorSetsProperties(bool hasExclude)
     {
+        IReadOnlyList<PackageExclude>? exclude = hasExclude
+            ? [new(packageId: "Excluded.Package", exactMatch: false)]
+            : null;
+
         PackageUpdate update = new(
             packageId: "Package.Id",
             packageType: "Nuget",
             exactMatch: true,
             versionBumpPackage: false,
             prohibitVersionBumpWhenReferenced: true,
-            exclude: null
+            exclude: exclude
         );
 
         Assert.Equal(expected: "Package.Id", actual: update.PackageId);
@@ -26,31 +32,6 @@ public sealed class PackageUpdateTests : TestBase
         Assert.True(
             condition: update.ProhibitVersionBumpWhenReferenced,
             userMessage: "ProhibitVersionBumpWhenReferenced should be true"
-        );
-        Assert.Null(update.Exclude);
-    }
-
-    [Fact]
-    public void ConstructorSetsPropertiesWhenExcludeIsPopulated()
-    {
-        IReadOnlyList<PackageExclude> exclude = [new(packageId: "Excluded.Package", exactMatch: false)];
-
-        PackageUpdate update = new(
-            packageId: "Package.Id",
-            packageType: "Npm",
-            exactMatch: false,
-            versionBumpPackage: true,
-            prohibitVersionBumpWhenReferenced: false,
-            exclude: exclude
-        );
-
-        Assert.Equal(expected: "Package.Id", actual: update.PackageId);
-        Assert.Equal(expected: "Npm", actual: update.PackageType);
-        Assert.False(condition: update.ExactMatch, userMessage: "ExactMatch should be false");
-        Assert.True(condition: update.VersionBumpPackage, userMessage: "VersionBumpPackage should be true");
-        Assert.False(
-            condition: update.ProhibitVersionBumpWhenReferenced,
-            userMessage: "ProhibitVersionBumpWhenReferenced should be false"
         );
         Assert.Equal(expected: exclude, actual: update.Exclude);
     }

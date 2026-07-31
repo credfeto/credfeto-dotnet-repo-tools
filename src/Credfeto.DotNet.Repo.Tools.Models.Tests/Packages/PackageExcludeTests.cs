@@ -6,25 +6,16 @@ namespace Credfeto.DotNet.Repo.Tools.Models.Tests.Packages;
 
 public sealed class PackageExcludeTests : TestBase
 {
-    [Fact]
-    public void ConstructorSetsPropertiesWhenExactMatchTrue()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void ConstructorSetsProperties(bool exactMatch)
     {
         const string packageId = "Package.Id";
 
-        PackageExclude exclude = new(packageId: packageId, exactMatch: true);
+        PackageExclude exclude = new(packageId: packageId, exactMatch: exactMatch);
 
         Assert.Equal(expected: packageId, actual: exclude.PackageId);
-        Assert.True(condition: exclude.ExactMatch, userMessage: "ExactMatch should be true");
-    }
-
-    [Fact]
-    public void ConstructorSetsPropertiesWhenExactMatchFalse()
-    {
-        const string packageId = "Another.Package.Id";
-
-        PackageExclude exclude = new(packageId: packageId, exactMatch: false);
-
-        Assert.Equal(expected: packageId, actual: exclude.PackageId);
-        Assert.False(condition: exclude.ExactMatch, userMessage: "ExactMatch should be false");
+        Assert.Equal(expected: exactMatch, actual: exclude.ExactMatch);
     }
 }
