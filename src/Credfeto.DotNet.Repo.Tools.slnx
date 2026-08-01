@@ -68,4 +68,5 @@
   <Project Path="Credfeto.DotNet.Repo.Tools.Extensions/Credfeto.DotNet.Repo.Tools.Extensions.csproj" />
   <Project Path="Credfeto.DotNet.Repo.Tools.Extensions.Tests/Credfeto.DotNet.Repo.Tools.Extensions.Tests.csproj" />
   <Project Path="Credfeto.DotNet.Repo.Tools.Models/Credfeto.DotNet.Repo.Tools.Models.csproj" />
+  <Project Path="Credfeto.DotNet.Repo.Tools.Models.Tests/Credfeto.DotNet.Repo.Tools.Models.Tests.csproj" />
 </Solution>
