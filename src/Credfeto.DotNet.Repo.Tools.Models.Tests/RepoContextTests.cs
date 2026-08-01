@@ -7,18 +7,23 @@ namespace Credfeto.DotNet.Repo.Tools.Models.Tests;
 
 public sealed class RepoContextTests : TestBase
 {
+    private static RepoContext CreateContext(IGitRepository repository, string defaultBranch = "main")
+    {
+        return new(
+            ClonePath: "/tmp/clone",
+            Repository: repository,
+            WorkingDirectory: "/tmp/work",
+            DefaultBranch: defaultBranch,
+            ChangeLogFileName: "CHANGELOG.md"
+        );
+    }
+
     [Fact]
     public void PrimaryConstructorSetsAllProperties()
     {
         IGitRepository repository = GetSubstitute<IGitRepository>();
 
-        RepoContext context = new(
-            ClonePath: "/tmp/clone",
-            Repository: repository,
-            WorkingDirectory: "/tmp/work",
-            DefaultBranch: "main",
-            ChangeLogFileName: "CHANGELOG.md"
-        );
+        RepoContext context = CreateContext(repository);
 
         Assert.Equal(expected: "/tmp/clone", actual: context.ClonePath);
         Assert.Same(expected: repository, actual: context.Repository);
@@ -49,20 +54,8 @@ public sealed class RepoContextTests : TestBase
     {
         IGitRepository repository = GetSubstitute<IGitRepository>();
 
-        RepoContext first = new(
-            ClonePath: "/tmp/clone",
-            Repository: repository,
-            WorkingDirectory: "/tmp/work",
-            DefaultBranch: "main",
-            ChangeLogFileName: "CHANGELOG.md"
-        );
-        RepoContext second = new(
-            ClonePath: "/tmp/clone",
-            Repository: repository,
-            WorkingDirectory: "/tmp/work",
-            DefaultBranch: "main",
-            ChangeLogFileName: "CHANGELOG.md"
-        );
+        RepoContext first = CreateContext(repository);
+        RepoContext second = CreateContext(repository);
 
         Assert.Equal(expected: first, actual: second);
     }
@@ -72,20 +65,8 @@ public sealed class RepoContextTests : TestBase
     {
         IGitRepository repository = GetSubstitute<IGitRepository>();
 
-        RepoContext first = new(
-            ClonePath: "/tmp/clone",
-            Repository: repository,
-            WorkingDirectory: "/tmp/work",
-            DefaultBranch: "main",
-            ChangeLogFileName: "CHANGELOG.md"
-        );
-        RepoContext second = new(
-            ClonePath: "/tmp/clone",
-            Repository: repository,
-            WorkingDirectory: "/tmp/work",
-            DefaultBranch: "develop",
-            ChangeLogFileName: "CHANGELOG.md"
-        );
+        RepoContext first = CreateContext(repository);
+        RepoContext second = CreateContext(repository, defaultBranch: "develop");
 
         Assert.NotEqual(expected: first, actual: second);
     }
