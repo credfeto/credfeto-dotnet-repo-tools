@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
@@ -7,8 +7,11 @@ using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Models;
+using Credfeto.DotNet.Repo.Tools.Models.Packages;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
+using Credfeto.DotNet.Repo.Tools.TemplateUpdate;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Exceptions;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
@@ -23,6 +26,8 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests.Services;
 
 public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
 {
+    private const string REPO_URL = "git@github.com:test/test-repo.git";
+
     private readonly string _tempFolder;
     private readonly IBulkTemplateUpdater _bulkTemplateUpdater;
 
@@ -30,6 +35,9 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
     private readonly ITemplateConfigLoader _templateConfigLoader;
     private readonly IGlobalJson _globalJson;
     private readonly IDotNetVersion _dotNetVersion;
+    private readonly IDotNetFilesDetector _dotNetFilesDetector;
+    private readonly IDependaBotConfigBuilder _dependaBotConfigBuilder;
+    private readonly IGitRepositoryFactory _gitRepositoryFactory;
 
     public BulkTemplateUpdaterTests()
     {
@@ -40,31 +48,33 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         this._templateConfigLoader = GetSubstitute<ITemplateConfigLoader>();
         this._globalJson = GetSubstitute<IGlobalJson>();
         this._dotNetVersion = GetSubstitute<IDotNetVersion>();
+        this._dotNetFilesDetector = GetSubstitute<IDotNetFilesDetector>();
+        this._dependaBotConfigBuilder = GetSubstitute<IDependaBotConfigBuilder>();
 
         IBulkPackageConfigLoader bulkPackageConfigLoader = GetSubstitute<IBulkPackageConfigLoader>();
-        IGitRepositoryFactory gitRepositoryFactory = GetSubstitute<IGitRepositoryFactory>();
+        this._gitRepositoryFactory = GetSubstitute<IGitRepositoryFactory>();
         IReleaseConfigLoader releaseConfigLoader = GetSubstitute<IReleaseConfigLoader>();
 
         this._bulkTemplateUpdater = new BulkTemplateUpdater(
             trackingCache: this._trackingCache,
             globalJson: this._globalJson,
-            dotNetFilesDetector: GetSubstitute<IDotNetFilesDetector>(),
+            dotNetFilesDetector: this._dotNetFilesDetector,
             dotNetVersion: this._dotNetVersion,
             dotNetSolutionCheck: GetSubstitute<IDotNetSolutionCheck>(),
             dotNetBuild: GetSubstitute<IDotNetBuild>(),
             releaseConfigLoader: releaseConfigLoader,
             releaseGeneration: GetSubstitute<IReleaseGeneration>(),
-            gitRepositoryFactory: gitRepositoryFactory,
+            gitRepositoryFactory: this._gitRepositoryFactory,
             bulkPackageConfigLoader: bulkPackageConfigLoader,
             fileUpdater: GetSubstitute<IFileUpdater>(),
-            dependaBotConfigBuilder: GetSubstitute<IDependaBotConfigBuilder>(),
+            dependaBotConfigBuilder: this._dependaBotConfigBuilder,
             labelsBuilder: GetSubstitute<ILabelsBuilder>(),
             templateConfigLoader: this._templateConfigLoader,
             logger: GetSubstitute<ILogger<BulkTemplateUpdater>>()
         );
 
         this.SetupDefaultMocks(
-            gitRepositoryFactory: gitRepositoryFactory,
+            gitRepositoryFactory: this._gitRepositoryFactory,
             bulkPackageConfigLoader: bulkPackageConfigLoader,
             releaseConfigLoader: releaseConfigLoader
         );
@@ -347,5 +357,217 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
                 )
                 .AsTask()
         );
+    }
+
+    private static TemplateConfig DependabotEnabledTemplateConfig()
+    {
+        return new TemplateConfig(
+            general: new GeneralTemplateConfig(files: []),
+            gitHub: new GitHubTemplateConfig(
+                issueTemplates: false,
+                pullRequestTemplates: false,
+                actions: false,
+                linters: false,
+                files: [],
+                dependabot: new DependabotTemplateConfig(generate: true),
+                labels: new LabelsTemplateConfig(generate: false)
+            ),
+            dotNet: new DotnetTemplateConfig(globalJson: false, jetBrainsDotSettings: false, files: []),
+            cleanup: new CleanupTemplateConfig(files: [])
+        );
+    }
+
+    private static void MockRepositoryMetadata(IGitRepository repository, string repoDir)
+    {
+        repository.WorkingDirectory.Returns(repoDir);
+        repository.ClonePath.Returns(REPO_URL);
+        repository.GetDefaultBranch(GitConstants.Upstream).Returns("main");
+        repository.HeadRev.Returns("abc123deadbeef");
+    }
+
+    private async Task<string> PrepareRepoWithChangeLogAsync()
+    {
+        string repoDir = Path.Combine(this._tempFolder, "repo");
+        Directory.CreateDirectory(repoDir);
+        Directory.CreateDirectory(Path.Combine(repoDir, ".github"));
+        LibGit2Sharp.Repository.Init(repoDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(repoDir, "CHANGELOG.md"),
+            contents: "# Changelog",
+            cancellationToken: this.CancellationToken()
+        );
+
+        return repoDir;
+    }
+
+    private void MockDependabotUpdateContext(string repoDir, string dependabotContent)
+    {
+        this._templateConfigLoader.LoadConfigAsync(
+                path: Arg.Any<string>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(DependabotEnabledTemplateConfig());
+
+        this._dotNetFilesDetector.FindAsync(baseFolder: repoDir, cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [], Projects: []));
+
+        this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                templateFolder: Arg.Any<string>(),
+                dotNetFiles: Arg.Any<DotNetFiles>(),
+                packages: Arg.Any<IReadOnlyList<PackageUpdate>>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(dependabotContent);
+    }
+
+    [Fact]
+    public async Task BulkUpdateWithMissingDependabotConfigWritesAndCommitsNewConfigAsync()
+    {
+        string repoDir = await this.PrepareRepoWithChangeLogAsync();
+        const string dependabotContent = "updates: []\n";
+        this.MockDependabotUpdateContext(repoDir: repoDir, dependabotContent: dependabotContent);
+
+        IGitRepository repoRepository = GetSubstitute<IGitRepository>();
+        MockRepositoryMetadata(repository: repoRepository, repoDir: repoDir);
+
+        using (LibGit2Sharp.Repository realRepo = new(repoDir))
+        {
+            repoRepository.Active.Returns(realRepo);
+
+            this._gitRepositoryFactory.OpenOrCloneAsync(
+                    workDir: Arg.Any<string>(),
+                    repoUrl: REPO_URL,
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(repoRepository);
+
+            await this._bulkTemplateUpdater.BulkUpdateAsync(
+                templateRepository: "git@github.com:template/repo.git",
+                trackingFileName: string.Empty,
+                packagesFileName: "/packages.json",
+                workFolder: this._tempFolder,
+                templateConfigFileName: "/template.json",
+                releaseConfigFileName: "/release.json",
+                repositories: [REPO_URL],
+                cancellationToken: this.CancellationToken()
+            );
+
+            string dependabotConfigPath = Path.Combine(repoDir, ".github", "dependabot.yml");
+            Assert.True(File.Exists(dependabotConfigPath), "Expected dependabot.yml to have been created");
+            Assert.Equal(
+                dependabotContent,
+                await File.ReadAllTextAsync(path: dependabotConfigPath, cancellationToken: this.CancellationToken())
+            );
+            await repoRepository
+                .Received(1)
+                .CommitAsync(
+                    message: "[Dependabot] Updated configuration",
+                    cancellationToken: Arg.Any<CancellationToken>()
+                );
+            await repoRepository.Received(1).PushAsync(Arg.Any<CancellationToken>());
+        }
+    }
+
+    [Fact]
+    public async Task BulkUpdateWithMatchingDependabotConfigDoesNotRewriteOrCommitAsync()
+    {
+        string repoDir = await this.PrepareRepoWithChangeLogAsync();
+        const string dependabotContent = "updates: []\n";
+        this.MockDependabotUpdateContext(repoDir: repoDir, dependabotContent: dependabotContent);
+
+        string dependabotConfigPath = Path.Combine(repoDir, ".github", "dependabot.yml");
+        await File.WriteAllTextAsync(
+            path: dependabotConfigPath,
+            contents: dependabotContent,
+            cancellationToken: this.CancellationToken()
+        );
+
+        IGitRepository repoRepository = GetSubstitute<IGitRepository>();
+        MockRepositoryMetadata(repository: repoRepository, repoDir: repoDir);
+
+        using (LibGit2Sharp.Repository realRepo = new(repoDir))
+        {
+            repoRepository.Active.Returns(realRepo);
+
+            this._gitRepositoryFactory.OpenOrCloneAsync(
+                    workDir: Arg.Any<string>(),
+                    repoUrl: REPO_URL,
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(repoRepository);
+
+            await this._bulkTemplateUpdater.BulkUpdateAsync(
+                templateRepository: "git@github.com:template/repo.git",
+                trackingFileName: string.Empty,
+                packagesFileName: "/packages.json",
+                workFolder: this._tempFolder,
+                templateConfigFileName: "/template.json",
+                releaseConfigFileName: "/release.json",
+                repositories: [REPO_URL],
+                cancellationToken: this.CancellationToken()
+            );
+
+            await repoRepository
+                .DidNotReceive()
+                .CommitAsync(
+                    message: "[Dependabot] Updated configuration",
+                    cancellationToken: Arg.Any<CancellationToken>()
+                );
+            await repoRepository.DidNotReceive().PushAsync(Arg.Any<CancellationToken>());
+        }
+    }
+
+    [Fact]
+    public async Task BulkUpdateWithDifferentDependabotConfigRewritesAndCommitsAsync()
+    {
+        string repoDir = await this.PrepareRepoWithChangeLogAsync();
+        const string dependabotContent = "updates: []\n";
+        this.MockDependabotUpdateContext(repoDir: repoDir, dependabotContent: dependabotContent);
+
+        string dependabotConfigPath = Path.Combine(repoDir, ".github", "dependabot.yml");
+        await File.WriteAllTextAsync(
+            path: dependabotConfigPath,
+            contents: "updates: [old]\n",
+            cancellationToken: this.CancellationToken()
+        );
+
+        IGitRepository repoRepository = GetSubstitute<IGitRepository>();
+        MockRepositoryMetadata(repository: repoRepository, repoDir: repoDir);
+
+        using (LibGit2Sharp.Repository realRepo = new(repoDir))
+        {
+            repoRepository.Active.Returns(realRepo);
+
+            this._gitRepositoryFactory.OpenOrCloneAsync(
+                    workDir: Arg.Any<string>(),
+                    repoUrl: REPO_URL,
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(repoRepository);
+
+            await this._bulkTemplateUpdater.BulkUpdateAsync(
+                templateRepository: "git@github.com:template/repo.git",
+                trackingFileName: string.Empty,
+                packagesFileName: "/packages.json",
+                workFolder: this._tempFolder,
+                templateConfigFileName: "/template.json",
+                releaseConfigFileName: "/release.json",
+                repositories: [REPO_URL],
+                cancellationToken: this.CancellationToken()
+            );
+
+            Assert.Equal(
+                dependabotContent,
+                await File.ReadAllTextAsync(path: dependabotConfigPath, cancellationToken: this.CancellationToken())
+            );
+            await repoRepository
+                .Received(1)
+                .CommitAsync(
+                    message: "[Dependabot] Updated configuration",
+                    cancellationToken: Arg.Any<CancellationToken>()
+                );
+            await repoRepository.Received(1).PushAsync(Arg.Any<CancellationToken>());
+        }
     }
 }
