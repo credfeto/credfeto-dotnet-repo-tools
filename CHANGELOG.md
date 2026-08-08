@@ -15,6 +15,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Extensions
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Models
 ### Fixed
+- CLI tools (Credfeto.DotNet.Repo.Tools.Cmd, Credfeto.DotNet.Repo.Formatter) now return the correct process exit code on command errors instead of always exiting 0
 ### Changed
 ### Deprecated
 ### Removed
