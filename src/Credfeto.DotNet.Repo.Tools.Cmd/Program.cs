@@ -30,7 +30,7 @@ internal static class Program
 
                 await host.RunAsync(CancellationToken.None);
 
-                return ExitCodes.Success;
+                return Environment.ExitCode;
             }
         }
         catch (NoPackagesUpdatedException)
