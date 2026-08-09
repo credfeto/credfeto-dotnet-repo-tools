@@ -409,41 +409,26 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             packages: packages,
             cancellationToken: cancellationToken
         );
-        byte[] newConfigBytes = Encoding.UTF8.GetBytes(newConfig);
 
-        bool writeNewConfig = false;
+        bool writeNewConfig = await HasFileContentChangedAsync(
+            fileName: dependabotConfig,
+            expectedContent: newConfig,
+            cancellationToken: cancellationToken
+        );
 
-        if (File.Exists(dependabotConfig))
+        if (!writeNewConfig)
         {
-            byte[] existingConfigBytes = await File.ReadAllBytesAsync(
-                path: dependabotConfig,
-                cancellationToken: cancellationToken
-            );
-
-            if (!existingConfigBytes.SequenceEqual(newConfigBytes))
-            {
-                // content changed.
-                writeNewConfig = true;
-            }
+            return false;
         }
 
-        if (writeNewConfig)
-        {
-            await File.WriteAllBytesAsync(
-                path: dependabotConfig,
-                bytes: newConfigBytes,
-                cancellationToken: cancellationToken
-            );
-            await repoContext.Repository.CommitAsync(
-                message: "[Dependabot] Updated configuration",
-                cancellationToken: cancellationToken
-            );
-            await repoContext.Repository.PushAsync(cancellationToken);
+        await File.WriteAllTextAsync(path: dependabotConfig, contents: newConfig, cancellationToken: cancellationToken);
+        await repoContext.Repository.CommitAsync(
+            message: "[Dependabot] Updated configuration",
+            cancellationToken: cancellationToken
+        );
+        await repoContext.Repository.PushAsync(cancellationToken);
 
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     private static ValueTask NoChangeLogUpdateAsync(CancellationToken cancellationToken)
