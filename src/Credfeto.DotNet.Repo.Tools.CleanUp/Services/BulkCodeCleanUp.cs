@@ -480,7 +480,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         {
             string original = await File.ReadAllTextAsync(
                 path: sourceFile,
-                encoding: Encoding.UTF8,
+                encoding: TextEncoding.Utf8NoBom,
                 cancellationToken: cancellationToken
             );
 
@@ -504,7 +504,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             await File.WriteAllTextAsync(
                 path: sourceFile,
                 contents: formatted,
-                encoding: Encoding.UTF8,
+                encoding: TextEncoding.Utf8NoBom,
                 cancellationToken: cancellationToken
             );
 
@@ -625,7 +625,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         {
             string content = await File.ReadAllTextAsync(
                 path: fileName,
-                encoding: Encoding.UTF8,
+                encoding: TextEncoding.Utf8NoBom,
                 cancellationToken: cancellationToken
             );
             string cleanedContent = await asyncCleanup(arg1: fileName, arg2: content, arg3: cancellationToken);
@@ -639,6 +639,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             await File.WriteAllTextAsync(
                 path: fileName,
                 contents: cleanedContent,
+                encoding: TextEncoding.Utf8NoBom,
                 cancellationToken: cancellationToken
             );
 
@@ -749,11 +750,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
     private static ValueTask SaveProjectAsync(string project, XmlDocument doc, in CancellationToken cancellationToken)
     {
-        return ProjectXmlSerializer.SaveAsync(
-            document: doc,
-            filePath: project,
-            cancellationToken: cancellationToken
-        );
+        return ProjectXmlSerializer.SaveAsync(document: doc, filePath: project, cancellationToken: cancellationToken);
     }
 
     private static async ValueTask<(XmlDocument doc, string content)> LoadProjectAsync(

@@ -1,11 +1,11 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
+using Credfeto.DotNet.Repo.Tools.CleanUp.Helpers;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services.LoggingExtensions;
 using Microsoft.Extensions.Logging;
 
@@ -31,6 +31,15 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
     {
         MatchCollection matches = SuppressMessages().Matches(content);
 
+        if (matches.Count == 0)
+        {
+            return content;
+        }
+
+        // Captured up front so a revert to the unmodified content can restore the file
+        // byte-exactly, regardless of its original encoding/BOM.
+        byte[] originalBytes = await File.ReadAllBytesAsync(path: fileName, cancellationToken: cancellationToken);
+
         string successfulBuild = content;
 
         // go from the last match backwards to ensure that the positions always match
@@ -41,7 +50,7 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
             await File.WriteAllTextAsync(
                 path: fileName,
                 contents: testSource,
-                encoding: Encoding.UTF8,
+                encoding: TextEncoding.Utf8NoBom,
                 cancellationToken: cancellationToken
             );
 
@@ -53,12 +62,23 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
             catch (Exception exception)
             {
                 // Revert to the last successful build on disk
-                await File.WriteAllTextAsync(
-                    path: fileName,
-                    contents: successfulBuild,
-                    encoding: Encoding.UTF8,
-                    cancellationToken: cancellationToken
-                );
+                if (StringComparer.Ordinal.Equals(x: successfulBuild, y: content))
+                {
+                    await File.WriteAllBytesAsync(
+                        path: fileName,
+                        bytes: originalBytes,
+                        cancellationToken: cancellationToken
+                    );
+                }
+                else
+                {
+                    await File.WriteAllTextAsync(
+                        path: fileName,
+                        contents: successfulBuild,
+                        encoding: TextEncoding.Utf8NoBom,
+                        cancellationToken: cancellationToken
+                    );
+                }
 
                 // build failed without this suppression, so skip it the revert
                 this._logger.FailedToBuild(filename: fileName, message: exception.Message, exception: exception);
