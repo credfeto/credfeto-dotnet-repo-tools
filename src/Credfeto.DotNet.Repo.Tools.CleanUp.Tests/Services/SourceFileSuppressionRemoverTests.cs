@@ -141,21 +141,6 @@ public static class Test {
     [Fact]
     public async Task OneSuppressionShouldBeRemovedIfBuildSucceedsAsync()
     {
-        const string source =
-            @"
-using System.Diagnostics;
-
-namespace Test;
-
-public static class Test {
-
-    [SuppressMessage(category: ""Meziantou.Analyzer"", checkId: ""MA0051: Method is too long"", Justification = ""Unit tests"")]
-    public static void DoesNothing() {
-          // Example
-    }
-}
-";
-
         string expected =
             @"
 using System.Diagnostics;
@@ -175,7 +160,7 @@ public static class Test {
 
         this.MockSuccessfulBuild();
 
-        string actual = await this.CleanupAsync(source);
+        string actual = await this.CleanupAsync(SuppressionSource);
 
         Assert.Equal(expected: expected, actual: actual);
 
@@ -185,26 +170,11 @@ public static class Test {
     [Fact]
     public async Task OneSuppressionShouldNotBeRemovedIfBuildFailsAsync()
     {
-        const string source =
-            @"
-using System.Diagnostics;
-
-namespace Test;
-
-public static class Test {
-
-    [SuppressMessage(category: ""Meziantou.Analyzer"", checkId: ""MA0051: Method is too long"", Justification = ""Unit tests"")]
-    public static void DoesNothing() {
-          // Example
-    }
-}
-";
-
         this.MockFailingBuild(1);
 
-        string actual = await this.CleanupAsync(source);
+        string actual = await this.CleanupAsync(SuppressionSource);
 
-        Assert.Equal(expected: source, actual: actual);
+        Assert.Equal(expected: SuppressionSource, actual: actual);
 
         await this.ReceivedBuildAsync(1);
     }

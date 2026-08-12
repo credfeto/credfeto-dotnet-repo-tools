@@ -12,6 +12,7 @@ using Cocona;
 using Credfeto.DotNet.Repo.Formatter.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp;
+using Credfeto.DotNet.Repo.Tools.CleanUp.Helpers;
 using Credfeto.DotNet.Repo.Tools.Extensions;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
@@ -25,8 +26,6 @@ public sealed class Commands
         ".cs",
         ".csproj"
     );
-
-    private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
@@ -231,7 +230,7 @@ public sealed class Commands
         await File.WriteAllTextAsync(
             path: filePath,
             contents: content,
-            encoding: Utf8NoBom,
+            encoding: TextEncoding.Utf8NoBom,
             cancellationToken: this._cancellationToken
         );
 
@@ -357,9 +356,10 @@ public sealed class Commands
         }
 
         string beforeWildcard = glob[..firstWildcard];
-        int lastSeparator = beforeWildcard.LastIndexOfAny(
-            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]
-        );
+        int lastSeparator = beforeWildcard.LastIndexOfAny([
+            Path.DirectorySeparatorChar,
+            Path.AltDirectorySeparatorChar,
+        ]);
 
         return lastSeparator < 0 ? Directory.GetCurrentDirectory() : glob[..lastSeparator];
     }
