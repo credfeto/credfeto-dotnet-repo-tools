@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -12,7 +11,6 @@ using Cocona;
 using Credfeto.DotNet.Repo.Formatter.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp;
-using Credfeto.DotNet.Repo.Tools.CleanUp.Helpers;
 using Credfeto.DotNet.Repo.Tools.Extensions;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
@@ -199,7 +197,7 @@ public sealed class Commands
     {
         string original = await File.ReadAllTextAsync(
             path: filePath,
-            encoding: Encoding.UTF8,
+            encoding: TextEncoding.Utf8NoBom,
             cancellationToken: this._cancellationToken
         );
 
@@ -241,7 +239,7 @@ public sealed class Commands
     {
         string original = await File.ReadAllTextAsync(
             path: filePath,
-            encoding: Encoding.UTF8,
+            encoding: TextEncoding.Utf8NoBom,
             cancellationToken: this._cancellationToken
         );
 

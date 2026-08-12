@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -768,7 +767,11 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
     private static Task<string> LoadProjectTextAsync(string path, in CancellationToken cancellationToken)
     {
-        return File.ReadAllTextAsync(path: path, encoding: Encoding.UTF8, cancellationToken: cancellationToken);
+        return File.ReadAllTextAsync(
+            path: path,
+            encoding: TextEncoding.Utf8NoBom,
+            cancellationToken: cancellationToken
+        );
     }
 
     private async ValueTask<CleanupUpdateContext> BuildUpdateContextAsync(

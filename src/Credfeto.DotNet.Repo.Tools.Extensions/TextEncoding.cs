@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Credfeto.DotNet.Repo.Tools.CleanUp.Helpers;
+namespace Credfeto.DotNet.Repo.Tools.Extensions;
 
 public static class TextEncoding
 {

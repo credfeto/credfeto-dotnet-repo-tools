@@ -4,8 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
-using Credfeto.DotNet.Repo.Tools.CleanUp.Helpers;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services;
+using Credfeto.DotNet.Repo.Tools.Extensions;
 using FunFair.Test.Common;
 using NSubstitute;
 using Xunit;
@@ -30,6 +30,23 @@ public static class Test {
 ";
 
     private static readonly string Tab = new(c: ' ', count: 4);
+
+    private static readonly string ExpectedWithSuppressionRemoved =
+        @"
+using System.Diagnostics;
+
+namespace Test;
+
+public static class Test {
+
+"
+        + Tab
+        + @"
+    public static void DoesNothing() {
+          // Example
+    }
+}
+";
 
     private readonly BuildContext _buildContext;
     private readonly IDotNetBuild _dotNetBuild;
@@ -98,20 +115,26 @@ public static class Test {
         return actual;
     }
 
-    private async Task<byte[]> CleanupBytesAsync(byte[] sourceBytes, string content)
+    private async Task<(byte[] SourceBytes, byte[] ActualBytes)> CleanupBytesAsync(bool includeBom)
     {
+        byte[] sourceBytes = includeBom
+            ? [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(SuppressionSource)]
+            : TextEncoding.Utf8NoBom.GetBytes(SuppressionSource);
+
         string fileName = Path.Combine(path1: this.TempFolder, path2: "example.cs");
 
         await File.WriteAllBytesAsync(path: fileName, bytes: sourceBytes, this.CancellationToken());
 
         await this._sourceFileSuppressionRemover.RemoveSuppressionsAsync(
             fileName: fileName,
-            content: content,
+            content: SuppressionSource,
             buildContext: this._buildContext,
             this.CancellationToken()
         );
 
-        return await File.ReadAllBytesAsync(path: fileName, this.CancellationToken());
+        byte[] actualBytes = await File.ReadAllBytesAsync(path: fileName, this.CancellationToken());
+
+        return (sourceBytes, actualBytes);
     }
 
     [Fact]
@@ -141,28 +164,11 @@ public static class Test {
     [Fact]
     public async Task OneSuppressionShouldBeRemovedIfBuildSucceedsAsync()
     {
-        string expected =
-            @"
-using System.Diagnostics;
-
-namespace Test;
-
-public static class Test {
-
-"
-            + Tab
-            + @"
-    public static void DoesNothing() {
-          // Example
-    }
-}
-";
-
         this.MockSuccessfulBuild();
 
         string actual = await this.CleanupAsync(SuppressionSource);
 
-        Assert.Equal(expected: expected, actual: actual);
+        Assert.Equal(expected: ExpectedWithSuppressionRemoved, actual: actual);
 
         await this.ReceivedBuildAsync(1);
     }
@@ -251,28 +257,14 @@ public static class Test {
         await this.ReceivedBuildAsync(1);
     }
 
-    [Fact]
-    public async Task BomLessFileWithRevertedSuppressionRemainsByteIdenticalAsync()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task FileWithRevertedSuppressionRemainsByteIdenticalAsync(bool includeBom)
     {
-        byte[] sourceBytes = TextEncoding.Utf8NoBom.GetBytes(SuppressionSource);
-
         this.MockFailingBuild(1);
 
-        byte[] actualBytes = await this.CleanupBytesAsync(sourceBytes: sourceBytes, content: SuppressionSource);
-
-        Assert.Equal(expected: sourceBytes, actual: actualBytes);
-
-        await this.ReceivedBuildAsync(1);
-    }
-
-    [Fact]
-    public async Task FileWithBomAndRevertedSuppressionRemainsByteIdenticalAsync()
-    {
-        byte[] sourceBytes = [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(SuppressionSource)];
-
-        this.MockFailingBuild(1);
-
-        byte[] actualBytes = await this.CleanupBytesAsync(sourceBytes: sourceBytes, content: SuppressionSource);
+        (byte[] sourceBytes, byte[] actualBytes) = await this.CleanupBytesAsync(includeBom);
 
         Assert.Equal(expected: sourceBytes, actual: actualBytes);
 
@@ -282,30 +274,11 @@ public static class Test {
     [Fact]
     public async Task ChangedFileIsWrittenWithoutBomAsync()
     {
-        string expected =
-            @"
-using System.Diagnostics;
-
-namespace Test;
-
-public static class Test {
-
-"
-            + Tab
-            + @"
-    public static void DoesNothing() {
-          // Example
-    }
-}
-";
-
-        byte[] sourceBytes = [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(SuppressionSource)];
-
         this.MockSuccessfulBuild();
 
-        byte[] actualBytes = await this.CleanupBytesAsync(sourceBytes: sourceBytes, content: SuppressionSource);
+        (_, byte[] actualBytes) = await this.CleanupBytesAsync(includeBom: true);
 
-        Assert.Equal(expected: TextEncoding.Utf8NoBom.GetBytes(expected), actual: actualBytes);
+        Assert.Equal(expected: TextEncoding.Utf8NoBom.GetBytes(ExpectedWithSuppressionRemoved), actual: actualBytes);
 
         await this.ReceivedBuildAsync(1);
     }
