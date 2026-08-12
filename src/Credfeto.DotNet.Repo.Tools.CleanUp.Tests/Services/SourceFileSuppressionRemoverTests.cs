@@ -14,6 +14,21 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests.Services;
 
 public sealed class SourceFileSuppressionRemoverTests : LoggingFolderCleanupTestBase
 {
+    private const string SuppressionSource =
+        @"
+using System.Diagnostics;
+
+namespace Test;
+
+public static class Test {
+
+    [SuppressMessage(category: ""Meziantou.Analyzer"", checkId: ""MA0051: Method is too long"", Justification = ""Unit tests"")]
+    public static void DoesNothing() {
+          // Example
+    }
+}
+";
+
     private static readonly string Tab = new(c: ' ', count: 4);
 
     private readonly BuildContext _buildContext;
@@ -269,26 +284,11 @@ public static class Test {
     [Fact]
     public async Task BomLessFileWithRevertedSuppressionRemainsByteIdenticalAsync()
     {
-        const string source =
-            @"
-using System.Diagnostics;
-
-namespace Test;
-
-public static class Test {
-
-    [SuppressMessage(category: ""Meziantou.Analyzer"", checkId: ""MA0051: Method is too long"", Justification = ""Unit tests"")]
-    public static void DoesNothing() {
-          // Example
-    }
-}
-";
-
-        byte[] sourceBytes = TextEncoding.Utf8NoBom.GetBytes(source);
+        byte[] sourceBytes = TextEncoding.Utf8NoBom.GetBytes(SuppressionSource);
 
         this.MockFailingBuild(1);
 
-        byte[] actualBytes = await this.CleanupBytesAsync(sourceBytes: sourceBytes, content: source);
+        byte[] actualBytes = await this.CleanupBytesAsync(sourceBytes: sourceBytes, content: SuppressionSource);
 
         Assert.Equal(expected: sourceBytes, actual: actualBytes);
 
@@ -298,26 +298,11 @@ public static class Test {
     [Fact]
     public async Task FileWithBomAndRevertedSuppressionRemainsByteIdenticalAsync()
     {
-        const string source =
-            @"
-using System.Diagnostics;
-
-namespace Test;
-
-public static class Test {
-
-    [SuppressMessage(category: ""Meziantou.Analyzer"", checkId: ""MA0051: Method is too long"", Justification = ""Unit tests"")]
-    public static void DoesNothing() {
-          // Example
-    }
-}
-";
-
-        byte[] sourceBytes = [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(source)];
+        byte[] sourceBytes = [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(SuppressionSource)];
 
         this.MockFailingBuild(1);
 
-        byte[] actualBytes = await this.CleanupBytesAsync(sourceBytes: sourceBytes, content: source);
+        byte[] actualBytes = await this.CleanupBytesAsync(sourceBytes: sourceBytes, content: SuppressionSource);
 
         Assert.Equal(expected: sourceBytes, actual: actualBytes);
 
@@ -327,21 +312,6 @@ public static class Test {
     [Fact]
     public async Task ChangedFileIsWrittenWithoutBomAsync()
     {
-        const string source =
-            @"
-using System.Diagnostics;
-
-namespace Test;
-
-public static class Test {
-
-    [SuppressMessage(category: ""Meziantou.Analyzer"", checkId: ""MA0051: Method is too long"", Justification = ""Unit tests"")]
-    public static void DoesNothing() {
-          // Example
-    }
-}
-";
-
         string expected =
             @"
 using System.Diagnostics;
@@ -359,11 +329,11 @@ public static class Test {
 }
 ";
 
-        byte[] sourceBytes = [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(source)];
+        byte[] sourceBytes = [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(SuppressionSource)];
 
         this.MockSuccessfulBuild();
 
-        byte[] actualBytes = await this.CleanupBytesAsync(sourceBytes: sourceBytes, content: source);
+        byte[] actualBytes = await this.CleanupBytesAsync(sourceBytes: sourceBytes, content: SuppressionSource);
 
         Assert.Equal(expected: TextEncoding.Utf8NoBom.GetBytes(expected), actual: actualBytes);
 

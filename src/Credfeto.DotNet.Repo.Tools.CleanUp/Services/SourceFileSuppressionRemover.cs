@@ -41,6 +41,7 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
         byte[] originalBytes = await File.ReadAllBytesAsync(path: fileName, cancellationToken: cancellationToken);
 
         string successfulBuild = content;
+        bool hasSuccessfulEdit = false;
 
         // go from the last match backwards to ensure that the positions always match
         foreach (Match match in matches.Reverse())
@@ -58,24 +59,25 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
             {
                 await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
                 successfulBuild = testSource;
+                hasSuccessfulEdit = true;
             }
             catch (Exception exception)
             {
                 // Revert to the last successful build on disk
-                if (StringComparer.Ordinal.Equals(x: successfulBuild, y: content))
-                {
-                    await File.WriteAllBytesAsync(
-                        path: fileName,
-                        bytes: originalBytes,
-                        cancellationToken: cancellationToken
-                    );
-                }
-                else
+                if (hasSuccessfulEdit)
                 {
                     await File.WriteAllTextAsync(
                         path: fileName,
                         contents: successfulBuild,
                         encoding: TextEncoding.Utf8NoBom,
+                        cancellationToken: cancellationToken
+                    );
+                }
+                else
+                {
+                    await File.WriteAllBytesAsync(
+                        path: fileName,
+                        bytes: originalBytes,
                         cancellationToken: cancellationToken
                     );
                 }
