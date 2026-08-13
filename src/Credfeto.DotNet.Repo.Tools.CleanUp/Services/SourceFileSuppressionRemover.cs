@@ -1,12 +1,12 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services.LoggingExtensions;
+using Credfeto.DotNet.Repo.Tools.Extensions;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
@@ -31,32 +31,38 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
     {
         MatchCollection matches = SuppressMessages().Matches(content);
 
+        if (matches.Count == 0)
+        {
+            return content;
+        }
+
+        // Tracks the last known-good bytes on disk, starting as the unmodified file
+        // (byte-exact, regardless of its original encoding/BOM) and advancing after
+        // each successful build so a failed attempt can revert to it.
+        byte[] lastGoodBytes = await File.ReadAllBytesAsync(path: fileName, cancellationToken: cancellationToken);
+
         string successfulBuild = content;
 
         // go from the last match backwards to ensure that the positions always match
         foreach (Match match in matches.Reverse())
         {
             string testSource = RemoveSuppressionFromMatch(match: match, source: successfulBuild);
+            byte[] testBytes = TextEncoding.Utf8NoBom.GetBytes(testSource);
 
-            await File.WriteAllTextAsync(
-                path: fileName,
-                contents: testSource,
-                encoding: Encoding.UTF8,
-                cancellationToken: cancellationToken
-            );
+            await File.WriteAllBytesAsync(path: fileName, bytes: testBytes, cancellationToken: cancellationToken);
 
             try
             {
                 await this._dotNetBuild.BuildAsync(buildContext: buildContext, cancellationToken: cancellationToken);
                 successfulBuild = testSource;
+                lastGoodBytes = testBytes;
             }
             catch (Exception exception)
             {
                 // Revert to the last successful build on disk
-                await File.WriteAllTextAsync(
+                await File.WriteAllBytesAsync(
                     path: fileName,
-                    contents: successfulBuild,
-                    encoding: Encoding.UTF8,
+                    bytes: lastGoodBytes,
                     cancellationToken: cancellationToken
                 );
 

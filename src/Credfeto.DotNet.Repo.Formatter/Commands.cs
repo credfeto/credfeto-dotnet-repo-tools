@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
@@ -25,8 +24,6 @@ public sealed class Commands
         ".cs",
         ".csproj"
     );
-
-    private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
@@ -200,7 +197,7 @@ public sealed class Commands
     {
         string original = await File.ReadAllTextAsync(
             path: filePath,
-            encoding: Encoding.UTF8,
+            encoding: TextEncoding.Utf8NoBom,
             cancellationToken: this._cancellationToken
         );
 
@@ -231,7 +228,7 @@ public sealed class Commands
         await File.WriteAllTextAsync(
             path: filePath,
             contents: content,
-            encoding: Utf8NoBom,
+            encoding: TextEncoding.Utf8NoBom,
             cancellationToken: this._cancellationToken
         );
 
@@ -242,7 +239,7 @@ public sealed class Commands
     {
         string original = await File.ReadAllTextAsync(
             path: filePath,
-            encoding: Encoding.UTF8,
+            encoding: TextEncoding.Utf8NoBom,
             cancellationToken: this._cancellationToken
         );
 
@@ -357,9 +354,10 @@ public sealed class Commands
         }
 
         string beforeWildcard = glob[..firstWildcard];
-        int lastSeparator = beforeWildcard.LastIndexOfAny(
-            [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]
-        );
+        int lastSeparator = beforeWildcard.LastIndexOfAny([
+            Path.DirectorySeparatorChar,
+            Path.AltDirectorySeparatorChar,
+        ]);
 
         return lastSeparator < 0 ? Directory.GetCurrentDirectory() : glob[..lastSeparator];
     }

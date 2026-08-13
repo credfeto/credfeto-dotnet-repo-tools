@@ -17,6 +17,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 - CLI tools (Credfeto.DotNet.Repo.Tools.Cmd, Credfeto.DotNet.Repo.Formatter) now return the correct process exit code on command errors instead of always exiting 0
 - dependabot.yml is now created on the first run for a newly onboarded repository, instead of being silently skipped when it does not yet exist
+- Standardise UTF-8 encoding (no BOM) across cleanup pipeline writes so reverted files stay byte-identical
 ### Changed
 ### Deprecated
 ### Removed
