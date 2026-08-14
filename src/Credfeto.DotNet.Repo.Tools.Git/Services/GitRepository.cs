@@ -29,7 +29,7 @@ public sealed class GitRepository : IGitRepository
         this._logger = logger;
     }
 
-    public Repository Active => this._repo ?? OpenRepository(workDir: this.WorkingDirectory);
+    public Repository Active => this._repo ??= OpenRepository(workDir: this.WorkingDirectory);
 
     public string ClonePath { get; }
 
@@ -318,12 +318,13 @@ public sealed class GitRepository : IGitRepository
         string upstreamBranchForUpdate = BuildUpstreamBranch(upstream: upstream, branch: branchForUpdate);
         string upstreamBranchPrefix = BuildUpstreamBranch(upstream: upstream, branch: branchPrefix);
 
-        IReadOnlyList<Branch> branchesToRemove = [.. repo.Branches.Where(IsMatchingBranch)];
+        IReadOnlyList<string> branchesToRemove =
+        [
+            .. repo.Branches.Where(IsMatchingBranch).Select(b => NormaliseBranchName(branch: b, upstream: upstream)),
+        ];
 
-        foreach (Branch branch in branchesToRemove)
+        foreach (string branchName in branchesToRemove)
         {
-            string branchName = NormaliseBranchName(branch: branch, upstream: upstream);
-
             await this.DeleteBranchAsync(branch: branchName, upstream: upstream, cancellationToken: cancellationToken);
         }
 
@@ -549,9 +550,8 @@ public sealed class GitRepository : IGitRepository
 
     private Remote GetRemote(string upstream)
     {
-        return this.Active.Network.Remotes[upstream] ?? throw new GitException(
-                $"Could not find upstream origin {upstream}"
-            );
+        return this.Active.Network.Remotes[upstream]
+            ?? throw new GitException($"Could not find upstream origin {upstream}");
     }
 
     private async ValueTask PruneAsync(CancellationToken cancellationToken)

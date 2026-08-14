@@ -85,6 +85,44 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task Active_AccessedTwice_ReturnsSameInstance()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepository>()
+        );
+
+        Repository first = repo.Active;
+        Repository second = repo.Active;
+
+        Assert.Same(expected: first, actual: second);
+    }
+
+    [Fact]
+    public async Task Active_AfterOperationResetsLink_StillCachesNewInstance()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepository>()
+        );
+
+        Assert.Same(expected: repo.Active, actual: repo.Active);
+
+        // HasUncommittedChanges resets the active repo link before re-opening it.
+        _ = repo.HasUncommittedChanges();
+
+        Assert.Same(expected: repo.Active, actual: repo.Active);
+    }
+
+    [Fact]
     public async Task HeadRev_ReturnsNonEmptyString()
     {
         string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
@@ -595,6 +633,45 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task RemoveBranchesForPrefixAsync_WithMultipleMatchingBranches_DeletesAllWithoutThrowing()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+        await AddFakeRemoteAsync(repoPath: repoPath, cancellationToken: this.CancellationToken());
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepository>()
+        );
+
+        const string firstDeletableBranch = "depends/old-dep-1";
+        const string secondDeletableBranch = "depends/old-dep-2";
+        await repo.CreateBranchAsync(branchName: firstDeletableBranch, cancellationToken: this.CancellationToken());
+        await repo.SwitchBranchAsync(branchName: DEFAULT_BRANCH, cancellationToken: this.CancellationToken());
+        await repo.CreateBranchAsync(branchName: secondDeletableBranch, cancellationToken: this.CancellationToken());
+        await repo.SwitchBranchAsync(branchName: DEFAULT_BRANCH, cancellationToken: this.CancellationToken());
+
+        // Two matching branches force RemoveBranchesForPrefixAsync's loop past its first iteration,
+        // which is where a stale Branch handle from an already-invalidated Active repo would surface.
+        await repo.RemoveBranchesForPrefixAsync(
+            branchForUpdate: "depends/new-dep",
+            branchPrefix: "depends/",
+            upstream: "origin",
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.False(
+            condition: repo.DoesBranchExist(firstDeletableBranch),
+            userMessage: $"Branch '{firstDeletableBranch}' should have been deleted"
+        );
+        Assert.False(
+            condition: repo.DoesBranchExist(secondDeletableBranch),
+            userMessage: $"Branch '{secondDeletableBranch}' should have been deleted"
+        );
+    }
+
+    [Fact]
     public async Task RemoveBranchesForPrefixAsync_WithCurrentBranchMatchingPrefix_SkipsCurrentBranch()
     {
         string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
@@ -857,6 +934,79 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
         IReadOnlyCollection<string> remoteBranches = repo.GetRemoteBranches("origin");
 
         Assert.DoesNotContain("depends/old-dep", remoteBranches);
+    }
+
+    [Fact]
+    public async Task RemoveBranchesForPrefixAsync_WithMultipleRemoteTrackingBranchesMatchingPrefix_DeletesAllRemoteBranchesWithoutThrowing()
+    {
+        string bareRemotePath = await this.CreateBareRemoteWithMultipleDependenciesBranchesAsync(
+            this.CancellationToken()
+        );
+        string testRepoPath = await this.CloneBareRemoteAsync(
+            bareRemotePath: bareRemotePath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: testRepoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepository>()
+        );
+
+        // Two remote-tracking branches matching the prefix force RemoveBranchesForPrefixAsync's loop past
+        // its first iteration; the second iteration is where a Branch handle from an already-disposed
+        // Active repo (invalidated mid-loop by DeleteBranchAsync's ResetActiveRepoLink) would surface.
+        await repo.RemoveBranchesForPrefixAsync(
+            branchForUpdate: "depends/new-dep",
+            branchPrefix: "depends/",
+            upstream: "origin",
+            cancellationToken: this.CancellationToken()
+        );
+
+        IReadOnlyCollection<string> remoteBranches = repo.GetRemoteBranches("origin");
+
+        Assert.DoesNotContain("depends/old-dep-1", remoteBranches);
+        Assert.DoesNotContain("depends/old-dep-2", remoteBranches);
+    }
+
+    private async Task<string> CreateBareRemoteWithMultipleDependenciesBranchesAsync(
+        CancellationToken cancellationToken
+    )
+    {
+        string sourceRepoPath = await this.CreateTempGitRepoAsync(cancellationToken);
+
+        string[] branches = ["depends/old-dep-1", "depends/old-dep-2"];
+
+        foreach (string branch in branches)
+        {
+            await RunGitAsync(
+                repoPath: sourceRepoPath,
+                arguments: $"checkout -b {branch}",
+                cancellationToken: cancellationToken
+            );
+            await File.WriteAllTextAsync(
+                path: Path.Combine(sourceRepoPath, branch.Replace(oldChar: '/', newChar: '-') + ".txt"),
+                contents: "content\n",
+                cancellationToken: cancellationToken
+            );
+            await RunGitAsync(repoPath: sourceRepoPath, arguments: "add -A", cancellationToken: cancellationToken);
+            await RunGitAsync(
+                repoPath: sourceRepoPath,
+                arguments: $"commit -m \"Add {branch} file\"",
+                cancellationToken: cancellationToken
+            );
+            await RunGitAsync(
+                repoPath: sourceRepoPath,
+                arguments: $"checkout {DEFAULT_BRANCH}",
+                cancellationToken: cancellationToken
+            );
+        }
+
+        return await this.CreateLocalBareRemoteAsync(
+            sourceRepoPath: sourceRepoPath,
+            cancellationToken: cancellationToken
+        );
     }
 
     private async Task<string> CreateBareRemoteWithDependenciesBranchAsync(CancellationToken cancellationToken)
