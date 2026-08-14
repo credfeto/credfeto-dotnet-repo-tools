@@ -114,11 +114,12 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             logger: this.GetTypedLogger<GitRepository>()
         );
 
-        Assert.Same(expected: repo.Active, actual: repo.Active);
+        Repository before = repo.Active;
 
         // HasUncommittedChanges resets the active repo link before re-opening it.
         _ = repo.HasUncommittedChanges();
 
+        Assert.NotSame(expected: before, actual: repo.Active);
         Assert.Same(expected: repo.Active, actual: repo.Active);
     }
 
