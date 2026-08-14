@@ -910,7 +910,10 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
     [Fact]
     public async Task RemoveBranchesForPrefixAsync_WithRemoteTrackingBranchMatchingPrefix_DeletesRemoteBranch()
     {
-        string bareRemotePath = await this.CreateBareRemoteWithDependenciesBranchAsync(this.CancellationToken());
+        string bareRemotePath = await this.CreateBareRemoteWithDependenciesBranchesAsync(
+            branches: ["depends/old-dep"],
+            cancellationToken: this.CancellationToken()
+        );
         string testRepoPath = await this.CloneBareRemoteAsync(
             bareRemotePath: bareRemotePath,
             cancellationToken: this.CancellationToken()
@@ -939,8 +942,9 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
     [Fact]
     public async Task RemoveBranchesForPrefixAsync_WithMultipleRemoteTrackingBranchesMatchingPrefix_DeletesAllRemoteBranchesWithoutThrowing()
     {
-        string bareRemotePath = await this.CreateBareRemoteWithMultipleDependenciesBranchesAsync(
-            this.CancellationToken()
+        string bareRemotePath = await this.CreateBareRemoteWithDependenciesBranchesAsync(
+            branches: ["depends/old-dep-1", "depends/old-dep-2"],
+            cancellationToken: this.CancellationToken()
         );
         string testRepoPath = await this.CloneBareRemoteAsync(
             bareRemotePath: bareRemotePath,
@@ -970,13 +974,12 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
         Assert.DoesNotContain("depends/old-dep-2", remoteBranches);
     }
 
-    private async Task<string> CreateBareRemoteWithMultipleDependenciesBranchesAsync(
+    private async Task<string> CreateBareRemoteWithDependenciesBranchesAsync(
+        IReadOnlyList<string> branches,
         CancellationToken cancellationToken
     )
     {
         string sourceRepoPath = await this.CreateTempGitRepoAsync(cancellationToken);
-
-        string[] branches = ["depends/old-dep-1", "depends/old-dep-2"];
 
         foreach (string branch in branches)
         {
@@ -1002,38 +1005,6 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
                 cancellationToken: cancellationToken
             );
         }
-
-        return await this.CreateLocalBareRemoteAsync(
-            sourceRepoPath: sourceRepoPath,
-            cancellationToken: cancellationToken
-        );
-    }
-
-    private async Task<string> CreateBareRemoteWithDependenciesBranchAsync(CancellationToken cancellationToken)
-    {
-        string sourceRepoPath = await this.CreateTempGitRepoAsync(cancellationToken);
-
-        await RunGitAsync(
-            repoPath: sourceRepoPath,
-            arguments: "checkout -b depends/old-dep",
-            cancellationToken: cancellationToken
-        );
-        await File.WriteAllTextAsync(
-            path: Path.Combine(sourceRepoPath, "dep-file.txt"),
-            contents: "content\n",
-            cancellationToken: cancellationToken
-        );
-        await RunGitAsync(repoPath: sourceRepoPath, arguments: "add -A", cancellationToken: cancellationToken);
-        await RunGitAsync(
-            repoPath: sourceRepoPath,
-            arguments: "commit -m \"Add dep file\"",
-            cancellationToken: cancellationToken
-        );
-        await RunGitAsync(
-            repoPath: sourceRepoPath,
-            arguments: $"checkout {DEFAULT_BRANCH}",
-            cancellationToken: cancellationToken
-        );
 
         return await this.CreateLocalBareRemoteAsync(
             sourceRepoPath: sourceRepoPath,
