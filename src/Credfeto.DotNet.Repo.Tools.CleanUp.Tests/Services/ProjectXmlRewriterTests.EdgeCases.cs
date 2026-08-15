@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using System.Xml;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services;
@@ -106,7 +103,7 @@ public sealed partial class ProjectXmlRewriterTests
     }
 
     [Fact]
-    public void MergePropertiesOfMultipleGroupsShouldThrowXmlExceptionForDuplicatePropertyAcrossGroups()
+    public void ReOrderPropertyGroupsShouldThrowXmlExceptionForDuplicatePropertyAcrossGroups()
     {
         // Two combinable groups that each have <Nullable> — when merged, this causes a duplicate
         const string xml =
@@ -120,19 +117,9 @@ public sealed partial class ProjectXmlRewriterTests
 </Project>";
 
         XmlDocument doc = LoadXml(xml);
-        XmlElement? project = doc.SelectSingleNode("Project") as XmlElement;
-        Assert.NotNull(project);
 
-        IReadOnlyList<XmlElement> propertyGroups =
-        [
-            .. project
-                .ChildNodes.OfType<XmlElement>()
-                .Where(n => StringComparer.Ordinal.Equals(x: n.Name, y: "PropertyGroup")),
-        ];
-
-        ProjectXmlRewriter concreteRewriter = new(this.GetTypedLogger<ProjectXmlRewriter>());
         Assert.Throws<XmlException>(() =>
-            concreteRewriter.MergePropertiesOfMultipleGroups(fileName: "test.csproj", propertyGroups: propertyGroups)
+            this._projectXmlRewriter.ReOrderPropertyGroups(projectDocument: doc, filename: "test.csproj")
         );
     }
 

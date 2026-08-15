@@ -30,34 +30,42 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         // Only merge/sort runs of combinable PropertyGroups that are not separated by an
         // Import/ImportGroup or a conditional PropertyGroup, as MSBuild evaluates properties
         // in document order and merging across such a boundary would change evaluation order.
-        IReadOnlyList<IReadOnlyList<XmlElement>> combinableRuns = [.. GetCombinablePropertyGroupRuns(project)];
+        (
+            IReadOnlyList<XmlElement> nonCombinablePropertyGroups,
+            IReadOnlyList<IReadOnlyList<XmlElement>> combinableRuns
+        ) = CollectNonCombinablePropertyGroupsAndCombinableRuns(project);
 
         foreach (IReadOnlyList<XmlElement> run in combinableRuns)
         {
-            this.MergePropertiesOfMultipleGroups(fileName: filename, propertyGroups: run);
+            this.MergeCombinablePropertyGroups(fileName: filename, combinablePropertyGroups: run);
         }
 
-        IReadOnlyList<XmlElement> propertyGroups =
-        [
-            .. project
-                .ChildNodes.OfType<XmlElement>()
-                .Where(n => StringComparer.Ordinal.Equals(x: n.Name, y: "PropertyGroup")),
-        ];
-
-        this.ReOrderPropertyGroupWithAttributesOrComments(filename: filename, propertyGroups: propertyGroups);
+        this.ReOrderPropertyGroupWithAttributesOrComments(
+            filename: filename,
+            propertyGroups: nonCombinablePropertyGroups
+        );
 
         string after = projectDocument.InnerXml;
 
         return !StringComparer.Ordinal.Equals(x: before, y: after);
     }
 
-    private static IEnumerable<IReadOnlyList<XmlElement>> GetCombinablePropertyGroupRuns(XmlElement project)
+    // Each PropertyGroup's combinable/non-combinable classification is only ever needed once, so
+    // both the non-combinable groups (destined for ReOrderPropertyGroupWithAttributesOrComments) and
+    // the combinable runs are partitioned in a single pass over the document, taken before any
+    // mutation happens.
+    private static (
+        IReadOnlyList<XmlElement> NonCombinablePropertyGroups,
+        IReadOnlyList<IReadOnlyList<XmlElement>> CombinableRuns
+    ) CollectNonCombinablePropertyGroupsAndCombinableRuns(XmlElement project)
     {
+        List<XmlElement> nonCombinablePropertyGroups = [];
+        List<IReadOnlyList<XmlElement>> combinableRuns = [];
         List<XmlElement> currentRun = [];
 
         foreach (XmlElement child in project.ChildNodes.OfType<XmlElement>())
         {
-            bool isPropertyGroup = StringComparer.Ordinal.Equals(x: child.Name, y: "PropertyGroup");
+            bool isPropertyGroup = IsPropertyGroup(child);
 
             if (isPropertyGroup && IsCombinableGroup(child))
             {
@@ -66,9 +74,14 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
                 continue;
             }
 
+            if (isPropertyGroup)
+            {
+                nonCombinablePropertyGroups.Add(child);
+            }
+
             if ((isPropertyGroup || IsImport(child)) && currentRun.Count != 0)
             {
-                yield return currentRun;
+                combinableRuns.Add(currentRun);
 
                 currentRun = [];
             }
@@ -76,14 +89,21 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
 
         if (currentRun.Count != 0)
         {
-            yield return currentRun;
+            combinableRuns.Add(currentRun);
         }
+
+        return (nonCombinablePropertyGroups, combinableRuns);
     }
 
     private static bool IsImport(XmlElement element)
     {
         return StringComparer.Ordinal.Equals(x: element.Name, y: "Import")
             || StringComparer.Ordinal.Equals(x: element.Name, y: "ImportGroup");
+    }
+
+    private static bool IsPropertyGroup(XmlElement element)
+    {
+        return StringComparer.Ordinal.Equals(x: element.Name, y: "PropertyGroup");
     }
 
     [SuppressMessage(
@@ -225,10 +245,8 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         }
     }
 
-    public void MergePropertiesOfMultipleGroups(string fileName, IReadOnlyList<XmlElement> propertyGroups)
+    private void MergeCombinablePropertyGroups(string fileName, IReadOnlyList<XmlElement> combinablePropertyGroups)
     {
-        IReadOnlyList<XmlElement> combinablePropertyGroups = [.. propertyGroups.Where(IsCombinableGroup)];
-
         XmlElement? targetPropertyGroup = combinablePropertyGroups.FirstOrDefault();
 
         if (targetPropertyGroup is null)
@@ -259,22 +277,12 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
             }
         }
 
-        if (WouldBreakPropertyReferenceOrder(orderedChildren))
+        if (this.WouldBreakPropertyReferenceOrderLogged(properties: orderedChildren, filename: fileName))
         {
-            this._logger.SkippingGroupWithForwardReference(fileName);
-
             return;
         }
 
-        // Empty the target property group
-        targetPropertyGroup.RemoveAll();
-
-        // Add the children we've added to the target property group
-        foreach (string entryKey in orderedChildren.Keys.Order(comparer: StringComparer.Ordinal))
-        {
-            XmlNode item = orderedChildren[entryKey];
-            targetPropertyGroup.AppendChild(item);
-        }
+        ReplaceChildrenInKeyOrder(group: targetPropertyGroup, orderedChildren: orderedChildren);
 
         // remove the old groups
         RemoveNodes(toRemove);
@@ -320,9 +328,7 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
     )]
     private void ReOrderPropertyGroupWithAttributesOrComments(string filename, IReadOnlyList<XmlElement> propertyGroups)
     {
-        IReadOnlyList<XmlElement> nonCombinablePropertyGroups = [.. propertyGroups.Where(ph => !IsCombinableGroup(ph))];
-
-        foreach (XmlElement propertyGroup in nonCombinablePropertyGroups)
+        foreach (XmlElement propertyGroup in propertyGroups)
         {
             Dictionary<string, string> attributes = new(StringComparer.Ordinal);
 
@@ -366,28 +372,31 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
                 }
             }
 
-            if (replace && WouldBreakPropertyReferenceOrder(orderedChildren))
+            if (
+                replace && !this.WouldBreakPropertyReferenceOrderLogged(properties: orderedChildren, filename: filename)
+            )
             {
-                replace = false;
-
-                this._logger.SkippingGroupWithForwardReference(filename);
-            }
-
-            if (replace)
-            {
-                propertyGroup.RemoveAll();
-
-                foreach (string entryKey in orderedChildren.Keys.Order(comparer: StringComparer.Ordinal))
-                {
-                    XmlNode item = orderedChildren[entryKey];
-                    propertyGroup.AppendChild(item);
-                }
+                ReplaceChildrenInKeyOrder(group: propertyGroup, orderedChildren: orderedChildren);
 
                 foreach (KeyValuePair<string, string> attribute in attributes)
                 {
                     propertyGroup.SetAttribute(name: attribute.Key, value: attribute.Value);
                 }
             }
+        }
+    }
+
+    private static void ReplaceChildrenInKeyOrder(
+        XmlElement group,
+        IReadOnlyDictionary<string, XmlNode> orderedChildren
+    )
+    {
+        group.RemoveAll();
+
+        foreach (string entryKey in orderedChildren.Keys.Order(comparer: StringComparer.Ordinal))
+        {
+            XmlNode item = orderedChildren[entryKey];
+            group.AppendChild(item);
         }
     }
 
@@ -399,6 +408,21 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
     private static bool IsComment(XmlNode node)
     {
         return node.NodeType == XmlNodeType.Comment;
+    }
+
+    private bool WouldBreakPropertyReferenceOrderLogged(
+        IReadOnlyDictionary<string, XmlNode> properties,
+        string filename
+    )
+    {
+        if (!WouldBreakPropertyReferenceOrder(properties))
+        {
+            return false;
+        }
+
+        this._logger.SkippingGroupWithForwardReference(filename);
+
+        return true;
     }
 
     // Checks whether sorting the given set of same-scope properties into alphabetical order would move
