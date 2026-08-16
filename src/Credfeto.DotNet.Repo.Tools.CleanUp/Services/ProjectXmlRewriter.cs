@@ -65,19 +65,21 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
 
         foreach (XmlElement child in project.ChildNodes.OfType<XmlElement>())
         {
-            if (IsPropertyGroup(child) && IsCombinableGroup(child))
+            bool isPropertyGroup = IsPropertyGroup(child);
+
+            if (isPropertyGroup && IsCombinableGroup(child))
             {
                 currentRun.Add(child);
 
                 continue;
             }
 
-            if (IsPropertyGroup(child))
+            if (isPropertyGroup)
             {
                 nonCombinablePropertyGroups.Add(child);
             }
 
-            if (IsRunBoundary(child) && currentRun.Count != 0)
+            if ((isPropertyGroup || IsImport(child)) && currentRun.Count != 0)
             {
                 combinableRuns.Add(currentRun);
 
@@ -91,11 +93,6 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         }
 
         return (nonCombinablePropertyGroups, combinableRuns);
-    }
-
-    private static bool IsRunBoundary(XmlElement element)
-    {
-        return IsPropertyGroup(element) || IsImport(element);
     }
 
     private static bool IsImport(XmlElement element)
@@ -414,25 +411,13 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         return node.NodeType == XmlNodeType.Comment;
     }
 
+    // Checks whether sorting the given set of same-scope properties into alphabetical order would move
+    // a property that references another property in the same set (via $(PropertyName)) above the
+    // property it depends on, which would silently change what the reference evaluates to.
     private bool WouldBreakPropertyReferenceOrderLogged(
         IReadOnlyDictionary<string, XmlNode> properties,
         string filename
     )
-    {
-        if (!WouldBreakPropertyReferenceOrder(properties))
-        {
-            return false;
-        }
-
-        this._logger.SkippingGroupWithForwardReference(filename);
-
-        return true;
-    }
-
-    // Checks whether sorting the given set of same-scope properties into alphabetical order would move
-    // a property that references another property in the same set (via $(PropertyName)) above the
-    // property it depends on, which would silently change what the reference evaluates to.
-    private static bool WouldBreakPropertyReferenceOrder(IReadOnlyDictionary<string, XmlNode> properties)
     {
         foreach ((string propertyName, XmlNode node) in properties)
         {
@@ -454,6 +439,8 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
 
                 if (StringComparer.Ordinal.Compare(x: propertyName, y: referencedProperty) < 0)
                 {
+                    this._logger.SkippingGroupWithForwardReference(filename);
+
                     return true;
                 }
             }
