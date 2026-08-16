@@ -65,21 +65,19 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
 
         foreach (XmlElement child in project.ChildNodes.OfType<XmlElement>())
         {
-            bool isPropertyGroup = IsPropertyGroup(child);
-
-            if (isPropertyGroup && IsCombinableGroup(child))
+            if (IsPropertyGroup(child) && IsCombinableGroup(child))
             {
                 currentRun.Add(child);
 
                 continue;
             }
 
-            if (isPropertyGroup)
+            if (IsPropertyGroup(child))
             {
                 nonCombinablePropertyGroups.Add(child);
             }
 
-            if ((isPropertyGroup || IsImport(child)) && currentRun.Count != 0)
+            if (IsRunBoundary(child) && currentRun.Count != 0)
             {
                 combinableRuns.Add(currentRun);
 
@@ -93,6 +91,11 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         }
 
         return (nonCombinablePropertyGroups, combinableRuns);
+    }
+
+    private static bool IsRunBoundary(XmlElement element)
+    {
+        return IsPropertyGroup(element) || IsImport(element);
     }
 
     private static bool IsImport(XmlElement element)
@@ -247,12 +250,8 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
 
     private void MergeCombinablePropertyGroups(string fileName, IReadOnlyList<XmlElement> combinablePropertyGroups)
     {
-        XmlElement? targetPropertyGroup = combinablePropertyGroups.FirstOrDefault();
-
-        if (targetPropertyGroup is null)
-        {
-            return;
-        }
+        // combinablePropertyGroups is always a non-empty run - see CollectNonCombinablePropertyGroupsAndCombinableRuns.
+        XmlElement targetPropertyGroup = combinablePropertyGroups[0];
 
         List<XmlElement> toRemove = [];
         Dictionary<string, XmlNode> orderedChildren = new(StringComparer.Ordinal);
@@ -372,16 +371,21 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
                 }
             }
 
-            if (
-                replace && !this.WouldBreakPropertyReferenceOrderLogged(properties: orderedChildren, filename: filename)
-            )
+            if (!replace)
             {
-                ReplaceChildrenInKeyOrder(group: propertyGroup, orderedChildren: orderedChildren);
+                continue;
+            }
 
-                foreach (KeyValuePair<string, string> attribute in attributes)
-                {
-                    propertyGroup.SetAttribute(name: attribute.Key, value: attribute.Value);
-                }
+            if (this.WouldBreakPropertyReferenceOrderLogged(properties: orderedChildren, filename: filename))
+            {
+                continue;
+            }
+
+            ReplaceChildrenInKeyOrder(group: propertyGroup, orderedChildren: orderedChildren);
+
+            foreach (KeyValuePair<string, string> attribute in attributes)
+            {
+                propertyGroup.SetAttribute(name: attribute.Key, value: attribute.Value);
             }
         }
     }
