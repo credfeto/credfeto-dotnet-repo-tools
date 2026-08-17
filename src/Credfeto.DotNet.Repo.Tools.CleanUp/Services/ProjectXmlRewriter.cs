@@ -326,14 +326,6 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
     {
         foreach (XmlElement propertyGroup in propertyGroups)
         {
-            Dictionary<string, string> attributes = new(StringComparer.Ordinal);
-
-            foreach (XmlAttribute attribute in propertyGroup.Attributes)
-            {
-                string attValue = propertyGroup.GetAttribute(attribute.Name);
-                attributes[attribute.Name] = attValue;
-            }
-
             XmlNodeList children = propertyGroup.ChildNodes;
 
             if (children.OfType<XmlNode>().Any(IsComment))
@@ -379,11 +371,6 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
             }
 
             ReplaceChildrenInKeyOrder(group: propertyGroup, orderedChildren: orderedChildren);
-
-            foreach (KeyValuePair<string, string> attribute in attributes)
-            {
-                propertyGroup.SetAttribute(name: attribute.Key, value: attribute.Value);
-            }
         }
     }
 
@@ -392,7 +379,10 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         IReadOnlyDictionary<string, XmlNode> orderedChildren
     )
     {
-        group.RemoveAll();
+        foreach (XmlNode child in group.ChildNodes.Cast<XmlNode>().ToArray())
+        {
+            group.RemoveChild(child);
+        }
 
         foreach (string entryKey in orderedChildren.Keys.Order(comparer: StringComparer.Ordinal))
         {
