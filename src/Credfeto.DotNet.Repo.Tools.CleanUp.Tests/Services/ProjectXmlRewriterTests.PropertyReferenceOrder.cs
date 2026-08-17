@@ -153,4 +153,32 @@ public sealed partial class ProjectXmlRewriterTests
 
         return this.DoReOrderPropertiesAsync(expectedXml: expectedXml, originalXml: originalXml);
     }
+
+    [Fact]
+    public Task ReOrderPropertiesShouldNotMergeCombinableGroupsSeparatedByAChooseAsync()
+    {
+        // A Choose/When/Otherwise block can define properties conditionally in document order,
+        // the same evaluation-order hazard as an Import, so it must also block merging of
+        // combinable PropertyGroups either side of it.
+        const string originalXml =
+            @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <PropertyGroup>
+    <Bravo>1</Bravo>
+  </PropertyGroup>
+  <Choose>
+    <When Condition=""'$(Configuration)'=='Debug'"">
+      <PropertyGroup>
+        <DebugOnly>true</DebugOnly>
+      </PropertyGroup>
+    </When>
+  </Choose>
+  <PropertyGroup>
+    <Alpha>2</Alpha>
+  </PropertyGroup>
+</Project>";
+
+        const string expectedXml = originalXml;
+
+        return this.DoReOrderPropertiesAsync(expectedXml: expectedXml, originalXml: originalXml);
+    }
 }

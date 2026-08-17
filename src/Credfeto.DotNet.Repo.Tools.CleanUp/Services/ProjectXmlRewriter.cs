@@ -79,7 +79,7 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
                 nonCombinablePropertyGroups.Add(child);
             }
 
-            if ((isPropertyGroup || IsImport(child)) && currentRun.Count != 0)
+            if ((isPropertyGroup || IsImport(child) || IsChoose(child)) && currentRun.Count != 0)
             {
                 combinableRuns.Add(currentRun);
 
@@ -99,6 +99,13 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
     {
         return StringComparer.Ordinal.Equals(x: element.Name, y: "Import")
             || StringComparer.Ordinal.Equals(x: element.Name, y: "ImportGroup");
+    }
+
+    private static bool IsChoose(XmlElement element)
+    {
+        // <Choose>/<When>/<Otherwise> can define properties conditionally in document order,
+        // the same evaluation-order hazard as Import, so it must also break a combinable run.
+        return StringComparer.Ordinal.Equals(x: element.Name, y: "Choose");
     }
 
     private static bool IsPropertyGroup(XmlElement element)
