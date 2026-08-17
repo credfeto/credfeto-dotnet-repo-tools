@@ -104,6 +104,25 @@ public sealed partial class ProjectXmlRewriterTests
     }
 
     [Fact]
+    public Task ReOrderPropertiesShouldNotReorderWhenConditionAttributeReferencesAnotherPropertyInTheSameGroupAsync()
+    {
+        // RuntimeIdentifier's Condition attribute references $(TargetFramework). Alphabetical order would
+        // place RuntimeIdentifier before TargetFramework, which would break the reference, so both must be
+        // left as-is.
+        const string originalXml =
+            @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RuntimeIdentifier Condition=""'$(TargetFramework)'=='net8.0'"">win-x64</RuntimeIdentifier>
+  </PropertyGroup>
+</Project>";
+
+        const string expectedXml = originalXml;
+
+        return this.DoReOrderPropertiesAsync(expectedXml: expectedXml, originalXml: originalXml);
+    }
+
+    [Fact]
     public Task ReOrderPropertiesShouldMergeCombinableGroupsSeparatedByAnItemGroupAsync()
     {
         // ItemGroups do not participate in MSBuild's property evaluation order, so they must not block

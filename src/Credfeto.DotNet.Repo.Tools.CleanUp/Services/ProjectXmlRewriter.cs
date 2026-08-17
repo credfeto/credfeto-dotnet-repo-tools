@@ -404,6 +404,8 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
     // Checks whether sorting the given set of same-scope properties into alphabetical order would move
     // a property that references another property in the same set (via $(PropertyName)) above the
     // property it depends on, which would silently change what the reference evaluates to.
+    // References are checked in both the element's text and its Condition attribute, since a
+    // Condition can reference a sibling property just as validly as the element's value can.
     private bool WouldBreakPropertyReferenceOrderLogged(
         IReadOnlyDictionary<string, XmlNode> properties,
         string filename
@@ -411,32 +413,50 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
     {
         foreach ((string propertyName, XmlNode node) in properties)
         {
-            foreach (Match match in PropertyReference().Matches(node.InnerText))
+            foreach (string text in GetPropertyReferenceableText(node))
             {
-                string referencedProperty = match.Groups["name"].Value;
-
-                if (StringComparer.Ordinal.Equals(x: referencedProperty, y: propertyName))
+                foreach (Match match in PropertyReference().Matches(text))
                 {
-                    // Self-reference, e.g. DefineConstants appending to its own current value
-                    continue;
-                }
+                    string referencedProperty = match.Groups["name"].Value;
 
-                if (!properties.ContainsKey(referencedProperty))
-                {
-                    // Defined outside this group/run (e.g. Directory.Build.props) - unaffected by in-file reordering
-                    continue;
-                }
+                    if (StringComparer.Ordinal.Equals(x: referencedProperty, y: propertyName))
+                    {
+                        // Self-reference, e.g. DefineConstants appending to its own current value
+                        continue;
+                    }
 
-                if (StringComparer.Ordinal.Compare(x: propertyName, y: referencedProperty) < 0)
-                {
-                    this._logger.SkippingGroupWithForwardReference(filename);
+                    if (!properties.ContainsKey(referencedProperty))
+                    {
+                        // Defined outside this group/run (e.g. Directory.Build.props) - unaffected by in-file reordering
+                        continue;
+                    }
 
-                    return true;
+                    if (StringComparer.Ordinal.Compare(x: propertyName, y: referencedProperty) < 0)
+                    {
+                        this._logger.SkippingGroupWithForwardReference(filename);
+
+                        return true;
+                    }
                 }
             }
         }
 
         return false;
+    }
+
+    private static IEnumerable<string> GetPropertyReferenceableText(XmlNode node)
+    {
+        yield return node.InnerText;
+
+        if (node is XmlElement { HasAttributes: true } element)
+        {
+            string condition = element.GetAttribute("Condition");
+
+            if (condition.Length != 0)
+            {
+                yield return condition;
+            }
+        }
     }
 
     [GeneratedRegex(
