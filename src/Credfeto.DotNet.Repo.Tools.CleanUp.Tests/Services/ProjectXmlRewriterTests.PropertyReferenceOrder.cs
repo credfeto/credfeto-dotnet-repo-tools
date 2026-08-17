@@ -181,4 +181,23 @@ public sealed partial class ProjectXmlRewriterTests
 
         return this.DoReOrderPropertiesAsync(expectedXml: expectedXml, originalXml: originalXml);
     }
+
+    [Fact]
+    public Task ReOrderPropertiesShouldNotReorderWhenReferenceCasingDiffersFromDefinitionAsync()
+    {
+        // MSBuild property names are case-insensitive, so $(version) still refers to <Version>.
+        // Alphabetical order would place PackageVersion before Version, which would break the
+        // reference despite the casing mismatch, so both must be left as-is.
+        const string originalXml =
+            @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <PropertyGroup>
+    <Version>1.2.3</Version>
+    <PackageVersion>$(version)-beta</PackageVersion>
+  </PropertyGroup>
+</Project>";
+
+        const string expectedXml = originalXml;
+
+        return this.DoReOrderPropertiesAsync(expectedXml: expectedXml, originalXml: originalXml);
+    }
 }

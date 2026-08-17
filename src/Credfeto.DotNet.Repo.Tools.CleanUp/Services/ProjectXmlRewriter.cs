@@ -426,19 +426,27 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
                 {
                     string referencedProperty = match.Groups["name"].Value;
 
-                    if (StringComparer.Ordinal.Equals(x: referencedProperty, y: propertyName))
+                    if (StringComparer.OrdinalIgnoreCase.Equals(x: referencedProperty, y: propertyName))
                     {
                         // Self-reference, e.g. DefineConstants appending to its own current value
                         continue;
                     }
 
-                    if (!properties.ContainsKey(referencedProperty))
+                    // MSBuild property names are case-insensitive, so the reference must be resolved
+                    // to whichever key in this set it actually matches even if the casing differs -
+                    // but the forward-reference comparison below must still use the same Ordinal
+                    // comparer ReplaceChildrenInKeyOrder actually sorts by, via the matched key itself.
+                    string? actualReferencedProperty = properties.Keys.FirstOrDefault(key =>
+                        StringComparer.OrdinalIgnoreCase.Equals(x: key, y: referencedProperty)
+                    );
+
+                    if (actualReferencedProperty is null)
                     {
                         // Defined outside this group/run (e.g. Directory.Build.props) - unaffected by in-file reordering
                         continue;
                     }
 
-                    if (StringComparer.Ordinal.Compare(x: propertyName, y: referencedProperty) < 0)
+                    if (StringComparer.Ordinal.Compare(x: propertyName, y: actualReferencedProperty) < 0)
                     {
                         this._logger.SkippingGroupWithForwardReference(filename);
 
