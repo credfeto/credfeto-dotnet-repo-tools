@@ -200,4 +200,23 @@ public sealed partial class ProjectXmlRewriterTests
 
         return this.DoReOrderPropertiesAsync(expectedXml: expectedXml, originalXml: originalXml);
     }
+
+    [Fact]
+    public Task ReOrderPropertiesShouldNotReorderWhenReferencedViaAPropertyFunctionAsync()
+    {
+        // PackageVersion references Version via a property function ($(Version.TrimEnd())), not a
+        // bare $(Version) reference. Alphabetical order would place PackageVersion before Version,
+        // which would break the reference, so both must be left as-is.
+        const string originalXml =
+            @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <PropertyGroup>
+    <Version>1.2.3</Version>
+    <PackageVersion>$(Version.TrimEnd())-beta</PackageVersion>
+  </PropertyGroup>
+</Project>";
+
+        const string expectedXml = originalXml;
+
+        return this.DoReOrderPropertiesAsync(expectedXml: expectedXml, originalXml: originalXml);
+    }
 }

@@ -474,8 +474,12 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         }
     }
 
+    // Deliberately does not require a balancing closing paren, so a property-function reference
+    // such as $(Version.TrimEnd()) or the inner $(A) in $([MSBuild]::Add($(A),1)) still yields
+    // the referenced property name. Over-matching is safe here: the only effect of a spurious
+    // match is skipping a reorder/merge that would otherwise have been safe to perform.
     [GeneratedRegex(
-        pattern: @"\$\((?<name>\w+)\)",
+        pattern: @"\$\((?<name>\w+)",
         RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture,
         matchTimeoutMilliseconds: 5000
     )]
