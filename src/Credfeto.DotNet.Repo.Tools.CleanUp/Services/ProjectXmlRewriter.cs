@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Xml;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services.LoggingExtensions;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
-public sealed class ProjectXmlRewriter : IProjectXmlRewriter
+public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
 {
     private readonly ILogger<ProjectXmlRewriter> _logger;
 
@@ -24,22 +25,92 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
             return false;
         }
 
-        IReadOnlyList<XmlElement> propertyGroups =
-        [
-            .. project
-                .ChildNodes.OfType<XmlElement>()
-                .Where(n => StringComparer.Ordinal.Equals(x: n.Name, y: "PropertyGroup")),
-        ];
-
         string before = projectDocument.InnerXml;
 
-        this.MergePropertiesOfMultipleGroups(fileName: filename, propertyGroups: propertyGroups);
+        // Only merge/sort runs of combinable PropertyGroups that are not separated by an
+        // Import/ImportGroup or a conditional PropertyGroup, as MSBuild evaluates properties
+        // in document order and merging across such a boundary would change evaluation order.
+        (
+            IReadOnlyList<XmlElement> nonCombinablePropertyGroups,
+            IReadOnlyList<IReadOnlyList<XmlElement>> combinableRuns
+        ) = CollectNonCombinablePropertyGroupsAndCombinableRuns(project);
 
-        this.ReOrderPropertyGroupWithAttributesOrComments(filename: filename, propertyGroups: propertyGroups);
+        foreach (IReadOnlyList<XmlElement> run in combinableRuns)
+        {
+            this.MergeCombinablePropertyGroups(fileName: filename, combinablePropertyGroups: run);
+        }
+
+        this.ReOrderPropertyGroupWithAttributesOrComments(
+            filename: filename,
+            propertyGroups: nonCombinablePropertyGroups
+        );
 
         string after = projectDocument.InnerXml;
 
         return !StringComparer.Ordinal.Equals(x: before, y: after);
+    }
+
+    // Each PropertyGroup's combinable/non-combinable classification is only ever needed once, so
+    // both the non-combinable groups (destined for ReOrderPropertyGroupWithAttributesOrComments) and
+    // the combinable runs are partitioned in a single pass over the document, taken before any
+    // mutation happens.
+    private static (
+        IReadOnlyList<XmlElement> NonCombinablePropertyGroups,
+        IReadOnlyList<IReadOnlyList<XmlElement>> CombinableRuns
+    ) CollectNonCombinablePropertyGroupsAndCombinableRuns(XmlElement project)
+    {
+        List<XmlElement> nonCombinablePropertyGroups = [];
+        List<IReadOnlyList<XmlElement>> combinableRuns = [];
+        List<XmlElement> currentRun = [];
+
+        foreach (XmlElement child in project.ChildNodes.OfType<XmlElement>())
+        {
+            bool isPropertyGroup = IsPropertyGroup(child);
+
+            if (isPropertyGroup && IsCombinableGroup(child))
+            {
+                currentRun.Add(child);
+
+                continue;
+            }
+
+            if (isPropertyGroup)
+            {
+                nonCombinablePropertyGroups.Add(child);
+            }
+
+            if ((isPropertyGroup || IsImport(child) || IsChoose(child)) && currentRun.Count != 0)
+            {
+                combinableRuns.Add(currentRun);
+
+                currentRun = [];
+            }
+        }
+
+        if (currentRun.Count != 0)
+        {
+            combinableRuns.Add(currentRun);
+        }
+
+        return (nonCombinablePropertyGroups, combinableRuns);
+    }
+
+    private static bool IsImport(XmlElement element)
+    {
+        return StringComparer.Ordinal.Equals(x: element.Name, y: "Import")
+            || StringComparer.Ordinal.Equals(x: element.Name, y: "ImportGroup");
+    }
+
+    private static bool IsChoose(XmlElement element)
+    {
+        // <Choose>/<When>/<Otherwise> can define properties conditionally in document order,
+        // the same evaluation-order hazard as Import, so it must also break a combinable run.
+        return StringComparer.Ordinal.Equals(x: element.Name, y: "Choose");
+    }
+
+    private static bool IsPropertyGroup(XmlElement element)
+    {
+        return StringComparer.Ordinal.Equals(x: element.Name, y: "PropertyGroup");
     }
 
     [SuppressMessage(
@@ -181,16 +252,10 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
         }
     }
 
-    public void MergePropertiesOfMultipleGroups(string fileName, IReadOnlyList<XmlElement> propertyGroups)
+    private void MergeCombinablePropertyGroups(string fileName, IReadOnlyList<XmlElement> combinablePropertyGroups)
     {
-        IReadOnlyList<XmlElement> combinablePropertyGroups = [.. propertyGroups.Where(IsCombinableGroup)];
-
-        XmlElement? targetPropertyGroup = combinablePropertyGroups.FirstOrDefault();
-
-        if (targetPropertyGroup is null)
-        {
-            return;
-        }
+        // combinablePropertyGroups is always a non-empty run - see CollectNonCombinablePropertyGroupsAndCombinableRuns.
+        XmlElement targetPropertyGroup = combinablePropertyGroups[0];
 
         List<XmlElement> toRemove = [];
         Dictionary<string, XmlNode> orderedChildren = new(StringComparer.Ordinal);
@@ -215,15 +280,12 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
             }
         }
 
-        // Empty the target property group
-        targetPropertyGroup.RemoveAll();
-
-        // Add the children we've added to the target property group
-        foreach (string entryKey in orderedChildren.Keys.Order(comparer: StringComparer.Ordinal))
+        if (this.WouldBreakPropertyReferenceOrderLogged(properties: orderedChildren, filename: fileName))
         {
-            XmlNode item = orderedChildren[entryKey];
-            targetPropertyGroup.AppendChild(item);
+            return;
         }
+
+        ReplaceChildrenInKeyOrder(group: targetPropertyGroup, orderedChildren: orderedChildren);
 
         // remove the old groups
         RemoveNodes(toRemove);
@@ -269,18 +331,8 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
     )]
     private void ReOrderPropertyGroupWithAttributesOrComments(string filename, IReadOnlyList<XmlElement> propertyGroups)
     {
-        IReadOnlyList<XmlElement> nonCombinablePropertyGroups = [.. propertyGroups.Where(ph => !IsCombinableGroup(ph))];
-
-        foreach (XmlElement propertyGroup in nonCombinablePropertyGroups)
+        foreach (XmlElement propertyGroup in propertyGroups)
         {
-            Dictionary<string, string> attributes = new(StringComparer.Ordinal);
-
-            foreach (XmlAttribute attribute in propertyGroup.Attributes)
-            {
-                string attValue = propertyGroup.GetAttribute(attribute.Name);
-                attributes[attribute.Name] = attValue;
-            }
-
             XmlNodeList children = propertyGroup.ChildNodes;
 
             if (children.OfType<XmlNode>().Any(IsComment))
@@ -315,21 +367,34 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
                 }
             }
 
-            if (replace)
+            if (!replace)
             {
-                propertyGroup.RemoveAll();
-
-                foreach (string entryKey in orderedChildren.Keys.Order(comparer: StringComparer.Ordinal))
-                {
-                    XmlNode item = orderedChildren[entryKey];
-                    propertyGroup.AppendChild(item);
-                }
-
-                foreach (KeyValuePair<string, string> attribute in attributes)
-                {
-                    propertyGroup.SetAttribute(name: attribute.Key, value: attribute.Value);
-                }
+                continue;
             }
+
+            if (this.WouldBreakPropertyReferenceOrderLogged(properties: orderedChildren, filename: filename))
+            {
+                continue;
+            }
+
+            ReplaceChildrenInKeyOrder(group: propertyGroup, orderedChildren: orderedChildren);
+        }
+    }
+
+    private static void ReplaceChildrenInKeyOrder(
+        XmlElement group,
+        IReadOnlyDictionary<string, XmlNode> orderedChildren
+    )
+    {
+        foreach (XmlNode child in group.ChildNodes.Cast<XmlNode>().ToArray())
+        {
+            group.RemoveChild(child);
+        }
+
+        foreach (string entryKey in orderedChildren.Keys.Order(comparer: StringComparer.Ordinal))
+        {
+            XmlNode item = orderedChildren[entryKey];
+            group.AppendChild(item);
         }
     }
 
@@ -342,4 +407,81 @@ public sealed class ProjectXmlRewriter : IProjectXmlRewriter
     {
         return node.NodeType == XmlNodeType.Comment;
     }
+
+    // Checks whether sorting the given set of same-scope properties into alphabetical order would move
+    // a property that references another property in the same set (via $(PropertyName)) above the
+    // property it depends on, which would silently change what the reference evaluates to.
+    // References are checked in both the element's text and its Condition attribute, since a
+    // Condition can reference a sibling property just as validly as the element's value can.
+    private bool WouldBreakPropertyReferenceOrderLogged(
+        IReadOnlyDictionary<string, XmlNode> properties,
+        string filename
+    )
+    {
+        foreach ((string propertyName, XmlNode node) in properties)
+        {
+            foreach (string text in GetPropertyReferenceableText(node))
+            {
+                foreach (Match match in PropertyReference().Matches(text))
+                {
+                    string referencedProperty = match.Groups["name"].Value;
+
+                    if (StringComparer.OrdinalIgnoreCase.Equals(x: referencedProperty, y: propertyName))
+                    {
+                        // Self-reference, e.g. DefineConstants appending to its own current value
+                        continue;
+                    }
+
+                    // MSBuild property names are case-insensitive, so the reference must be resolved
+                    // to whichever key in this set it actually matches even if the casing differs -
+                    // but the forward-reference comparison below must still use the same Ordinal
+                    // comparer ReplaceChildrenInKeyOrder actually sorts by, via the matched key itself.
+                    string? actualReferencedProperty = properties.Keys.FirstOrDefault(key =>
+                        StringComparer.OrdinalIgnoreCase.Equals(x: key, y: referencedProperty)
+                    );
+
+                    if (actualReferencedProperty is null)
+                    {
+                        // Defined outside this group/run (e.g. Directory.Build.props) - unaffected by in-file reordering
+                        continue;
+                    }
+
+                    if (StringComparer.Ordinal.Compare(x: propertyName, y: actualReferencedProperty) < 0)
+                    {
+                        this._logger.SkippingGroupWithForwardReference(filename);
+
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<string> GetPropertyReferenceableText(XmlNode node)
+    {
+        yield return node.InnerText;
+
+        if (node is XmlElement { HasAttributes: true } element)
+        {
+            string condition = element.GetAttribute("Condition");
+
+            if (condition.Length != 0)
+            {
+                yield return condition;
+            }
+        }
+    }
+
+    // Deliberately does not require a balancing closing paren, so a property-function reference
+    // such as $(Version.TrimEnd()) or the inner $(A) in $([MSBuild]::Add($(A),1)) still yields
+    // the referenced property name. Over-matching is safe here: the only effect of a spurious
+    // match is skipping a reorder/merge that would otherwise have been safe to perform.
+    [GeneratedRegex(
+        pattern: @"\$\((?<name>\w+)",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture,
+        matchTimeoutMilliseconds: 5000
+    )]
+    private static partial Regex PropertyReference();
 }

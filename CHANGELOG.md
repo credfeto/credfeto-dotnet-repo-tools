@@ -19,6 +19,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - dependabot.yml is now created on the first run for a newly onboarded repository, instead of being silently skipped when it does not yet exist
 - Standardise UTF-8 encoding (no BOM) across cleanup pipeline writes so reverted files stay byte-identical
 - GitRepository.Active now caches the opened LibGit2Sharp repository instance instead of opening (and leaking) a new one on every access
+- PropertyGroup reordering/merging no longer moves a property above another same-file property it references, and no longer merges PropertyGroups separated by a conditional group or Import, preventing MSBuild property evaluation order corruption.
 ### Changed
 ### Deprecated
 ### Removed

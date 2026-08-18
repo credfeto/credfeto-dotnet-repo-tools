@@ -64,4 +64,14 @@ internal static partial class ProjectXmlRewriterLoggingExtensions
         string filename,
         string referenceType
     );
+
+    [LoggerMessage(
+        EventId = 8,
+        Level = LogLevel.Error,
+        Message = "{filename} SKIPPING GROUP AS reordering would move a property reference above its definition"
+    )]
+    public static partial void SkippingGroupWithForwardReference(
+        this ILogger<ProjectXmlRewriter> logger,
+        string filename
+    );
 }
