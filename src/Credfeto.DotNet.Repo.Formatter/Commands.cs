@@ -12,6 +12,8 @@ using Credfeto.DotNet.Repo.Formatter.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp;
 using Credfeto.DotNet.Repo.Tools.Extensions;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
 
@@ -225,6 +227,16 @@ public sealed class Commands
             return false;
         }
 
+        if (
+            CountSyntaxErrors(content: content, cancellationToken: this._cancellationToken)
+            > CountSyntaxErrors(content: original, cancellationToken: this._cancellationToken)
+        )
+        {
+            this._logger.LogUnparseableResultNotWritten(filePath);
+
+            return false;
+        }
+
         await File.WriteAllTextAsync(
             path: filePath,
             contents: content,
@@ -233,6 +245,14 @@ public sealed class Commands
         );
 
         return true;
+    }
+
+    private static int CountSyntaxErrors(string content, in CancellationToken cancellationToken)
+    {
+        SyntaxTree tree = CSharpSyntaxTree.ParseText(text: content, cancellationToken: cancellationToken);
+
+        return tree.GetDiagnostics(cancellationToken: cancellationToken)
+            .Count(d => d.Severity == DiagnosticSeverity.Error);
     }
 
     private async ValueTask<bool> ProcessProjectFileAsync(string filePath)
