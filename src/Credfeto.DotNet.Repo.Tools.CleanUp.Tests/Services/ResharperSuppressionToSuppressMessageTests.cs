@@ -108,6 +108,80 @@ public sealed class ResharperSuppressionToSuppressMessageTests : TestBase
         Assert.Equal(expected: input, actual: result);
     }
 
+    [Fact]
+    public void ReplaceShouldNotConvertCommentAboveLocalVariableDeclaration()
+    {
+        string input =
+            "public sealed class Example\n{\n    public void Method()\n    {\n        "
+            + MakeDisable("InconsistentNaming")
+            + "\n        int x = 5;\n    }\n}";
+
+        this.TestIt(input: input, expected: input);
+    }
+
+    [Fact]
+    public void ReplaceShouldNotConvertTrailingSameLineComment()
+    {
+        string input =
+            "public sealed class Example\n{\n    public void Method()\n    {\n        int x = 5; "
+            + MakeDisable("InconsistentNaming")
+            + "\n    }\n}";
+
+        this.TestIt(input: input, expected: input);
+    }
+
+    [Fact]
+    public void ReplaceShouldConvertOnlyLegalOccurrencesWhenFileHasMixedPositions()
+    {
+        string input =
+            "public sealed class Example\n{\n    "
+            + MakeDisable("InconsistentNaming")
+            + "\n    public void Method()\n    {\n        "
+            + MakeDisable("InconsistentNaming")
+            + "\n        int x = 5;\n    }\n}";
+
+        string expected =
+            "public sealed class Example\n{\n    "
+            + MakeSuppressMessage("InconsistentNaming")
+            + "\n    public void Method()\n    {\n        "
+            + MakeDisable("InconsistentNaming")
+            + "\n        int x = 5;\n    }\n}";
+
+        this.TestIt(input: input, expected: expected);
+    }
+
+    [Fact]
+    public void ReplaceShouldPreserveIndentationOfConvertedComment()
+    {
+        string input =
+            "public sealed class Example\n{\n    "
+            + MakeDisable("InconsistentNaming")
+            + "\n    public void Method() { }\n}";
+
+        string expected =
+            "public sealed class Example\n{\n    "
+            + MakeSuppressMessage("InconsistentNaming")
+            + "\n    public void Method() { }\n}";
+
+        this.TestIt(input: input, expected: expected);
+    }
+
+    [Fact]
+    public void ReplaceShouldPreserveCarriageReturnLineEndings()
+    {
+        string input =
+            "public sealed class Example\r\n{\r\n    "
+            + MakeDisable("InconsistentNaming")
+            + "\r\n    public void Method() { }\r\n}";
+
+        string expected =
+            "public sealed class Example\r\n{\r\n    "
+            + MakeSuppressMessage("InconsistentNaming")
+            + "\r\n    public void Method() { }\r\n}";
+
+        this.TestIt(input: input, expected: expected);
+    }
+
     private void TestIt(string input, string expected)
     {
         string result = this._resharperSuppressionToSuppressMessage.Replace(input);

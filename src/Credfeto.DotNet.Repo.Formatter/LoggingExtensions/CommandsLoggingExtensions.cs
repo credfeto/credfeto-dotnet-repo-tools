@@ -39,4 +39,11 @@ internal static partial class CommandsLoggingExtensions
         Message = "Completed. {fileCount} file(s) processed, {updatedCount} updated."
     )]
     public static partial void LogCompleted(this ILogger logger, int fileCount, int updatedCount);
+
+    [LoggerMessage(
+        EventId = 9,
+        Level = LogLevel.Error,
+        Message = "Result would introduce new syntax errors - not writing: {fileName}"
+    )]
+    public static partial void LogUnparseableResultNotWritten(this ILogger logger, string fileName);
 }
