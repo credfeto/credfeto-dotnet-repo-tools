@@ -196,6 +196,19 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task CleanupAsyncDoesNotWriteFileWhenResultWouldBecomeUnparseableAsync()
+    {
+        const string original = "public class Foo { }";
+        string file = await this.CreateFileAsync(relativePath: "Foo.cs", content: original);
+        this._resharperSuppressionToSuppressMessage.Replace(Arg.Any<string>()).Returns("public class Foo {");
+
+        int result = await this._commands.CleanupAsync(inputs: [file]);
+
+        Assert.Equal(expected: ExitCodes.Success, actual: result);
+        Assert.Equal(expected: original, actual: await this.ReadFileAsync(file));
+    }
+
+    [Fact]
     public async Task CleanupAsyncDeduplicatesRepeatedInputsAsync()
     {
         string file = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
