@@ -60,6 +60,8 @@
   - any: ['src/Credfeto.DotNet.Repo.Tools.Git.Tests/**/*']
 "credfeto-dotnet-repo-tools-models":
   - any: ['src/Credfeto.DotNet.Repo.Tools.Models/**/*']
+"credfeto-dotnet-repo-tools-models-tests":
+  - any: ['src/Credfeto.DotNet.Repo.Tools.Models.Tests/**/*']
 "credfeto-dotnet-repo-tools-packages":
   - any: ['src/Credfeto.DotNet.Repo.Tools.Packages/**/*']
 "credfeto-dotnet-repo-tools-packages-interfaces":
