@@ -21,6 +21,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - GitRepository.Active now caches the opened LibGit2Sharp repository instance instead of opening (and leaking) a new one on every access
 - PropertyGroup reordering/merging no longer moves a property above another same-file property it references, and no longer merges PropertyGroups separated by a conditional group or Import, preventing MSBuild property evaluation order corruption.
 ### Changed
+- SDK - Updated DotNet SDK to 10.0.400
 ### Deprecated
 ### Removed
 ### Deployment Changes
