@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
@@ -72,7 +70,11 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
             return content;
         }
 
-        (int baselineSyntaxErrors, int baselineAttributeContextErrors) = CountErrors(content);
+        (int baselineSyntaxErrors, int baselineAttributeContextErrors) = RoslynSyntaxValidation.CountErrors(
+            content: content,
+            diagnosticId: AttributeNotValidInContextDiagnosticId,
+            cancellationToken: CancellationToken.None
+        );
         string working = content;
 
         // Process from the last match to the first so that earlier matches' offsets, taken
@@ -89,7 +91,11 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
             string candidateReplacement = match.Groups["Indent"].Value + replacement + match.Groups["LineEnd"].Value;
             string candidate = working[..match.Index] + candidateReplacement + working[(match.Index + match.Length)..];
 
-            (int candidateSyntaxErrors, int candidateAttributeContextErrors) = CountErrors(candidate);
+            (int candidateSyntaxErrors, int candidateAttributeContextErrors) = RoslynSyntaxValidation.CountErrors(
+                content: candidate,
+                diagnosticId: AttributeNotValidInContextDiagnosticId,
+                cancellationToken: CancellationToken.None
+            );
 
             if (
                 candidateSyntaxErrors <= baselineSyntaxErrors
@@ -101,28 +107,5 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
         }
 
         return working;
-    }
-
-    // Two independent checks: a bare syntax-tree parse (noise-free, no assembly references needed)
-    // catches genuine parse errors such as an attribute list before a case label or a collection
-    // element; the compilation-level CS7014 count catches attribute lists that parse fine but are
-    // semantically illegal where they now sit (e.g. before a local declaration or statement).
-    private static (int SyntaxErrors, int AttributeContextErrors) CountErrors(string content)
-    {
-        SyntaxTree tree = CSharpSyntaxTree.ParseText(text: content, cancellationToken: CancellationToken.None);
-
-        int syntaxErrors = tree.GetDiagnostics(cancellationToken: CancellationToken.None)
-            .Count(d => d.Severity == DiagnosticSeverity.Error);
-
-        int attributeContextErrors = CSharpCompilation
-            .Create(assemblyName: "ResharperSuppressionValidation")
-            .AddSyntaxTrees(tree)
-            .GetDiagnostics(cancellationToken: CancellationToken.None)
-            .Count(d =>
-                d.Severity == DiagnosticSeverity.Error
-                && StringComparer.Ordinal.Equals(d.Id, AttributeNotValidInContextDiagnosticId)
-            );
-
-        return (syntaxErrors, attributeContextErrors);
     }
 }
