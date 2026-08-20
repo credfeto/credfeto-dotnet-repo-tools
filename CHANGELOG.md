@@ -11,6 +11,16 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.5.8] - 2026-08-20
+### Added
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Build
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Extensions
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Tools.Models
@@ -22,12 +32,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - PropertyGroup reordering/merging no longer moves a property above another same-file property it references, and no longer merges PropertyGroups separated by a conditional group or Import, preventing MSBuild property evaluation order corruption.
 ### Changed
 - SDK - Updated DotNet SDK to 10.0.400
-### Deprecated
-### Removed
-### Deployment Changes
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
+
 ## [1.5.7] - 2026-07-19
 ### Added
 - Unit tests for 100% code coverage of Credfeto.DotNet.Repo.Formatter
