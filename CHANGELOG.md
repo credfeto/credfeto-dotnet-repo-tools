@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- ReSharper comment-to-attribute conversion corrupting source when comment is inside a method body
 ### Changed
 ### Deprecated
 ### Removed
@@ -30,7 +31,6 @@ Releases that have at least been deployed to staging, BUT NOT necessarily releas
 - Standardise UTF-8 encoding (no BOM) across cleanup pipeline writes so reverted files stay byte-identical
 - GitRepository.Active now caches the opened LibGit2Sharp repository instance instead of opening (and leaking) a new one on every access
 - PropertyGroup reordering/merging no longer moves a property above another same-file property it references, and no longer merges PropertyGroups separated by a conditional group or Import, preventing MSBuild property evaluation order corruption.
-- ReSharper comment-to-attribute conversion corrupting source when comment is inside a method body
 ### Changed
 - SDK - Updated DotNet SDK to 10.0.400
 
