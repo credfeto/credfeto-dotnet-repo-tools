@@ -3,11 +3,17 @@ using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
 public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressionToSuppressMessage
 {
+    // CS7014 "Attributes are not valid in this context" is what the compiler reports for an attribute
+    // placed before a local declaration or statement; it is a binder diagnostic, not a parser one, so
+    // a bare syntax-tree parse (no diagnostics) cannot detect it - a compilation is required.
+    private const string AttributeNotValidInContextDiagnosticId = "CS7014";
+
     private static readonly IReadOnlyList<string> Replacements =
     [
         "RedundantDefaultMemberInitializer",
@@ -44,22 +50,62 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
     );
 
     private static readonly Regex CombinedRegex = new(
-        pattern: "//\\s+ReSharper\\s+disable\\s+once\\s+(?<Rule>"
+        pattern: "^(?<Indent>[ \t]*)//\\s+ReSharper\\s+disable\\s+once\\s+(?<Rule>"
             + string.Join(separator: '|', Replacements.Select(Regex.Escape))
-            + ")",
+            + ")[ \t]*(?<LineEnd>\\r?)$",
         options: RegexOptions.Compiled
             | RegexOptions.CultureInvariant
             | RegexOptions.NonBacktracking
-            | RegexOptions.ExplicitCapture,
+            | RegexOptions.ExplicitCapture
+            | RegexOptions.Multiline,
         matchTimeout: TimeSpan.FromSeconds(1)
     );
 
     public string Replace(string content)
     {
-        return CombinedRegex.Replace(
-            input: content,
-            evaluator: m =>
-                ReplacementMap.TryGetValue(key: m.Groups["Rule"].Value, out string? replacement) ? replacement : m.Value
+        MatchCollection matches = CombinedRegex.Matches(content);
+
+        if (matches.Count == 0)
+        {
+            return content;
+        }
+
+        (int baselineSyntaxErrors, int baselineAttributeContextErrors) = RoslynSyntaxValidation.CountErrors(
+            content: content,
+            diagnosticId: AttributeNotValidInContextDiagnosticId,
+            cancellationToken: CancellationToken.None
         );
+        string working = content;
+
+        // Process from the last match to the first so that earlier matches' offsets, taken
+        // from the original content, stay valid as later ones are replaced.
+        for (int i = matches.Count - 1; i >= 0; --i)
+        {
+            Match match = matches[i];
+
+            if (!ReplacementMap.TryGetValue(key: match.Groups["Rule"].Value, out string? replacement))
+            {
+                continue;
+            }
+
+            string candidateReplacement = match.Groups["Indent"].Value + replacement + match.Groups["LineEnd"].Value;
+            string candidate = working[..match.Index] + candidateReplacement + working[(match.Index + match.Length)..];
+
+            (int candidateSyntaxErrors, int candidateAttributeContextErrors) = RoslynSyntaxValidation.CountErrors(
+                content: candidate,
+                diagnosticId: AttributeNotValidInContextDiagnosticId,
+                cancellationToken: CancellationToken.None
+            );
+
+            if (
+                candidateSyntaxErrors <= baselineSyntaxErrors
+                && candidateAttributeContextErrors <= baselineAttributeContextErrors
+            )
+            {
+                working = candidate;
+            }
+        }
+
+        return working;
     }
 }

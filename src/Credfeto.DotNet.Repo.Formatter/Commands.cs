@@ -225,6 +225,16 @@ public sealed class Commands
             return false;
         }
 
+        if (
+            RoslynSyntaxValidation.CountSyntaxErrors(content: content, cancellationToken: this._cancellationToken)
+            > RoslynSyntaxValidation.CountSyntaxErrors(content: original, cancellationToken: this._cancellationToken)
+        )
+        {
+            this._logger.LogUnparseableResultNotWritten(filePath);
+
+            return false;
+        }
+
         await File.WriteAllTextAsync(
             path: filePath,
             contents: content,

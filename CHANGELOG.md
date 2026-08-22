@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- ReSharper comment-to-attribute conversion corrupting source when comment is inside a method body
 ### Changed
 ### Deprecated
 ### Removed
