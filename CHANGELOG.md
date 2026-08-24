@@ -18,6 +18,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.136.1515
 - Dependencies - Updated CSharpIsNullAnalyzer to 0.2.19
 - Dependencies - Updated Microsoft.CodeAnalysis.CSharp to 5.9.0
+- Dependencies - Updated Microsoft.Sbom.Targets to 4.1.5
 ### Deprecated
 ### Removed
 ### Deployment Changes
