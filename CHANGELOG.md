@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.152.2216
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.136.1515
+- Dependencies - Updated CSharpIsNullAnalyzer to 0.2.19
 ### Deprecated
 ### Removed
 ### Deployment Changes
