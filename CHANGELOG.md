@@ -24,6 +24,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated xunit.analyzers to 2.0.0
 - Dependencies - Updated xunit.v3 to 4.0.0
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.159.1917
+- Dependencies - Updated FunFair.BuildCheck to 474.2.11.2561
 ### Deprecated
 ### Removed
 ### Deployment Changes

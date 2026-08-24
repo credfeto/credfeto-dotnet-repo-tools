@@ -64,7 +64,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Credfeto.DotNet.Code.Analysis.Overrides" Version="1.0.4.290" />
-    <PackageReference Include="FunFair.BuildCheck.Runner" Version="474.2.9.2369" />
+    <PackageReference Include="FunFair.BuildCheck.Runner" Version="474.2.11.2561" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="2.1.0" PrivateAssets="All" ExcludeAssets="runtime" />
