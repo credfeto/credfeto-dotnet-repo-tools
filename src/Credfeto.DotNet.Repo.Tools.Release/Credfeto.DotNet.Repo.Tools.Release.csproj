@@ -67,7 +67,7 @@
   <ItemGroup>
     <PackageReference Include="Credfeto.ChangeLog" Version="1.10.194.1792" />
     <PackageReference Include="Credfeto.Date.Interfaces" Version="1.1.151.1695" />
-    <PackageReference Include="FunFair.BuildVersion.Interfaces" Version="6.2.18.1825" />
+    <PackageReference Include="FunFair.BuildVersion.Interfaces" Version="6.2.19.2266" />
     <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="10.0.10" />
   </ItemGroup>
   <ItemGroup>
