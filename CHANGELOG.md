@@ -34,6 +34,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Microsoft.Extensions to 10.0.11
 - Dependencies - Updated FunFair.Test to 6.4.0.2617
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.200.2469
+- Dependencies - Updated LibGit2Sharp to 0.32.0
 ### Deprecated
 ### Removed
 ### Deployment Changes
