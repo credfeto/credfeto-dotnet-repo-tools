@@ -20,6 +20,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Microsoft.CodeAnalysis.CSharp to 5.9.0
 - Dependencies - Updated Microsoft.Sbom.Targets to 4.1.5
 - Dependencies - Updated Roslynator.Analyzers to 5.0.0
+- Dependencies - Updated SonarAnalyzer.CSharp to 10.33.0.1635
 ### Deprecated
 ### Removed
 ### Deployment Changes
