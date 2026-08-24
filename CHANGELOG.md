@@ -15,6 +15,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - ReSharper comment-to-attribute conversion corrupting source when comment is inside a method body
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.152.2216
+- Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.136.1515
 ### Deprecated
 ### Removed
 ### Deployment Changes
