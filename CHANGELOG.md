@@ -26,6 +26,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.159.1917
 - Dependencies - Updated FunFair.BuildCheck to 474.2.11.2561
 - Dependencies - Updated FunFair.BuildVersion to 6.2.19.2266
+- Dependencies - Updated FunFair.Test to 6.4.0.2617
 ### Deprecated
 ### Removed
 ### Deployment Changes
