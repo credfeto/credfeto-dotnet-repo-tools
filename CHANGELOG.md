@@ -19,6 +19,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated CSharpIsNullAnalyzer to 0.2.19
 - Dependencies - Updated Microsoft.CodeAnalysis.CSharp to 5.9.0
 - Dependencies - Updated Microsoft.Sbom.Targets to 4.1.5
+- Dependencies - Updated Roslynator.Analyzers to 5.0.0
 ### Deprecated
 ### Removed
 ### Deployment Changes
