@@ -14,7 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 - ReSharper comment-to-attribute conversion corrupting source when comment is inside a method body
 - Added missing IncludeAssets to package references and switched test projects from xunit.v3.mtp-v2 to xunit.v3.aot.mtp-v2, fixing the build-pre-release check that was red on main (FunFair.BuildCheck 474.2.11.2561)
-- TBD - to be finalized after review
+- Dependency reducer no longer skips full re-analysis on clean/skipped repos, and no longer marks a repo fully processed if the run aborts partway through
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.152.2216
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.136.1515
