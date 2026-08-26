@@ -18,7 +18,10 @@ public sealed class FrameworkSettingsTests : TestBase
     [Theory]
     [InlineData(true, "true")]
     [InlineData(false, "false")]
-    public void ExposesSdkVersionAndAllowPreRelease(bool allowPreRelease, string expectedDotNetAllowPreReleaseSdk)
+    public static void ExposesSdkVersionAndAllowPreRelease(
+        bool allowPreRelease,
+        string expectedDotNetAllowPreReleaseSdk
+    )
     {
         DotNetVersionSettings dotNetSettings = DefaultDotNetSettings with { AllowPreRelease = allowPreRelease };
 
@@ -42,7 +45,7 @@ public sealed class FrameworkSettingsTests : TestBase
     [Theory]
     [InlineData(null, "")]
     [InlineData("Import.props", "Import.props")]
-    public void ProjectImport(string? value, string expected)
+    public static void ProjectImport(string? value, string expected)
     {
         using (new EnvironmentVariableScope(variableName: "DOTNET_PACK_PROJECT_METADATA_IMPORT", value: value))
         {
@@ -55,7 +58,7 @@ public sealed class FrameworkSettingsTests : TestBase
     [Theory]
     [InlineData("true", "true")]
     [InlineData(null, null)]
-    public void DotnetPackable(string? value, string? expected)
+    public static void DotnetPackable(string? value, string? expected)
     {
         using (new EnvironmentVariableScope(variableName: "DOTNET_PACKABLE", value: value))
         {
@@ -68,7 +71,7 @@ public sealed class FrameworkSettingsTests : TestBase
     [Theory]
     [InlineData("true", "true")]
     [InlineData(null, null)]
-    public void DotnetPublishable(string? value, string? expected)
+    public static void DotnetPublishable(string? value, string? expected)
     {
         using (new EnvironmentVariableScope(variableName: "DOTNET_PUBLISHABLE", value: value))
         {
@@ -81,7 +84,7 @@ public sealed class FrameworkSettingsTests : TestBase
     [Theory]
     [InlineData("net10.0", "net10.0")]
     [InlineData(null, null)]
-    public void DotnetTargetFramework(string? value, string? expected)
+    public static void DotnetTargetFramework(string? value, string? expected)
     {
         using (new EnvironmentVariableScope(variableName: "DOTNET_CORE_APP_TARGET_FRAMEWORK", value: value))
         {
@@ -95,7 +98,7 @@ public sealed class FrameworkSettingsTests : TestBase
     [InlineData("true", true)]
     [InlineData("false", false)]
     [InlineData(null, false)]
-    public void XmlDocumentationRequired(string? value, bool expected)
+    public static void XmlDocumentationRequired(string? value, bool expected)
     {
         using (new EnvironmentVariableScope(variableName: "XML_DOCUMENTATION", value: value))
         {

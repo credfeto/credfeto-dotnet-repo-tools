@@ -66,7 +66,7 @@ public sealed class RepoUrlParserTests : LoggingTestBase
     [InlineData("file:///local/path/repo.git")]
     [InlineData("not-a-url")]
     [InlineData("just some text")]
-    public void ShouldReturnFalseForUnparseable(string path)
+    public static void ShouldReturnFalseForUnparseable(string path)
     {
         bool ok = RepoUrlParser.TryParse(path: path, out GitUrlProtocol protocol, out string? host, out string? repo);
         Assert.False(condition: ok, userMessage: "Should not have parsed");

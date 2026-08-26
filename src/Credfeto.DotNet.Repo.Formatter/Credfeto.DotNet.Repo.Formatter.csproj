@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
@@ -77,15 +77,15 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Extensions\Credfeto.DotNet.Repo.Tools.Extensions.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Cocona" Version="2.2.0" />
-    <PackageReference Include="FunFair.BuildVersion.Detection" Version="6.2.19.2266" />
-    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="10.0.11" />
-    <PackageReference Include="Serilog.Enrichers.Demystifier" Version="1.0.3" />
-    <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" />
-    <PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" />
-    <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" />
-    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageReference Include="Cocona" Version="2.2.0" IncludeAssets="compile;runtime" />
+    <PackageReference Include="FunFair.BuildVersion.Detection" Version="6.2.19.2266" IncludeAssets="compile;runtime" />
+    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="10.0.11" IncludeAssets="compile;runtime" />
+    <PackageReference Include="Serilog.Enrichers.Demystifier" Version="1.0.3" IncludeAssets="compile;runtime" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" IncludeAssets="compile;runtime" />
+    <PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" IncludeAssets="compile;runtime" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" IncludeAssets="compile;runtime" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="10.0.0" IncludeAssets="compile;runtime" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" IncludeAssets="compile;runtime" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="2.1.0" PrivateAssets="All" ExcludeAssets="runtime" />

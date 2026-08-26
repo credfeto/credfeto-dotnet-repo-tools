@@ -9,7 +9,7 @@ public sealed class PackageExcludeTests : TestBase
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void ConstructorSetsProperties(bool exactMatch)
+    public static void ConstructorSetsProperties(bool exactMatch)
     {
         const string packageId = "Package.Id";
 

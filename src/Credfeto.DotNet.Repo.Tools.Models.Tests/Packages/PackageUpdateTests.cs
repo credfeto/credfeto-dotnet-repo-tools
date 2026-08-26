@@ -10,7 +10,7 @@ public sealed class PackageUpdateTests : TestBase
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void ConstructorSetsProperties(bool hasExclude)
+    public static void ConstructorSetsProperties(bool hasExclude)
     {
         IReadOnlyList<PackageExclude>? exclude = hasExclude
             ? [new(packageId: "Excluded.Package", exactMatch: false)]
