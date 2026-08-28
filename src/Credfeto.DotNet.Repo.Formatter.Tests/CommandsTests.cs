@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -279,7 +280,7 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         int result = await this._commands.CleanupAsync(inputs: [file]);
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
-        Assert.NotEqual(expected: projectXml, actual: await this.ReadFileAsync(file));
+        Assert.NotEqual(expected: projectXml, actual: await this.ReadFileAsync(file), comparer: StringComparer.Ordinal);
     }
 
     [Fact]
@@ -293,7 +294,7 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         int result = await this._commands.CleanupAsync(inputs: [file]);
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
-        Assert.NotEqual(expected: projectXml, actual: await this.ReadFileAsync(file));
+        Assert.NotEqual(expected: projectXml, actual: await this.ReadFileAsync(file), comparer: StringComparer.Ordinal);
     }
 
     [Fact]
