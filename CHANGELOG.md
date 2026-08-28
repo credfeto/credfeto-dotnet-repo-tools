@@ -17,6 +17,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependency reducer no longer skips full re-analysis on clean/skipped repos, and no longer marks a repo fully processed if the run aborts partway through
 - IDE0022/IDE1006 analyzer errors (expression-bodied method requiring a block body; private const not following ALL_UPPER naming) that were breaking build-pre-release CI on main
 - Consumer code migrated to Credfeto.ChangeLog 1.10.200.2469's DI-based service APIs (IChangeLogDetector, IChangeLogUpdater, IChangeLogReader, IChangeLogLanguageFactory), replacing the removed static helper classes; the detector's process-current-directory assumption is scoped per repository since this tool processes many repositories within one process run
+- MA0002 analyzer errors (assertion calls missing an explicit StringComparer.Ordinal comparer) introduced by the Meziantou.Analyzer 3.0.177 bump, breaking build-pre-release CI
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.152.2216
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.136.1515
