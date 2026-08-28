@@ -37,6 +37,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.200.2469
 - Dependencies - Updated Meziantou.Analyzer to 3.0.177
 - Dependencies - Updated FunFair.CodeAnalysis to 7.2.13.2323
+- Dependencies - Updated LibGit2Sharp to 0.32.0
 ### Deprecated
 ### Removed
 ### Deployment Changes
