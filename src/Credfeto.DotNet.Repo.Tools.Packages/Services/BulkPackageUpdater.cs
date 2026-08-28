@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -27,6 +28,7 @@ namespace Credfeto.DotNet.Repo.Tools.Packages.Services;
 public sealed class BulkPackageUpdater : IBulkPackageUpdater
 {
     private readonly IBulkPackageConfigLoader _bulkPackageConfigLoader;
+    private readonly IChangeLogDetector _changeLogDetector;
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IProjectLoader _projectLoader;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
@@ -58,6 +60,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         IBulkPackageConfigLoader bulkPackageConfigLoader,
         ISinglePackageUpdater singlePackageUpdater,
         IPackageUpdateConfigurationBuilder packageUpdateConfigurationBuilder,
+        IChangeLogDetector changeLogDetector,
         ILogger<BulkPackageUpdater> logger
     )
     {
@@ -75,7 +78,28 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         this._bulkPackageConfigLoader = bulkPackageConfigLoader;
         this._singlePackageUpdater = singlePackageUpdater;
         this._packageUpdateConfigurationBuilder = packageUpdateConfigurationBuilder;
+        this._changeLogDetector = changeLogDetector;
         this._logger = logger;
+    }
+
+    // Credfeto.ChangeLog's detector determines the target repository from the process's current
+    // directory, which does not fit a tool that processes many repositories within a single
+    // process run. Scope the working directory to the target repo for the duration of the call;
+    // safe only because repositories are processed sequentially, never in parallel.
+    private bool TryFindChangeLog(string repoWorkingDirectory, [NotNullWhen(true)] out string? changeLogFileName)
+    {
+        string previousDirectory = Environment.CurrentDirectory;
+
+        try
+        {
+            Environment.CurrentDirectory = repoWorkingDirectory;
+
+            return this._changeLogDetector.TryFindChangeLog(out changeLogFileName);
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousDirectory;
+        }
     }
 
     public async ValueTask BulkUpdateAsync(
@@ -314,7 +338,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             )
         )
         {
-            if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
+            if (!this.TryFindChangeLog(repository.Active.Info.WorkingDirectory, out string? changeLogFileName))
             {
                 this._logger.LogNoChangelogFound();
                 await this._trackingCache.UpdateTrackingAsync(

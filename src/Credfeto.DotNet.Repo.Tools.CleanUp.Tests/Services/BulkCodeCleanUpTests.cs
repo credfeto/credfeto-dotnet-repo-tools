@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.ChangeLog;
+using Credfeto.ChangeLog.Services;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
@@ -40,6 +42,7 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         AlwaysMatch: []
     );
 
+    private readonly IChangeLogDetector _changeLogDetector = new ChangeLogDetector();
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IDotNetVersion _dotNetVersion;
@@ -91,6 +94,7 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             sourceFileSuppressionRemover: this._sourceFileSuppressionRemover,
             tsqlFormatter: this._tsqlFormatter,
             dotNetBuild: this._dotNetBuild,
+            changeLogDetector: this._changeLogDetector,
             logger: this.GetTypedLogger<BulkCodeCleanUp>()
         );
     }

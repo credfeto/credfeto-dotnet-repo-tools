@@ -21,6 +21,8 @@ namespace Credfeto.DotNet.Repo.Tools.Packages.Services;
 public sealed class SinglePackageUpdater : ISinglePackageUpdater
 {
     private const string CHANGELOG_ENTRY_TYPE = "Changed";
+    private readonly ChangeLogLanguage _changeLogLanguage;
+    private readonly IChangeLogUpdater _changeLogUpdater;
     private readonly IDotNetBuild _dotNetBuild;
 
     private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
@@ -37,6 +39,8 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
         ITrackingHashGenerator trackingHashGenerator,
         IPackageUpdater packageUpdater,
         IPackageUpdateConfigurationBuilder packageUpdateConfigurationBuilder,
+        IChangeLogUpdater changeLogUpdater,
+        IChangeLogLanguageFactory changeLogLanguageFactory,
         ILogger<SinglePackageUpdater> logger
     )
     {
@@ -46,6 +50,8 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
         this._trackingHashGenerator = trackingHashGenerator;
         this._packageUpdater = packageUpdater;
         this._packageUpdateConfigurationBuilder = packageUpdateConfigurationBuilder;
+        this._changeLogUpdater = changeLogUpdater;
+        this._changeLogLanguage = changeLogLanguageFactory.Get(ChangeLogLanguageFactory.English);
         this._logger = logger;
     }
 
@@ -363,7 +369,7 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
             cancellationToken: cancellationToken
         );
 
-        await CommitChangeWithChangelogAsync(
+        await this.CommitChangeWithChangelogAsync(
             repoContext: repoContext,
             package: package,
             version: version,
@@ -396,7 +402,7 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
     )
     {
         this._logger.LogCommittingToDefault(repoContext: repoContext, packageId: package.PackageId, version: version);
-        await CommitChangeWithChangelogAsync(
+        await this.CommitChangeWithChangelogAsync(
             repoContext: repoContext,
             package: package,
             version: version,
@@ -416,23 +422,25 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
         return $"depends/update-{package.PackageId}/".ToLowerInvariant();
     }
 
-    private static async ValueTask CommitChangeWithChangelogAsync(
+    private async ValueTask CommitChangeWithChangelogAsync(
         RepoContext repoContext,
         PackageUpdate package,
         string version,
         CancellationToken cancellationToken
     )
     {
-        await ChangeLogUpdater.RemoveEntryAsync(
+        await this._changeLogUpdater.RemoveEntryAsync(
             changeLogFileName: repoContext.ChangeLogFileName,
+            language: this._changeLogLanguage,
             type: CHANGELOG_ENTRY_TYPE,
-            $"Dependencies - Updated {package.PackageId} to ",
+            message: $"Dependencies - Updated {package.PackageId} to ",
             cancellationToken: cancellationToken
         );
-        await ChangeLogUpdater.AddEntryAsync(
+        await this._changeLogUpdater.AddEntryAsync(
             changeLogFileName: repoContext.ChangeLogFileName,
+            language: this._changeLogLanguage,
             type: CHANGELOG_ENTRY_TYPE,
-            $"Dependencies - Updated {package.PackageId} to {version}",
+            message: $"Dependencies - Updated {package.PackageId} to {version}",
             cancellationToken: cancellationToken
         );
 

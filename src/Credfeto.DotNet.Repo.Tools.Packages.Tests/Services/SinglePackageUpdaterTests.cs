@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.ChangeLog;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
@@ -15,6 +16,7 @@ using Credfeto.DotNet.Repo.Tools.Packages.Services;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.Package;
 using FunFair.Test.Common;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using NuGet.Versioning;
 using Xunit;
@@ -39,6 +41,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         Framework: null
     );
 
+    private readonly IChangeLogUpdater _changeLogUpdater;
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
     private readonly IPackageUpdateConfigurationBuilder _packageUpdateConfigurationBuilder;
@@ -64,6 +67,11 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         this._repository.GetDefaultBranch(GitConstants.Upstream).Returns(DEFAULT_BRANCH);
         this._repository.HeadRev.Returns(HEAD_REV);
 
+        ServiceProvider changeLogServices = new ServiceCollection().AddChangeLog().BuildServiceProvider();
+        this._changeLogUpdater = changeLogServices.GetRequiredService<IChangeLogUpdater>();
+        IChangeLogLanguageFactory changeLogLanguageFactory =
+            changeLogServices.GetRequiredService<IChangeLogLanguageFactory>();
+
         this._singlePackageUpdater = new SinglePackageUpdater(
             dotNetSolutionCheck: this._dotNetSolutionCheck,
             dotNetBuild: this._dotNetBuild,
@@ -71,6 +79,8 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
             trackingHashGenerator: this._trackingHashGenerator,
             packageUpdater: this._packageUpdater,
             packageUpdateConfigurationBuilder: this._packageUpdateConfigurationBuilder,
+            changeLogUpdater: this._changeLogUpdater,
+            changeLogLanguageFactory: changeLogLanguageFactory,
             logger: this.GetTypedLogger<SinglePackageUpdater>()
         );
     }

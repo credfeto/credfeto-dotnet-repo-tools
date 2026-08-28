@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.ChangeLog;
+using Credfeto.ChangeLog.Services;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces;
@@ -27,6 +29,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         RollForward: "major"
     );
 
+    private readonly IChangeLogDetector _changeLogDetector = new ChangeLogDetector();
     private readonly IDependencyReducer _dependencyReducer;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IDotNetVersion _dotNetVersion;
@@ -59,6 +62,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             dependencyReducer: this._dependencyReducer,
             trackingHashGenerator: this._trackingHashGenerator,
             dotNetFilesDetector: this._dotNetFilesDetector,
+            changeLogDetector: this._changeLogDetector,
             logger: this.GetTypedLogger<BulkDependencyReducer>()
         );
     }
@@ -798,6 +802,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             dependencyReducer: new CallbackInvokingDependencyReducer(),
             trackingHashGenerator: this._trackingHashGenerator,
             dotNetFilesDetector: this._dotNetFilesDetector,
+            changeLogDetector: this._changeLogDetector,
             logger: this.GetTypedLogger<BulkDependencyReducer>()
         );
     }

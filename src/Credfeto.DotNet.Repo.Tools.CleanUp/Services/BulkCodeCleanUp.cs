@@ -28,6 +28,7 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
 public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 {
+    private readonly IChangeLogDetector _changeLogDetector;
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IDotNetVersion _dotNetVersion;
@@ -58,6 +59,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         ISourceFileSuppressionRemover sourceFileSuppressionRemover,
         ITransactSqlFormatter tsqlFormatter,
         IDotNetBuild dotNetBuild,
+        IChangeLogDetector changeLogDetector,
         ILogger<BulkCodeCleanUp> logger
     )
     {
@@ -73,8 +75,29 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         this._resharperSuppressionToSuppressMessage = resharperSuppressionToSuppressMessage;
         this._sourceFileSuppressionRemover = sourceFileSuppressionRemover;
         this._dotNetBuild = dotNetBuild;
+        this._changeLogDetector = changeLogDetector;
         this._logger = logger;
         this._tsqlFormatter = tsqlFormatter;
+    }
+
+    // Credfeto.ChangeLog's detector determines the target repository from the process's current
+    // directory, which does not fit a tool that processes many repositories within a single
+    // process run. Scope the working directory to the target repo for the duration of the call;
+    // safe only because repositories are processed sequentially, never in parallel.
+    private bool TryFindChangeLog(string repoWorkingDirectory, [NotNullWhen(true)] out string? changeLogFileName)
+    {
+        string previousDirectory = Environment.CurrentDirectory;
+
+        try
+        {
+            Environment.CurrentDirectory = repoWorkingDirectory;
+
+            return this._changeLogDetector.TryFindChangeLog(out changeLogFileName);
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousDirectory;
+        }
     }
 
     /*
@@ -237,7 +260,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             )
         )
         {
-            if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
+            if (!this.TryFindChangeLog(repository.Active.Info.WorkingDirectory, out string? changeLogFileName))
             {
                 this._logger.LogNoChangelogFound();
                 await this._trackingCache.UpdateTrackingAsync(

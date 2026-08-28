@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Added missing IncludeAssets to package references and switched test projects from xunit.v3.mtp-v2 to xunit.v3.aot.mtp-v2, fixing the build-pre-release check that was red on main (FunFair.BuildCheck 474.2.11.2561)
 - Dependency reducer no longer skips full re-analysis on clean/skipped repos, and no longer marks a repo fully processed if the run aborts partway through
 - IDE0022/IDE1006 analyzer errors (expression-bodied method requiring a block body; private const not following ALL_UPPER naming) that were breaking build-pre-release CI on main
+- Consumer code migrated to Credfeto.ChangeLog 1.10.200.2469's DI-based service APIs (IChangeLogDetector, IChangeLogUpdater, IChangeLogReader, IChangeLogLanguageFactory), replacing the removed static helper classes; the detector's process-current-directory assumption is scoped per repository since this tool processes many repositories within one process run
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.152.2216
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.136.1515
@@ -32,6 +33,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.Test.Source.Generator to 6.4.0.2617
 - Dependencies - Updated Microsoft.Extensions to 10.0.11
 - Dependencies - Updated FunFair.Test to 6.4.0.2617
+- Dependencies - Updated Credfeto.ChangeLog to 1.10.200.2469
 ### Deprecated
 ### Removed
 ### Deployment Changes

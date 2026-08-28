@@ -1,3 +1,4 @@
+using Credfeto.ChangeLog;
 using Credfeto.Date;
 using Credfeto.DotNet.Repo.Tools.Build;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
@@ -21,6 +22,7 @@ internal static class ApplicationSetup
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
         return services
+            .AddChangeLog()
             .AddDate()
             .AddGit()
             .AddPackageUpdater()

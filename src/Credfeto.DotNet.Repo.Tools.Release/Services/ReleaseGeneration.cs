@@ -28,6 +28,9 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 {
     private const int DEFAULT_BUILD_NUMBER = 101;
 
+    private readonly ChangeLogLanguage _changeLogLanguage;
+    private readonly IChangeLogReader _changeLogReader;
+    private readonly IChangeLogUpdater _changeLogUpdater;
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
 
@@ -42,6 +45,9 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         ITrackingCache trackingCache,
         IDotNetSolutionCheck dotNetSolutionCheck,
         IDotNetBuild dotNetBuild,
+        IChangeLogUpdater changeLogUpdater,
+        IChangeLogReader changeLogReader,
+        IChangeLogLanguageFactory changeLogLanguageFactory,
         ILogger<ReleaseGeneration> logger
     )
     {
@@ -50,6 +56,9 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         this._trackingCache = trackingCache;
         this._dotNetSolutionCheck = dotNetSolutionCheck;
         this._dotNetBuild = dotNetBuild;
+        this._changeLogUpdater = changeLogUpdater;
+        this._changeLogReader = changeLogReader;
+        this._changeLogLanguage = changeLogLanguageFactory.Get(ChangeLogLanguageFactory.English);
         this._logger = logger;
     }
 
@@ -122,8 +131,9 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     {
         string nextVersion = this.GetNextVersion(repoContext: repoContext);
 
-        await ChangeLogUpdater.CreateReleaseAsync(
+        await this._changeLogUpdater.CreateReleaseAsync(
             changeLogFileName: repoContext.ChangeLogFileName,
+            language: this._changeLogLanguage,
             version: nextVersion,
             pending: false,
             cancellationToken: cancellationToken
@@ -250,7 +260,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         CancellationToken cancellationToken
     )
     {
-        string releaseNotes = await ChangeLogReader.ExtractReleaseNotesFromFileAsync(
+        string releaseNotes = await this._changeLogReader.ExtractReleaseNotesFromFileAsync(
             changeLogFileName: repoContext.ChangeLogFileName,
             version: "Unreleased",
             cancellationToken: cancellationToken

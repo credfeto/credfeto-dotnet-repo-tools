@@ -1,3 +1,4 @@
+using Credfeto.ChangeLog;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
@@ -63,6 +64,7 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
             .AddMockedService<IDotNetVersion>()
             .AddMockedService<IDotNetBuild>()
             .AddMockedService<IDotNetFilesDetector>()
+            .AddMockedService<IChangeLogDetector>()
             .AddCleanUp();
     }
 }
