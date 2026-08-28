@@ -1,4 +1,5 @@
 ﻿using System.Net.Http;
+using Credfeto.ChangeLog;
 using Credfeto.Date.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
@@ -25,6 +26,9 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
             .AddMockedService<IDotNetSolutionCheck>()
             .AddMockedService<ITrackingCache>()
             .AddMockedService<IVersionDetector>()
+            .AddMockedService<IChangeLogUpdater>()
+            .AddMockedService<IChangeLogReader>()
+            .AddMockedService<IChangeLogLanguageFactory>()
             .AddReleaseGeneration();
     }
 

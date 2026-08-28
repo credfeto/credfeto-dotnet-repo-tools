@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.ChangeLog;
 using Credfeto.Date.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
@@ -19,6 +20,7 @@ using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using FunFair.BuildVersion.Interfaces;
 using FunFair.Test.Common;
 using LibGit2Sharp;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 using NuGet.Versioning;
 using Xunit;
@@ -70,12 +72,17 @@ public sealed class ReleaseGenerationTests : LoggingFolderCleanupTestBase
         this._repository.GetDefaultBranch(GitConstants.Upstream).Returns(DEFAULT_BRANCH);
         this._repository.HeadRev.Returns(HEAD_REV);
 
+        ServiceProvider changeLogServices = new ServiceCollection().AddChangeLog().BuildServiceProvider();
+
         this._releaseGeneration = new ReleaseGeneration(
             timeSource: this._timeSource,
             versionDetector: this._versionDetector,
             trackingCache: this._trackingCache,
             dotNetSolutionCheck: this._dotNetSolutionCheck,
             dotNetBuild: this._dotNetBuild,
+            changeLogUpdater: changeLogServices.GetRequiredService<IChangeLogUpdater>(),
+            changeLogReader: changeLogServices.GetRequiredService<IChangeLogReader>(),
+            changeLogLanguageFactory: changeLogServices.GetRequiredService<IChangeLogLanguageFactory>(),
             logger: this.GetTypedLogger<ReleaseGeneration>()
         );
     }

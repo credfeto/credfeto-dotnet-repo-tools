@@ -4,7 +4,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.ChangeLog;
 using Credfeto.ChangeLog.Exceptions;
+using Credfeto.ChangeLog.Services;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
@@ -51,6 +53,7 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
     );
 
     private readonly IBulkPackageConfigLoader _bulkPackageConfigLoader;
+    private readonly IChangeLogDetector _changeLogDetector = new ChangeLogDetector();
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IDotNetVersion _dotNetVersion;
@@ -103,6 +106,7 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
             bulkPackageConfigLoader: this._bulkPackageConfigLoader,
             singlePackageUpdater: this._singlePackageUpdater,
             packageUpdateConfigurationBuilder: this._packageUpdateConfigurationBuilder,
+            changeLogDetector: this._changeLogDetector,
             logger: this.GetTypedLogger<BulkPackageUpdater>()
         );
     }

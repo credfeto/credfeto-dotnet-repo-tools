@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.ChangeLog;
+using Credfeto.ChangeLog.Services;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
@@ -18,6 +20,7 @@ using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using FunFair.Test.Common;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
@@ -55,6 +58,11 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         this._gitRepositoryFactory = GetSubstitute<IGitRepositoryFactory>();
         IReleaseConfigLoader releaseConfigLoader = GetSubstitute<IReleaseConfigLoader>();
 
+        ServiceProvider changeLogServices = new ServiceCollection().AddChangeLog().BuildServiceProvider();
+        IChangeLogUpdater changeLogUpdater = changeLogServices.GetRequiredService<IChangeLogUpdater>();
+        IChangeLogLanguageFactory changeLogLanguageFactory =
+            changeLogServices.GetRequiredService<IChangeLogLanguageFactory>();
+
         this._bulkTemplateUpdater = new BulkTemplateUpdater(
             trackingCache: this._trackingCache,
             globalJson: this._globalJson,
@@ -70,6 +78,9 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
             dependaBotConfigBuilder: this._dependaBotConfigBuilder,
             labelsBuilder: GetSubstitute<ILabelsBuilder>(),
             templateConfigLoader: this._templateConfigLoader,
+            changeLogDetector: new ChangeLogDetector(),
+            changeLogUpdater: changeLogUpdater,
+            changeLogLanguageFactory: changeLogLanguageFactory,
             logger: GetSubstitute<ILogger<BulkTemplateUpdater>>()
         );
 

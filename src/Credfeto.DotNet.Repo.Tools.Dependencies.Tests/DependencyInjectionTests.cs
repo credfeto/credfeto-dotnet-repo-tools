@@ -1,3 +1,4 @@
+using Credfeto.ChangeLog;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
@@ -25,6 +26,7 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
             .AddMockedService<IGitRepositoryFactory>()
             .AddMockedService<IDotNetFilesDetector>()
             .AddMockedService<ITrackingHashGenerator>()
+            .AddMockedService<IChangeLogDetector>()
             .AddDependenciesReduction();
     }
 

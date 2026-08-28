@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -21,6 +22,7 @@ namespace Credfeto.DotNet.Repo.Tools.Dependencies.Services;
 
 public sealed class BulkDependencyReducer : IBulkDependencyReducer
 {
+    private readonly IChangeLogDetector _changeLogDetector;
     private readonly IDependencyReducer _dependencyReducer;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IDotNetVersion _dotNetVersion;
@@ -38,6 +40,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         IDependencyReducer dependencyReducer,
         ITrackingHashGenerator trackingHashGenerator,
         IDotNetFilesDetector dotNetFilesDetector,
+        IChangeLogDetector changeLogDetector,
         ILogger<BulkDependencyReducer> logger
     )
     {
@@ -48,7 +51,28 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
         this._dependencyReducer = dependencyReducer;
         this._trackingHashGenerator = trackingHashGenerator;
         this._dotNetFilesDetector = dotNetFilesDetector;
+        this._changeLogDetector = changeLogDetector;
         this._logger = logger;
+    }
+
+    // Credfeto.ChangeLog's detector determines the target repository from the process's current
+    // directory, which does not fit a tool that processes many repositories within a single
+    // process run. Scope the working directory to the target repo for the duration of the call;
+    // safe only because repositories are processed sequentially, never in parallel.
+    private bool TryFindChangeLog(string repoWorkingDirectory, [NotNullWhen(true)] out string? changeLogFileName)
+    {
+        string previousDirectory = Environment.CurrentDirectory;
+
+        try
+        {
+            Environment.CurrentDirectory = repoWorkingDirectory;
+
+            return this._changeLogDetector.TryFindChangeLog(out changeLogFileName);
+        }
+        finally
+        {
+            Environment.CurrentDirectory = previousDirectory;
+        }
     }
 
     public async ValueTask BulkUpdateAsync(
@@ -148,7 +172,7 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             )
         )
         {
-            if (!ChangeLogDetector.TryFindChangeLog(repository: repository.Active, out string? changeLogFileName))
+            if (!this.TryFindChangeLog(repository.Active.Info.WorkingDirectory, out string? changeLogFileName))
             {
                 this._logger.LogNoChangelogFound();
 
