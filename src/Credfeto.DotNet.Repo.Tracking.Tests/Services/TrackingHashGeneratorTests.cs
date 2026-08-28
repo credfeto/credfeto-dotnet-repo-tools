@@ -105,7 +105,7 @@ public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
             cancellationToken: this.CancellationToken()
         );
 
-        Assert.NotEqual(expected: emptyHash, actual: populatedHash);
+        Assert.NotEqual(expected: emptyHash, actual: populatedHash, comparer: StringComparer.Ordinal);
     }
 
     [Fact]

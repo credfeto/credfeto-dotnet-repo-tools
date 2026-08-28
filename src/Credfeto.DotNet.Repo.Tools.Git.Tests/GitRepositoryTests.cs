@@ -846,8 +846,8 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
         IReadOnlyCollection<string> remoteBranches = repo.GetRemoteBranches("origin");
 
         Assert.NotEmpty(remoteBranches);
-        Assert.Contains(DEFAULT_BRANCH, remoteBranches);
-        Assert.DoesNotContain("HEAD", remoteBranches);
+        Assert.Contains(DEFAULT_BRANCH, remoteBranches, comparer: StringComparer.Ordinal);
+        Assert.DoesNotContain("HEAD", remoteBranches, comparer: StringComparer.Ordinal);
     }
 
     [Fact]
@@ -913,7 +913,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
 
         foreach (string branch in deletableBranches)
         {
-            Assert.DoesNotContain(branch, remoteBranches);
+            Assert.DoesNotContain(branch, remoteBranches, comparer: StringComparer.Ordinal);
         }
     }
 
