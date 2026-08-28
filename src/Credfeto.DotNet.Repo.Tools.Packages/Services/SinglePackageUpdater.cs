@@ -171,11 +171,11 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
         CancellationToken cancellationToken
     )
     {
-        string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
-
         if (
-            lastKnownGoodBuild is not null
-            && StringComparer.OrdinalIgnoreCase.Equals(x: lastKnownGoodBuild, y: repoContext.Repository.HeadRev)
+            await this.LastKnownGoodBuildStillMatchesAsync(
+                repoContext: repoContext,
+                cancellationToken: cancellationToken
+            )
         )
         {
             // content of last build was successful
@@ -201,6 +201,26 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
             updateContext: updateContext,
             cancellationToken: cancellationToken
         );
+    }
+
+    private async ValueTask<bool> LastKnownGoodBuildStillMatchesAsync(
+        RepoContext repoContext,
+        CancellationToken cancellationToken
+    )
+    {
+        string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
+
+        if (lastKnownGoodBuild is null)
+        {
+            return false;
+        }
+
+        string currentTrackingHash = await this._trackingHashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: cancellationToken
+        );
+
+        return StringComparer.Ordinal.Equals(x: lastKnownGoodBuild, y: currentTrackingHash);
     }
 
     private async ValueTask UpdateTrackingHashAsync(

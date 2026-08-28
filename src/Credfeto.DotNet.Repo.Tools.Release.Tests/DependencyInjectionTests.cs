@@ -25,6 +25,7 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
             .AddMockedService<IDotNetBuild>()
             .AddMockedService<IDotNetSolutionCheck>()
             .AddMockedService<ITrackingCache>()
+            .AddMockedService<ITrackingHashGenerator>()
             .AddMockedService<IVersionDetector>()
             .AddMockedService<IChangeLogUpdater>()
             .AddMockedService<IChangeLogReader>()

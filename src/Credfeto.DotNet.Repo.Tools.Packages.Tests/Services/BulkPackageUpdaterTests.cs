@@ -12,6 +12,7 @@ using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Packages.Services;
@@ -69,6 +70,7 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
     private readonly ISinglePackageUpdater _singlePackageUpdater;
     private readonly IGitRepository _templateRepository;
     private readonly ITrackingCache _trackingCache;
+    private readonly ITrackingHashGenerator _trackingHashGenerator;
     private readonly BulkPackageUpdater _updater;
 
     public BulkPackageUpdaterTests(ITestOutputHelper output)
@@ -77,6 +79,7 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
         this._packageUpdater = GetSubstitute<IPackageUpdater>();
         this._packageCache = GetSubstitute<IPackageCache>();
         this._trackingCache = GetSubstitute<ITrackingCache>();
+        this._trackingHashGenerator = GetSubstitute<ITrackingHashGenerator>();
         this._globalJson = GetSubstitute<IGlobalJson>();
         this._dotNetVersion = GetSubstitute<IDotNetVersion>();
         this._dotNetBuild = GetSubstitute<IDotNetBuild>();
@@ -95,6 +98,7 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
             packageUpdater: this._packageUpdater,
             packageCache: this._packageCache,
             trackingCache: this._trackingCache,
+            trackingHashGenerator: this._trackingHashGenerator,
             globalJson: this._globalJson,
             dotNetVersion: this._dotNetVersion,
             dotNetBuild: this._dotNetBuild,
@@ -730,6 +734,12 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
                 )
                 .Returns(this._repoRepository);
 
+            this._trackingHashGenerator.GenerateTrackingHashAsync(
+                    repoContext: Arg.Any<RepoContext>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns("content-hash-no-changelog");
+
             PackageUpdateContext context = CreateUpdateContext();
 
             await this._updater.UpdateRepositoriesAsync(
@@ -739,7 +749,9 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
                 cancellationToken: this.CancellationToken()
             );
 
-            this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: "abc123deadbeef");
+            // Tracks the content hash, not the raw HeadRev, so it stays comparable with
+            // SinglePackageUpdater's last-known-good-build check.
+            this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: "content-hash-no-changelog");
         }
     }
 
@@ -784,6 +796,12 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
                 )
                 .Returns(DefaultDotNetSettings);
 
+            this._trackingHashGenerator.GenerateTrackingHashAsync(
+                    repoContext: Arg.Any<RepoContext>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns("content-hash-no-dotnet-files");
+
             PackageUpdateContext context = CreateUpdateContext();
 
             await this._updater.UpdateRepositoriesAsync(
@@ -793,7 +811,9 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
                 cancellationToken: this.CancellationToken()
             );
 
-            this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: "abc123deadbeef");
+            // Tracks the content hash, not the raw HeadRev, so it stays comparable with
+            // SinglePackageUpdater's last-known-good-build check.
+            this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: "content-hash-no-dotnet-files");
         }
     }
 

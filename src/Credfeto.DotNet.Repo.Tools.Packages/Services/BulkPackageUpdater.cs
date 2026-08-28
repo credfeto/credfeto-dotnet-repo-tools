@@ -44,11 +44,13 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
     private readonly ISinglePackageUpdater _singlePackageUpdater;
     private readonly ITrackingCache _trackingCache;
+    private readonly ITrackingHashGenerator _trackingHashGenerator;
 
     public BulkPackageUpdater(
         IPackageUpdater packageUpdater,
         IPackageCache packageCache,
         ITrackingCache trackingCache,
+        ITrackingHashGenerator trackingHashGenerator,
         IGlobalJson globalJson,
         IDotNetVersion dotNetVersion,
         IDotNetBuild dotNetBuild,
@@ -67,6 +69,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         this._packageUpdater = packageUpdater;
         this._packageCache = packageCache;
         this._trackingCache = trackingCache;
+        this._trackingHashGenerator = trackingHashGenerator;
         this._globalJson = globalJson;
         this._dotNetVersion = dotNetVersion;
         this._dotNetBuild = dotNetBuild;
@@ -341,10 +344,16 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             if (!this.TryFindChangeLog(repository.Active.Info.WorkingDirectory, out string? changeLogFileName))
             {
                 this._logger.LogNoChangelogFound();
+
+                RepoContext unTrackedRepoContext = new(Repository: repository, ChangeLogFileName: "?");
+                string trackingHash = await this._trackingHashGenerator.GenerateTrackingHashAsync(
+                    repoContext: unTrackedRepoContext,
+                    cancellationToken: cancellationToken
+                );
                 await this._trackingCache.UpdateTrackingAsync(
-                    new(Repository: repository, ChangeLogFileName: "?"),
+                    unTrackedRepoContext,
                     updateContext: updateContext,
-                    value: repository.HeadRev,
+                    value: trackingHash,
                     cancellationToken: cancellationToken
                 );
 
@@ -377,10 +386,14 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         if (!dotNetFiles.HasSolutionsAndProjects)
         {
             this._logger.LogNoDotNetFilesFound();
+            string trackingHash = await this._trackingHashGenerator.GenerateTrackingHashAsync(
+                repoContext: repoContext,
+                cancellationToken: cancellationToken
+            );
             await this._trackingCache.UpdateTrackingAsync(
                 repoContext: repoContext,
                 updateContext: updateContext,
-                value: repoContext.Repository.HeadRev,
+                value: trackingHash,
                 cancellationToken: cancellationToken
             );
 

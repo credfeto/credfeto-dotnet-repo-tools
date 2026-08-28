@@ -28,6 +28,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
     private const string CLONE_PATH = "git@github.com:test/test-repo.git";
     private const string DEFAULT_BRANCH = "main";
     private const string HEAD_REV = "abc123def456";
+    private const string TRACKING_HASH = "content-hash-matching-last-good-build";
 
     private static readonly DotNetVersionSettings DefaultDotNetSettings = new(
         SdkVersion: null,
@@ -167,8 +168,13 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         // No uncommitted changes
         this._repository.HasUncommittedChanges().Returns(false);
 
-        // Tracking hash matches HeadRev - so no build required
-        this._trackingCache.Get(CLONE_PATH).Returns(HEAD_REV);
+        // Tracking hash matches the current content hash - so no build required
+        this._trackingCache.Get(CLONE_PATH).Returns(TRACKING_HASH);
+        this._trackingHashGenerator.GenerateTrackingHashAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(TRACKING_HASH);
 
         // No package updates
         PackageUpdateConfiguration config = new(
@@ -213,7 +219,12 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         PackageUpdate package = CreatePackage();
 
         this._repository.HasUncommittedChanges().Returns(false);
-        this._trackingCache.Get(CLONE_PATH).Returns(HEAD_REV);
+        this._trackingCache.Get(CLONE_PATH).Returns(TRACKING_HASH);
+        this._trackingHashGenerator.GenerateTrackingHashAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(TRACKING_HASH);
 
         PackageUpdateConfiguration config = new(
             PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
@@ -265,7 +276,12 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
 
         // Has uncommitted changes
         this._repository.HasUncommittedChanges().Returns(true);
-        this._trackingCache.Get(CLONE_PATH).Returns(HEAD_REV);
+        this._trackingCache.Get(CLONE_PATH).Returns(TRACKING_HASH);
+        this._trackingHashGenerator.GenerateTrackingHashAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(TRACKING_HASH);
 
         PackageUpdateConfiguration config = new(
             PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
@@ -371,7 +387,12 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         PackageUpdate package = CreatePackage();
 
         this._repository.HasUncommittedChanges().Returns(false);
-        this._trackingCache.Get(CLONE_PATH).Returns(HEAD_REV);
+        this._trackingCache.Get(CLONE_PATH).Returns(TRACKING_HASH);
+        this._trackingHashGenerator.GenerateTrackingHashAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(TRACKING_HASH);
 
         PackageUpdateConfiguration config = new(
             PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
@@ -430,7 +451,12 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         PackageUpdate package = CreatePackage();
 
         this._repository.HasUncommittedChanges().Returns(false);
-        this._trackingCache.Get(CLONE_PATH).Returns(HEAD_REV);
+        this._trackingCache.Get(CLONE_PATH).Returns(TRACKING_HASH);
+        this._trackingHashGenerator.GenerateTrackingHashAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(TRACKING_HASH);
 
         PackageUpdateConfiguration config = new(
             PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
@@ -492,7 +518,12 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         PackageUpdate package = CreatePackage();
 
         this._repository.HasUncommittedChanges().Returns(false);
-        this._trackingCache.Get(CLONE_PATH).Returns(HEAD_REV);
+        this._trackingCache.Get(CLONE_PATH).Returns(TRACKING_HASH);
+        this._trackingHashGenerator.GenerateTrackingHashAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(TRACKING_HASH);
 
         PackageUpdateConfiguration config = new(
             PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
@@ -597,5 +628,108 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
 
         Assert.True(result, userMessage: "Update should return true when packages were updated and build succeeded");
         await this._repository.Received(1).PushAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Unit Test"
+    )]
+    public async Task UpdateSkipsBuildWhenStoredTrackingHashMatchesCurrentContentHashAsync()
+    {
+        string changelogPath = await this.CreateChangelogFileAsync();
+        RepoContext repoContext = this.CreateRepoContext(changelogPath);
+        PackageUpdateContext updateContext = CreateUpdateContext();
+        PackageUpdate package = CreatePackage();
+
+        this._repository.HasUncommittedChanges().Returns(false);
+
+        // Stored value is a content hash matching what would be generated now
+        this._trackingCache.Get(CLONE_PATH).Returns(TRACKING_HASH);
+        this._trackingHashGenerator.GenerateTrackingHashAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(TRACKING_HASH);
+
+        PackageUpdateConfiguration config = new(
+            PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
+            ExcludedPackages: []
+        );
+        this._packageUpdateConfigurationBuilder.Build(package).Returns(config);
+        IReadOnlyList<PackageVersion> noPackageUpdates = [];
+        this._packageUpdater.UpdateAsync(
+                basePath: Arg.Any<string>(),
+                configuration: Arg.Any<PackageUpdateConfiguration>(),
+                packageSources: Arg.Any<IReadOnlyList<string>>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(noPackageUpdates);
+
+        await this._singlePackageUpdater.UpdateAsync(
+            updateContext: updateContext,
+            repoContext: repoContext,
+            solutions: [],
+            sourceDirectory: this.TempFolder,
+            buildSettings: EmptyBuildSettings,
+            dotNetSettings: DefaultDotNetSettings,
+            package: package,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await this._dotNetBuild.DidNotReceive().BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Unit Test"
+    )]
+    public async Task UpdateRunsBuildWhenStoredValueMatchesHeadRevButNotCurrentContentHashAsync()
+    {
+        string changelogPath = await this.CreateChangelogFileAsync();
+        RepoContext repoContext = this.CreateRepoContext(changelogPath);
+        PackageUpdateContext updateContext = CreateUpdateContext();
+        PackageUpdate package = CreatePackage();
+
+        this._repository.HasUncommittedChanges().Returns(false);
+
+        // Stored value happens to equal HeadRev (as a stale/incompatible write would produce), but the
+        // freshly generated content hash never matches a git SHA, so the build must still run.
+        this._trackingCache.Get(CLONE_PATH).Returns(HEAD_REV);
+        this._trackingHashGenerator.GenerateTrackingHashAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(TRACKING_HASH);
+
+        PackageUpdateConfiguration config = new(
+            PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
+            ExcludedPackages: []
+        );
+        this._packageUpdateConfigurationBuilder.Build(package).Returns(config);
+        IReadOnlyList<PackageVersion> noPackageUpdates = [];
+        this._packageUpdater.UpdateAsync(
+                basePath: Arg.Any<string>(),
+                configuration: Arg.Any<PackageUpdateConfiguration>(),
+                packageSources: Arg.Any<IReadOnlyList<string>>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(noPackageUpdates);
+
+        await this._singlePackageUpdater.UpdateAsync(
+            updateContext: updateContext,
+            repoContext: repoContext,
+            solutions: [],
+            sourceDirectory: this.TempFolder,
+            buildSettings: EmptyBuildSettings,
+            dotNetSettings: DefaultDotNetSettings,
+            package: package,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await this._dotNetBuild.Received(1).BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>());
     }
 }

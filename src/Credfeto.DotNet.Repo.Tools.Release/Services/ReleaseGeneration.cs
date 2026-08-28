@@ -37,12 +37,14 @@ public sealed class ReleaseGeneration : IReleaseGeneration
     private readonly ILogger<ReleaseGeneration> _logger;
     private readonly ICurrentTimeSource _timeSource;
     private readonly ITrackingCache _trackingCache;
+    private readonly ITrackingHashGenerator _trackingHashGenerator;
     private readonly IVersionDetector _versionDetector;
 
     public ReleaseGeneration(
         ICurrentTimeSource timeSource,
         IVersionDetector versionDetector,
         ITrackingCache trackingCache,
+        ITrackingHashGenerator trackingHashGenerator,
         IDotNetSolutionCheck dotNetSolutionCheck,
         IDotNetBuild dotNetBuild,
         IChangeLogUpdater changeLogUpdater,
@@ -54,6 +56,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         this._timeSource = timeSource;
         this._versionDetector = versionDetector;
         this._trackingCache = trackingCache;
+        this._trackingHashGenerator = trackingHashGenerator;
         this._dotNetSolutionCheck = dotNetSolutionCheck;
         this._dotNetBuild = dotNetBuild;
         this._changeLogUpdater = changeLogUpdater;
@@ -144,7 +147,11 @@ public sealed class ReleaseGeneration : IReleaseGeneration
 
         this._logger.LogReleaseCreated(repoContext: repoContext, version: nextVersion);
 
-        this._trackingCache.Set(repoUrl: repoContext.ClonePath, value: repoContext.Repository.HeadRev);
+        string trackingHash = await this._trackingHashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: cancellationToken
+        );
+        this._trackingCache.Set(repoUrl: repoContext.ClonePath, value: trackingHash);
 
         string releaseBranch = $"release/{nextVersion}";
         await repoContext.Repository.CreateBranchAsync(branchName: releaseBranch, cancellationToken: cancellationToken);
