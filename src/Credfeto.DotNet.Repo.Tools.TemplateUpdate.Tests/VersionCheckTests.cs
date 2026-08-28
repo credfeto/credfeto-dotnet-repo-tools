@@ -15,7 +15,7 @@ public sealed class VersionCheckTests : TestBase
     [InlineData("2.0.0", "2.0.0-preview", false)]
     [InlineData("2.0.0-preview-1", "2.0.0-preview-2", true)]
     [InlineData("2.0.0-preview-2", "2.0.0-preview-1", false)]
-    public void IsNewer(string source, string target, bool shouldBeNewer)
+    public static void IsNewer(string source, string target, bool shouldBeNewer)
     {
         NuGetVersion sourceVersion = new(source);
         NuGetVersion targetVersion = new(target);

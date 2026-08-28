@@ -35,7 +35,7 @@ public sealed class ReferenceConfigTests : TestBase
     [InlineData("CountryData.Bogus")]
     [InlineData("BenchmarkDotNet")]
     [InlineData("BenchmarkDotNet.Diagnostics.dotTrace")]
-    public void PackageInDoNotRemoveListShouldReturnTrue(string packageId)
+    public static void PackageInDoNotRemoveListShouldReturnTrue(string packageId)
     {
         ReferenceConfig config = BuildConfig();
         bool result = config.IsDoNotRemovePackage(packageId: packageId, allPackageIds: []);
@@ -198,7 +198,7 @@ public sealed class ReferenceConfigTests : TestBase
     [InlineData("LibSassHost.Native.linux-x64")]
     [InlineData("LIBSASSHOST.NATIVE.linux-x64")]
     [InlineData("LibSassHost.Native.win-x64")]
-    public void LibSassHostNativePackageShouldReturnTrue(string packageId)
+    public static void LibSassHostNativePackageShouldReturnTrue(string packageId)
     {
         ReferenceConfig config = BuildConfig();
         bool result = config.IsDoNotRemovePackage(packageId: packageId, allPackageIds: []);

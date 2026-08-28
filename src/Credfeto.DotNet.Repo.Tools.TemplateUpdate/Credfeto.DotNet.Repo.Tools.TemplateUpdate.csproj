@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
@@ -67,9 +67,9 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tracking.Interfaces\Credfeto.DotNet.Repo.Tracking.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.194.1792" />
-    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="10.0.11" />
-    <PackageReference Include="NuGet.Versioning" Version="7.6.0" />
+    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.194.1792" IncludeAssets="compile;runtime" />
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="10.0.11" IncludeAssets="compile;runtime" />
+    <PackageReference Include="NuGet.Versioning" Version="7.6.0" IncludeAssets="compile;runtime" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="2.1.0" PrivateAssets="All" ExcludeAssets="runtime" />

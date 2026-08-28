@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
@@ -63,8 +63,8 @@
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Credfeto.DotNet.Code.Analysis.Overrides" Version="1.0.4.290" />
-    <PackageReference Include="FunFair.BuildCheck.Runner" Version="474.2.11.2561" />
+    <PackageReference Include="Credfeto.DotNet.Code.Analysis.Overrides" Version="1.0.4.290" IncludeAssets="compile;runtime" />
+    <PackageReference Include="FunFair.BuildCheck.Runner" Version="474.2.11.2561" IncludeAssets="compile;runtime" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="2.1.0" PrivateAssets="All" ExcludeAssets="runtime" />

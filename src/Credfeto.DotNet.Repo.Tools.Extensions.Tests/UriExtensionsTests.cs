@@ -12,7 +12,7 @@ public sealed class UriExtensionsTests : TestBase
     [InlineData("ftp://example.com", false)]
     [InlineData("file:///path", false)]
     [InlineData("git://github.com/repo", false)]
-    public void IsHttp(string uri, bool expected)
+    public static void IsHttp(string uri, bool expected)
     {
         Assert.Equal(expected: expected, actual: new Uri(uri).IsHttp());
     }

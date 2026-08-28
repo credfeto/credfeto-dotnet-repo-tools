@@ -332,7 +332,12 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             workingDirectory: this.TempFolder
         );
 
-        await this.RunBulkUpdateWithTrackingAsync("https://github.com/test/noop-repo.git", string.Empty);
+        const string cloneUrl = "https://github.com/test/noop-repo.git";
+        testRepo.HeadRev.Returns("no-changelog-head-rev");
+
+        await this.RunBulkUpdateWithTrackingAsync(cloneUrl, string.Empty);
+
+        this._trackingCache.Received(1).Set(repoUrl: cloneUrl, value: "no-changelog-head-rev");
     }
 
     [Fact]
@@ -356,7 +361,9 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        SetupTestGitRepository(testRepo, activeRepo, repoDir, "https://github.com/test/changelog-nodotnet-repo.git");
+        const string cloneUrl = "https://github.com/test/changelog-nodotnet-repo.git";
+        SetupTestGitRepository(testRepo, activeRepo, repoDir, cloneUrl);
+        testRepo.HeadRev.Returns("no-dotnet-files-head-rev");
 
         MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
@@ -365,11 +372,12 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             workingDirectory: this.TempFolder
         );
 
-        await this.RunBulkUpdateWithTrackingAsync("https://github.com/test/changelog-nodotnet-repo.git", string.Empty);
+        await this.RunBulkUpdateWithTrackingAsync(cloneUrl, string.Empty);
 
         await testRepo
             .Received(1)
             .ResetToDefaultBranchAsync(upstream: Arg.Any<string>(), cancellationToken: Arg.Any<CancellationToken>());
+        this._trackingCache.Received(1).Set(repoUrl: cloneUrl, value: "no-dotnet-files-head-rev");
     }
 
     [Fact]
@@ -397,10 +405,12 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             this._dotNetFilesDetector,
             new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile])
         );
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, "clean-repo-hash");
 
+        const string cloneUrl = "https://github.com/test/dotnet-repo.git";
         IGitRepository templateRepo = GetSubstitute<IGitRepository>();
         IGitRepository testRepo = GetSubstitute<IGitRepository>();
-        SetupTestGitRepository(testRepo, activeRepo, repoDir, "https://github.com/test/dotnet-repo.git");
+        SetupTestGitRepository(testRepo, activeRepo, repoDir, cloneUrl);
 
         MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
@@ -409,7 +419,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             workingDirectory: this.TempFolder
         );
 
-        await this.RunBulkUpdateWithTrackingAsync("https://github.com/test/dotnet-repo.git", string.Empty);
+        await this.RunBulkUpdateWithTrackingAsync(cloneUrl, string.Empty);
 
         await this
             ._dependencyReducer.Received(1)
@@ -417,6 +427,66 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         await testRepo
             .Received(1)
             .ResetToDefaultBranchAsync(upstream: Arg.Any<string>(), cancellationToken: Arg.Any<CancellationToken>());
+
+        // Clean repo (no removals) must still get a tracking entry, so a later run can fast-skip it.
+        this._trackingCache.Received(1).Set(repoUrl: cloneUrl, value: "clean-repo-hash");
+    }
+
+    [Fact]
+    public async ValueTask BulkUpdateAsyncShouldNotUpdateTrackingCacheWhenCheckReferencesAbortsAsync()
+    {
+        string repoDir = Path.Combine(path1: this.TempFolder, path2: "gitrepo-dotnet-aborted");
+        Directory.CreateDirectory(repoDir);
+        LibGit2Sharp.Repository.Init(repoDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(repoDir, "CHANGELOG.md"),
+            contents: "# Changelog\n",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string projectFile = Path.Combine(repoDir, "Aborted.csproj");
+        await File.WriteAllTextAsync(
+            path: projectFile,
+            contents: "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup></Project>",
+            cancellationToken: this.CancellationToken()
+        );
+
+        using LibGit2Sharp.Repository activeRepo = new(repoDir);
+
+        MockIDotNetFilesDetectorFind(
+            this._dotNetFilesDetector,
+            new DotNetFiles(SourceDirectory: repoDir, Solutions: [projectFile], Projects: [projectFile])
+        );
+        this._dependencyReducer.When(reducer =>
+                reducer.CheckReferencesAsync(
+                    Arg.Any<DotNetFiles>(),
+                    Arg.Any<ReferenceConfig>(),
+                    Arg.Any<CancellationToken>()
+                )
+            )
+            .Do(_ => throw new DotNetBuildErrorException("Build failed part-way through"));
+
+        const string cloneUrl = "https://github.com/test/dotnet-repo-aborted.git";
+        IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+        IGitRepository testRepo = GetSubstitute<IGitRepository>();
+        SetupTestGitRepository(testRepo, activeRepo, repoDir, cloneUrl);
+
+        MockIGitRepositoryFactoryOpenOrClone(
+            factory: this._gitRepositoryFactory,
+            templateRepo: templateRepo,
+            testRepo: testRepo,
+            workingDirectory: this.TempFolder
+        );
+
+        await this.RunBulkUpdateWithTrackingAsync(cloneUrl, string.Empty);
+
+        await testRepo
+            .Received(1)
+            .ResetToDefaultBranchAsync(upstream: Arg.Any<string>(), cancellationToken: Arg.Any<CancellationToken>());
+
+        // An aborted CheckReferencesAsync must not record a tracking hash, otherwise the next run would
+        // wrongly fast-skip a repo that was never fully analysed.
+        this._trackingCache.DidNotReceive().Set(Arg.Any<string>(), Arg.Any<string?>());
     }
 
     [Fact]
