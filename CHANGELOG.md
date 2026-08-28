@@ -15,6 +15,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - ReSharper comment-to-attribute conversion corrupting source when comment is inside a method body
 - Added missing IncludeAssets to package references and switched test projects from xunit.v3.mtp-v2 to xunit.v3.aot.mtp-v2, fixing the build-pre-release check that was red on main (FunFair.BuildCheck 474.2.11.2561)
 - Dependency reducer no longer skips full re-analysis on clean/skipped repos, and no longer marks a repo fully processed if the run aborts partway through
+- IDE0022/IDE1006 analyzer errors (expression-bodied method requiring a block body; private const not following ALL_UPPER naming) that were breaking build-pre-release CI on main
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.152.2216
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.136.1515
@@ -30,9 +31,11 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.BuildVersion to 6.2.19.2266
 - Dependencies - Updated FunFair.Test.Source.Generator to 6.4.0.2617
 - Dependencies - Updated Microsoft.Extensions to 10.0.11
+- Dependencies - Updated FunFair.Test to 6.4.0.2617
 ### Deprecated
 ### Removed
 ### Deployment Changes
+
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->

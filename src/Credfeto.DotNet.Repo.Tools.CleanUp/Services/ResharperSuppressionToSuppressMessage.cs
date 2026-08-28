@@ -12,7 +12,7 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
     // CS7014 "Attributes are not valid in this context" is what the compiler reports for an attribute
     // placed before a local declaration or statement; it is a binder diagnostic, not a parser one, so
     // a bare syntax-tree parse (no diagnostics) cannot detect it - a compilation is required.
-    private const string AttributeNotValidInContextDiagnosticId = "CS7014";
+    private const string ATTRIBUTE_NOT_VALID_IN_CONTEXT_DIAGNOSTIC_ID = "CS7014";
 
     private static readonly IReadOnlyList<string> Replacements =
     [
@@ -72,7 +72,7 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
 
         (int baselineSyntaxErrors, int baselineAttributeContextErrors) = RoslynSyntaxValidation.CountErrors(
             content: content,
-            diagnosticId: AttributeNotValidInContextDiagnosticId,
+            diagnosticId: ATTRIBUTE_NOT_VALID_IN_CONTEXT_DIAGNOSTIC_ID,
             cancellationToken: CancellationToken.None
         );
         string working = content;
@@ -93,7 +93,7 @@ public sealed class ResharperSuppressionToSuppressMessage : IResharperSuppressio
 
             (int candidateSyntaxErrors, int candidateAttributeContextErrors) = RoslynSyntaxValidation.CountErrors(
                 content: candidate,
-                diagnosticId: AttributeNotValidInContextDiagnosticId,
+                diagnosticId: ATTRIBUTE_NOT_VALID_IN_CONTEXT_DIAGNOSTIC_ID,
                 cancellationToken: CancellationToken.None
             );
 

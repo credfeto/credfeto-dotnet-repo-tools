@@ -14,7 +14,7 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests.Services;
 
 public sealed class SourceFileSuppressionRemoverTests : LoggingFolderCleanupTestBase
 {
-    private const string SuppressionSource =
+    private const string SUPPRESSION_SOURCE =
         @"
 using System.Diagnostics;
 
@@ -118,8 +118,8 @@ public static class Test {
     private async Task<(byte[] SourceBytes, byte[] ActualBytes)> CleanupBytesAsync(bool includeBom)
     {
         byte[] sourceBytes = includeBom
-            ? [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(SuppressionSource)]
-            : TextEncoding.Utf8NoBom.GetBytes(SuppressionSource);
+            ? [.. Encoding.UTF8.GetPreamble(), .. Encoding.UTF8.GetBytes(SUPPRESSION_SOURCE)]
+            : TextEncoding.Utf8NoBom.GetBytes(SUPPRESSION_SOURCE);
 
         string fileName = Path.Combine(path1: this.TempFolder, path2: "example.cs");
 
@@ -127,7 +127,7 @@ public static class Test {
 
         await this._sourceFileSuppressionRemover.RemoveSuppressionsAsync(
             fileName: fileName,
-            content: SuppressionSource,
+            content: SUPPRESSION_SOURCE,
             buildContext: this._buildContext,
             this.CancellationToken()
         );
@@ -166,7 +166,7 @@ public static class Test {
     {
         this.MockSuccessfulBuild();
 
-        string actual = await this.CleanupAsync(SuppressionSource);
+        string actual = await this.CleanupAsync(SUPPRESSION_SOURCE);
 
         Assert.Equal(expected: ExpectedWithSuppressionRemoved, actual: actual);
 
@@ -178,9 +178,9 @@ public static class Test {
     {
         this.MockFailingBuild(1);
 
-        string actual = await this.CleanupAsync(SuppressionSource);
+        string actual = await this.CleanupAsync(SUPPRESSION_SOURCE);
 
-        Assert.Equal(expected: SuppressionSource, actual: actual);
+        Assert.Equal(expected: SUPPRESSION_SOURCE, actual: actual);
 
         await this.ReceivedBuildAsync(1);
     }

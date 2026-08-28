@@ -917,8 +917,10 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
         }
     }
 
-    private static string[] BuildDeletableBranchNames(int count) =>
-        [.. Enumerable.Range(start: 1, count: count).Select(i => $"depends/old-dep-{i}")];
+    private static string[] BuildDeletableBranchNames(int count)
+    {
+        return [.. Enumerable.Range(start: 1, count: count).Select(i => $"depends/old-dep-{i}")];
+    }
 
     private async Task<string> CreateBareRemoteWithDependenciesBranchesAsync(
         IReadOnlyList<string> branches,
