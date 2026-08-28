@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Added missing IncludeAssets to package references and switched test projects from xunit.v3.mtp-v2 to xunit.v3.aot.mtp-v2, fixing the build-pre-release check that was red on main (FunFair.BuildCheck 474.2.11.2561)
 - Dependency reducer no longer skips full re-analysis on clean/skipped repos, and no longer marks a repo fully processed if the run aborts partway through
 - IDE0022/IDE1006 analyzer errors (expression-bodied method requiring a block body; private const not following ALL_UPPER naming) that were breaking build-pre-release CI on main
+- MA0002 analyzer errors (assertion calls missing an explicit StringComparer.Ordinal comparer) introduced by the Meziantou.Analyzer 3.0.177 bump, breaking build-pre-release CI
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.152.2216
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.136.1515
