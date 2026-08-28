@@ -324,6 +324,24 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return document;
     }
 
+    private async ValueTask UpdateTrackingHashAsync(
+        RepoContext repoContext,
+        PackageUpdateContext updateContext,
+        CancellationToken cancellationToken
+    )
+    {
+        string trackingHash = await this._trackingHashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: cancellationToken
+        );
+        await this._trackingCache.UpdateTrackingAsync(
+            repoContext: repoContext,
+            updateContext: updateContext,
+            value: trackingHash,
+            cancellationToken: cancellationToken
+        );
+    }
+
     private async ValueTask UpdateRepositoryAsync(
         PackageUpdateContext updateContext,
         IReadOnlyList<PackageUpdate> packages,
@@ -346,14 +364,9 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 this._logger.LogNoChangelogFound();
 
                 RepoContext unTrackedRepoContext = new(Repository: repository, ChangeLogFileName: "?");
-                string trackingHash = await this._trackingHashGenerator.GenerateTrackingHashAsync(
+                await this.UpdateTrackingHashAsync(
                     repoContext: unTrackedRepoContext,
-                    cancellationToken: cancellationToken
-                );
-                await this._trackingCache.UpdateTrackingAsync(
-                    unTrackedRepoContext,
                     updateContext: updateContext,
-                    value: trackingHash,
                     cancellationToken: cancellationToken
                 );
 
@@ -386,14 +399,9 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         if (!dotNetFiles.HasSolutionsAndProjects)
         {
             this._logger.LogNoDotNetFilesFound();
-            string trackingHash = await this._trackingHashGenerator.GenerateTrackingHashAsync(
-                repoContext: repoContext,
-                cancellationToken: cancellationToken
-            );
-            await this._trackingCache.UpdateTrackingAsync(
+            await this.UpdateTrackingHashAsync(
                 repoContext: repoContext,
                 updateContext: updateContext,
-                value: trackingHash,
                 cancellationToken: cancellationToken
             );
 
