@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
@@ -183,6 +184,10 @@ public sealed class RepoContextExtensionsTests : LoggingFolderCleanupTestBase
 
         Assert.True(condition: result, userMessage: "Should have npm/yarn");
         Assert.NotNull(directories);
-        Assert.Contains(expected: appDir[this.TempFolder.Length..], collection: directories);
+        Assert.Contains(
+            expected: appDir[this.TempFolder.Length..],
+            collection: directories,
+            comparer: StringComparer.Ordinal
+        );
     }
 }
