@@ -63,6 +63,7 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
         BuildSettings buildSettings,
         DotNetVersionSettings dotNetSettings,
         PackageUpdate package,
+        string? knownTrackingHash,
         CancellationToken cancellationToken
     )
     {
@@ -75,6 +76,7 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
             sourceDirectory: sourceDirectory,
             buildSettings: buildSettings,
             dotNetSettings: dotNetSettings,
+            knownTrackingHash: knownTrackingHash,
             cancellationToken: cancellationToken
         );
 
@@ -168,11 +170,13 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
         string sourceDirectory,
         BuildSettings buildSettings,
         DotNetVersionSettings dotNetSettings,
+        string? knownTrackingHash,
         CancellationToken cancellationToken
     )
     {
         (bool matches, string? currentTrackingHash) = await this.CheckLastKnownGoodBuildAsync(
             repoContext: repoContext,
+            knownTrackingHash: knownTrackingHash,
             cancellationToken: cancellationToken
         );
 
@@ -206,9 +210,13 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
 
     // Returns the freshly generated tracking hash alongside the match result (when generated) so
     // the caller can reuse it instead of re-scanning and re-hashing the working directory a second
-    // time once the build completes.
+    // time once the build completes. When the caller already knows the current tracking hash (e.g.
+    // BulkPackageUpdater computed it once for the repo, whose default-branch content does not change
+    // across a packages loop), it is passed in via knownTrackingHash to avoid re-scanning the working
+    // directory again for every package.
     private async ValueTask<(bool Matches, string? CurrentTrackingHash)> CheckLastKnownGoodBuildAsync(
         RepoContext repoContext,
+        string? knownTrackingHash,
         CancellationToken cancellationToken
     )
     {
@@ -219,10 +227,12 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
             return (false, null);
         }
 
-        string currentTrackingHash = await this._trackingHashGenerator.GenerateTrackingHashAsync(
-            repoContext: repoContext,
-            cancellationToken: cancellationToken
-        );
+        string currentTrackingHash =
+            knownTrackingHash
+            ?? await this._trackingHashGenerator.GenerateTrackingHashAsync(
+                repoContext: repoContext,
+                cancellationToken: cancellationToken
+            );
 
         return (StringComparer.Ordinal.Equals(x: lastKnownGoodBuild, y: currentTrackingHash), currentTrackingHash);
     }

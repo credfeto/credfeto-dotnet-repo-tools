@@ -455,6 +455,14 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     {
         int totalUpdates = 0;
 
+        // The repo's default-branch content (and so its tracking hash) does not change across this loop:
+        // each package update happens on its own branch and is reset back to the default branch afterwards.
+        // Compute it once here rather than letting every package re-scan and re-hash the working directory.
+        string? knownTrackingHash = await this.TryGetCurrentTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: cancellationToken
+        );
+
         foreach (PackageUpdate package in packages)
         {
             bool updated = await this.UpdateOnePackageAsync(
@@ -464,6 +472,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 buildSettings: buildSettings,
                 dotNetSettings: dotNetSettings,
                 package: package,
+                knownTrackingHash: knownTrackingHash,
                 cancellationToken: cancellationToken
             );
 
@@ -476,6 +485,24 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return totalUpdates;
     }
 
+    private async ValueTask<string?> TryGetCurrentTrackingHashAsync(
+        RepoContext repoContext,
+        CancellationToken cancellationToken
+    )
+    {
+        string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
+
+        if (lastKnownGoodBuild is null)
+        {
+            return null;
+        }
+
+        return await this._trackingHashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: cancellationToken
+        );
+    }
+
     private ValueTask<bool> UpdateOnePackageAsync(
         in PackageUpdateContext updateContext,
         in RepoContext repoContext,
@@ -483,6 +510,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         in BuildSettings buildSettings,
         in DotNetVersionSettings dotNetSettings,
         PackageUpdate package,
+        string? knownTrackingHash,
         in CancellationToken cancellationToken
     )
     {
@@ -498,6 +526,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             buildSettings: buildSettings,
             dotNetSettings: dotNetSettings,
             package: package,
+            knownTrackingHash: knownTrackingHash,
             cancellationToken: cancellationToken
         );
     }

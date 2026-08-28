@@ -205,6 +205,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
             buildSettings: EmptyBuildSettings,
             dotNetSettings: DefaultDotNetSettings,
             package: package,
+            knownTrackingHash: null,
             cancellationToken: this.CancellationToken()
         );
 
@@ -250,6 +251,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
             buildSettings: EmptyBuildSettings,
             dotNetSettings: DefaultDotNetSettings,
             package: package,
+            knownTrackingHash: null,
             cancellationToken: this.CancellationToken()
         );
 
@@ -303,6 +305,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
             buildSettings: EmptyBuildSettings,
             dotNetSettings: DefaultDotNetSettings,
             package: package,
+            knownTrackingHash: null,
             cancellationToken: this.CancellationToken()
         );
 
@@ -359,6 +362,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
             buildSettings: EmptyBuildSettings,
             dotNetSettings: DefaultDotNetSettings,
             package: package,
+            knownTrackingHash: null,
             cancellationToken: this.CancellationToken()
         );
 
@@ -425,6 +429,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
             buildSettings: EmptyBuildSettings,
             dotNetSettings: DefaultDotNetSettings,
             package: package,
+            knownTrackingHash: null,
             cancellationToken: this.CancellationToken()
         );
 
@@ -487,6 +492,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
             buildSettings: EmptyBuildSettings,
             dotNetSettings: DefaultDotNetSettings,
             package: package,
+            knownTrackingHash: null,
             cancellationToken: this.CancellationToken()
         );
 
@@ -547,6 +553,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
             buildSettings: EmptyBuildSettings,
             dotNetSettings: DefaultDotNetSettings,
             package: package,
+            knownTrackingHash: null,
             cancellationToken: this.CancellationToken()
         );
 
@@ -605,6 +612,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
             buildSettings: EmptyBuildSettings,
             dotNetSettings: DefaultDotNetSettings,
             package: package,
+            knownTrackingHash: null,
             cancellationToken: this.CancellationToken()
         );
 
@@ -653,6 +661,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
             buildSettings: EmptyBuildSettings,
             dotNetSettings: DefaultDotNetSettings,
             package: package,
+            knownTrackingHash: null,
             cancellationToken: this.CancellationToken()
         );
 
@@ -701,6 +710,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
             buildSettings: EmptyBuildSettings,
             dotNetSettings: DefaultDotNetSettings,
             package: package,
+            knownTrackingHash: null,
             cancellationToken: this.CancellationToken()
         );
 
