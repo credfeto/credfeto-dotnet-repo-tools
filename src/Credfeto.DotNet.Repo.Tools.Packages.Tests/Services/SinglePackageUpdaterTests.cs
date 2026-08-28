@@ -121,14 +121,14 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         );
     }
 
-    private void GivenTrackingHash(string? stored, string current)
+    private static void MockITrackingCacheGet(ITrackingCache cache, string cloneUrl, string? hash)
     {
-        this._trackingCache.Get(CLONE_PATH).Returns(stored);
-        this._trackingHashGenerator.GenerateTrackingHashAsync(
-                repoContext: Arg.Any<RepoContext>(),
-                cancellationToken: Arg.Any<CancellationToken>()
-            )
-            .Returns(current);
+        cache.Get(cloneUrl).Returns(hash);
+    }
+
+    private static void MockITrackingHashGeneratorGenerateTrackingHash(ITrackingHashGenerator generator, string hash)
+    {
+        generator.GenerateTrackingHashAsync(Arg.Any<RepoContext>(), Arg.Any<CancellationToken>()).Returns(hash);
     }
 
     private static PackageUpdateContext CreateUpdateContext()
@@ -179,7 +179,8 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         this._repository.HasUncommittedChanges().Returns(false);
 
         // Tracking hash matches the current content hash - so no build required
-        this.GivenTrackingHash(stored: TRACKING_HASH, current: TRACKING_HASH);
+        MockITrackingCacheGet(this._trackingCache, CLONE_PATH, TRACKING_HASH);
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, TRACKING_HASH);
 
         // No package updates
         PackageUpdateConfiguration config = new(
@@ -224,7 +225,8 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         PackageUpdate package = CreatePackage();
 
         this._repository.HasUncommittedChanges().Returns(false);
-        this.GivenTrackingHash(stored: TRACKING_HASH, current: TRACKING_HASH);
+        MockITrackingCacheGet(this._trackingCache, CLONE_PATH, TRACKING_HASH);
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, TRACKING_HASH);
 
         PackageUpdateConfiguration config = new(
             PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
@@ -276,7 +278,8 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
 
         // Has uncommitted changes
         this._repository.HasUncommittedChanges().Returns(true);
-        this.GivenTrackingHash(stored: TRACKING_HASH, current: TRACKING_HASH);
+        MockITrackingCacheGet(this._trackingCache, CLONE_PATH, TRACKING_HASH);
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, TRACKING_HASH);
 
         PackageUpdateConfiguration config = new(
             PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
@@ -382,7 +385,8 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         PackageUpdate package = CreatePackage();
 
         this._repository.HasUncommittedChanges().Returns(false);
-        this.GivenTrackingHash(stored: TRACKING_HASH, current: TRACKING_HASH);
+        MockITrackingCacheGet(this._trackingCache, CLONE_PATH, TRACKING_HASH);
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, TRACKING_HASH);
 
         PackageUpdateConfiguration config = new(
             PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
@@ -441,7 +445,8 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         PackageUpdate package = CreatePackage();
 
         this._repository.HasUncommittedChanges().Returns(false);
-        this.GivenTrackingHash(stored: TRACKING_HASH, current: TRACKING_HASH);
+        MockITrackingCacheGet(this._trackingCache, CLONE_PATH, TRACKING_HASH);
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, TRACKING_HASH);
 
         PackageUpdateConfiguration config = new(
             PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
@@ -503,7 +508,8 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         PackageUpdate package = CreatePackage();
 
         this._repository.HasUncommittedChanges().Returns(false);
-        this.GivenTrackingHash(stored: TRACKING_HASH, current: TRACKING_HASH);
+        MockITrackingCacheGet(this._trackingCache, CLONE_PATH, TRACKING_HASH);
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, TRACKING_HASH);
 
         PackageUpdateConfiguration config = new(
             PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
@@ -563,7 +569,8 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         PackageUpdate package = CreatePackage();
 
         this._repository.HasUncommittedChanges().Returns(false);
-        this.GivenTrackingHash(stored: HEAD_REV, current: "newhash");
+        MockITrackingCacheGet(this._trackingCache, CLONE_PATH, HEAD_REV);
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, "newhash");
 
         PackageUpdateConfiguration config = new(
             PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
@@ -621,7 +628,8 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         this._repository.HasUncommittedChanges().Returns(false);
 
         // Stored value is a content hash matching what would be generated now
-        this.GivenTrackingHash(stored: TRACKING_HASH, current: TRACKING_HASH);
+        MockITrackingCacheGet(this._trackingCache, CLONE_PATH, TRACKING_HASH);
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, TRACKING_HASH);
 
         PackageUpdateConfiguration config = new(
             PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
@@ -668,7 +676,8 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
 
         // Stored value happens to equal HeadRev (as a stale/incompatible write would produce), but the
         // freshly generated content hash never matches a git SHA, so the build must still run.
-        this.GivenTrackingHash(stored: HEAD_REV, current: TRACKING_HASH);
+        MockITrackingCacheGet(this._trackingCache, CLONE_PATH, HEAD_REV);
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, TRACKING_HASH);
 
         PackageUpdateConfiguration config = new(
             PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
