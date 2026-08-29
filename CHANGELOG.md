@@ -19,7 +19,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Consumer code migrated to Credfeto.ChangeLog 1.10.200.2469's DI-based service APIs (IChangeLogDetector, IChangeLogUpdater, IChangeLogReader, IChangeLogLanguageFactory), replacing the removed static helper classes; the detector's process-current-directory assumption is scoped per repository since this tool processes many repositories within one process run
 - MA0002 analyzer errors (assertion calls missing an explicit StringComparer.Ordinal comparer) introduced by the Meziantou.Analyzer 3.0.177 bump, breaking build-pre-release CI
 - Package/release tracking tools no longer compare a Base64 content hash against a git commit SHA when deciding whether a repository's last known build is still good, and the hash is now generated once per repository run instead of once per package, so bulk package updates and release generation stop rebuilding (or re-scanning) every package/repo on every run
-- TBD - to be finalized after review
+- Release generation no longer hangs when the incremented release branch already exists - ReleaseGeneration.GetNextVersion now advances from the current candidate on each retry instead of recomputing from the original version, and the next-release log line reports the version actually being tried
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.152.2216
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.136.1515

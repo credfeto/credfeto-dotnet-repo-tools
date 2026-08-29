@@ -409,14 +409,14 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         this._logger.LogLastRelease(version);
 
         NuGetVersion nextVersion = new(major: version.Major, minor: version.Minor, patch: version.Patch);
-        this._logger.LogNextRelease(version);
+        this._logger.LogNextRelease(nextVersion);
 
         bool exists = repoContext.Repository.DoesBranchExist($"release/{nextVersion}");
 
         while (exists)
         {
-            nextVersion = new(major: version.Major, minor: version.Minor, version.Patch + 1);
-            this._logger.LogNextRelease(version);
+            nextVersion = new(major: nextVersion.Major, minor: nextVersion.Minor, patch: nextVersion.Patch + 1);
+            this._logger.LogNextRelease(nextVersion);
             exists = repoContext.Repository.DoesBranchExist($"release/{nextVersion}");
         }
 
