@@ -12,14 +12,24 @@ public sealed class TargetFrameworkVersionComparer : IComparer<string>
 
     public int Compare(string? x, string? y)
     {
-        if (
-            x is not null
-            && y is not null
-            && TryGetVersion(tfm: x, out Version? xVersion)
-            && TryGetVersion(tfm: y, out Version? yVersion)
-        )
+        if (x is null || y is null)
+        {
+            return StringComparer.OrdinalIgnoreCase.Compare(x, y);
+        }
+
+        if (TryGetVersion(tfm: x, out Version? xVersion) && TryGetVersion(tfm: y, out Version? yVersion))
         {
             return xVersion.CompareTo(yVersion);
+        }
+
+        bool xIsUnified = TryGetVersion(tfm: x, out _);
+        bool yIsUnified = TryGetVersion(tfm: y, out _);
+
+        if (xIsUnified != yIsUnified)
+        {
+            // A parsed, unified TFM (net5.0+) is always newer than a legacy moniker
+            // (e.g. net472, netstandard2.0) that TryGetVersion cannot parse.
+            return xIsUnified ? 1 : -1;
         }
 
         return StringComparer.OrdinalIgnoreCase.Compare(x, y);
