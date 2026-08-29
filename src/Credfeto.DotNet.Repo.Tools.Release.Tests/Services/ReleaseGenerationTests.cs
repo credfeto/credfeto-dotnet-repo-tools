@@ -674,6 +674,41 @@ public sealed class ReleaseGenerationTests : LoggingFolderCleanupTestBase
         this._trackingCache.Received(1).Set(Arg.Any<string>(), Arg.Any<string?>());
     }
 
+    [Theory]
+    [InlineData(1, 2, 3, "release/1.2.3;release/1.2.4", "release/1.2.5")]
+    [InlineData(2, 0, 0, "", "release/2.0.0")]
+    [InlineData(1, 0, 0, "release/1.0.0", "release/1.0.1")]
+    public async Task CreateAsync_SkipsExistingReleaseBranchesToFirstFreePatchAsync(
+        int major,
+        int minor,
+        int patch,
+        string existingBranches,
+        string expectedBranch
+    )
+    {
+        string changelogPath = await this.CreateChangelogFileAsync(ChangelogWithReleaseSections());
+        RepoContext repoContext = this.CreateRepoContext(changelogPath);
+
+        NuGetVersion version = new(major: major, minor: minor, patch: patch);
+        this._versionDetector.FindVersion(Arg.Any<Repository>(), Arg.Any<int>()).Returns(version);
+
+        foreach (string existingBranch in existingBranches.Split(separator: ';', StringSplitOptions.RemoveEmptyEntries))
+        {
+            this._repository.DoesBranchExist(existingBranch).Returns(true);
+        }
+
+        this._repository.DoesBranchExist(expectedBranch).Returns(false);
+
+        await Assert.ThrowsAsync<ReleaseCreatedException>(testCode: async () =>
+            await this._releaseGeneration.CreateAsync(
+                repoContext: repoContext,
+                cancellationToken: this.CancellationToken()
+            )
+        );
+
+        await this._repository.Received(1).CreateBranchAsync(expectedBranch, Arg.Any<CancellationToken>());
+    }
+
     [Fact]
     [SuppressMessage(
         category: "Meziantou.Analyzer",
