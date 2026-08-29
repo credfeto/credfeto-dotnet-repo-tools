@@ -12,22 +12,12 @@ public sealed class TargetFrameworkVersionComparer : IComparer<string>
 
     public int Compare(string? x, string? y)
     {
-        if (ReferenceEquals(x, y))
-        {
-            return 0;
-        }
-
-        if (x is null)
-        {
-            return -1;
-        }
-
-        if (y is null)
-        {
-            return 1;
-        }
-
-        if (TryGetVersion(tfm: x, out Version? xVersion) && TryGetVersion(tfm: y, out Version? yVersion))
+        if (
+            x is not null
+            && y is not null
+            && TryGetVersion(tfm: x, out Version? xVersion)
+            && TryGetVersion(tfm: y, out Version? yVersion)
+        )
         {
             return xVersion.CompareTo(yVersion);
         }
