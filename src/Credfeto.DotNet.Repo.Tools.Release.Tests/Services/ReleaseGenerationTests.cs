@@ -674,17 +674,30 @@ public sealed class ReleaseGenerationTests : LoggingFolderCleanupTestBase
         this._trackingCache.Received(1).Set(Arg.Any<string>(), Arg.Any<string?>());
     }
 
-    [Fact]
-    public async Task CreateAsync_MultipleExistingReleaseBranches_SkipsToFirstFreePatchAsync()
+    [Theory]
+    [InlineData(1, 2, 3, "release/1.2.3;release/1.2.4", "release/1.2.5")]
+    [InlineData(2, 0, 0, "", "release/2.0.0")]
+    [InlineData(1, 0, 0, "release/1.0.0", "release/1.0.1")]
+    public async Task CreateAsync_SkipsExistingReleaseBranchesToFirstFreePatchAsync(
+        int major,
+        int minor,
+        int patch,
+        string existingBranches,
+        string expectedBranch
+    )
     {
         string changelogPath = await this.CreateChangelogFileAsync(ChangelogWithReleaseSections());
         RepoContext repoContext = this.CreateRepoContext(changelogPath);
 
-        NuGetVersion version = new(major: 1, minor: 2, patch: 3);
+        NuGetVersion version = new(major: major, minor: minor, patch: patch);
         this._versionDetector.FindVersion(Arg.Any<Repository>(), Arg.Any<int>()).Returns(version);
-        this._repository.DoesBranchExist("release/1.2.3").Returns(true);
-        this._repository.DoesBranchExist("release/1.2.4").Returns(true);
-        this._repository.DoesBranchExist("release/1.2.5").Returns(false);
+
+        foreach (string existingBranch in existingBranches.Split(separator: ';', StringSplitOptions.RemoveEmptyEntries))
+        {
+            this._repository.DoesBranchExist(existingBranch).Returns(true);
+        }
+
+        this._repository.DoesBranchExist(expectedBranch).Returns(false);
 
         await Assert.ThrowsAsync<ReleaseCreatedException>(testCode: async () =>
             await this._releaseGeneration.CreateAsync(
@@ -693,48 +706,7 @@ public sealed class ReleaseGenerationTests : LoggingFolderCleanupTestBase
             )
         );
 
-        await this._repository.Received(1).CreateBranchAsync("release/1.2.5", Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task CreateAsync_NoExistingReleaseBranches_UsesDetectedVersionUnchangedAsync()
-    {
-        string changelogPath = await this.CreateChangelogFileAsync(ChangelogWithReleaseSections());
-        RepoContext repoContext = this.CreateRepoContext(changelogPath);
-
-        NuGetVersion version = new(major: 2, minor: 0, patch: 0);
-        this._versionDetector.FindVersion(Arg.Any<Repository>(), Arg.Any<int>()).Returns(version);
-        this._repository.DoesBranchExist("release/2.0.0").Returns(false);
-
-        await Assert.ThrowsAsync<ReleaseCreatedException>(testCode: async () =>
-            await this._releaseGeneration.CreateAsync(
-                repoContext: repoContext,
-                cancellationToken: this.CancellationToken()
-            )
-        );
-
-        await this._repository.Received(1).CreateBranchAsync("release/2.0.0", Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task CreateAsync_OnlyInitialReleaseBranchExists_IncrementsPatchOnceAsync()
-    {
-        string changelogPath = await this.CreateChangelogFileAsync(ChangelogWithReleaseSections());
-        RepoContext repoContext = this.CreateRepoContext(changelogPath);
-
-        NuGetVersion version = new(major: 1, minor: 0, patch: 0);
-        this._versionDetector.FindVersion(Arg.Any<Repository>(), Arg.Any<int>()).Returns(version);
-        this._repository.DoesBranchExist("release/1.0.0").Returns(true);
-        this._repository.DoesBranchExist("release/1.0.1").Returns(false);
-
-        await Assert.ThrowsAsync<ReleaseCreatedException>(testCode: async () =>
-            await this._releaseGeneration.CreateAsync(
-                repoContext: repoContext,
-                cancellationToken: this.CancellationToken()
-            )
-        );
-
-        await this._repository.Received(1).CreateBranchAsync("release/1.0.1", Arg.Any<CancellationToken>());
+        await this._repository.Received(1).CreateBranchAsync(expectedBranch, Arg.Any<CancellationToken>());
     }
 
     [Fact]
