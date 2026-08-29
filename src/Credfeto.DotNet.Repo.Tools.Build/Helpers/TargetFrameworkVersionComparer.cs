@@ -55,13 +55,6 @@ public sealed class TargetFrameworkVersionComparer : IComparer<string>
             span = span[..platformSeparator];
         }
 
-        if (!span.Contains('.'))
-        {
-            version = null;
-
-            return false;
-        }
-
         return Version.TryParse(input: span, result: out version);
     }
 }
