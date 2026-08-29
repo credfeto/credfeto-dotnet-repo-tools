@@ -55,6 +55,7 @@ public sealed class ReleaseGenerationTests : LoggingFolderCleanupTestBase
     private readonly IGitRepository _repository;
     private readonly ICurrentTimeSource _timeSource;
     private readonly ITrackingCache _trackingCache;
+    private readonly ITrackingHashGenerator _trackingHashGenerator;
     private readonly IVersionDetector _versionDetector;
 
     public ReleaseGenerationTests(ITestOutputHelper output)
@@ -63,6 +64,7 @@ public sealed class ReleaseGenerationTests : LoggingFolderCleanupTestBase
         this._timeSource = GetSubstitute<ICurrentTimeSource>();
         this._versionDetector = GetSubstitute<IVersionDetector>();
         this._trackingCache = GetSubstitute<ITrackingCache>();
+        this._trackingHashGenerator = GetSubstitute<ITrackingHashGenerator>();
         this._dotNetSolutionCheck = GetSubstitute<IDotNetSolutionCheck>();
         this._dotNetBuild = GetSubstitute<IDotNetBuild>();
         this._repository = GetSubstitute<IGitRepository>();
@@ -78,6 +80,7 @@ public sealed class ReleaseGenerationTests : LoggingFolderCleanupTestBase
             timeSource: this._timeSource,
             versionDetector: this._versionDetector,
             trackingCache: this._trackingCache,
+            trackingHashGenerator: this._trackingHashGenerator,
             dotNetSolutionCheck: this._dotNetSolutionCheck,
             dotNetBuild: this._dotNetBuild,
             changeLogUpdater: changeLogServices.GetRequiredService<IChangeLogUpdater>(),

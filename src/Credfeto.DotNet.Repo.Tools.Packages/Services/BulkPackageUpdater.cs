@@ -44,11 +44,13 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
 
     private readonly ISinglePackageUpdater _singlePackageUpdater;
     private readonly ITrackingCache _trackingCache;
+    private readonly ITrackingHashGenerator _trackingHashGenerator;
 
     public BulkPackageUpdater(
         IPackageUpdater packageUpdater,
         IPackageCache packageCache,
         ITrackingCache trackingCache,
+        ITrackingHashGenerator trackingHashGenerator,
         IGlobalJson globalJson,
         IDotNetVersion dotNetVersion,
         IDotNetBuild dotNetBuild,
@@ -67,6 +69,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         this._packageUpdater = packageUpdater;
         this._packageCache = packageCache;
         this._trackingCache = trackingCache;
+        this._trackingHashGenerator = trackingHashGenerator;
         this._globalJson = globalJson;
         this._dotNetVersion = dotNetVersion;
         this._dotNetBuild = dotNetBuild;
@@ -321,6 +324,24 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return document;
     }
 
+    private async ValueTask UpdateTrackingHashAsync(
+        RepoContext repoContext,
+        PackageUpdateContext updateContext,
+        CancellationToken cancellationToken
+    )
+    {
+        string trackingHash = await this._trackingHashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: cancellationToken
+        );
+        await this._trackingCache.UpdateTrackingAsync(
+            repoContext: repoContext,
+            updateContext: updateContext,
+            value: trackingHash,
+            cancellationToken: cancellationToken
+        );
+    }
+
     private async ValueTask UpdateRepositoryAsync(
         PackageUpdateContext updateContext,
         IReadOnlyList<PackageUpdate> packages,
@@ -341,10 +362,11 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             if (!this.TryFindChangeLog(repository.Active.Info.WorkingDirectory, out string? changeLogFileName))
             {
                 this._logger.LogNoChangelogFound();
-                await this._trackingCache.UpdateTrackingAsync(
-                    new(Repository: repository, ChangeLogFileName: "?"),
+
+                RepoContext unTrackedRepoContext = new(Repository: repository, ChangeLogFileName: "?");
+                await this.UpdateTrackingHashAsync(
+                    repoContext: unTrackedRepoContext,
                     updateContext: updateContext,
-                    value: repository.HeadRev,
                     cancellationToken: cancellationToken
                 );
 
@@ -377,10 +399,9 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         if (!dotNetFiles.HasSolutionsAndProjects)
         {
             this._logger.LogNoDotNetFilesFound();
-            await this._trackingCache.UpdateTrackingAsync(
+            await this.UpdateTrackingHashAsync(
                 repoContext: repoContext,
                 updateContext: updateContext,
-                value: repoContext.Repository.HeadRev,
                 cancellationToken: cancellationToken
             );
 
@@ -434,6 +455,14 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
     {
         int totalUpdates = 0;
 
+        // The repo's default-branch content (and so its tracking hash) does not change across this loop:
+        // each package update happens on its own branch and is reset back to the default branch afterwards.
+        // Compute it once here rather than letting every package re-scan and re-hash the working directory.
+        string? knownTrackingHash = await this.TryGetCurrentTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: cancellationToken
+        );
+
         foreach (PackageUpdate package in packages)
         {
             bool updated = await this.UpdateOnePackageAsync(
@@ -443,6 +472,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 buildSettings: buildSettings,
                 dotNetSettings: dotNetSettings,
                 package: package,
+                knownTrackingHash: knownTrackingHash,
                 cancellationToken: cancellationToken
             );
 
@@ -455,6 +485,24 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         return totalUpdates;
     }
 
+    private async ValueTask<string?> TryGetCurrentTrackingHashAsync(
+        RepoContext repoContext,
+        CancellationToken cancellationToken
+    )
+    {
+        string? lastKnownGoodBuild = this._trackingCache.Get(repoContext.ClonePath);
+
+        if (lastKnownGoodBuild is null)
+        {
+            return null;
+        }
+
+        return await this._trackingHashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: cancellationToken
+        );
+    }
+
     private ValueTask<bool> UpdateOnePackageAsync(
         in PackageUpdateContext updateContext,
         in RepoContext repoContext,
@@ -462,6 +510,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         in BuildSettings buildSettings,
         in DotNetVersionSettings dotNetSettings,
         PackageUpdate package,
+        string? knownTrackingHash,
         in CancellationToken cancellationToken
     )
     {
@@ -477,6 +526,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
             buildSettings: buildSettings,
             dotNetSettings: dotNetSettings,
             package: package,
+            knownTrackingHash: knownTrackingHash,
             cancellationToken: cancellationToken
         );
     }

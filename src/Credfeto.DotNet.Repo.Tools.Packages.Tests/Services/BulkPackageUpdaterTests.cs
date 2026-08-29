@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -12,6 +12,7 @@ using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Packages.Services;
@@ -69,6 +70,7 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
     private readonly ISinglePackageUpdater _singlePackageUpdater;
     private readonly IGitRepository _templateRepository;
     private readonly ITrackingCache _trackingCache;
+    private readonly ITrackingHashGenerator _trackingHashGenerator;
     private readonly BulkPackageUpdater _updater;
 
     public BulkPackageUpdaterTests(ITestOutputHelper output)
@@ -77,6 +79,7 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
         this._packageUpdater = GetSubstitute<IPackageUpdater>();
         this._packageCache = GetSubstitute<IPackageCache>();
         this._trackingCache = GetSubstitute<ITrackingCache>();
+        this._trackingHashGenerator = GetSubstitute<ITrackingHashGenerator>();
         this._globalJson = GetSubstitute<IGlobalJson>();
         this._dotNetVersion = GetSubstitute<IDotNetVersion>();
         this._dotNetBuild = GetSubstitute<IDotNetBuild>();
@@ -95,6 +98,7 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
             packageUpdater: this._packageUpdater,
             packageCache: this._packageCache,
             trackingCache: this._trackingCache,
+            trackingHashGenerator: this._trackingHashGenerator,
             globalJson: this._globalJson,
             dotNetVersion: this._dotNetVersion,
             dotNetBuild: this._dotNetBuild,
@@ -121,6 +125,11 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
             DotNetSettings: DefaultDotNetSettings,
             ReleaseConfig: DefaultReleaseConfig
         );
+    }
+
+    private static void MockITrackingHashGeneratorGenerateTrackingHash(ITrackingHashGenerator generator, string hash)
+    {
+        generator.GenerateTrackingHashAsync(Arg.Any<RepoContext>(), Arg.Any<CancellationToken>()).Returns(hash);
     }
 
     [Fact]
@@ -730,6 +739,8 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
                 )
                 .Returns(this._repoRepository);
 
+            MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, "content-hash-no-changelog");
+
             PackageUpdateContext context = CreateUpdateContext();
 
             await this._updater.UpdateRepositoriesAsync(
@@ -739,7 +750,9 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
                 cancellationToken: this.CancellationToken()
             );
 
-            this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: "abc123deadbeef");
+            // Tracks the content hash, not the raw HeadRev, so it stays comparable with
+            // SinglePackageUpdater's last-known-good-build check.
+            this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: "content-hash-no-changelog");
         }
     }
 
@@ -784,6 +797,8 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
                 )
                 .Returns(DefaultDotNetSettings);
 
+            MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, "content-hash-no-dotnet-files");
+
             PackageUpdateContext context = CreateUpdateContext();
 
             await this._updater.UpdateRepositoriesAsync(
@@ -793,7 +808,9 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
                 cancellationToken: this.CancellationToken()
             );
 
-            this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: "abc123deadbeef");
+            // Tracks the content hash, not the raw HeadRev, so it stays comparable with
+            // SinglePackageUpdater's last-known-good-build check.
+            this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: "content-hash-no-dotnet-files");
         }
     }
 
@@ -961,6 +978,7 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
                     buildSettings: Arg.Any<BuildSettings>(),
                     dotNetSettings: Arg.Any<DotNetVersionSettings>(),
                     package: Arg.Any<PackageUpdate>(),
+                    knownTrackingHash: Arg.Any<string?>(),
                     cancellationToken: Arg.Any<CancellationToken>()
                 )
                 .Returns(false);
@@ -1057,6 +1075,7 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
                     buildSettings: Arg.Any<BuildSettings>(),
                     dotNetSettings: Arg.Any<DotNetVersionSettings>(),
                     package: Arg.Any<PackageUpdate>(),
+                    knownTrackingHash: Arg.Any<string?>(),
                     cancellationToken: Arg.Any<CancellationToken>()
                 )
                 .Returns(true);
@@ -1079,6 +1098,257 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
                     dotNetSettings: Arg.Any<DotNetVersionSettings>(),
                     packages: Arg.Any<IReadOnlyList<PackageUpdate>>(),
                     releaseConfig: Arg.Any<ReleaseConfig>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                );
+        }
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Unit Test"
+    )]
+    public async Task UpdateRepositoriesWithMultiplePackagesGeneratesTrackingHashOnceForTheRepoAsync()
+    {
+        string repoDir = Path.Combine(this.TempFolder, "repo");
+        Directory.CreateDirectory(repoDir);
+        LibGit2Sharp.Repository.Init(repoDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(repoDir, "CHANGELOG.md"),
+            contents: "# Changelog",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string solutionFile = Path.Combine(repoDir, "Test.sln");
+        string srcDir = Path.Combine(repoDir, "src");
+        Directory.CreateDirectory(srcDir);
+        string projectFile = Path.Combine(srcDir, "Test.csproj");
+        await File.WriteAllTextAsync(
+            path: solutionFile,
+            contents: string.Empty,
+            cancellationToken: this.CancellationToken()
+        );
+        await File.WriteAllTextAsync(
+            path: projectFile,
+            contents: string.Empty,
+            cancellationToken: this.CancellationToken()
+        );
+
+        PackageUpdate firstPackage = new(
+            packageId: "Test.Package.One",
+            packageType: "nuget",
+            exactMatch: false,
+            versionBumpPackage: false,
+            prohibitVersionBumpWhenReferenced: false,
+            exclude: null
+        );
+        PackageUpdate secondPackage = new(
+            packageId: "Test.Package.Two",
+            packageType: "nuget",
+            exactMatch: false,
+            versionBumpPackage: false,
+            prohibitVersionBumpWhenReferenced: false,
+            exclude: null
+        );
+
+        using (LibGit2Sharp.Repository realRepo = new(repoDir))
+        {
+            this._repoRepository.Active.Returns(realRepo);
+            this._repoRepository.WorkingDirectory.Returns(repoDir);
+            this._repoRepository.ClonePath.Returns(REPO_URL);
+            this._repoRepository.GetDefaultBranch(GitConstants.Upstream).Returns("main");
+            this._repoRepository.HeadRev.Returns("abc123deadbeef");
+
+            this._gitRepositoryFactory.OpenOrCloneAsync(
+                    workDir: WORK_FOLDER,
+                    repoUrl: REPO_URL,
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(this._repoRepository);
+
+            this._dotNetFilesDetector.FindAsync(baseFolder: repoDir, cancellationToken: Arg.Any<CancellationToken>())
+                .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [solutionFile], Projects: [projectFile]));
+
+            this._globalJson.LoadGlobalJsonAsync(
+                    baseFolder: Arg.Any<string>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(DefaultDotNetSettings);
+
+            this._dotNetBuild.LoadBuildSettingsAsync(
+                    projects: Arg.Any<IReadOnlyList<string>>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(new BuildSettings(PublishableProjects: [], PackableProjects: [], Framework: null));
+
+            this._trackingCache.Get(REPO_URL).Returns("previously-tracked-hash");
+            MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, "previously-tracked-hash");
+
+            this._singlePackageUpdater.UpdateAsync(
+                    updateContext: Arg.Any<PackageUpdateContext>(),
+                    repoContext: Arg.Any<Credfeto.DotNet.Repo.Tools.Models.RepoContext>(),
+                    solutions: Arg.Any<IReadOnlyList<string>>(),
+                    sourceDirectory: Arg.Any<string>(),
+                    buildSettings: Arg.Any<BuildSettings>(),
+                    dotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                    package: Arg.Any<PackageUpdate>(),
+                    knownTrackingHash: Arg.Any<string?>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(false);
+
+            PackageUpdateContext context = CreateUpdateContext();
+
+            await this._updater.UpdateRepositoriesAsync(
+                updateContext: context,
+                repositories: [REPO_URL],
+                packages: [firstPackage, secondPackage],
+                cancellationToken: this.CancellationToken()
+            );
+
+            // Two packages were configured for the one repo, but the repo's tracking hash only
+            // needs generating once: the default-branch tree it is computed from does not change
+            // between package iterations, so both packages' checks should reuse the same value.
+            await this
+                ._trackingHashGenerator.Received(1)
+                .GenerateTrackingHashAsync(
+                    repoContext: Arg.Any<RepoContext>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                );
+
+            await this
+                ._singlePackageUpdater.Received(2)
+                .UpdateAsync(
+                    updateContext: Arg.Any<PackageUpdateContext>(),
+                    repoContext: Arg.Any<Credfeto.DotNet.Repo.Tools.Models.RepoContext>(),
+                    solutions: Arg.Any<IReadOnlyList<string>>(),
+                    sourceDirectory: Arg.Any<string>(),
+                    buildSettings: Arg.Any<BuildSettings>(),
+                    dotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                    package: Arg.Any<PackageUpdate>(),
+                    knownTrackingHash: "previously-tracked-hash",
+                    cancellationToken: Arg.Any<CancellationToken>()
+                );
+        }
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Unit Test"
+    )]
+    public async Task UpdateRepositoriesWithNoTrackedHashDoesNotGenerateTrackingHashUpfrontAsync()
+    {
+        string repoDir = Path.Combine(this.TempFolder, "repo");
+        Directory.CreateDirectory(repoDir);
+        LibGit2Sharp.Repository.Init(repoDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(repoDir, "CHANGELOG.md"),
+            contents: "# Changelog",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string solutionFile = Path.Combine(repoDir, "Test.sln");
+        string srcDir = Path.Combine(repoDir, "src");
+        Directory.CreateDirectory(srcDir);
+        string projectFile = Path.Combine(srcDir, "Test.csproj");
+        await File.WriteAllTextAsync(
+            path: solutionFile,
+            contents: string.Empty,
+            cancellationToken: this.CancellationToken()
+        );
+        await File.WriteAllTextAsync(
+            path: projectFile,
+            contents: string.Empty,
+            cancellationToken: this.CancellationToken()
+        );
+
+        PackageUpdate packageUpdate = new(
+            packageId: "Test.Package",
+            packageType: "nuget",
+            exactMatch: false,
+            versionBumpPackage: false,
+            prohibitVersionBumpWhenReferenced: false,
+            exclude: null
+        );
+
+        using (LibGit2Sharp.Repository realRepo = new(repoDir))
+        {
+            this._repoRepository.Active.Returns(realRepo);
+            this._repoRepository.WorkingDirectory.Returns(repoDir);
+            this._repoRepository.ClonePath.Returns(REPO_URL);
+            this._repoRepository.GetDefaultBranch(GitConstants.Upstream).Returns("main");
+            this._repoRepository.HeadRev.Returns("abc123deadbeef");
+
+            this._gitRepositoryFactory.OpenOrCloneAsync(
+                    workDir: WORK_FOLDER,
+                    repoUrl: REPO_URL,
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(this._repoRepository);
+
+            this._dotNetFilesDetector.FindAsync(baseFolder: repoDir, cancellationToken: Arg.Any<CancellationToken>())
+                .Returns(new DotNetFiles(SourceDirectory: repoDir, Solutions: [solutionFile], Projects: [projectFile]));
+
+            this._globalJson.LoadGlobalJsonAsync(
+                    baseFolder: Arg.Any<string>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(DefaultDotNetSettings);
+
+            this._dotNetBuild.LoadBuildSettingsAsync(
+                    projects: Arg.Any<IReadOnlyList<string>>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(new BuildSettings(PublishableProjects: [], PackableProjects: [], Framework: null));
+
+            // No prior tracking hash cached for this repo (the default, unstubbed NSubstitute return).
+            this._trackingCache.Get(REPO_URL).Returns((string?)null);
+
+            this._singlePackageUpdater.UpdateAsync(
+                    updateContext: Arg.Any<PackageUpdateContext>(),
+                    repoContext: Arg.Any<Credfeto.DotNet.Repo.Tools.Models.RepoContext>(),
+                    solutions: Arg.Any<IReadOnlyList<string>>(),
+                    sourceDirectory: Arg.Any<string>(),
+                    buildSettings: Arg.Any<BuildSettings>(),
+                    dotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                    package: Arg.Any<PackageUpdate>(),
+                    knownTrackingHash: Arg.Any<string?>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(false);
+
+            PackageUpdateContext context = CreateUpdateContext();
+
+            await this._updater.UpdateRepositoriesAsync(
+                updateContext: context,
+                repositories: [REPO_URL],
+                packages: [packageUpdate],
+                cancellationToken: this.CancellationToken()
+            );
+
+            // With no cached tracking hash there is nothing to compare against, so the repo-level
+            // hash must not be generated upfront; each package still gets a null knownTrackingHash.
+            await this
+                ._trackingHashGenerator.DidNotReceive()
+                .GenerateTrackingHashAsync(
+                    repoContext: Arg.Any<RepoContext>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                );
+
+            await this
+                ._singlePackageUpdater.Received(1)
+                .UpdateAsync(
+                    updateContext: Arg.Any<PackageUpdateContext>(),
+                    repoContext: Arg.Any<Credfeto.DotNet.Repo.Tools.Models.RepoContext>(),
+                    solutions: Arg.Any<IReadOnlyList<string>>(),
+                    sourceDirectory: Arg.Any<string>(),
+                    buildSettings: Arg.Any<BuildSettings>(),
+                    dotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                    package: Arg.Any<PackageUpdate>(),
+                    knownTrackingHash: Arg.Is<string?>(value => value == null),
                     cancellationToken: Arg.Any<CancellationToken>()
                 );
         }

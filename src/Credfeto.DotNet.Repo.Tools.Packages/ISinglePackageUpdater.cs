@@ -18,6 +18,7 @@ public interface ISinglePackageUpdater
         BuildSettings buildSettings,
         DotNetVersionSettings dotNetSettings,
         PackageUpdate package,
+        string? knownTrackingHash,
         CancellationToken cancellationToken
     );
 }
