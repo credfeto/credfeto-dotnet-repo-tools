@@ -354,14 +354,15 @@ public sealed class DotNetBuild : IDotNetBuild
             const string parameter = "--nowarn:";
             const char separator = ';';
 
-            return items.Count switch
+            if (items.Count == 0)
             {
-                0 => string.Empty,
-                _ => string.Concat(
-                    parameter,
-                    string.Join(separator: separator, items.Order(comparer: StringComparer.Ordinal))
-                ),
-            };
+                return string.Empty;
+            }
+
+            return string.Concat(
+                parameter,
+                string.Join(separator: separator, items.Order(comparer: StringComparer.Ordinal))
+            );
         }
     }
 
