@@ -10,6 +10,7 @@ using System.Xml;
 using Credfeto.DotNet.Code.Analysis.Overrides;
 using Credfeto.DotNet.Code.Analysis.Overrides.Helpers;
 using Credfeto.DotNet.Code.Analysis.Overrides.Models;
+using Credfeto.DotNet.Repo.Tools.Build.Helpers;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Build.Services.LoggingExtensions;
@@ -190,14 +191,17 @@ public sealed class DotNetBuild : IDotNetBuild
             publishable.Add(project);
 
             string? candidateFramework = GetTargetFrameworks(doc: doc)
-                .MaxBy(keySelector: x => x, comparer: StringComparer.OrdinalIgnoreCase);
+                .MaxBy(keySelector: x => x, comparer: TargetFrameworkVersionComparer.Instance);
 
             if (candidateFramework is null)
             {
                 return;
             }
 
-            if (framework is null || StringComparer.OrdinalIgnoreCase.Compare(x: candidateFramework, y: framework) > 0)
+            if (
+                framework is null
+                || TargetFrameworkVersionComparer.Instance.Compare(x: candidateFramework, y: framework) > 0
+            )
             {
                 framework = candidateFramework;
                 this._logger.LogFoundFramework(framework);
