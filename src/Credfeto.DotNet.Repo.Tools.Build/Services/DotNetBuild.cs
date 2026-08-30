@@ -357,7 +357,6 @@ public sealed class DotNetBuild : IDotNetBuild
             return items.Count switch
             {
                 0 => string.Empty,
-                1 => string.Concat(parameter, items[0]),
                 _ => string.Concat(
                     parameter,
                     string.Join(separator: separator, items.Order(comparer: StringComparer.Ordinal))
