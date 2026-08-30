@@ -17,13 +17,13 @@ public sealed class TargetFrameworkVersionComparer : IComparer<string>
             return StringComparer.OrdinalIgnoreCase.Compare(x, y);
         }
 
-        if (TryGetVersion(tfm: x, out Version? xVersion) && TryGetVersion(tfm: y, out Version? yVersion))
+        bool xIsUnified = TryGetVersion(tfm: x, out Version? xVersion);
+        bool yIsUnified = TryGetVersion(tfm: y, out Version? yVersion);
+
+        if (xVersion is not null && yVersion is not null)
         {
             return xVersion.CompareTo(yVersion);
         }
-
-        bool xIsUnified = TryGetVersion(tfm: x, out _);
-        bool yIsUnified = TryGetVersion(tfm: y, out _);
 
         if (xIsUnified != yIsUnified)
         {
