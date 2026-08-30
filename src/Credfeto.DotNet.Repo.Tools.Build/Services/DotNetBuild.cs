@@ -45,14 +45,11 @@ public sealed class DotNetBuild : IDotNetBuild
     private readonly ILogger<DotNetBuild> _logger;
     private readonly IProjectXmlLoader _projectLoader;
 
-    private readonly string _quotedPropertyEscape;
-
     public DotNetBuild(IProjectXmlLoader projectLoader, ILogger<DotNetBuild> logger)
     {
         this._logger = logger;
 
         this._projectLoader = projectLoader;
-        this._quotedPropertyEscape = OperatingSystem.IsLinux() ? "'" : "\\";
     }
 
     public async ValueTask BuildAsync(BuildContext buildContext, CancellationToken cancellationToken)
@@ -113,7 +110,7 @@ public sealed class DotNetBuild : IDotNetBuild
         {
             try
             {
-                string noWarn = this.BuildNoWarn(buildContext);
+                string noWarn = BuildNoWarn(buildContext);
                 string parameters = BuildEnvironmentParameters(
                     ("Version", BUILD_VERSION),
                     ("SolutionDir", buildContext.SourceDirectory),
@@ -300,7 +297,7 @@ public sealed class DotNetBuild : IDotNetBuild
         in CancellationToken cancellationToken
     )
     {
-        string noWarn = this.BuildNoWarn(buildContext);
+        string noWarn = BuildNoWarn(buildContext);
 
         if (string.IsNullOrWhiteSpace(framework))
         {
@@ -343,7 +340,7 @@ public sealed class DotNetBuild : IDotNetBuild
         }
     }
 
-    private string BuildNoWarn(in BuildContext buildContext)
+    private static string BuildNoWarn(in BuildContext buildContext)
     {
         if (buildContext.BuildOverride.PreRelease)
         {
@@ -363,7 +360,7 @@ public sealed class DotNetBuild : IDotNetBuild
                 1 => string.Concat(parameter, items[0]),
                 _ => string.Concat(
                     parameter,
-                    $"{this._quotedPropertyEscape}\"{string.Join(separator: separator, items.Order(comparer: StringComparer.Ordinal))}\"{this._quotedPropertyEscape}"
+                    string.Join(separator: separator, items.Order(comparer: StringComparer.Ordinal))
                 ),
             };
         }
@@ -371,7 +368,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private ValueTask DotNetPackAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
     {
-        string noWarn = this.BuildNoWarn(buildContext);
+        string noWarn = BuildNoWarn(buildContext);
 
         string parameters = BuildEnvironmentParameters(
             ("Version", BUILD_VERSION),
@@ -409,7 +406,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private ValueTask DotNetBuildAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
     {
-        string noWarn = this.BuildNoWarn(buildContext);
+        string noWarn = BuildNoWarn(buildContext);
         string parameters = BuildEnvironmentParameters(
             ("Version", BUILD_VERSION),
             ("SuppressNETCoreSdkPreviewMessage", "True"),
@@ -428,7 +425,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private ValueTask DotNetRestoreAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
     {
-        string noWarn = this.BuildNoWarn(buildContext);
+        string noWarn = BuildNoWarn(buildContext);
 
         this._logger.LogRestoring();
 
@@ -441,7 +438,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
     private ValueTask DotNetCleanAsync(in BuildContext buildContext, in CancellationToken cancellationToken)
     {
-        string noWarn = this.BuildNoWarn(buildContext);
+        string noWarn = BuildNoWarn(buildContext);
 
         this._logger.LogCleaning();
 
