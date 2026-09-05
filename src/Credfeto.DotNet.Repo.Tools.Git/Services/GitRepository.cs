@@ -222,7 +222,7 @@ public sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Push");
+                this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: "Push");
             }
 
             this._logger.LogPushedBranch(this.Active.Refs.Head.CanonicalName);
@@ -248,7 +248,7 @@ public sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Push");
+                this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: "Push");
             }
 
             this._logger.LogPushedBranchUpstream(
@@ -290,7 +290,7 @@ public sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Create Branch {branchName}");
+                this.ThrowOnFailure(result: result, exitCode: exitCode, $"Create Branch {branchName}");
             }
         }
         finally
@@ -451,7 +451,7 @@ public sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Reset {branchName} --hard");
+                this.ThrowOnFailure(result: result, exitCode: exitCode, $"Reset {branchName} --hard");
             }
         }
         finally
@@ -473,7 +473,7 @@ public sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Reset HEAD --hard");
+                this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: "Reset HEAD --hard");
             }
         }
         finally
@@ -526,7 +526,7 @@ public sealed class GitRepository : IGitRepository
 
             if (exitCode != 0)
             {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Checkout {branchName}");
+                this.ThrowOnFailure(result: result, exitCode: exitCode, $"Checkout {branchName}");
             }
         }
         finally
@@ -629,10 +629,21 @@ public sealed class GitRepository : IGitRepository
             cancellationToken: cancellationToken
         );
 
-        if (exitCode != 0)
+        if (exitCode == 0)
         {
-            this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Commit \"{message}\"");
+            return;
         }
+
+        string prefix = $"Commit \"{message}\"";
+
+        if (IsNothingToCommit(result))
+        {
+            this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: prefix);
+
+            return;
+        }
+
+        this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: prefix);
     }
 
     private async ValueTask DeleteBranchAsync(string branch, string upstream, CancellationToken cancellationToken)
@@ -718,6 +729,20 @@ public sealed class GitRepository : IGitRepository
         {
             this._logger.LogGitMessage(line);
         }
+    }
+
+    private void ThrowOnFailure(IReadOnlyList<string> result, int exitCode, string prefix)
+    {
+        this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: prefix);
+
+        throw new GitException($"{prefix} failed with exit code {exitCode}");
+    }
+
+    private static bool IsNothingToCommit(IReadOnlyList<string> result)
+    {
+        return result.Any(line =>
+            line.Contains(value: "nothing to commit", comparisonType: StringComparison.OrdinalIgnoreCase)
+        );
     }
 
     private async Task DeleteLocalBranchAsync(string branch, CancellationToken cancellationToken)
