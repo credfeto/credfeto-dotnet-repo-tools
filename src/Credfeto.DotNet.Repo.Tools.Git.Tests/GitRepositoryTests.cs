@@ -559,6 +559,65 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task PushAsync_WithLocalRemoteAndUpstreamConfigured_Succeeds()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+        string bareRemotePath = await this.CreateLocalBareRemoteAsync(
+            sourceRepoPath: repoPath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await RunGitAsync(
+            repoPath: repoPath,
+            arguments: $"remote add origin \"{bareRemotePath}\"",
+            cancellationToken: this.CancellationToken()
+        );
+        await RunGitAsync(
+            repoPath: repoPath,
+            arguments: $"push --set-upstream origin {DEFAULT_BRANCH}",
+            cancellationToken: this.CancellationToken()
+        );
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepository>()
+        );
+
+        await repo.PushAsync(cancellationToken: this.CancellationToken());
+    }
+
+    [Fact]
+    public async Task PushOriginAsync_WithLocalRemote_Succeeds()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+        string bareRemotePath = await this.CreateLocalBareRemoteAsync(
+            sourceRepoPath: repoPath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await RunGitAsync(
+            repoPath: repoPath,
+            arguments: $"remote add origin \"{bareRemotePath}\"",
+            cancellationToken: this.CancellationToken()
+        );
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepository>()
+        );
+
+        await repo.PushOriginAsync(
+            branchName: DEFAULT_BRANCH,
+            upstream: "origin",
+            cancellationToken: this.CancellationToken()
+        );
+    }
+
+    [Fact]
     public async Task RemoveBranchesForPrefixAsync_WithNoMatchingBranches_DoesNotThrow()
     {
         string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
