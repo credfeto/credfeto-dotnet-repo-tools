@@ -77,7 +77,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Cocona" Version="2.2.0" IncludeAssets="compile;runtime" />
-    <PackageReference Include="FunFair.BuildVersion.Detection" Version="6.2.19.2266" IncludeAssets="compile;runtime" />
     <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="10.0.11" IncludeAssets="compile;runtime" />
     <PackageReference Include="Serilog.Enrichers.Demystifier" Version="1.0.3" IncludeAssets="compile;runtime" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" IncludeAssets="compile;runtime" />
