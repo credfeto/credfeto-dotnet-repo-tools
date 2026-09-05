@@ -68,7 +68,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Cmd\Credfeto.DotNet.Repo.Tools.Cmd.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces\Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces.csproj" />
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Dependencies\Credfeto.DotNet.Repo.Tools.Dependencies.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FunFair.Test.Common" Version="6.4.0.2617" IncludeAssets="compile;runtime" />
