@@ -13,7 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 - MSBuild --nowarn quoting on Linux corrupted the first and last suppressed warning code (e.g. NU1802, NU1904 were never actually suppressed), because DotNetBuild applied shell-style quoting even though the process is launched without a shell
-- TBD - to be finalized after review
+- Git push, commit, branch switch/create and hard-reset commands now throw on a non-zero git exit code instead of logging and continuing as if they had succeeded, preventing bulk dependency/package update runs from silently recording a failed push as complete or hard-resetting the wrong branch
 ### Changed
 ### Deprecated
 ### Removed

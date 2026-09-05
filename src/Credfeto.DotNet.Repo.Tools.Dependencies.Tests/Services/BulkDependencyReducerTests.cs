@@ -272,6 +272,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             [new GitRepositoryLockedException("Repository is locked")],
             [new SolutionCheckFailedException("Solution check failed")],
             [new DotNetBuildErrorException("Build failed")],
+            [new GitException("Push failed with exit code 1")],
         ];
 
     [Theory]
