@@ -692,12 +692,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Delete remote branch");
-
-                throw new GitException($"Could not delete remote branch {branch}");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, $"Delete remote branch {branch}");
         }
         finally
         {
@@ -746,12 +741,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Delete local branch {branch}");
-
-                throw new GitException($"Could not delete local branch {branch}");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, $"Delete local branch {branch}");
         }
         finally
         {
