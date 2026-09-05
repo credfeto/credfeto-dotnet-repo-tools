@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
@@ -60,7 +60,6 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-xhfc-gr8f-ffwc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.DotNet.Interfaces\Credfeto.DotNet.Repo.Tools.DotNet.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
