@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- MSBuild --nowarn quoting on Linux corrupted the first and last suppressed warning code (e.g. NU1802, NU1904 were never actually suppressed), because DotNetBuild applied shell-style quoting even though the process is launched without a shell
 ### Changed
 ### Deprecated
 ### Removed
@@ -20,6 +21,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+
 ## [1.5.9] - 2026-09-05
 ### Fixed
 - ReSharper comment-to-attribute conversion corrupting source when comment is inside a method body
@@ -31,7 +33,6 @@ Releases that have at least been deployed to staging, BUT NOT necessarily releas
 - Package/release tracking tools no longer compare a Base64 content hash against a git commit SHA when deciding whether a repository's last known build is still good, and the hash is now generated once per repository run instead of once per package, so bulk package updates and release generation stop rebuilding (or re-scanning) every package/repo on every run
 - Release generation no longer hangs when the incremented release branch already exists - ReleaseGeneration.GetNextVersion now advances from the current candidate on each retry instead of recomputing from the original version, and the next-release log line reports the version actually being tried
 - Publish framework selection now compares target framework versions numerically instead of ordinally, so net10.0 is correctly preferred over net9.0 when a publishable executable multi-targets both
-- MSBuild --nowarn quoting on Linux corrupted the first and last suppressed warning code (e.g. NU1802, NU1904 were never actually suppressed), because DotNetBuild applied shell-style quoting even though the process is launched without a shell
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.152.2216
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.136.1515
