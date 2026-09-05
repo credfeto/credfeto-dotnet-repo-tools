@@ -220,10 +220,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: "Push");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: "Push");
 
             this._logger.LogPushedBranch(this.Active.Refs.Head.CanonicalName);
         }
@@ -246,10 +243,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: "Push");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: "Push");
 
             this._logger.LogPushedBranchUpstream(
                 canonicalName: this.Active.Refs.Head.CanonicalName,
@@ -288,10 +282,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.ThrowOnFailure(result: result, exitCode: exitCode, $"Create Branch {branchName}");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, $"Create Branch {branchName}");
         }
         finally
         {
@@ -449,10 +440,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.ThrowOnFailure(result: result, exitCode: exitCode, $"Reset {branchName} --hard");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, $"Reset {branchName} --hard");
         }
         finally
         {
@@ -471,10 +459,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: "Reset HEAD --hard");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: "Reset HEAD --hard");
         }
         finally
         {
@@ -524,10 +509,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.ThrowOnFailure(result: result, exitCode: exitCode, $"Checkout {branchName}");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, $"Checkout {branchName}");
         }
         finally
         {
@@ -733,6 +715,11 @@ public sealed class GitRepository : IGitRepository
 
     private void ThrowOnFailure(IReadOnlyList<string> result, int exitCode, string prefix)
     {
+        if (exitCode == 0)
+        {
+            return;
+        }
+
         this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: prefix);
 
         throw new GitException($"{prefix} failed with exit code {exitCode}");
