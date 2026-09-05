@@ -12,6 +12,16 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+## [1.5.9] - 2026-09-05
+### Fixed
 - ReSharper comment-to-attribute conversion corrupting source when comment is inside a method body
 - Added missing IncludeAssets to package references and switched test projects from xunit.v3.mtp-v2 to xunit.v3.aot.mtp-v2, fixing the build-pre-release check that was red on main (FunFair.BuildCheck 474.2.11.2561)
 - Dependency reducer no longer skips full re-analysis on clean/skipped repos, and no longer marks a repo fully processed if the run aborts partway through
@@ -41,13 +51,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Meziantou.Analyzer to 3.0.177
 - Dependencies - Updated FunFair.CodeAnalysis to 7.2.13.2323
 - Dependencies - Updated LibGit2Sharp to 0.32.0
-### Deprecated
-### Removed
-### Deployment Changes
-
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 
 ## [1.5.8] - 2026-08-20
 ### Added
