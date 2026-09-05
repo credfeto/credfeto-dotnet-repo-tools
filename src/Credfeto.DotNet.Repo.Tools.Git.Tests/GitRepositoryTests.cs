@@ -706,7 +706,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             logger: this.GetTypedLogger<GitRepository>()
         );
 
-        // Repo is clean - git commit fails with non-zero exit code; CommitAsync only logs, does not throw
+        // Repo is clean - git commit fails with non-zero exit code, but "nothing to commit" is tolerated, not fatal
         await repo.CommitAsync(message: "Nothing to commit", cancellationToken: this.CancellationToken());
     }
 
