@@ -143,6 +143,10 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             {
                 this._logger.LogRepoLocked(repo, exception.Message, exception: exception);
             }
+            catch (GitException exception)
+            {
+                this._logger.LogGitOperationFailed(repo: repo, exception: exception);
+            }
             finally
             {
                 if (!string.IsNullOrWhiteSpace(updateContext.TrackingFileName))

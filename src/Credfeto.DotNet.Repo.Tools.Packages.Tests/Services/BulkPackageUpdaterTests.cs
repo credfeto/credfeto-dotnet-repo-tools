@@ -251,6 +251,31 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
         checkId: "MA0051: Method is too long",
         Justification = "Unit Test"
     )]
+    public async Task UpdateRepositoriesWithRepoThrowingGitExceptionContinuesAsync()
+    {
+        PackageUpdateContext context = CreateUpdateContext();
+
+        this._gitRepositoryFactory.OpenOrCloneAsync(
+                workDir: WORK_FOLDER,
+                repoUrl: REPO_URL,
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .ThrowsAsync(new GitException("Push failed with exit code 1"));
+
+        await this._updater.UpdateRepositoriesAsync(
+            updateContext: context,
+            repositories: [REPO_URL],
+            packages: [],
+            cancellationToken: this.CancellationToken()
+        );
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Unit Test"
+    )]
     public async Task UpdateRepositoriesWithRepoThrowingReleaseCreatedExceptionAbortsRunAsync()
     {
         PackageUpdateContext context = CreateUpdateContext();
