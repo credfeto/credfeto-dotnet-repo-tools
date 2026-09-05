@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- MSBuild --nowarn quoting on Linux corrupted the first and last suppressed warning code (e.g. NU1802, NU1904 were never actually suppressed), because DotNetBuild applied shell-style quoting even though the process is launched without a shell
 ### Changed
 ### Deprecated
 ### Removed
@@ -20,6 +21,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+
 ## [1.5.9] - 2026-09-05
 ### Fixed
 - ReSharper comment-to-attribute conversion corrupting source when comment is inside a method body
