@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
@@ -66,7 +66,6 @@
   </ItemGroup>
   <Import Project="$(SolutionDir)UnitTests.props" Condition="Exists('$(SolutionDir)UnitTests.props')" />
   <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Cmd\Credfeto.DotNet.Repo.Tools.Cmd.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces\Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces.csproj" />
     <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Dependencies\Credfeto.DotNet.Repo.Tools.Dependencies.csproj" />
