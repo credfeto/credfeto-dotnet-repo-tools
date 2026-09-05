@@ -536,6 +536,8 @@ public sealed class GitRepository : IGitRepository
             ?? throw new GitException($"Could not find upstream origin {upstream}");
     }
 
+    // Prune/Clean/Fetch are best-effort maintenance operations, not state-changing commands, so a
+    // non-zero exit code here is only logged via DumpExitCodeResult rather than raised via ThrowOnFailure.
     private async ValueTask PruneAsync(CancellationToken cancellationToken)
     {
         try
