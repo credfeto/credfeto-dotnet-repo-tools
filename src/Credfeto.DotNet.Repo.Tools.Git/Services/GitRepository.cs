@@ -220,10 +220,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Push");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: "Push");
 
             this._logger.LogPushedBranch(this.Active.Refs.Head.CanonicalName);
         }
@@ -246,10 +243,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Push");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: "Push");
 
             this._logger.LogPushedBranchUpstream(
                 canonicalName: this.Active.Refs.Head.CanonicalName,
@@ -288,10 +282,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Create Branch {branchName}");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, $"Create Branch {branchName}");
         }
         finally
         {
@@ -449,10 +440,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Reset {branchName} --hard");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, $"Reset {branchName} --hard");
         }
         finally
         {
@@ -471,10 +459,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Reset HEAD --hard");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: "Reset HEAD --hard");
         }
         finally
         {
@@ -524,10 +509,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Checkout {branchName}");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, $"Checkout {branchName}");
         }
         finally
         {
@@ -554,6 +536,8 @@ public sealed class GitRepository : IGitRepository
             ?? throw new GitException($"Could not find upstream origin {upstream}");
     }
 
+    // Prune/Clean/Fetch are best-effort maintenance operations, not state-changing commands, so a
+    // non-zero exit code here is only logged via DumpExitCodeResult rather than raised via ThrowOnFailure.
     private async ValueTask PruneAsync(CancellationToken cancellationToken)
     {
         try
@@ -629,10 +613,21 @@ public sealed class GitRepository : IGitRepository
             cancellationToken: cancellationToken
         );
 
-        if (exitCode != 0)
+        if (exitCode == 0)
         {
-            this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Commit \"{message}\"");
+            return;
         }
+
+        string prefix = $"Commit \"{message}\"";
+
+        if (IsNothingToCommit(result))
+        {
+            this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: prefix);
+
+            return;
+        }
+
+        this.ThrowOnFailure(result: result, exitCode: exitCode, prefix: prefix);
     }
 
     private async ValueTask DeleteBranchAsync(string branch, string upstream, CancellationToken cancellationToken)
@@ -697,12 +692,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: "Delete remote branch");
-
-                throw new GitException($"Could not delete remote branch {branch}");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, $"Delete remote branch {branch}");
         }
         finally
         {
@@ -720,6 +710,25 @@ public sealed class GitRepository : IGitRepository
         }
     }
 
+    private void ThrowOnFailure(IReadOnlyList<string> result, int exitCode, string prefix)
+    {
+        if (exitCode == 0)
+        {
+            return;
+        }
+
+        this.DumpExitCodeResult(result: result, exitCode: exitCode, prefix: prefix);
+
+        throw new GitException($"{prefix} failed with exit code {exitCode}");
+    }
+
+    private static bool IsNothingToCommit(IReadOnlyList<string> result)
+    {
+        return result.Any(line =>
+            line.Contains(value: "nothing to commit", comparisonType: StringComparison.OrdinalIgnoreCase)
+        );
+    }
+
     private async Task DeleteLocalBranchAsync(string branch, CancellationToken cancellationToken)
     {
         try
@@ -732,12 +741,7 @@ public sealed class GitRepository : IGitRepository
                 cancellationToken: cancellationToken
             );
 
-            if (exitCode != 0)
-            {
-                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Delete local branch {branch}");
-
-                throw new GitException($"Could not delete local branch {branch}");
-            }
+            this.ThrowOnFailure(result: result, exitCode: exitCode, $"Delete local branch {branch}");
         }
         finally
         {

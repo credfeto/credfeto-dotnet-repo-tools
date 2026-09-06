@@ -105,4 +105,11 @@ public static partial class BulkDependencyUpdaterLoggingExtensions
         string message,
         Exception exception
     );
+
+    [LoggerMessage(EventId = 23, Level = LogLevel.Error, Message = "Skipping repo as {repo}: git operation failed")]
+    public static partial void LogGitOperationFailed(
+        this ILogger<BulkDependencyReducer> logger,
+        string repo,
+        Exception exception
+    );
 }
