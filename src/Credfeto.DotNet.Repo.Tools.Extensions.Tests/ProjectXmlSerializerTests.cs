@@ -73,7 +73,8 @@ public sealed class ProjectXmlSerializerTests : LoggingTestBase, IDisposable
             cancellationToken: this.CancellationToken()
         );
 
-        const string expected = "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n  </PropertyGroup>\n</Project>\n";
+        const string expected =
+            "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFramework>net10.0</TargetFramework>\n  </PropertyGroup>\n</Project>\n";
 
         Assert.Equal(expected: expected, actual: result);
     }
@@ -112,6 +113,9 @@ public sealed class ProjectXmlSerializerTests : LoggingTestBase, IDisposable
         string content = await File.ReadAllTextAsync(path: path, cancellationToken: this.CancellationToken());
 
         Assert.EndsWith(expectedEndString: "\n", actualString: content, StringComparison.Ordinal);
-        Assert.False(content.EndsWith("\n\n", StringComparison.Ordinal), "Should not have more than one trailing newline");
+        Assert.False(
+            content.EndsWith("\n\n", StringComparison.Ordinal),
+            "Should not have more than one trailing newline"
+        );
     }
 }
