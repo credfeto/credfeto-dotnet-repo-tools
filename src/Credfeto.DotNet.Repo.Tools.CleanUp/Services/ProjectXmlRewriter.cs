@@ -122,6 +122,11 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         return StringComparer.Ordinal.Equals(x: element.Name, y: "PropertyGroup");
     }
 
+    private static bool IsItemGroup(XmlElement element)
+    {
+        return StringComparer.Ordinal.Equals(x: element.Name, y: "ItemGroup");
+    }
+
     [SuppressMessage(
         category: "Meziantou.Analyzer",
         checkId: "MA0051: Method is too long",
@@ -134,12 +139,7 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
             return false;
         }
 
-        IReadOnlyList<XmlElement> itemGroups =
-        [
-            .. project
-                .ChildNodes.OfType<XmlElement>()
-                .Where(n => StringComparer.Ordinal.Equals(x: n.Name, y: "ItemGroup")),
-        ];
+        IReadOnlyList<XmlElement> itemGroups = [.. project.ChildNodes.OfType<XmlElement>().Where(IsItemGroup)];
 
         string before = projectDocument.InnerXml;
 
@@ -234,25 +234,23 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
             return false;
         }
 
-        string before = projectDocument.InnerXml;
-
         IEnumerable<XmlElement> references = project
             .ChildNodes.OfType<XmlElement>()
-            .Where(itemGroup => StringComparer.Ordinal.Equals(x: itemGroup.Name, y: "ItemGroup"))
+            .Where(IsItemGroup)
             .SelectMany(itemGroup => itemGroup.ChildNodes.OfType<XmlElement>())
             .Where(reference => ReferenceElementNames.Contains(reference.Name));
 
+        bool changed = false;
+
         foreach (XmlElement reference in references.ToArray())
         {
-            this.NormaliseReferenceElement(reference: reference, filename: filename);
+            changed |= this.NormaliseReferenceElement(reference: reference, filename: filename);
         }
 
-        string after = projectDocument.InnerXml;
-
-        return !StringComparer.Ordinal.Equals(x: before, y: after);
+        return changed;
     }
 
-    private void NormaliseReferenceElement(XmlElement reference, string filename)
+    private bool NormaliseReferenceElement(XmlElement reference, string filename)
     {
         bool convertedAny = false;
 
@@ -260,10 +258,11 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         {
             if (!TryGetConvertibleMetadataValue(child, out string? value))
             {
-                this._logger.SkippingChildElementNormalisationNotPlainText(
+                this._logger.SkippingChildElementNormalisation(
                     filename: filename,
                     elementName: reference.Name,
-                    childName: child.Name
+                    childName: child.Name,
+                    reason: "it is not plain text"
                 );
 
                 continue;
@@ -274,10 +273,11 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
                 && !StringComparer.Ordinal.Equals(x: reference.GetAttribute(child.Name), y: value)
             )
             {
-                this._logger.SkippingChildElementNormalisationConflictingAttribute(
+                this._logger.SkippingChildElementNormalisation(
                     filename: filename,
                     elementName: reference.Name,
-                    childName: child.Name
+                    childName: child.Name,
+                    reason: "a conflicting attribute is already present"
                 );
 
                 continue;
@@ -290,7 +290,7 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
 
         if (!convertedAny)
         {
-            return;
+            return false;
         }
 
         RemoveWhitespaceOnlyText(reference);
@@ -299,6 +299,8 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         {
             reference.IsEmpty = true;
         }
+
+        return true;
     }
 
     private static bool TryGetConvertibleMetadataValue(XmlElement child, [NotNullWhen(true)] out string? value)
