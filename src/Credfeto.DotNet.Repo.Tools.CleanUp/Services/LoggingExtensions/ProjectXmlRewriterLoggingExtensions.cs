@@ -74,4 +74,28 @@ internal static partial class ProjectXmlRewriterLoggingExtensions
         this ILogger<ProjectXmlRewriter> logger,
         string filename
     );
+
+    [LoggerMessage(
+        EventId = 9,
+        Level = LogLevel.Error,
+        Message = "{filename} SKIPPING NORMALISATION of {elementName} child {childName} as it is not plain text"
+    )]
+    public static partial void SkippingChildElementNormalisationNotPlainText(
+        this ILogger<ProjectXmlRewriter> logger,
+        string filename,
+        string elementName,
+        string childName
+    );
+
+    [LoggerMessage(
+        EventId = 10,
+        Level = LogLevel.Error,
+        Message = "{filename} SKIPPING NORMALISATION of {elementName} child {childName} as a conflicting attribute is already present"
+    )]
+    public static partial void SkippingChildElementNormalisationConflictingAttribute(
+        this ILogger<ProjectXmlRewriter> logger,
+        string filename,
+        string elementName,
+        string childName
+    );
 }

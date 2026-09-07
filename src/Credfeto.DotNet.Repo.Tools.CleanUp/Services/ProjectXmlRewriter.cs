@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -11,6 +12,14 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
 public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
 {
+    private static readonly FrozenSet<string> ReferenceElementNames = new[]
+    {
+        "PackageReference",
+        "ProjectReference",
+        "DotNetCliToolReference",
+        "FrameworkReference",
+    }.ToFrozenSet(StringComparer.Ordinal);
+
     private readonly ILogger<ProjectXmlRewriter> _logger;
 
     public ProjectXmlRewriter(ILogger<ProjectXmlRewriter> logger)
@@ -213,6 +222,115 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         string after = projectDocument.InnerXml;
 
         return !StringComparer.Ordinal.Equals(x: before, y: after);
+    }
+
+    // MSBuild allows reference metadata (e.g. Version, PrivateAssets) to be expressed as either an
+    // attribute or a child element; the child-element form is harder for downstream tooling (such as
+    // the package updater) to reason about consistently, so normalise it to the attribute form here.
+    public bool NormaliseReferenceMetadata(XmlDocument projectDocument, string filename)
+    {
+        if (projectDocument.SelectSingleNode("Project") is not XmlElement project)
+        {
+            return false;
+        }
+
+        string before = projectDocument.InnerXml;
+
+        IEnumerable<XmlElement> references = project
+            .ChildNodes.OfType<XmlElement>()
+            .Where(itemGroup => StringComparer.Ordinal.Equals(x: itemGroup.Name, y: "ItemGroup"))
+            .SelectMany(itemGroup => itemGroup.ChildNodes.OfType<XmlElement>())
+            .Where(reference => ReferenceElementNames.Contains(reference.Name));
+
+        foreach (XmlElement reference in references.ToArray())
+        {
+            this.NormaliseReferenceElement(reference: reference, filename: filename);
+        }
+
+        string after = projectDocument.InnerXml;
+
+        return !StringComparer.Ordinal.Equals(x: before, y: after);
+    }
+
+    private void NormaliseReferenceElement(XmlElement reference, string filename)
+    {
+        bool convertedAny = false;
+
+        foreach (XmlElement child in reference.ChildNodes.OfType<XmlElement>().ToArray())
+        {
+            if (!TryGetConvertibleMetadataValue(child, out string? value))
+            {
+                this._logger.SkippingChildElementNormalisationNotPlainText(
+                    filename: filename,
+                    elementName: reference.Name,
+                    childName: child.Name
+                );
+
+                continue;
+            }
+
+            if (
+                reference.HasAttribute(child.Name)
+                && !StringComparer.Ordinal.Equals(x: reference.GetAttribute(child.Name), y: value)
+            )
+            {
+                this._logger.SkippingChildElementNormalisationConflictingAttribute(
+                    filename: filename,
+                    elementName: reference.Name,
+                    childName: child.Name
+                );
+
+                continue;
+            }
+
+            reference.SetAttribute(name: child.Name, value: value);
+            reference.RemoveChild(child);
+            convertedAny = true;
+        }
+
+        if (!convertedAny)
+        {
+            return;
+        }
+
+        RemoveWhitespaceOnlyText(reference);
+
+        if (!reference.HasChildNodes)
+        {
+            reference.IsEmpty = true;
+        }
+    }
+
+    private static bool TryGetConvertibleMetadataValue(XmlElement child, [NotNullWhen(true)] out string? value)
+    {
+        if (child.HasAttributes)
+        {
+            value = null;
+
+            return false;
+        }
+
+        if (child.ChildNodes.Count > 1 || child.FirstChild is not null && child.FirstChild.NodeType != XmlNodeType.Text)
+        {
+            value = null;
+
+            return false;
+        }
+
+        value = child.InnerText;
+
+        return true;
+    }
+
+    private static void RemoveWhitespaceOnlyText(XmlElement element)
+    {
+        foreach (XmlNode child in element.ChildNodes.Cast<XmlNode>().ToArray())
+        {
+            if (child.NodeType == XmlNodeType.Text && string.IsNullOrWhiteSpace(child.Value))
+            {
+                element.RemoveChild(child);
+            }
+        }
     }
 
     private static void AppendReferences(
