@@ -377,7 +377,10 @@ public sealed class DependencyReducer : IDependencyReducer
         );
     }
 
-    private static void TrackObsoletePackage(in ProjectUpdateContext projectUpdateContext, PackageReference packageReference)
+    private static void TrackObsoletePackage(
+        in ProjectUpdateContext projectUpdateContext,
+        PackageReference packageReference
+    )
     {
         projectUpdateContext.Tracking.AddObsolete(
             new(
