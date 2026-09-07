@@ -303,14 +303,11 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
 
     private static bool TryGetConvertibleMetadataValue(XmlElement child, [NotNullWhen(true)] out string? value)
     {
-        if (child.HasAttributes)
-        {
-            value = null;
-
-            return false;
-        }
-
-        if (child.ChildNodes.Count > 1 || child.FirstChild is not null && child.FirstChild.NodeType != XmlNodeType.Text)
+        if (
+            child.HasAttributes
+            || child.ChildNodes.Count > 1
+            || child.FirstChild is not null && child.FirstChild.NodeType != XmlNodeType.Text
+        )
         {
             value = null;
 
