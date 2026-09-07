@@ -10,18 +10,18 @@ namespace Credfeto.DotNet.Repo.Tools.Extensions;
 public static class ProjectXmlSerializer
 {
     private static readonly XmlWriterSettings WriterSettings = new()
-                                                               {
-                                                                   Async = true,
-                                                                   Indent = true,
-                                                                   IndentChars = "  ",
-                                                                   OmitXmlDeclaration = true,
-                                                                   Encoding = Encoding.UTF8,
-                                                                   NewLineChars = "\n",
-                                                                   NewLineHandling = NewLineHandling.None,
-                                                                   NewLineOnAttributes = false,
-                                                                   NamespaceHandling = NamespaceHandling.OmitDuplicates,
-                                                                   CloseOutput = true,
-                                                               };
+    {
+        Async = true,
+        Indent = true,
+        IndentChars = "  ",
+        OmitXmlDeclaration = true,
+        Encoding = Encoding.UTF8,
+        NewLineChars = "\n",
+        NewLineHandling = NewLineHandling.None,
+        NewLineOnAttributes = false,
+        NamespaceHandling = NamespaceHandling.OmitDuplicates,
+        CloseOutput = true,
+    };
 
     public static async ValueTask<string> ToProjectFileTextAsync(
         XmlDocument document,
@@ -60,11 +60,7 @@ public static class ProjectXmlSerializer
         );
     }
 
-    public static async ValueTask SaveAsync(
-        XmlDocument document,
-        string filePath,
-        CancellationToken cancellationToken
-    )
+    public static async ValueTask SaveAsync(XmlDocument document, string filePath, CancellationToken cancellationToken)
     {
         await using (MemoryStream stream = new())
         {
@@ -75,7 +71,11 @@ public static class ProjectXmlSerializer
 
             // Render fully in memory first, so a serialisation failure can never truncate an
             // already-good file on disk.
-            await File.WriteAllBytesAsync(path: filePath, bytes: stream.ToArray(), cancellationToken: cancellationToken);
+            await File.WriteAllBytesAsync(
+                path: filePath,
+                bytes: stream.ToArray(),
+                cancellationToken: cancellationToken
+            );
         }
     }
 }
