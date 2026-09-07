@@ -204,24 +204,22 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
             config.Add("");
         }
 
-        config.AddRange(
-            [
-                $"  - package-ecosystem: {ecoSystem}",
-                $"    directory: \"{directory}\"",
-                "    schedule:",
-                "      interval: daily",
-                "      time: \"03:00\"",
-                "      timezone: \"Europe/London\"",
-                "    open-pull-requests-limit: 99",
-                "    assignees:",
-                $"      - {reviewer}",
-                "    commit-message:",
-                "      prefix: \"[Dependencies]\"",
-                "    labels:",
-                $"      - \"{packageTypeLabel}\"",
-                "      - \"dependencies\"",
-                "      - \"Changelog Not Required\"",
-            ]
-        );
+        config.AddRange([
+            $"  - package-ecosystem: {ecoSystem}",
+            $"    directory: \"{directory}\"",
+            "    schedule:",
+            "      interval: daily",
+            "      time: \"03:00\"",
+            "      timezone: \"Europe/London\"",
+            "    open-pull-requests-limit: 99",
+            "    assignees:",
+            $"      - {reviewer}",
+            "    commit-message:",
+            "      prefix: \"[Dependencies]\"",
+            "    labels:",
+            $"      - \"{packageTypeLabel}\"",
+            "      - \"dependencies\"",
+            "      - \"Changelog Not Required\"",
+        ]);
     }
 }
