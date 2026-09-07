@@ -89,4 +89,11 @@ internal static partial class BulkPackageUpdaterLoggingExtensions
         string message,
         Exception exception
     );
+
+    [LoggerMessage(EventId = 22, Level = LogLevel.Error, Message = "Skipping repo as {repo}: git operation failed")]
+    public static partial void LogGitOperationFailed(
+        this ILogger<BulkPackageUpdater> logger,
+        string repo,
+        Exception exception
+    );
 }

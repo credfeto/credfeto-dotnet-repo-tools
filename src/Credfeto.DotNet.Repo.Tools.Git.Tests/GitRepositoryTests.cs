@@ -520,9 +520,63 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task PushAsync_WithNoRemote_LogsButDoesNotThrow()
+    public async Task PushAsync_WithNoRemote_ThrowsGitException()
     {
         string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepository>()
+        );
+
+        await Assert.ThrowsAsync<GitException>(() =>
+            repo.PushAsync(cancellationToken: this.CancellationToken()).AsTask()
+        );
+    }
+
+    [Fact]
+    public async Task PushOriginAsync_WithNoRemote_ThrowsGitException()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepository>()
+        );
+
+        await Assert.ThrowsAsync<GitException>(() =>
+            repo.PushOriginAsync(
+                    branchName: DEFAULT_BRANCH,
+                    upstream: "origin",
+                    cancellationToken: this.CancellationToken()
+                )
+                .AsTask()
+        );
+    }
+
+    [Fact]
+    public async Task PushAsync_WithLocalRemoteAndUpstreamConfigured_Succeeds()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+        string bareRemotePath = await this.CreateLocalBareRemoteAsync(
+            sourceRepoPath: repoPath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await RunGitAsync(
+            repoPath: repoPath,
+            arguments: $"remote add origin \"{bareRemotePath}\"",
+            cancellationToken: this.CancellationToken()
+        );
+        await RunGitAsync(
+            repoPath: repoPath,
+            arguments: $"push --set-upstream origin {DEFAULT_BRANCH}",
+            cancellationToken: this.CancellationToken()
+        );
 
         using GitRepository repo = new(
             clonePath: "https://example.com/repo.git",
@@ -535,9 +589,19 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task PushOriginAsync_WithNoRemote_LogsButDoesNotThrow()
+    public async Task PushOriginAsync_WithLocalRemote_Succeeds()
     {
         string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+        string bareRemotePath = await this.CreateLocalBareRemoteAsync(
+            sourceRepoPath: repoPath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await RunGitAsync(
+            repoPath: repoPath,
+            arguments: $"remote add origin \"{bareRemotePath}\"",
+            cancellationToken: this.CancellationToken()
+        );
 
         using GitRepository repo = new(
             clonePath: "https://example.com/repo.git",
@@ -701,12 +765,12 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             logger: this.GetTypedLogger<GitRepository>()
         );
 
-        // Repo is clean - git commit fails with non-zero exit code; CommitAsync only logs, does not throw
+        // Repo is clean - git commit fails with non-zero exit code, but "nothing to commit" is tolerated, not fatal
         await repo.CommitAsync(message: "Nothing to commit", cancellationToken: this.CancellationToken());
     }
 
     [Fact]
-    public async Task CommitAsync_InNonGitDirectory_DoesNotThrow()
+    public async Task CommitAsync_InNonGitDirectory_ThrowsGitException()
     {
         string nonGitDir = Path.Combine(this.TempFolder, "non-git-" + Guid.NewGuid().ToString("N")[..8]);
         Directory.CreateDirectory(nonGitDir);
@@ -718,8 +782,11 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             logger: this.GetTypedLogger<GitRepository>()
         );
 
-        // git add -A fails in a non-git directory (exitCode != 0); git commit also fails; neither throws
-        await repo.CommitAsync(message: "Test commit", cancellationToken: this.CancellationToken());
+        // git add -A fails in a non-git directory (exitCode != 0, only logged); git commit also fails
+        // for a real reason (not "nothing to commit"), which is now fatal
+        await Assert.ThrowsAsync<GitException>(() =>
+            repo.CommitAsync(message: "Test commit", cancellationToken: this.CancellationToken()).AsTask()
+        );
     }
 
     [Fact]
@@ -743,7 +810,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task CreateBranchAsync_WhenBranchAlreadyExists_DoesNotThrow()
+    public async Task CreateBranchAsync_WhenBranchAlreadyExists_ThrowsGitException()
     {
         string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
 
@@ -754,12 +821,14 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             logger: this.GetTypedLogger<GitRepository>()
         );
 
-        // Try to create a branch that already exists - git checkout -b fails (exitCode != 0); only logs, no throw
-        await repo.CreateBranchAsync(branchName: DEFAULT_BRANCH, cancellationToken: this.CancellationToken());
+        // Try to create a branch that already exists - git checkout -b fails (exitCode != 0), now fatal
+        await Assert.ThrowsAsync<GitException>(() =>
+            repo.CreateBranchAsync(branchName: DEFAULT_BRANCH, cancellationToken: this.CancellationToken()).AsTask()
+        );
     }
 
     [Fact]
-    public async Task SwitchBranchAsync_ToNonExistentBranch_DoesNotThrow()
+    public async Task SwitchBranchAsync_ToNonExistentBranch_ThrowsGitException()
     {
         string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
 
@@ -770,10 +839,13 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             logger: this.GetTypedLogger<GitRepository>()
         );
 
-        // git switch to a non-existent branch fails (exitCode != 0); only logs, no throw
-        await repo.SwitchBranchAsync(
-            branchName: "branch-that-does-not-exist",
-            cancellationToken: this.CancellationToken()
+        // git switch to a non-existent branch fails (exitCode != 0), now fatal
+        await Assert.ThrowsAsync<GitException>(() =>
+            repo.SwitchBranchAsync(
+                    branchName: "branch-that-does-not-exist",
+                    cancellationToken: this.CancellationToken()
+                )
+                .AsTask()
         );
     }
 
