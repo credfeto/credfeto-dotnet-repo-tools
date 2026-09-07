@@ -316,7 +316,7 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
             return false;
         }
 
-        value = child.InnerText;
+        value = child.InnerText.Trim();
 
         return true;
     }

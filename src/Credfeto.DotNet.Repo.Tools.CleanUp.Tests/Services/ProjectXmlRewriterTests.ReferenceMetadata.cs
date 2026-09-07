@@ -210,6 +210,30 @@ public sealed partial class ProjectXmlRewriterTests
     }
 
     [Fact]
+    public Task ShouldTrimWhitespaceFromMultiLineChildElementValueAsync()
+    {
+        const string originalXml =
+            @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <ItemGroup>
+    <PackageReference Include=""Foo.Bar"">
+      <Version>
+        1.0.0
+      </Version>
+    </PackageReference>
+  </ItemGroup>
+</Project>";
+
+        const string expectedXml =
+            @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <ItemGroup>
+    <PackageReference Include=""Foo.Bar"" Version=""1.0.0"" />
+  </ItemGroup>
+</Project>";
+
+        return this.DoNormaliseReferenceMetadataAsync(expectedXml: expectedXml, originalXml: originalXml);
+    }
+
+    [Fact]
     public void NormaliseReferenceMetadataShouldReturnFalseWhenNoProjectElement()
     {
         const string xml =
