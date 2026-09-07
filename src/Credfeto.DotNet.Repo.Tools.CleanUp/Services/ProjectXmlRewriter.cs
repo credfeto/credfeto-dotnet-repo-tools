@@ -12,13 +12,13 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
 public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
 {
-    private static readonly FrozenSet<string> ReferenceElementNames = new[]
-    {
+    private static readonly FrozenSet<string> ReferenceElementNames = FrozenSet.Create(
+        StringComparer.Ordinal,
         "PackageReference",
         "ProjectReference",
         "DotNetCliToolReference",
-        "FrameworkReference",
-    }.ToFrozenSet(StringComparer.Ordinal);
+        "FrameworkReference"
+    );
 
     private readonly ILogger<ProjectXmlRewriter> _logger;
 
@@ -242,7 +242,7 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
 
         bool changed = false;
 
-        foreach (XmlElement reference in references.ToArray())
+        foreach (XmlElement reference in references)
         {
             changed |= this.NormaliseReferenceElement(reference: reference, filename: filename);
         }
