@@ -14,6 +14,7 @@ using Credfeto.DotNet.Repo.Tools.Build.Helpers;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Build.Services.LoggingExtensions;
+using Credfeto.DotNet.Repo.Tools.Extensions;
 using FunFair.BuildCheck.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -500,8 +501,8 @@ public sealed class DotNetBuild : IDotNetBuild
         checkId: "S4036: Use an absolute path for this command",
         Justification = "Relies on dotnet being resolved via PATH"
     )]
-    private static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(
-        BuildContext buildContext,
+    private static ValueTask<(string[] Output, int ExitCode)> ExecAsync(
+        in BuildContext buildContext,
         string arguments,
         CancellationToken cancellationToken
     )
@@ -526,38 +527,11 @@ public sealed class DotNetBuild : IDotNetBuild
             },
         };
 
-        using (Process? process = Process.Start(psi))
-        {
-            if (process is null)
-            {
-                throw new InvalidOperationException("Failed to start dotnet");
-            }
-
-            try
-            {
-                string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-
-                string error = await process.StandardError.ReadToEndAsync(cancellationToken);
-
-                await process.WaitForExitAsync(cancellationToken);
-
-                string result = string.Join(separator: Environment.NewLine, output, error);
-
-                return (
-                    result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries),
-                    process.ExitCode
-                );
-            }
-            catch (OperationCanceledException)
-            {
-                if (!process.HasExited)
-                {
-                    process.Kill(entireProcessTree: true);
-                }
-
-                throw;
-            }
-        }
+        return ProcessRunner.ExecAsync(
+            psi: psi,
+            failedToStartMessage: "Failed to start dotnet",
+            cancellationToken: cancellationToken
+        );
     }
 
     private static bool TryGetCodeAnalysisFileName(
