@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - MSBuild --nowarn quoting on Linux corrupted the first and last suppressed warning code (e.g. NU1802, NU1904 were never actually suppressed), because DotNetBuild applied shell-style quoting even though the process is launched without a shell
 - Git push, commit, branch switch/create and hard-reset commands now throw on a non-zero git exit code instead of logging and continuing as if they had succeeded, preventing bulk dependency/package update runs from silently recording a failed push as complete or hard-resetting the wrong branch
 - Skip normalising PackageReference/ProjectReference child-element metadata (e.g. Version) to attributes when duplicate same-named child elements are present, avoiding data loss from silently dropping one of the duplicates
+- Ctrl+C now cleanly cancels a bulk update-packages/formatter run instead of continuing regardless or being torn down non-gracefully mid-operation
 ### Changed
 ### Deprecated
 ### Removed
