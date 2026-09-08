@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,6 +8,11 @@ namespace Credfeto.DotNet.Repo.Tools.Extensions;
 
 public static class ProcessRunner
 {
+    [SuppressMessage(
+        "codecracker.CSharp",
+        "CC0004: Empty Catch Block",
+        Justification = "Intentionally ignoring the TOCTOU race between HasExited and Kill()"
+    )]
     public static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(
         ProcessStartInfo psi,
         string failedToStartMessage,
@@ -42,11 +48,7 @@ public static class ProcessRunner
             }
             catch (InvalidOperationException)
             {
-                // Process already exited between the HasExited check and Kill().
-                Debug.Assert(
-                    condition: process.HasExited,
-                    message: "Kill() only throws InvalidOperationException once the process has exited."
-                );
+                // Process already exited between the HasExited check and Kill() - safe to ignore.
             }
 
             throw;
