@@ -74,4 +74,17 @@ internal static partial class ProjectXmlRewriterLoggingExtensions
         this ILogger<ProjectXmlRewriter> logger,
         string filename
     );
+
+    [LoggerMessage(
+        EventId = 9,
+        Level = LogLevel.Error,
+        Message = "{filename} SKIPPING NORMALISATION of {elementName} child {childName} as {reason}"
+    )]
+    public static partial void SkippingChildElementNormalisation(
+        this ILogger<ProjectXmlRewriter> logger,
+        string filename,
+        string elementName,
+        string childName,
+        string reason
+    );
 }

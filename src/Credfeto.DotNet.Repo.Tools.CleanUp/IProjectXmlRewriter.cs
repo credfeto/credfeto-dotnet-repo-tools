@@ -7,4 +7,6 @@ public interface IProjectXmlRewriter
     bool ReOrderPropertyGroups(XmlDocument projectDocument, string filename);
 
     bool ReOrderIncludes(XmlDocument projectDocument, string filename);
+
+    bool NormaliseReferenceMetadata(XmlDocument projectDocument, string filename);
 }

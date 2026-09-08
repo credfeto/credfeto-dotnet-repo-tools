@@ -748,6 +748,11 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
 
         try
         {
+            if (this._projectXmlRewriter.NormaliseReferenceMetadata(projectDocument: project, filename: projectFile))
+            {
+                ++changes;
+            }
+
             if (this._projectXmlRewriter.ReOrderPropertyGroups(projectDocument: project, filename: projectFile))
             {
                 ++changes;

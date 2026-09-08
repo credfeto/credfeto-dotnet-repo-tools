@@ -959,6 +959,35 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task BulkUpdateAsyncShouldCountReferenceMetadataNormalisationAsChangeAsync()
+    {
+        (Repository activeRepo, string projectFile, IGitRepository testRepo) =
+            await this.SetupRepoDirWithChangelogAndProjectAsync(
+                repoDirName: "gitrepo-reference-metadata",
+                cloneUrl: "https://github.com/test/reference-metadata-repo.git",
+                headRev: "meta001"
+            );
+
+        using (activeRepo)
+        {
+            string repoDir = testRepo.WorkingDirectory;
+
+            this.SetupDotNetFilesAndBuild(repoDir: repoDir, projectFile: projectFile);
+
+            this._projectXmlRewriter.NormaliseReferenceMetadata(Arg.Any<System.Xml.XmlDocument>(), Arg.Any<string>())
+                .Returns(true);
+
+            IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+            this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
+
+            await this.RunBulkUpdateAsync("https://github.com/test/reference-metadata-repo.git");
+
+            this._trackingCache.Received(1)
+                .Set(repoUrl: "https://github.com/test/reference-metadata-repo.git", value: "meta001");
+        }
+    }
+
+    [Fact]
     public async Task BulkUpdateAsyncShouldHandleExceptionInProjectCleanupAsync()
     {
         (Repository activeRepo, string projectFile, IGitRepository testRepo) =
