@@ -252,40 +252,19 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
 
     private bool NormaliseReferenceElement(XmlElement reference, string filename)
     {
+        XmlElement[] children = [.. reference.ChildNodes.OfType<XmlElement>()];
+        HashSet<string> duplicateChildNames = GetDuplicateChildNames(children);
+
         bool convertedAny = false;
 
-        foreach (XmlElement child in reference.ChildNodes.OfType<XmlElement>().ToArray())
+        foreach (XmlElement child in children)
         {
-            if (!TryGetConvertibleMetadataValue(child, out string? value))
-            {
-                this._logger.SkippingChildElementNormalisation(
-                    filename: filename,
-                    elementName: reference.Name,
-                    childName: child.Name,
-                    reason: "it is not plain text"
-                );
-
-                continue;
-            }
-
-            if (
-                reference.HasAttribute(child.Name)
-                && !StringComparer.Ordinal.Equals(x: reference.GetAttribute(child.Name), y: value)
-            )
-            {
-                this._logger.SkippingChildElementNormalisation(
-                    filename: filename,
-                    elementName: reference.Name,
-                    childName: child.Name,
-                    reason: "a conflicting attribute is already present"
-                );
-
-                continue;
-            }
-
-            reference.SetAttribute(name: child.Name, value: value);
-            reference.RemoveChild(child);
-            convertedAny = true;
+            convertedAny |= this.TryNormaliseChildElement(
+                reference: reference,
+                child: child,
+                filename: filename,
+                duplicateChildNames: duplicateChildNames
+            );
         }
 
         if (!convertedAny)
@@ -299,6 +278,67 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         {
             reference.IsEmpty = true;
         }
+
+        return true;
+    }
+
+    private static HashSet<string> GetDuplicateChildNames(XmlElement[] children)
+    {
+        return children
+            .GroupBy(keySelector: child => child.Name, comparer: StringComparer.Ordinal)
+            .Where(group => group.Skip(1).Any())
+            .Select(group => group.Key)
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
+    private bool TryNormaliseChildElement(
+        XmlElement reference,
+        XmlElement child,
+        string filename,
+        HashSet<string> duplicateChildNames
+    )
+    {
+        if (duplicateChildNames.Contains(child.Name))
+        {
+            this._logger.SkippingChildElementNormalisation(
+                filename: filename,
+                elementName: reference.Name,
+                childName: child.Name,
+                reason: "multiple child elements with the same name are present"
+            );
+
+            return false;
+        }
+
+        if (!TryGetConvertibleMetadataValue(child, out string? value))
+        {
+            this._logger.SkippingChildElementNormalisation(
+                filename: filename,
+                elementName: reference.Name,
+                childName: child.Name,
+                reason: "it is not plain text"
+            );
+
+            return false;
+        }
+
+        if (
+            reference.HasAttribute(child.Name)
+            && !StringComparer.Ordinal.Equals(x: reference.GetAttribute(child.Name), y: value)
+        )
+        {
+            this._logger.SkippingChildElementNormalisation(
+                filename: filename,
+                elementName: reference.Name,
+                childName: child.Name,
+                reason: "a conflicting attribute is already present"
+            );
+
+            return false;
+        }
+
+        reference.SetAttribute(name: child.Name, value: value);
+        reference.RemoveChild(child);
 
         return true;
     }

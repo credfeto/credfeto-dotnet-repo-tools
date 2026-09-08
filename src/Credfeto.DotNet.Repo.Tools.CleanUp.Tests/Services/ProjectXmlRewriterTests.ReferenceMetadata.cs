@@ -234,6 +234,88 @@ public sealed partial class ProjectXmlRewriterTests
     }
 
     [Fact]
+    public Task ShouldLeaveDuplicateNamedChildElementsUnchangedAsync()
+    {
+        const string xml =
+            @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <ItemGroup>
+    <PackageReference Include=""Foo.Bar"">
+      <Version>1.0.0</Version>
+      <Version>2.0.0</Version>
+    </PackageReference>
+  </ItemGroup>
+</Project>";
+
+        return this.DoNormaliseReferenceMetadataAsync(expectedXml: xml, originalXml: xml);
+    }
+
+    [Fact]
+    public Task ShouldEscapeXmlSpecialCharactersWhenConvertingChildElementToAttributeAsync()
+    {
+        const string originalXml =
+            @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <ItemGroup>
+    <PackageReference Include=""Foo.Bar"">
+      <IncludeAssets>a&amp;b&lt;c&gt;d""e'f</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>";
+
+        const string expectedXml =
+            @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <ItemGroup>
+    <PackageReference Include=""Foo.Bar"" IncludeAssets=""a&amp;b&lt;c&gt;d&quot;e'f"" />
+  </ItemGroup>
+</Project>";
+
+        return this.DoNormaliseReferenceMetadataAsync(expectedXml: expectedXml, originalXml: originalXml);
+    }
+
+    [Fact]
+    public Task ShouldConvertChildElementMatchingExistingAttributeValueAsync()
+    {
+        const string originalXml =
+            @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <ItemGroup>
+    <PackageReference Include=""Foo.Bar"" Version=""1.0.0"">
+      <Version>1.0.0</Version>
+    </PackageReference>
+  </ItemGroup>
+</Project>";
+
+        const string expectedXml =
+            @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <ItemGroup>
+    <PackageReference Include=""Foo.Bar"" Version=""1.0.0"" />
+  </ItemGroup>
+</Project>";
+
+        return this.DoNormaliseReferenceMetadataAsync(expectedXml: expectedXml, originalXml: originalXml);
+    }
+
+    [Fact]
+    public Task ShouldConvertWhitespaceOnlyChildElementToEmptyAttributeAsync()
+    {
+        const string originalXml =
+            @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <ItemGroup>
+    <PackageReference Include=""Foo.Bar"">
+      <ExcludeAssets>   </ExcludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>";
+
+        const string expectedXml =
+            @"<Project Sdk=""Microsoft.NET.Sdk"">
+  <ItemGroup>
+    <PackageReference Include=""Foo.Bar"" ExcludeAssets="""" />
+  </ItemGroup>
+</Project>";
+
+        return this.DoNormaliseReferenceMetadataAsync(expectedXml: expectedXml, originalXml: originalXml);
+    }
+
+    [Fact]
     public void NormaliseReferenceMetadataShouldReturnFalseWhenNoProjectElement()
     {
         const string xml =
