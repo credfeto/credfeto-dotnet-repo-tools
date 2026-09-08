@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Ctrl+C now cleanly cancels a bulk update-packages/formatter run instead of continuing regardless or being torn down non-gracefully mid-operation
 ### Changed
 - Dependencies - Updated Meziantou.Analyzer to 3.0.258
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.206.2608
