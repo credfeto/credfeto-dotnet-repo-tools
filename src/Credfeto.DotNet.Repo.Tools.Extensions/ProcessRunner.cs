@@ -33,9 +33,20 @@ public static class ProcessRunner
         }
         catch (OperationCanceledException)
         {
-            if (!process.HasExited)
+            try
             {
-                process.Kill(entireProcessTree: true);
+                if (!process.HasExited)
+                {
+                    process.Kill(entireProcessTree: true);
+                }
+            }
+            catch (InvalidOperationException)
+            {
+                // Process already exited between the HasExited check and Kill().
+                Debug.Assert(
+                    condition: process.HasExited,
+                    message: "Kill() only throws InvalidOperationException once the process has exited."
+                );
             }
 
             throw;
