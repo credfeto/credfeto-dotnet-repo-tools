@@ -10,6 +10,7 @@ using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Dependencies;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Dependencies.Services;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces;
@@ -363,10 +364,117 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task ReduceDependenciesPropagatesCoconaContextCancellationTokenAsync()
+    {
+        using CancellationTokenSource cancellationTokenSource = new();
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: cancellationToken
+        );
+        this.SetupOneRepository();
+
+        await this._commands.ReduceDependenciesAsync(
+            repositoriesFileName: "repos.lst",
+            templateRepository: "https://template.git",
+            trackingFileName: "tracking.json",
+            workFolder: "/work"
+        );
+
+        await this
+            ._gitRepositoryListLoader.Received(1)
+            .LoadAsync(path: Arg.Any<string>(), cancellationToken: cancellationToken);
+        await this
+            ._bulkDependencyReducer.Received(1)
+            .BulkUpdateAsync(
+                templateRepository: Arg.Any<string>(),
+                trackingFileName: Arg.Any<string>(),
+                workFolder: Arg.Any<string>(),
+                repositories: Arg.Any<IReadOnlyList<string>>(),
+                cancellationToken: cancellationToken
+            );
+    }
+
+    [Fact]
+    public async Task ReduceDependenciesStopsAtFirstAwaitWhenCoconaContextCancellationTokenAlreadyCancelledAsync()
+    {
+        using CancellationTokenSource cancellationTokenSource = new();
+        await cancellationTokenSource.CancelAsync();
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: cancellationToken
+        );
+        this._gitRepositoryListLoader.LoadAsync(path: Arg.Any<string>(), cancellationToken: cancellationToken)
+            .Returns<IReadOnlyList<string>>(_ => throw new OperationCanceledException(cancellationToken));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            this._commands.ReduceDependenciesAsync(
+                repositoriesFileName: "repos.lst",
+                templateRepository: "https://template.git",
+                trackingFileName: "tracking.json",
+                workFolder: "/work"
+            )
+        );
+
+        await this.ReceivedBulkDependencyReduceAsync(0);
+    }
+
+    [Fact]
     public async Task CheckDependenciesCallsDotNetFilesDetectorAsync()
     {
         await this._commands.CheckDependenciesAsync(workFolder: "/work");
 
         await this.ReceivedFindAsync(1);
+    }
+
+    [Fact]
+    public async Task CheckDependenciesPropagatesCoconaContextCancellationTokenAsync()
+    {
+        using CancellationTokenSource cancellationTokenSource = new();
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: cancellationToken
+        );
+
+        await this._commands.CheckDependenciesAsync(workFolder: "/work");
+
+        await this
+            ._dotNetFilesDetector.Received(1)
+            .FindAsync(baseFolder: Arg.Any<string>(), cancellationToken: cancellationToken);
+        await this
+            ._dependencyReducer.Received(1)
+            .CheckReferencesAsync(
+                dotNetFiles: Arg.Any<DotNetFiles>(),
+                config: Arg.Any<ReferenceConfig>(),
+                cancellationToken: cancellationToken
+            );
+    }
+
+    [Fact]
+    public async Task CheckDependenciesStopsAtFirstAwaitWhenCoconaContextCancellationTokenAlreadyCancelledAsync()
+    {
+        using CancellationTokenSource cancellationTokenSource = new();
+        await cancellationTokenSource.CancelAsync();
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: cancellationToken
+        );
+        this._dotNetFilesDetector.FindAsync(baseFolder: Arg.Any<string>(), cancellationToken: cancellationToken)
+            .Returns<DotNetFiles>(_ => throw new OperationCanceledException(cancellationToken));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            this._commands.CheckDependenciesAsync(workFolder: "/work")
+        );
+
+        await this
+            ._dependencyReducer.DidNotReceiveWithAnyArgs()
+            .CheckReferencesAsync(
+                dotNetFiles: Arg.Any<DotNetFiles>(),
+                config: Arg.Any<ReferenceConfig>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            );
     }
 }
