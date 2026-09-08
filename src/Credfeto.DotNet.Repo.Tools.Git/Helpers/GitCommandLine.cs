@@ -45,23 +45,30 @@ public static class GitCommandLine
                 throw new InvalidOperationException("Failed to start git");
             }
 
-#if NET7_0_OR_GREATER
-            string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
+            try
+            {
+                string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
 
-            string error = await process.StandardError.ReadToEndAsync(cancellationToken);
-#else
-            string output = await process.StandardOutput.ReadToEndAsync();
-            string error = await process.StandardError.ReadToEndAsync();
-#endif
+                string error = await process.StandardError.ReadToEndAsync(cancellationToken);
 
-            await process.WaitForExitAsync(cancellationToken);
+                await process.WaitForExitAsync(cancellationToken);
 
-            string result = string.Join(separator: Environment.NewLine, output, error);
+                string result = string.Join(separator: Environment.NewLine, output, error);
 
-            return (
-                result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries),
-                process.ExitCode
-            );
+                return (
+                    result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries),
+                    process.ExitCode
+                );
+            }
+            catch (OperationCanceledException)
+            {
+                if (!process.HasExited)
+                {
+                    process.Kill(entireProcessTree: true);
+                }
+
+                throw;
+            }
         }
     }
 

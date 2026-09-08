@@ -2,9 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
+using Cocona;
+using Cocona.Application;
+using Cocona.Command;
 using Credfeto.DotNet.Repo.Formatter.Constants;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp;
@@ -18,6 +22,7 @@ namespace Credfeto.DotNet.Repo.Formatter.Tests;
 public sealed class CommandsTests : LoggingFolderCleanupTestBase
 {
     private readonly Commands _commands;
+    private readonly ICoconaAppContextAccessor _coconaAppContextAccessor;
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IProjectXmlRewriter _projectXmlRewriter;
@@ -36,6 +41,11 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         this._sourceFileSuppressionRemover = GetSubstitute<ISourceFileSuppressionRemover>();
         this._dotNetBuild = GetSubstitute<IDotNetBuild>();
         this._dotNetFilesDetector = GetSubstitute<IDotNetFilesDetector>();
+        this._coconaAppContextAccessor = GetSubstitute<ICoconaAppContextAccessor>();
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: this.CancellationToken()
+        );
 
         this.SetupPassThroughCsCleaners();
 
@@ -47,8 +57,34 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
             sourceFileSuppressionRemover: this._sourceFileSuppressionRemover,
             dotNetBuild: this._dotNetBuild,
             dotNetFilesDetector: this._dotNetFilesDetector,
+            coconaAppContextAccessor: this._coconaAppContextAccessor,
             logger: this.GetTypedLogger<Commands>()
         );
+    }
+
+    private static void MockCoconaAppContextAccessorCurrent(
+        ICoconaAppContextAccessor accessor,
+        in CancellationToken cancellationToken
+    )
+    {
+        // ! object.ToString() is always resolvable via reflection
+        CommandDescriptor descriptor = new(
+            methodInfo: typeof(object).GetMethod(nameof(ToString), BindingFlags.Public | BindingFlags.Instance)!,
+            target: null,
+            name: "test-command",
+            aliases: [],
+            description: string.Empty,
+            metadata: [],
+            parameters: [],
+            options: [],
+            arguments: [],
+            overloads: [],
+            optionLikeCommands: [],
+            flags: CommandFlags.None,
+            subCommands: null
+        );
+
+        accessor.Current.Returns(new CoconaAppContext(descriptor, cancellationToken));
     }
 
     [SuppressMessage(
@@ -168,6 +204,49 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         await this
             ._sourceFileReformatter.DidNotReceive()
             .ReformatAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CleanupAsyncPropagatesCoconaContextCancellationTokenToReformatterAsync()
+    {
+        using CancellationTokenSource cancellationTokenSource = new();
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: cancellationToken
+        );
+        string file = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
+
+        int result = await this._commands.CleanupAsync(inputs: [file]);
+
+        Assert.Equal(expected: ExitCodes.Success, actual: result);
+        await this
+            ._sourceFileReformatter.Received(1)
+            .ReformatAsync(Arg.Any<string>(), Arg.Any<string>(), cancellationToken);
+    }
+
+    [Fact]
+    public async Task CleanupAsyncPropagatesCancellationBeforeProcessingFilesWhenCoconaContextCancellationTokenAlreadyCancelledAsync()
+    {
+        using CancellationTokenSource cancellationTokenSource = new();
+        await cancellationTokenSource.CancelAsync();
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: cancellationToken
+        );
+        string buildRoot = this.TempFolder;
+        string csFile = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
+        this._dotNetFilesDetector.FindAsync(baseFolder: buildRoot, cancellationToken: cancellationToken)
+            .Returns<DotNetFiles>(_ => throw new OperationCanceledException(cancellationToken));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            this._commands.CleanupAsync(inputs: [csFile], removeSuppressions: true, buildRoot: buildRoot)
+        );
+
+        await this
+            ._dotNetBuild.DidNotReceiveWithAnyArgs()
+            .LoadBuildSettingsAsync(Arg.Any<IReadOnlyList<string>>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
