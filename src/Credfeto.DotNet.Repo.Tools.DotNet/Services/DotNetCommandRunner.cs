@@ -40,25 +40,30 @@ public sealed class DotNetCommandRunner : IDotNetCommandRunner
         // ! Process.Start with UseShellExecute=false never returns null
         using Process process = Process.Start(psi)!;
 
-#if NET7_0_OR_GREATER
-        string[] streams = await Task.WhenAll(
-            process.StandardOutput.ReadToEndAsync(cancellationToken),
-            process.StandardError.ReadToEndAsync(cancellationToken)
-        );
-#else
-        string[] streams = await Task.WhenAll(
-            process.StandardOutput.ReadToEndAsync(),
-            process.StandardError.ReadToEndAsync()
-        );
-#endif
+        try
+        {
+            string[] streams = await Task.WhenAll(
+                process.StandardOutput.ReadToEndAsync(cancellationToken),
+                process.StandardError.ReadToEndAsync(cancellationToken)
+            );
 
-        await process.WaitForExitAsync(cancellationToken);
+            await process.WaitForExitAsync(cancellationToken);
 
-        string[] outputLines = streams[0]
-            .Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries);
-        string[] errorLines = streams[1]
-            .Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries);
+            string[] outputLines = streams[0]
+                .Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries);
+            string[] errorLines = streams[1]
+                .Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries);
 
-        return ([.. outputLines, .. errorLines], process.ExitCode);
+            return ([.. outputLines, .. errorLines], process.ExitCode);
+        }
+        catch (OperationCanceledException)
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+
+            throw;
+        }
     }
 }

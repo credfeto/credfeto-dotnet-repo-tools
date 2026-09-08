@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cocona;
+using Cocona.Application;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Cmd.LoggingExtensions;
@@ -23,7 +24,7 @@ public sealed class Commands
     private readonly IBulkDependencyReducer _bulkDependencyReducer;
     private readonly IBulkPackageUpdater _bulkPackageUpdater;
     private readonly IBulkTemplateUpdater _bulkTemplateUpdater;
-    private readonly CancellationToken _cancellationToken = CancellationToken.None;
+    private readonly ICoconaAppContextAccessor _coconaAppContextAccessor;
     private readonly IDependencyReducer _dependencyReducer;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IGitRepositoryListLoader _gitRepositoryListLoader;
@@ -42,6 +43,7 @@ public sealed class Commands
         IBulkDependencyReducer bulkDependencyReducer,
         IDependencyReducer dependencyReducer,
         IDotNetFilesDetector dotNetFilesDetector,
+        ICoconaAppContextAccessor coconaAppContextAccessor,
         ILogger<Commands> logger
     )
     {
@@ -52,8 +54,12 @@ public sealed class Commands
         this._bulkDependencyReducer = bulkDependencyReducer;
         this._dependencyReducer = dependencyReducer;
         this._dotNetFilesDetector = dotNetFilesDetector;
+        this._coconaAppContextAccessor = coconaAppContextAccessor;
         this._logger = logger;
     }
+
+    // ! Current is always set once Cocona has started invoking a command
+    private CancellationToken CurrentCancellationToken => this._coconaAppContextAccessor.Current!.CancellationToken;
 
     [Command("update-packages", Description = "Update all packages in all repositories")]
     public async Task UpdatePackagesAsync(
@@ -73,7 +79,7 @@ public sealed class Commands
         IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
             repositoriesFileName: repositoriesFileName,
             templateRepository: templateRepository,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         this.Dump(repositories);
@@ -88,7 +94,7 @@ public sealed class Commands
             releaseConfigFileName: releaseConfigFileName,
             additionalNugetSources: nugetSources,
             repositories: repositories,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         this.Done();
@@ -116,7 +122,7 @@ public sealed class Commands
         IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
             repositoriesFileName: repositoriesFileName,
             templateRepository: templateRepository,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         this.Dump(repositories);
@@ -129,7 +135,7 @@ public sealed class Commands
             templateConfigFileName: templateConfigFileName,
             releaseConfigFileName: releaseConfigFileName,
             repositories: repositories,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         this.Done();
@@ -175,7 +181,7 @@ public sealed class Commands
         IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
             repositoriesFileName: repositoriesFileName,
             templateRepository: templateRepository,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         this.Dump(repositories);
@@ -187,7 +193,7 @@ public sealed class Commands
             workFolder: workFolder,
             releaseConfigFileName: releaseConfigFileName,
             repositories: repositories,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         this.Done();
@@ -206,7 +212,7 @@ public sealed class Commands
         IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
             repositoriesFileName: repositoriesFileName,
             templateRepository: templateRepository,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         this.Dump(repositories);
@@ -216,7 +222,7 @@ public sealed class Commands
             trackingFileName: trackingFileName,
             workFolder: workFolder,
             repositories: repositories,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         this.Done();
@@ -229,13 +235,13 @@ public sealed class Commands
     {
         DotNetFiles dotNetFiles = await this._dotNetFilesDetector.FindAsync(
             baseFolder: workFolder,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         await this._dependencyReducer.CheckReferencesAsync(
             dotNetFiles: dotNetFiles,
             new(CommitAsync),
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         this.Done();

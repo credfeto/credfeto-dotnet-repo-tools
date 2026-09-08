@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Cocona;
+using Cocona.Application;
 using Credfeto.DotNet.Repo.Formatter.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp;
@@ -25,6 +26,7 @@ public sealed class Commands
         ".csproj"
     );
 
+    private readonly ICoconaAppContextAccessor _coconaAppContextAccessor;
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly ILogger<Commands> _logger;
@@ -33,7 +35,6 @@ public sealed class Commands
     private readonly ISourceFileReformatter _sourceFileReformatter;
     private readonly ISourceFileSuppressionRemover _sourceFileSuppressionRemover;
     private readonly IXmlDocCommentRemover _xmlDocCommentRemover;
-    private readonly CancellationToken _cancellationToken = CancellationToken.None;
 
     [SuppressMessage(
         category: "FunFair.CodeAnalysis",
@@ -48,6 +49,7 @@ public sealed class Commands
         ISourceFileSuppressionRemover sourceFileSuppressionRemover,
         IDotNetBuild dotNetBuild,
         IDotNetFilesDetector dotNetFilesDetector,
+        ICoconaAppContextAccessor coconaAppContextAccessor,
         ILogger<Commands> logger
     )
     {
@@ -58,8 +60,12 @@ public sealed class Commands
         this._sourceFileSuppressionRemover = sourceFileSuppressionRemover;
         this._dotNetBuild = dotNetBuild;
         this._dotNetFilesDetector = dotNetFilesDetector;
+        this._coconaAppContextAccessor = coconaAppContextAccessor;
         this._logger = logger;
     }
+
+    // ! Current is always set once Cocona has started invoking a command
+    private CancellationToken CurrentCancellationToken => this._coconaAppContextAccessor.Current!.CancellationToken;
 
     [Command(Description = "Format C# source files and project files")]
     [SuppressMessage(
@@ -161,12 +167,12 @@ public sealed class Commands
 
         DotNetFiles dotNetFiles = await this._dotNetFilesDetector.FindAsync(
             baseFolder: buildRoot,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(
             projects: dotNetFiles.Projects,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         return new BuildContext(
@@ -198,7 +204,7 @@ public sealed class Commands
         string original = await File.ReadAllTextAsync(
             path: filePath,
             encoding: TextEncoding.Utf8NoBom,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         string content = original;
@@ -207,7 +213,7 @@ public sealed class Commands
         content = await this._sourceFileReformatter.ReformatAsync(
             fileName: filePath,
             content: content,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         if (buildContext is { } ctx)
@@ -216,7 +222,7 @@ public sealed class Commands
                 fileName: filePath,
                 content: content,
                 buildContext: ctx,
-                cancellationToken: this._cancellationToken
+                cancellationToken: this.CurrentCancellationToken
             );
         }
 
@@ -226,8 +232,11 @@ public sealed class Commands
         }
 
         if (
-            RoslynSyntaxValidation.CountSyntaxErrors(content: content, cancellationToken: this._cancellationToken)
-            > RoslynSyntaxValidation.CountSyntaxErrors(content: original, cancellationToken: this._cancellationToken)
+            RoslynSyntaxValidation.CountSyntaxErrors(content: content, cancellationToken: this.CurrentCancellationToken)
+            > RoslynSyntaxValidation.CountSyntaxErrors(
+                content: original,
+                cancellationToken: this.CurrentCancellationToken
+            )
         )
         {
             this._logger.LogUnparseableResultNotWritten(filePath);
@@ -239,7 +248,7 @@ public sealed class Commands
             path: filePath,
             contents: content,
             encoding: TextEncoding.Utf8NoBom,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         return true;
@@ -250,7 +259,7 @@ public sealed class Commands
         string original = await File.ReadAllTextAsync(
             path: filePath,
             encoding: TextEncoding.Utf8NoBom,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         XmlDocument doc = new();
@@ -267,7 +276,7 @@ public sealed class Commands
 
         string rewritten = await ProjectXmlSerializer.ToProjectFileTextAsync(
             document: doc,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         if (StringComparer.Ordinal.Equals(x: original, y: rewritten))
@@ -278,7 +287,7 @@ public sealed class Commands
         await ProjectXmlSerializer.WriteAsync(
             filePath: filePath,
             content: rewritten,
-            cancellationToken: this._cancellationToken
+            cancellationToken: this.CurrentCancellationToken
         );
 
         return true;
