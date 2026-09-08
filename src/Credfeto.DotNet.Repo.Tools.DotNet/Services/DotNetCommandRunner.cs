@@ -1,8 +1,8 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.DotNet.Repo.Tools.Extensions;
 
 namespace Credfeto.DotNet.Repo.Tools.DotNet.Services;
 
@@ -13,10 +13,7 @@ public sealed class DotNetCommandRunner : IDotNetCommandRunner
         checkId: "S4036: Use an absolute path for this command",
         Justification = "Relies on dotnet being resolved via PATH"
     )]
-    public async ValueTask<(string[] Output, int ExitCode)> RunAsync(
-        string arguments,
-        CancellationToken cancellationToken
-    )
+    public ValueTask<(string[] Output, int ExitCode)> RunAsync(string arguments, CancellationToken cancellationToken)
     {
         ProcessStartInfo psi = new()
         {
@@ -37,33 +34,10 @@ public sealed class DotNetCommandRunner : IDotNetCommandRunner
             },
         };
 
-        // ! Process.Start with UseShellExecute=false never returns null
-        using Process process = Process.Start(psi)!;
-
-        try
-        {
-            string[] streams = await Task.WhenAll(
-                process.StandardOutput.ReadToEndAsync(cancellationToken),
-                process.StandardError.ReadToEndAsync(cancellationToken)
-            );
-
-            await process.WaitForExitAsync(cancellationToken);
-
-            string[] outputLines = streams[0]
-                .Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries);
-            string[] errorLines = streams[1]
-                .Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries);
-
-            return ([.. outputLines, .. errorLines], process.ExitCode);
-        }
-        catch (OperationCanceledException)
-        {
-            if (!process.HasExited)
-            {
-                process.Kill(entireProcessTree: true);
-            }
-
-            throw;
-        }
+        return ProcessRunner.ExecAsync(
+            psi: psi,
+            failedToStartMessage: "Failed to start dotnet",
+            cancellationToken: cancellationToken
+        );
     }
 }

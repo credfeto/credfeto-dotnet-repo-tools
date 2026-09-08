@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.DotNet.Repo.Tools.Extensions;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 
 namespace Credfeto.DotNet.Repo.Tools.Git.Helpers;
@@ -17,7 +18,7 @@ public static class GitCommandLine
         checkId: "S4036: Use an absolute path for this command",
         Justification = "Relies on git being resolved via PATH"
     )]
-    public static async ValueTask<(string[] Output, int ExitCode)> ExecAsync(
+    public static ValueTask<(string[] Output, int ExitCode)> ExecAsync(
         string clonePath,
         string repoPath,
         string arguments,
@@ -38,38 +39,11 @@ public static class GitCommandLine
             Environment = { ["GIT_REDIRECT_STDERR"] = "2>&1" },
         };
 
-        using (Process? process = Process.Start(psi))
-        {
-            if (process is null)
-            {
-                throw new InvalidOperationException("Failed to start git");
-            }
-
-            try
-            {
-                string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-
-                string error = await process.StandardError.ReadToEndAsync(cancellationToken);
-
-                await process.WaitForExitAsync(cancellationToken);
-
-                string result = string.Join(separator: Environment.NewLine, output, error);
-
-                return (
-                    result.Split(separator: Environment.NewLine, options: StringSplitOptions.RemoveEmptyEntries),
-                    process.ExitCode
-                );
-            }
-            catch (OperationCanceledException)
-            {
-                if (!process.HasExited)
-                {
-                    process.Kill(entireProcessTree: true);
-                }
-
-                throw;
-            }
-        }
+        return ProcessRunner.ExecAsync(
+            psi: psi,
+            failedToStartMessage: "Failed to start git",
+            cancellationToken: cancellationToken
+        );
     }
 
     private static void EnsureNotLocked(string repoUrl, string workingDirectory)
