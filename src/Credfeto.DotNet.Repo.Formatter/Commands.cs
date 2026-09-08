@@ -136,7 +136,11 @@ public sealed class Commands
 
         await Parallel.ForEachAsync(
             source: resolvedFiles,
-            parallelOptions: new() { MaxDegreeOfParallelism = maxDegree },
+            parallelOptions: new()
+            {
+                MaxDegreeOfParallelism = maxDegree,
+                CancellationToken = this.CurrentCancellationToken,
+            },
             body: async (file, _) =>
             {
                 this._logger.LogProcessingFile(file);
