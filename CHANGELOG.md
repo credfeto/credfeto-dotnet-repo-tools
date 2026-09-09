@@ -17,6 +17,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Git push, commit, branch switch/create and hard-reset commands now throw on a non-zero git exit code instead of logging and continuing as if they had succeeded, preventing bulk dependency/package update runs from silently recording a failed push as complete or hard-resetting the wrong branch
 - Skip normalising PackageReference/ProjectReference child-element metadata (e.g. Version) to attributes when duplicate same-named child elements are present, avoiding data loss from silently dropping one of the duplicates
 ### Changed
+- SDK - Updated DotNet SDK to 10.0.401
 ### Deprecated
 ### Removed
 ### Deployment Changes
