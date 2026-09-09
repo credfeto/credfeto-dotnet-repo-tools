@@ -11,13 +11,8 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
-- Repo cleanup now normalises PackageReference, ProjectReference, FrameworkReference and DotNetCliToolReference metadata (e.g. Version, PrivateAssets) expressed as a child element into the equivalent attribute form
 ### Fixed
-- MSBuild --nowarn quoting on Linux corrupted the first and last suppressed warning code (e.g. NU1802, NU1904 were never actually suppressed), because DotNetBuild applied shell-style quoting even though the process is launched without a shell
-- Git push, commit, branch switch/create and hard-reset commands now throw on a non-zero git exit code instead of logging and continuing as if they had succeeded, preventing bulk dependency/package update runs from silently recording a failed push as complete or hard-resetting the wrong branch
-- Skip normalising PackageReference/ProjectReference child-element metadata (e.g. Version) to attributes when duplicate same-named child elements are present, avoiding data loss from silently dropping one of the duplicates
 ### Changed
-- SDK - Updated DotNet SDK to 10.0.401
 ### Deprecated
 ### Removed
 ### Deployment Changes
@@ -25,6 +20,16 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+
+## [1.5.10] - 2026-09-09
+### Added
+- Repo cleanup now normalises PackageReference, ProjectReference, FrameworkReference and DotNetCliToolReference metadata (e.g. Version, PrivateAssets) expressed as a child element into the equivalent attribute form
+### Fixed
+- MSBuild --nowarn quoting on Linux corrupted the first and last suppressed warning code (e.g. NU1802, NU1904 were never actually suppressed), because DotNetBuild applied shell-style quoting even though the process is launched without a shell
+- Git push, commit, branch switch/create and hard-reset commands now throw on a non-zero git exit code instead of logging and continuing as if they had succeeded, preventing bulk dependency/package update runs from silently recording a failed push as complete or hard-resetting the wrong branch
+- Skip normalising PackageReference/ProjectReference child-element metadata (e.g. Version) to attributes when duplicate same-named child elements are present, avoiding data loss from silently dropping one of the duplicates
+### Changed
+- SDK - Updated DotNet SDK to 10.0.401
 
 ## [1.5.9] - 2026-09-05
 ### Fixed
