@@ -18,6 +18,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Meziantou.Analyzer to 3.0.253
 - Dependencies - Updated Nullable.Extended.Analyzer to 1.16.6891
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.34.0.3385
+- Dependencies - Updated Credfeto.ChangeLog to 1.10.205.2578
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.160.1934
 - Dependencies - Updated FunFair.BuildCheck to 474.2.15.2688
 - Dependencies - Updated FunFair.Test to 6.4.6.2749
