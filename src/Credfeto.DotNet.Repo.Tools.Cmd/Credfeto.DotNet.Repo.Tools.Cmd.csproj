@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <AnalysisLevel>latest</AnalysisLevel>
     <AnalysisMode>AllEnabledByDefault</AnalysisMode>
@@ -85,7 +85,7 @@
   <ItemGroup>
     <PackageReference Include="Cocona" Version="2.2.0" IncludeAssets="compile;runtime" />
     <PackageReference Include="Credfeto.Date" Version="1.1.151.1695" IncludeAssets="compile;runtime" />
-    <PackageReference Include="Credfeto.Enumeration.Source.Generation.Attributes" Version="1.2.152.2216" IncludeAssets="compile;runtime" />
+    <PackageReference Include="Credfeto.Enumeration.Source.Generation.Attributes" Version="1.2.154.2267" IncludeAssets="compile;runtime" />
     <PackageReference Include="FunFair.BuildVersion.Detection" Version="6.2.19.2266" IncludeAssets="compile;runtime" />
     <PackageReference Include="Serilog.Enrichers.Demystifier" Version="1.0.3" IncludeAssets="compile;runtime" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" IncludeAssets="compile;runtime" />
@@ -97,7 +97,7 @@
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="2.1.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="codecracker.CSharp" Version="1.1.0" PrivateAssets="All" ExcludeAssets="runtime" />
-    <PackageReference Include="Credfeto.Enumeration.Source.Generation" Version="1.2.152.2216" PrivateAssets="All" ExcludeAssets="runtime" />
+    <PackageReference Include="Credfeto.Enumeration.Source.Generation" Version="1.2.154.2267" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Credfeto.Version.Information.Generator" Version="1.0.136.1515" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="CSharpIsNullAnalyzer" Version="0.2.19" PrivateAssets="all" ExcludeAssets="runtime" />
     <PackageReference Include="FunFair.CodeAnalysis" Version="7.2.13.2323" PrivateAssets="All" ExcludeAssets="runtime" />
