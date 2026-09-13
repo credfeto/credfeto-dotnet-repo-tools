@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Release generation - Pass the changelog language to ExtractReleaseNotesFromFileAsync, required after the Credfeto.ChangeLog 1.10.205.2578 update added a mandatory language parameter
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.154.2267
 - Dependencies - Updated Nullable.Extended.Analyzer to 1.16.6891
