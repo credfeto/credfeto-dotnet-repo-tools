@@ -20,6 +20,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.34.0.3385
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.160.1934
 - Dependencies - Updated FunFair.BuildCheck to 474.2.15.2688
+- Dependencies - Updated FunFair.Test to 6.4.6.2749
 ### Deprecated
 ### Removed
 ### Deployment Changes
