@@ -270,6 +270,7 @@ public sealed class ReleaseGeneration : IReleaseGeneration
         string releaseNotes = await this._changeLogReader.ExtractReleaseNotesFromFileAsync(
             changeLogFileName: repoContext.ChangeLogFileName,
             version: "Unreleased",
+            language: this._changeLogLanguage,
             cancellationToken: cancellationToken
         );
 
