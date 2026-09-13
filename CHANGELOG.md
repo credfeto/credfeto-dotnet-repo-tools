@@ -15,7 +15,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.154.2267
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.137.1543
-- Dependencies - Updated Meziantou.Analyzer to 3.0.253
 - Dependencies - Updated Nullable.Extended.Analyzer to 1.16.6891
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.34.0.3385
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.160.1934
@@ -24,6 +23,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.Test.Source.Generator to 6.4.6.2749
 - Dependencies - Updated Microsoft.Extensions to 10.0.12
 - Dependencies - Updated NuGet to 7.9.0
+- Dependencies - Updated Meziantou.Analyzer to 3.0.257
 ### Deprecated
 ### Removed
 ### Deployment Changes
