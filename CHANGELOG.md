@@ -22,6 +22,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.BuildCheck to 474.2.15.2688
 - Dependencies - Updated FunFair.Test to 6.4.6.2749
 - Dependencies - Updated FunFair.Test.Source.Generator to 6.4.6.2749
+- Dependencies - Updated Microsoft.Extensions to 10.0.12
 ### Deprecated
 ### Removed
 ### Deployment Changes
