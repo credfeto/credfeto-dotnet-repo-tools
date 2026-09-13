@@ -25,6 +25,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated NuGet to 7.9.0
 - Dependencies - Updated Meziantou.Analyzer to 3.0.257
 - Dependencies - Updated xunit.analyzers to 2.1.0
+- Dependencies - Updated xunit.v3 to 4.0.1
 ### Deprecated
 ### Removed
 ### Deployment Changes
