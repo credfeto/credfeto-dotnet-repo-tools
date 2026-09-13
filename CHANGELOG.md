@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Ctrl+C now cleanly cancels a bulk update-packages/formatter run instead of continuing regardless or being torn down non-gracefully mid-operation
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.154.2267
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.137.1543
