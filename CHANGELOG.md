@@ -19,6 +19,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Nullable.Extended.Analyzer to 1.16.6891
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.34.0.3385
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.160.1934
+- Dependencies - Updated FunFair.BuildCheck to 474.2.15.2688
 ### Deprecated
 ### Removed
 ### Deployment Changes
