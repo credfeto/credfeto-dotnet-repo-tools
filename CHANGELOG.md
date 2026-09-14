@@ -12,6 +12,17 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+
+## [1.5.11] - 2026-09-14
+### Fixed
 - Release generation - Pass the changelog language to ExtractReleaseNotesFromFileAsync, required after the Credfeto.ChangeLog 1.10.205.2578 update added a mandatory language parameter
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.154.2267
@@ -28,13 +39,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated xunit.analyzers to 2.1.0
 - Dependencies - Updated xunit.v3 to 4.0.1
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.138.1557
-### Deprecated
-### Removed
-### Deployment Changes
-
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 
 ## [1.5.10] - 2026-09-09
 ### Added
