@@ -350,7 +350,7 @@ public sealed class DotNetBuild : IDotNetBuild
 
         return Build(NoWarnAll);
 
-        string Build(IReadOnlyList<string> items)
+        static string Build(IReadOnlyList<string> items)
         {
             const string parameter = "--nowarn:";
             const char separator = ';';
