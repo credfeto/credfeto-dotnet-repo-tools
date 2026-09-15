@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 - Ctrl+C now cleanly cancels a bulk update-packages/formatter run instead of continuing regardless or being torn down non-gracefully mid-operation
+- A single repository's failure during update-template/update-packages/code-cleanup/reduce-dependencies/check-dependencies no longer aborts the whole batch run or leaves the process hung; failures are logged and the run continues to the next repository
 ### Changed
 ### Deprecated
 ### Removed
