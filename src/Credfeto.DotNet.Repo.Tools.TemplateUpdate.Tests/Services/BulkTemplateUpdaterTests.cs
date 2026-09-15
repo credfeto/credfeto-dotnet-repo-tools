@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -150,21 +151,30 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
             );
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop Ordinal and change lookup semantics"
+    )]
     private static TemplateConfig EmptyTemplateConfig()
     {
         return new TemplateConfig(
-            general: new GeneralTemplateConfig(files: []),
+            general: new GeneralTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal)),
             gitHub: new GitHubTemplateConfig(
                 issueTemplates: false,
                 pullRequestTemplates: false,
                 actions: false,
                 linters: false,
-                files: [],
+                files: new Dictionary<string, string>(StringComparer.Ordinal),
                 dependabot: new DependabotTemplateConfig(generate: false),
                 labels: new LabelsTemplateConfig(generate: false)
             ),
-            dotNet: new DotnetTemplateConfig(globalJson: false, jetBrainsDotSettings: false, files: []),
-            cleanup: new CleanupTemplateConfig(files: [])
+            dotNet: new DotnetTemplateConfig(
+                globalJson: false,
+                jetBrainsDotSettings: false,
+                files: new Dictionary<string, string>(StringComparer.Ordinal)
+            ),
+            cleanup: new CleanupTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal))
         );
     }
 
@@ -322,6 +332,11 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
     }
 
     [Fact]
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop Ordinal and change lookup semantics"
+    )]
     public async Task BulkUpdateWithCleanupFileExistingInTemplateFolderThrows()
     {
         string conflictingFile = Path.Combine(this._tempFolder, "old-file.txt");
@@ -332,17 +347,21 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         );
 
         TemplateConfig configWithCleanup = new(
-            general: new GeneralTemplateConfig(files: []),
+            general: new GeneralTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal)),
             gitHub: new GitHubTemplateConfig(
                 issueTemplates: false,
                 pullRequestTemplates: false,
                 actions: false,
                 linters: false,
-                files: [],
+                files: new Dictionary<string, string>(StringComparer.Ordinal),
                 dependabot: new DependabotTemplateConfig(generate: false),
                 labels: new LabelsTemplateConfig(generate: false)
             ),
-            dotNet: new DotnetTemplateConfig(globalJson: false, jetBrainsDotSettings: false, files: []),
+            dotNet: new DotnetTemplateConfig(
+                globalJson: false,
+                jetBrainsDotSettings: false,
+                files: new Dictionary<string, string>(StringComparer.Ordinal)
+            ),
             cleanup: new CleanupTemplateConfig(
                 files: new Dictionary<string, string>(StringComparer.Ordinal) { ["old-file.txt"] = "chore" }
             )
@@ -370,21 +389,30 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         );
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop Ordinal and change lookup semantics"
+    )]
     private static TemplateConfig DependabotEnabledTemplateConfig()
     {
         return new TemplateConfig(
-            general: new GeneralTemplateConfig(files: []),
+            general: new GeneralTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal)),
             gitHub: new GitHubTemplateConfig(
                 issueTemplates: false,
                 pullRequestTemplates: false,
                 actions: false,
                 linters: false,
-                files: [],
+                files: new Dictionary<string, string>(StringComparer.Ordinal),
                 dependabot: new DependabotTemplateConfig(generate: true),
                 labels: new LabelsTemplateConfig(generate: false)
             ),
-            dotNet: new DotnetTemplateConfig(globalJson: false, jetBrainsDotSettings: false, files: []),
-            cleanup: new CleanupTemplateConfig(files: [])
+            dotNet: new DotnetTemplateConfig(
+                globalJson: false,
+                jetBrainsDotSettings: false,
+                files: new Dictionary<string, string>(StringComparer.Ordinal)
+            ),
+            cleanup: new CleanupTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal))
         );
     }
 
