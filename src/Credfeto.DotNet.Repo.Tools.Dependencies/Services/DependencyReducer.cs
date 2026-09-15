@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -103,6 +104,11 @@ public sealed class DependencyReducer : IDependencyReducer
         this._logger.WriteStatistics(section: "Reduce", value: tracking.ReduceReferences.Count);
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop OrdinalIgnoreCase and change lookup semantics"
+    )]
     private async ValueTask CheckProjectDependenciesAsync(
         ProjectUpdateContext projectUpdateContext,
         CancellationToken cancellationToken
@@ -890,6 +896,11 @@ public sealed class DependencyReducer : IDependencyReducer
         );
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the HashSet/Dictionary constructor; simplifying would silently drop OrdinalIgnoreCase and change lookup semantics"
+    )]
     private static IReadOnlyList<FilePackageReference> GetPackageReferences(
         string fileName,
         bool includeReferences,
@@ -1011,6 +1022,11 @@ public sealed class DependencyReducer : IDependencyReducer
         return fileName;
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the HashSet constructor; simplifying would silently drop OrdinalIgnoreCase and change lookup semantics"
+    )]
     private static void IncludeReferencedPackages(List<string> allPackageIds, List<XmlElement> packageReferenceElements)
     {
         HashSet<string> seen = new(StringComparer.OrdinalIgnoreCase);
@@ -1026,6 +1042,11 @@ public sealed class DependencyReducer : IDependencyReducer
         }
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the HashSet/Dictionary constructor; simplifying would silently drop OrdinalIgnoreCase and change lookup semantics"
+    )]
     private static IReadOnlyList<FileProjectReference> GetProjectReferences(
         string fileName,
         bool includeReferences,
@@ -1079,6 +1100,11 @@ public sealed class DependencyReducer : IDependencyReducer
         return references;
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "Populated in a loop with a pre-sized capacity; no fixed set of items exists to inline into a collection expression"
+    )]
     private static async ValueTask<IReadOnlyList<string>> ReadProjectSourceFilesAsync(
         string projectFolder,
         CancellationToken cancellationToken

@@ -1,11 +1,17 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Cocona;
+using Cocona.Application;
+using Cocona.Command;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Dependencies;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Dependencies.Services;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces;
@@ -22,6 +28,7 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     private readonly IBulkPackageUpdater _bulkPackageUpdater;
     private readonly IBulkTemplateUpdater _bulkTemplateUpdater;
     private readonly Commands _commands;
+    private readonly ICoconaAppContextAccessor _coconaAppContextAccessor;
     private readonly IDependencyReducer _dependencyReducer;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IGitRepositoryListLoader _gitRepositoryListLoader;
@@ -36,6 +43,11 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         this._bulkDependencyReducer = GetSubstitute<IBulkDependencyReducer>();
         this._dependencyReducer = GetSubstitute<IDependencyReducer>();
         this._dotNetFilesDetector = GetSubstitute<IDotNetFilesDetector>();
+        this._coconaAppContextAccessor = GetSubstitute<ICoconaAppContextAccessor>();
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: this.CancellationToken()
+        );
         this._commands = new Commands(
             gitRepositoryListLoader: this._gitRepositoryListLoader,
             bulkCodeCleanUp: this._bulkCodeCleanUp,
@@ -44,8 +56,34 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
             bulkDependencyReducer: this._bulkDependencyReducer,
             dependencyReducer: this._dependencyReducer,
             dotNetFilesDetector: this._dotNetFilesDetector,
+            coconaAppContextAccessor: this._coconaAppContextAccessor,
             logger: this.GetTypedLogger<Commands>()
         );
+    }
+
+    private static void MockCoconaAppContextAccessorCurrent(
+        ICoconaAppContextAccessor accessor,
+        in CancellationToken cancellationToken
+    )
+    {
+        // ! object.ToString() is always resolvable via reflection
+        CommandDescriptor descriptor = new(
+            methodInfo: typeof(object).GetMethod(nameof(ToString), BindingFlags.Public | BindingFlags.Instance)!,
+            target: null,
+            name: "test-command",
+            aliases: [],
+            description: string.Empty,
+            metadata: [],
+            parameters: [],
+            options: [],
+            arguments: [],
+            overloads: [],
+            optionLikeCommands: [],
+            flags: CommandFlags.None,
+            subCommands: null
+        );
+
+        accessor.Current.Returns(new CoconaAppContext(descriptor, cancellationToken));
     }
 
     private void SetupRepositories(IReadOnlyList<string> repos)
@@ -170,11 +208,59 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public Task UpdatePackagesThrowsWhenNoRepositoriesFoundAsync()
+    public async Task UpdatePackagesPropagatesCoconaContextCancellationTokenAsync()
     {
-        this.SetupRepositories([]);
+        using CancellationTokenSource cancellationTokenSource = new();
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: cancellationToken
+        );
+        this.SetupOneRepository();
 
-        return Assert.ThrowsAsync<InvalidOperationException>(() =>
+        await this._commands.UpdatePackagesAsync(
+            repositoriesFileName: "repos.lst",
+            templateRepository: "https://template.git",
+            cacheFileName: null,
+            trackingFileName: "tracking.json",
+            packagesFileName: "packages.json",
+            workFolder: "/work",
+            releaseConfigFileName: "release.config",
+            source: null
+        );
+
+        await this
+            ._gitRepositoryListLoader.Received(1)
+            .LoadAsync(path: Arg.Any<string>(), cancellationToken: cancellationToken);
+        await this
+            ._bulkPackageUpdater.Received(1)
+            .BulkUpdateAsync(
+                templateRepository: Arg.Any<string>(),
+                cacheFileName: Arg.Any<string?>(),
+                trackingFileName: Arg.Any<string>(),
+                packagesFileName: Arg.Any<string>(),
+                workFolder: Arg.Any<string>(),
+                releaseConfigFileName: Arg.Any<string>(),
+                additionalNugetSources: Arg.Any<IReadOnlyList<string>>(),
+                repositories: Arg.Any<IReadOnlyList<string>>(),
+                cancellationToken: cancellationToken
+            );
+    }
+
+    [Fact]
+    public async Task UpdatePackagesStopsAtFirstAwaitWhenCoconaContextCancellationTokenAlreadyCancelledAsync()
+    {
+        using CancellationTokenSource cancellationTokenSource = new();
+        await cancellationTokenSource.CancelAsync();
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: cancellationToken
+        );
+        this._gitRepositoryListLoader.LoadAsync(path: Arg.Any<string>(), cancellationToken: cancellationToken)
+            .Returns<IReadOnlyList<string>>(_ => throw new OperationCanceledException(cancellationToken));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
             this._commands.UpdatePackagesAsync(
                 repositoriesFileName: "repos.lst",
                 templateRepository: "https://template.git",
@@ -186,6 +272,27 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
                 source: null
             )
         );
+
+        await this.ReceivedBulkPackageUpdateAsync(0);
+    }
+
+    [Fact]
+    public async Task UpdatePackagesReturnsErrorExitCodeWhenNoRepositoriesFoundAsync()
+    {
+        this.SetupRepositories([]);
+
+        int exitCode = await this._commands.UpdatePackagesAsync(
+            repositoriesFileName: "repos.lst",
+            templateRepository: "https://template.git",
+            cacheFileName: null,
+            trackingFileName: "tracking.json",
+            packagesFileName: "packages.json",
+            workFolder: "/work",
+            releaseConfigFileName: "release.config",
+            source: null
+        );
+
+        Assert.Equal(1, exitCode);
     }
 
     [Fact]
@@ -226,6 +333,42 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    [SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    public async Task UpdateFromTemplateReturnsErrorExitCodeInsteadOfThrowingWhenBulkTemplateUpdaterFailsAsync()
+    {
+        this.SetupOneRepository();
+        this._bulkTemplateUpdater.BulkUpdateAsync(
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                [],
+                this.CancellationToken()
+            )
+            .ReturnsForAnyArgs(_ =>
+                ValueTask.FromException(new InvalidOperationException("Simulated unexpected failure"))
+            );
+
+        int exitCode = await this._commands.UpdateFromTemplateAsync(
+            repositoriesFileName: "repos.lst",
+            templateRepository: "https://template.git",
+            templateConfigFileName: "template.config",
+            trackingFileName: "tracking.json",
+            packagesFileName: "packages.json",
+            workFolder: "/work",
+            releaseConfigFileName: "release.config"
+        );
+
+        Assert.Equal(1, exitCode);
+    }
+
+    [Fact]
     public async Task CodeCleanupCallsBulkCodeCleanUpAsync()
     {
         this.SetupOneRepository();
@@ -258,10 +401,117 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task ReduceDependenciesPropagatesCoconaContextCancellationTokenAsync()
+    {
+        using CancellationTokenSource cancellationTokenSource = new();
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: cancellationToken
+        );
+        this.SetupOneRepository();
+
+        await this._commands.ReduceDependenciesAsync(
+            repositoriesFileName: "repos.lst",
+            templateRepository: "https://template.git",
+            trackingFileName: "tracking.json",
+            workFolder: "/work"
+        );
+
+        await this
+            ._gitRepositoryListLoader.Received(1)
+            .LoadAsync(path: Arg.Any<string>(), cancellationToken: cancellationToken);
+        await this
+            ._bulkDependencyReducer.Received(1)
+            .BulkUpdateAsync(
+                templateRepository: Arg.Any<string>(),
+                trackingFileName: Arg.Any<string>(),
+                workFolder: Arg.Any<string>(),
+                repositories: Arg.Any<IReadOnlyList<string>>(),
+                cancellationToken: cancellationToken
+            );
+    }
+
+    [Fact]
+    public async Task ReduceDependenciesStopsAtFirstAwaitWhenCoconaContextCancellationTokenAlreadyCancelledAsync()
+    {
+        using CancellationTokenSource cancellationTokenSource = new();
+        await cancellationTokenSource.CancelAsync();
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: cancellationToken
+        );
+        this._gitRepositoryListLoader.LoadAsync(path: Arg.Any<string>(), cancellationToken: cancellationToken)
+            .Returns<IReadOnlyList<string>>(_ => throw new OperationCanceledException(cancellationToken));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            this._commands.ReduceDependenciesAsync(
+                repositoriesFileName: "repos.lst",
+                templateRepository: "https://template.git",
+                trackingFileName: "tracking.json",
+                workFolder: "/work"
+            )
+        );
+
+        await this.ReceivedBulkDependencyReduceAsync(0);
+    }
+
+    [Fact]
     public async Task CheckDependenciesCallsDotNetFilesDetectorAsync()
     {
         await this._commands.CheckDependenciesAsync(workFolder: "/work");
 
         await this.ReceivedFindAsync(1);
+    }
+
+    [Fact]
+    public async Task CheckDependenciesPropagatesCoconaContextCancellationTokenAsync()
+    {
+        using CancellationTokenSource cancellationTokenSource = new();
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: cancellationToken
+        );
+
+        await this._commands.CheckDependenciesAsync(workFolder: "/work");
+
+        await this
+            ._dotNetFilesDetector.Received(1)
+            .FindAsync(baseFolder: Arg.Any<string>(), cancellationToken: cancellationToken);
+        await this
+            ._dependencyReducer.Received(1)
+            .CheckReferencesAsync(
+                dotNetFiles: Arg.Any<DotNetFiles>(),
+                config: Arg.Any<ReferenceConfig>(),
+                cancellationToken: cancellationToken
+            );
+    }
+
+    [Fact]
+    public async Task CheckDependenciesStopsAtFirstAwaitWhenCoconaContextCancellationTokenAlreadyCancelledAsync()
+    {
+        using CancellationTokenSource cancellationTokenSource = new();
+        await cancellationTokenSource.CancelAsync();
+        CancellationToken cancellationToken = cancellationTokenSource.Token;
+        MockCoconaAppContextAccessorCurrent(
+            accessor: this._coconaAppContextAccessor,
+            cancellationToken: cancellationToken
+        );
+        this._dotNetFilesDetector.FindAsync(baseFolder: Arg.Any<string>(), cancellationToken: cancellationToken)
+            .Returns<DotNetFiles>(_ => throw new OperationCanceledException(cancellationToken));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            this._commands.CheckDependenciesAsync(workFolder: "/work")
+        );
+
+        await this
+            ._dependencyReducer.DidNotReceiveWithAnyArgs()
+            .CheckReferencesAsync(
+                dotNetFiles: Arg.Any<DotNetFiles>(),
+                config: Arg.Any<ReferenceConfig>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            );
     }
 }

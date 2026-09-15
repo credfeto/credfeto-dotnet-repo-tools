@@ -210,4 +210,16 @@ internal static partial class BulkTemplateUpdaterLoggingExtensions
         Message = "Template config conflict: '{fileName}' is listed in cleanup.files but still exists in the template. Remove it from the template or from cleanup.files to prevent repeated add/remove cycles."
     )]
     public static partial void LogCleanupConflict(this ILogger<BulkTemplateUpdater> logger, string fileName);
+
+    [LoggerMessage(
+        EventId = 22,
+        Level = LogLevel.Error,
+        Message = "Skipping repo as {repo} failed to update: {message}"
+    )]
+    public static partial void LogRepoUpdateFailed(
+        this ILogger<BulkTemplateUpdater> logger,
+        string repo,
+        string message,
+        Exception exception
+    );
 }

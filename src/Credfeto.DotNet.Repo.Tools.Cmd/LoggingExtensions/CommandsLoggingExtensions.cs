@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
@@ -11,4 +12,7 @@ internal static partial class CommandsLoggingExtensions
 
     [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Done")]
     public static partial void LogCompleted(this ILogger<Commands> logger);
+
+    [LoggerMessage(EventId = 3, Level = LogLevel.Critical, Message = "Command failed: {message}")]
+    public static partial void LogCommandFailed(this ILogger<Commands> logger, string message, Exception exception);
 }

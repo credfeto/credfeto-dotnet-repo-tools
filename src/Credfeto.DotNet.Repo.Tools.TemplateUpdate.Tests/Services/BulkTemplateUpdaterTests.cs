@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -150,21 +151,30 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
             );
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop Ordinal and change lookup semantics"
+    )]
     private static TemplateConfig EmptyTemplateConfig()
     {
         return new TemplateConfig(
-            general: new GeneralTemplateConfig(files: []),
+            general: new GeneralTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal)),
             gitHub: new GitHubTemplateConfig(
                 issueTemplates: false,
                 pullRequestTemplates: false,
                 actions: false,
                 linters: false,
-                files: [],
+                files: new Dictionary<string, string>(StringComparer.Ordinal),
                 dependabot: new DependabotTemplateConfig(generate: false),
                 labels: new LabelsTemplateConfig(generate: false)
             ),
-            dotNet: new DotnetTemplateConfig(globalJson: false, jetBrainsDotSettings: false, files: []),
-            cleanup: new CleanupTemplateConfig(files: [])
+            dotNet: new DotnetTemplateConfig(
+                globalJson: false,
+                jetBrainsDotSettings: false,
+                files: new Dictionary<string, string>(StringComparer.Ordinal)
+            ),
+            cleanup: new CleanupTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal))
         );
     }
 
@@ -322,6 +332,11 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
     }
 
     [Fact]
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop Ordinal and change lookup semantics"
+    )]
     public async Task BulkUpdateWithCleanupFileExistingInTemplateFolderThrows()
     {
         string conflictingFile = Path.Combine(this._tempFolder, "old-file.txt");
@@ -332,17 +347,21 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         );
 
         TemplateConfig configWithCleanup = new(
-            general: new GeneralTemplateConfig(files: []),
+            general: new GeneralTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal)),
             gitHub: new GitHubTemplateConfig(
                 issueTemplates: false,
                 pullRequestTemplates: false,
                 actions: false,
                 linters: false,
-                files: [],
+                files: new Dictionary<string, string>(StringComparer.Ordinal),
                 dependabot: new DependabotTemplateConfig(generate: false),
                 labels: new LabelsTemplateConfig(generate: false)
             ),
-            dotNet: new DotnetTemplateConfig(globalJson: false, jetBrainsDotSettings: false, files: []),
+            dotNet: new DotnetTemplateConfig(
+                globalJson: false,
+                jetBrainsDotSettings: false,
+                files: new Dictionary<string, string>(StringComparer.Ordinal)
+            ),
             cleanup: new CleanupTemplateConfig(
                 files: new Dictionary<string, string>(StringComparer.Ordinal) { ["old-file.txt"] = "chore" }
             )
@@ -370,21 +389,30 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         );
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop Ordinal and change lookup semantics"
+    )]
     private static TemplateConfig DependabotEnabledTemplateConfig()
     {
         return new TemplateConfig(
-            general: new GeneralTemplateConfig(files: []),
+            general: new GeneralTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal)),
             gitHub: new GitHubTemplateConfig(
                 issueTemplates: false,
                 pullRequestTemplates: false,
                 actions: false,
                 linters: false,
-                files: [],
+                files: new Dictionary<string, string>(StringComparer.Ordinal),
                 dependabot: new DependabotTemplateConfig(generate: true),
                 labels: new LabelsTemplateConfig(generate: false)
             ),
-            dotNet: new DotnetTemplateConfig(globalJson: false, jetBrainsDotSettings: false, files: []),
-            cleanup: new CleanupTemplateConfig(files: [])
+            dotNet: new DotnetTemplateConfig(
+                globalJson: false,
+                jetBrainsDotSettings: false,
+                files: new Dictionary<string, string>(StringComparer.Ordinal)
+            ),
+            cleanup: new CleanupTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal))
         );
     }
 
@@ -526,6 +554,69 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
                     cancellationToken: Arg.Any<CancellationToken>()
                 );
             await repoRepository.DidNotReceive().PushAsync(Arg.Any<CancellationToken>());
+        }
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    public async Task BulkUpdateWithOneRepoThrowingUnexpectedExceptionContinuesToNextRepoAsync()
+    {
+        const string secondRepoUrl = "git@github.com:test/test-repo-2.git";
+
+        this._gitRepositoryFactory.OpenOrCloneAsync(
+                workDir: Arg.Any<string>(),
+                repoUrl: REPO_URL,
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(_ =>
+                ValueTask.FromException<IGitRepository>(
+                    new InvalidOperationException("Simulated unexpected failure for the first repo")
+                )
+            );
+
+        string repoDir = await this.PrepareRepoWithChangeLogAsync();
+        const string dependabotContent = "updates: []\n";
+        this.MockDependabotUpdateContext(repoDir: repoDir, dependabotContent: dependabotContent);
+
+        string dependabotConfigPath = Path.Combine(repoDir, ".github", "dependabot.yml");
+        await File.WriteAllTextAsync(
+            path: dependabotConfigPath,
+            contents: dependabotContent,
+            cancellationToken: this.CancellationToken()
+        );
+
+        IGitRepository secondRepoRepository = GetSubstitute<IGitRepository>();
+        MockRepositoryMetadata(repository: secondRepoRepository, repoDir: repoDir);
+
+        using (LibGit2Sharp.Repository realRepo = new(repoDir))
+        {
+            secondRepoRepository.Active.Returns(realRepo);
+
+            this._gitRepositoryFactory.OpenOrCloneAsync(
+                    workDir: Arg.Any<string>(),
+                    repoUrl: secondRepoUrl,
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(secondRepoRepository);
+
+            await this._bulkTemplateUpdater.BulkUpdateAsync(
+                templateRepository: "git@github.com:template/repo.git",
+                trackingFileName: string.Empty,
+                packagesFileName: "/packages.json",
+                workFolder: this._tempFolder,
+                templateConfigFileName: "/template.json",
+                releaseConfigFileName: "/release.json",
+                repositories: [REPO_URL, secondRepoUrl],
+                cancellationToken: this.CancellationToken()
+            );
+
+            await this
+                ._dotNetFilesDetector.Received(1)
+                .FindAsync(baseFolder: repoDir, cancellationToken: Arg.Any<CancellationToken>());
         }
     }
 
