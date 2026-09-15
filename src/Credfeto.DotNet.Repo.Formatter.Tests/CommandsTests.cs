@@ -261,6 +261,26 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    [SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    public async Task CleanupAsyncReturnsErrorExitCodeInsteadOfThrowingWhenReformatterFailsAsync()
+    {
+        string file = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
+
+        this._sourceFileReformatter.ReformatAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(_ =>
+                ValueTask.FromException<string>(new InvalidOperationException("Simulated unexpected failure"))
+            );
+
+        int result = await this._commands.CleanupAsync(inputs: [file]);
+
+        Assert.Equal(expected: ExitCodes.Error, actual: result);
+    }
+
+    [Fact]
     public async Task CleanupAsyncWritesUpdatedCSharpFileContentAsync()
     {
         string file = await this.CreateFileAsync(

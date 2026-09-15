@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Formatter.LoggingExtensions;
@@ -46,4 +47,7 @@ internal static partial class CommandsLoggingExtensions
         Message = "Result would introduce new syntax errors - not writing: {fileName}"
     )]
     public static partial void LogUnparseableResultNotWritten(this ILogger logger, string fileName);
+
+    [LoggerMessage(EventId = 10, Level = LogLevel.Critical, Message = "Command failed: {message}")]
+    public static partial void LogCommandFailed(this ILogger logger, string message, Exception exception);
 }
