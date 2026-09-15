@@ -132,6 +132,11 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         checkId: "MA0051: Method is too long",
         Justification = "Needs simplification"
     )]
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop OrdinalIgnoreCase and change lookup semantics"
+    )]
     public bool ReOrderIncludes(XmlDocument projectDocument, string filename)
     {
         if (projectDocument.SelectSingleNode("Project") is not XmlElement project)
@@ -409,6 +414,11 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         }
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop Ordinal and change lookup semantics"
+    )]
     private void MergeCombinablePropertyGroups(string fileName, IReadOnlyList<XmlElement> combinablePropertyGroups)
     {
         // combinablePropertyGroups is always a non-empty run - see CollectNonCombinablePropertyGroupsAndCombinableRuns.
@@ -448,6 +458,11 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         RemoveNodes(toRemove);
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the HashSet constructor; simplifying would silently drop Ordinal and change lookup semantics"
+    )]
     private static bool IsCombinableGroup(XmlElement propertyGroup)
     {
         if (propertyGroup.HasAttributes)
@@ -485,6 +500,11 @@ public sealed partial class ProjectXmlRewriter : IProjectXmlRewriter
         category: "Meziantou.Analyzer",
         checkId: "MA0051: Method is too long",
         Justification = "Should be simplified"
+    )]
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop Ordinal and change lookup semantics"
     )]
     private void ReOrderPropertyGroupWithAttributesOrComments(string filename, IReadOnlyList<XmlElement> propertyGroups)
     {
