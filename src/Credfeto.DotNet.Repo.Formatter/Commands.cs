@@ -115,16 +115,28 @@ public sealed class Commands
             return Constants.ExitCodes.Error;
         }
 
-        BuildContext? buildContext = await this.BuildContextOrNullAsync(
-            removeSuppressions: removeSuppressions,
-            buildRoot: buildRoot
-        );
+        try
+        {
+            BuildContext? buildContext = await this.BuildContextOrNullAsync(
+                removeSuppressions: removeSuppressions,
+                buildRoot: buildRoot
+            );
 
-        int updatedCount = await this.ProcessAllFilesAsync(resolvedFiles: resolvedFiles, buildContext: buildContext);
+            int updatedCount = await this.ProcessAllFilesAsync(
+                resolvedFiles: resolvedFiles,
+                buildContext: buildContext
+            );
 
-        this._logger.LogCompleted(fileCount: resolvedFiles.Count, updatedCount: updatedCount);
+            this._logger.LogCompleted(fileCount: resolvedFiles.Count, updatedCount: updatedCount);
 
-        return Constants.ExitCodes.Success;
+            return Constants.ExitCodes.Success;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            this._logger.LogCommandFailed(exception.Message, exception: exception);
+
+            return Constants.ExitCodes.Error;
+        }
     }
 
     private async Task<int> ProcessAllFilesAsync(IReadOnlyList<string> resolvedFiles, BuildContext? buildContext)

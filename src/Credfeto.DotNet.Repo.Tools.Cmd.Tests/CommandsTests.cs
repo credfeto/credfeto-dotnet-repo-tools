@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -276,22 +277,22 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public Task UpdatePackagesThrowsWhenNoRepositoriesFoundAsync()
+    public async Task UpdatePackagesReturnsErrorExitCodeWhenNoRepositoriesFoundAsync()
     {
         this.SetupRepositories([]);
 
-        return Assert.ThrowsAsync<InvalidOperationException>(() =>
-            this._commands.UpdatePackagesAsync(
-                repositoriesFileName: "repos.lst",
-                templateRepository: "https://template.git",
-                cacheFileName: null,
-                trackingFileName: "tracking.json",
-                packagesFileName: "packages.json",
-                workFolder: "/work",
-                releaseConfigFileName: "release.config",
-                source: null
-            )
+        int exitCode = await this._commands.UpdatePackagesAsync(
+            repositoriesFileName: "repos.lst",
+            templateRepository: "https://template.git",
+            cacheFileName: null,
+            trackingFileName: "tracking.json",
+            packagesFileName: "packages.json",
+            workFolder: "/work",
+            releaseConfigFileName: "release.config",
+            source: null
         );
+
+        Assert.Equal(1, exitCode);
     }
 
     [Fact]
@@ -329,6 +330,42 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         );
 
         await this.ReceivedBulkTemplateUpdateAsync(1);
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    public async Task UpdateFromTemplateReturnsErrorExitCodeInsteadOfThrowingWhenBulkTemplateUpdaterFailsAsync()
+    {
+        this.SetupOneRepository();
+        this._bulkTemplateUpdater.BulkUpdateAsync(
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                string.Empty,
+                [],
+                this.CancellationToken()
+            )
+            .ReturnsForAnyArgs(_ =>
+                ValueTask.FromException(new InvalidOperationException("Simulated unexpected failure"))
+            );
+
+        int exitCode = await this._commands.UpdateFromTemplateAsync(
+            repositoriesFileName: "repos.lst",
+            templateRepository: "https://template.git",
+            templateConfigFileName: "template.config",
+            trackingFileName: "tracking.json",
+            packagesFileName: "packages.json",
+            workFolder: "/work",
+            releaseConfigFileName: "release.config"
+        );
+
+        Assert.Equal(1, exitCode);
     }
 
     [Fact]
