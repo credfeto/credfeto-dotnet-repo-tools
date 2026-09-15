@@ -558,6 +558,69 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
     }
 
     [Fact]
+    [SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    public async Task BulkUpdateWithOneRepoThrowingUnexpectedExceptionContinuesToNextRepoAsync()
+    {
+        const string secondRepoUrl = "git@github.com:test/test-repo-2.git";
+
+        this._gitRepositoryFactory.OpenOrCloneAsync(
+                workDir: Arg.Any<string>(),
+                repoUrl: REPO_URL,
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(_ =>
+                ValueTask.FromException<IGitRepository>(
+                    new InvalidOperationException("Simulated unexpected failure for the first repo")
+                )
+            );
+
+        string repoDir = await this.PrepareRepoWithChangeLogAsync();
+        const string dependabotContent = "updates: []\n";
+        this.MockDependabotUpdateContext(repoDir: repoDir, dependabotContent: dependabotContent);
+
+        string dependabotConfigPath = Path.Combine(repoDir, ".github", "dependabot.yml");
+        await File.WriteAllTextAsync(
+            path: dependabotConfigPath,
+            contents: dependabotContent,
+            cancellationToken: this.CancellationToken()
+        );
+
+        IGitRepository secondRepoRepository = GetSubstitute<IGitRepository>();
+        MockRepositoryMetadata(repository: secondRepoRepository, repoDir: repoDir);
+
+        using (LibGit2Sharp.Repository realRepo = new(repoDir))
+        {
+            secondRepoRepository.Active.Returns(realRepo);
+
+            this._gitRepositoryFactory.OpenOrCloneAsync(
+                    workDir: Arg.Any<string>(),
+                    repoUrl: secondRepoUrl,
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(secondRepoRepository);
+
+            await this._bulkTemplateUpdater.BulkUpdateAsync(
+                templateRepository: "git@github.com:template/repo.git",
+                trackingFileName: string.Empty,
+                packagesFileName: "/packages.json",
+                workFolder: this._tempFolder,
+                templateConfigFileName: "/template.json",
+                releaseConfigFileName: "/release.json",
+                repositories: [REPO_URL, secondRepoUrl],
+                cancellationToken: this.CancellationToken()
+            );
+
+            await this
+                ._dotNetFilesDetector.Received(1)
+                .FindAsync(baseFolder: repoDir, cancellationToken: Arg.Any<CancellationToken>());
+        }
+    }
+
+    [Fact]
     public async Task BulkUpdateWithDifferentDependabotConfigRewritesAndCommitsAsync()
     {
         string repoDir = await this.PrepareRepoWithChangeLogAsync();
