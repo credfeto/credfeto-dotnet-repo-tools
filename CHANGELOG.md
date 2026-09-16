@@ -12,7 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
-- TBD - to be finalized after review
+- Framework SDK selection no longer prefers the repository's prerelease SDK over the template's when the repository is on a release-candidate build but the template isn't, and release-candidate builds now compare correctly (e.g. rc.10 is treated as newer than rc.9)
 ### Changed
 ### Deprecated
 ### Removed
