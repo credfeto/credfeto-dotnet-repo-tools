@@ -47,10 +47,15 @@ public sealed class ProcessRunnerTests : TestBase
             arguments: "-c \"head -c 200000 /dev/zero | tr '\\0' x 1>&2; echo done\""
         );
 
+        using CancellationTokenSource timeout = CancellationTokenSource.CreateLinkedTokenSource(
+            this.CancellationToken()
+        );
+        timeout.CancelAfter(TimeSpan.FromSeconds(10));
+
         (string[] output, int exitCode) = await ProcessRunner.ExecAsync(
             psi: psi,
             failedToStartMessage: "Failed to start sh",
-            cancellationToken: this.CancellationToken()
+            cancellationToken: timeout.Token
         );
 
         Assert.Equal(expected: 0, actual: exitCode);
