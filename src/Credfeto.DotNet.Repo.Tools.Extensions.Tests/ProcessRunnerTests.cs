@@ -41,6 +41,23 @@ public sealed class ProcessRunnerTests : TestBase
     }
 
     [Fact]
+    public async Task ExecAsyncWhenProcessWritesLargeStandardErrorDoesNotDeadlockAsync()
+    {
+        ProcessStartInfo psi = CreateProcessStartInfo(
+            arguments: "-c \"head -c 200000 /dev/zero | tr '\\0' x 1>&2; echo done\""
+        );
+
+        (string[] output, int exitCode) = await ProcessRunner.ExecAsync(
+            psi: psi,
+            failedToStartMessage: "Failed to start sh",
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.Equal(expected: 0, actual: exitCode);
+        Assert.Contains(expected: "done", collection: output, comparer: StringComparer.Ordinal);
+    }
+
+    [Fact]
     public async Task ExecAsyncWhenCancelledKillsProcessAndThrowsAsync()
     {
         ProcessStartInfo psi = CreateProcessStartInfo(arguments: "-c \"sleep 30\"");

@@ -36,7 +36,6 @@ public static class GitCommandLine
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true,
-            Environment = { ["GIT_REDIRECT_STDERR"] = "2>&1" },
         };
 
         return ProcessRunner.ExecAsync(
