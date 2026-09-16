@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- TBD - to be finalized after review
 ### Changed
 - Dependencies - Updated Meziantou.Analyzer to 3.0.262
 - Dependencies - Updated Microsoft.Sbom.Targets to 4.1.12
