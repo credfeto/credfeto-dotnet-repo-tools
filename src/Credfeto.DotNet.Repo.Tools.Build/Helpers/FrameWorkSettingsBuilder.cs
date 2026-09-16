@@ -42,24 +42,12 @@ public static class FrameWorkSettingsBuilder
         {
             if (IsReleaseCandidate(repositoryFramework))
             {
-                if (templateFramework.IsPrerelease && IsReleaseCandidate(repositoryFramework))
+                if (templateFramework.IsPrerelease && IsReleaseCandidate(templateFramework))
                 {
-                    if (repositoryFramework.Version > templateFramework.Version)
+                    if (repositoryFramework > templateFramework)
                     {
-                        // Repo is newer Framework version
+                        // Repo is newer Framework version or newer Pre-Release
                         return true;
-                    }
-
-                    if (repositoryFramework.Version == templateFramework.Version)
-                    {
-                        if (
-                            StringComparer.Ordinal.Compare(x: repositoryFramework.Release, y: templateFramework.Release)
-                            > 0
-                        )
-                        {
-                            // repo Pre-Release is newer or same as template
-                            return true;
-                        }
                     }
                 }
                 else if (repositoryFramework.Version > templateFramework.Version)
