@@ -14,7 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 - Ctrl+C now cleanly cancels a bulk update-packages/formatter run instead of continuing regardless or being torn down non-gracefully mid-operation
 - A single repository's failure during update-template/update-packages/code-cleanup/reduce-dependencies/check-dependencies no longer aborts the whole batch run or leaves the process hung; failures are logged and the run continues to the next repository
-- Remove vestigial GIT_REDIRECT_STDERR workaround now that git command output is drained concurrently, and add a regression test proving large stderr output no longer deadlocks the process runner
+- Git operations that emit large amounts of diagnostic output (fetch/prune with many ref changes, verbose clone or push) no longer hang the tool
 ### Changed
 ### Deprecated
 ### Removed
