@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Git.Helpers;
@@ -27,6 +28,26 @@ public sealed class GitCommandLineTests : LoggingFolderCleanupTestBase
 
         Assert.Equal(expected: 0, actual: exitCode);
         Assert.NotEmpty(output);
+    }
+
+    [Fact]
+    public async Task ExecAsync_WhenGitWritesToStandardError_SurfacesStandardErrorInOutputAsync()
+    {
+        string workDir = Path.Combine(this.TempFolder, "no-repo-for-status");
+        Directory.CreateDirectory(workDir);
+
+        (string[] output, int exitCode) = await GitCommandLine.ExecAsync(
+            clonePath: "fake-clone",
+            repoPath: workDir,
+            arguments: "status",
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.NotEqual(expected: 0, actual: exitCode);
+        Assert.Contains(
+            output,
+            line => line.Contains(value: "not a git repository", comparisonType: StringComparison.OrdinalIgnoreCase)
+        );
     }
 
     [Fact]
