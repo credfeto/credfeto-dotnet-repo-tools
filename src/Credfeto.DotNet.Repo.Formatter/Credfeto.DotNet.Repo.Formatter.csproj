@@ -72,8 +72,8 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-g4vj-cjjj-v7hg" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build\Credfeto.DotNet.Repo.Tools.Build.csproj" />
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.CleanUp\Credfeto.DotNet.Repo.Tools.CleanUp.csproj" />
+    <ProjectReference Include="../Credfeto.DotNet.Repo.Tools.Build/Credfeto.DotNet.Repo.Tools.Build.csproj" />
+    <ProjectReference Include="../Credfeto.DotNet.Repo.Tools.CleanUp/Credfeto.DotNet.Repo.Tools.CleanUp.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Cocona" Version="2.2.0" IncludeAssets="compile;runtime" />

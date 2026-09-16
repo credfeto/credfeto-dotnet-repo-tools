@@ -204,6 +204,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 {
                     this._logger.LogRepoLocked(repo, exception.Message, exception: exception);
                 }
+                catch (Exception exception)
+                    when (exception is not ReleaseCreatedException and not OperationCanceledException)
+                {
+                    this._logger.LogRepoUpdateFailed(repo, exception.Message, exception: exception);
+                }
                 finally
                 {
                     if (!string.IsNullOrWhiteSpace(updateContext.TrackingFileName))

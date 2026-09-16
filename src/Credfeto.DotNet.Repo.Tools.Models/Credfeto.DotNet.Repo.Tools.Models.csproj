@@ -60,7 +60,7 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-xhfc-gr8f-ffwc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Git.Interfaces\Credfeto.DotNet.Repo.Tools.Git.Interfaces.csproj" />
+    <ProjectReference Include="../Credfeto.DotNet.Repo.Tools.Git.Interfaces/Credfeto.DotNet.Repo.Tools.Git.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Credfeto.Extensions.Linq" Version="1.0.160.1934" IncludeAssets="compile;runtime" />

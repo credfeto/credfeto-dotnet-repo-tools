@@ -60,8 +60,8 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-xhfc-gr8f-ffwc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Build.Interfaces\Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj" />
-    <ProjectReference Include="..\Credfeto.DotNet.Repo.Tools.Models\Credfeto.DotNet.Repo.Tools.Models.csproj" />
+    <ProjectReference Include="../Credfeto.DotNet.Repo.Tools.Build.Interfaces/Credfeto.DotNet.Repo.Tools.Build.Interfaces.csproj" />
+    <ProjectReference Include="../Credfeto.DotNet.Repo.Tools.Models/Credfeto.DotNet.Repo.Tools.Models.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="2.1.0" PrivateAssets="All" ExcludeAssets="runtime" />

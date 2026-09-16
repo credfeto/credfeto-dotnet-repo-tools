@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
@@ -92,6 +93,11 @@ public sealed class TrackingCacheExtensionsTests : TestBase
         );
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop Ordinal and change lookup semantics"
+    )]
     private static TemplateConfig CreateMinimalTemplateConfig()
     {
         return new TemplateConfig(

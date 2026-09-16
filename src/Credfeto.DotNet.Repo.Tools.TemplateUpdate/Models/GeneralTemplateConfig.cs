@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
@@ -6,6 +7,11 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 public sealed class GeneralTemplateConfig
 {
     [JsonConstructor]
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop Ordinal and change lookup semantics"
+    )]
     public GeneralTemplateConfig(
         Dictionary<string, string> files,
         Dictionary<string, string>? mirrorFolders = null,

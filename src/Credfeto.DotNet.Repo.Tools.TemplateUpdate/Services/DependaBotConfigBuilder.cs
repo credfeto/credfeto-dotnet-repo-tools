@@ -131,6 +131,11 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
         );
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the HashSet constructor; simplifying would silently drop OrdinalIgnoreCase and change lookup semantics"
+    )]
     private static IEnumerable<PackageUpdate> DetermineMinimalDotnetPackages(IReadOnlyList<PackageUpdate> packages)
     {
         // Add Wildcard packages

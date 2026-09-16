@@ -9,6 +9,11 @@ namespace Credfeto.DotNet.Repo.Tracking.SerializationContext;
 
 internal sealed class TrackingItemsConverter : JsonConverter<TrackingItems>
 {
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop OrdinalIgnoreCase and change lookup semantics"
+    )]
     public override TrackingItems Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         if (reader.TokenType != JsonTokenType.StartObject)
