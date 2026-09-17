@@ -56,9 +56,11 @@ Do not replace these; specialised tooling required:
 - **Docker toolchain**: `docker/build-push-action`, `docker/login-action`, `docker/setup-buildx-action`, `docker/setup-qemu-action`
 - **AWS credential management**: `aws-actions/configure-aws-credentials`
 - **Git operations** (rebase, auto-commit): `stefanzweifel/git-auto-commit-action`, `bbeesley/gha-auto-dependabot-rebase`
-- **Security scanning**: `trufflesecurity/trufflehog`, `aquasecurity/trivy-action`
+- **Security scanning**: `trufflesecurity/trufflehog`, `aquasecurity/trivy-action`, `anchore/sbom-action`
 - **Multi-language linting**: `super-linter/super-linter`
 - **Complex config-driven label sync**: `crazy-max/ghaction-github-labeler`
+
+`anchore/sbom-action` is allowlisted as the specialised tooling for Syft-based SBOM generation: verified publisher (Anchore, Inc.), actively maintained, and the canonical purpose-built SBOM tool. A hand-rolled `curl`-based Syft binary install, used as a substitute in its absence rather than genuinely required specialised tooling, already caused a transient CI failure with no retry logic ([credfeto/cs-template#1079](https://github.com/credfeto/cs-template/issues/1079)). `anchore/scan-action` (Grype-based vulnerability scanning) is deliberately **not** allowlisted: it duplicates `aquasecurity/trivy-action`'s already-allowlisted vulnerability-scanning role, with no demonstrated need for a second scanner or Grype's separate vulnerability feed; revisit if a concrete need emerges.
 
 ## Version Pinning
 
@@ -83,9 +85,9 @@ When a merge or rebase produces conflicting pins for the same action (or for run
 
 Whenever you add or modify a `uses:` reference, check all actions in that file are on the latest released version:
 
-1. For each `uses:`, run `gh api repos/<owner>/<action>/releases/latest --jq '.tag_name'`.
-2. If behind, update in the same commit: for a SHA-pinned action, resolve the new tag to its commit SHA (see above) and update both the SHA and the trailing version comment; for a tag-pinned action, update the tag directly.
-3. Never leave a file with a mix of updated and stale versions after touching it.
+- **P1.** For each `uses:`, run `gh api repos/<owner>/<action>/releases/latest --jq '.tag_name'`.
+- **P2.** If behind, update in the same commit: for a SHA-pinned action, resolve the new tag to its commit SHA (see above) and update both the SHA and the trailing version comment; for a tag-pinned action, update the tag directly.
+- **P3.** Never leave a file with a mix of updated and stale versions after touching it.
 
 ## Handling Node.js Deprecation Warnings
 
@@ -95,14 +97,14 @@ When reviewing a PR run and you see a message similar to:
 
 Take the following steps:
 
-1. **Identify the action** named in the warning (e.g. `azure/sql-action@v2.3`).
-2. **Locate the workflow file** that references it; it could live in `funfair-tech/funfair-server-template`, `credfeto/cs-template`, or the current repo. Search `.github/workflows/` in each.
-3. **Find the minimum compliant version**: enumerate candidate releases with `gh api --paginate repos/<owner>/<action>/releases --jq '.[].tag_name'` (or browse the action's releases), then inspect tagged `action.yml`/`action.yaml` `runs.using` values to confirm the earliest release that ships a Node.js 24 runtime.
-4. **Raise an issue in the repo that owns the workflow file**, with:
-   - **Title**: `chore: update <action> to a Node.js 24 compatible version`
-   - **Labels**: `AI-Work`, `dependencies`, `github-actions`, `High`
-   - **Body**: include the current version, the minimum compliant version (if one exists), a link to the upstream release, and the deprecation deadline.
-5. Do **not** silently ignore the warning or defer it; raise the issue even if no compliant version is available yet (note that in the issue body).
+- **P1.** **Identify the action** named in the warning (e.g. `azure/sql-action@v2.3`).
+- **P2.** **Locate the workflow file** that references it; it could live in `funfair-tech/funfair-server-template`, `credfeto/cs-template`, or the current repo. Search `.github/workflows/` in each.
+- **P3.** **Find the minimum compliant version**: enumerate candidate releases with `gh api --paginate repos/<owner>/<action>/releases --jq '.[].tag_name'` (or browse the action's releases), then inspect tagged `action.yml`/`action.yaml` `runs.using` values to confirm the earliest release that ships a Node.js 24 runtime.
+- **P4.** **Raise an issue in the repo that owns the workflow file**, with:
+  - **Title**: `chore: update <action> to a Node.js 24 compatible version`
+  - **Labels**: `AI-Work`, `dependencies`, `github-actions`, `High`
+  - **Body**: include the current version, the minimum compliant version (if one exists), a link to the upstream release, and the deprecation deadline.
+- **P5.** Do **not** silently ignore the warning or defer it; raise the issue even if no compliant version is available yet (note that in the issue body).
 
 ## Bash Steps vs github-script
 
@@ -207,8 +209,8 @@ Use `core.notice` for values a human would want to see first: build version, dep
 
 Remove a step only if **both** are true:
 
-1. Its output is never referenced by any subsequent step or job output.
-2. It has no meaningful side effect: does not configure the environment, install tools, run a check that can fail the job, or produce an artifact.
+- Its output is never referenced by any subsequent step or job output.
+- It has no meaningful side effect: does not configure the environment, install tools, run a check that can fail the job, or produce an artifact.
 
 Steps with side effects are never dead:
 
