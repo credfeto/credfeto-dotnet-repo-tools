@@ -92,6 +92,36 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
         );
     }
 
+    [Fact]
+    public async Task OpenOrCloneAsync_WithDestinationPathContainingSpaces_ClonesSuccessfullyAsync()
+    {
+        string sourceRepoPath = Path.Combine(this.TempFolder, "source-repo");
+        await CreateMinimalGitRepoAsync(repoPath: sourceRepoPath, cancellationToken: this.CancellationToken());
+
+        string destinationPath = Path.Combine(this.TempFolder, "destination with spaces");
+
+        IGitRepositoryLocator gitRepositoryLocator = GetSubstitute<IGitRepositoryLocator>();
+        gitRepositoryLocator.GetWorkingDirectory(Arg.Any<string>(), Arg.Any<string>()).Returns(destinationPath);
+
+        IGitRepositoryFactory factory = new GitRepositoryFactory(
+            locator: gitRepositoryLocator,
+            loggerFactory: NullLoggerFactory.Instance,
+            logger: this.GetTypedLogger<GitRepositoryFactory>()
+        );
+
+        using IGitRepository repo = await factory.OpenOrCloneAsync(
+            workDir: this.TempFolder,
+            repoUrl: sourceRepoPath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.True(
+            condition: Directory.Exists(destinationPath),
+            userMessage: "Destination directory with spaces should exist after clone"
+        );
+        Assert.NotEmpty(repo.HeadRev);
+    }
+
     [Fact(Skip = "Requires SSH to be setup")]
     public Task CanCloneSshAsync()
     {

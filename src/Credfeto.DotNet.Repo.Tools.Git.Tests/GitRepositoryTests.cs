@@ -489,6 +489,63 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task CommitAsync_WithMessageContainingQuotesAndShellMetacharacters_CommitsMessageVerbatim()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+
+        await File.WriteAllTextAsync(
+            path: Path.Combine(repoPath, "quoted-message-test.txt"),
+            contents: "test content\n",
+            cancellationToken: this.CancellationToken()
+        );
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepository>()
+        );
+
+        const string message = "Fix \"broken\" thing; rm -rf / && echo $(whoami) `pwd`";
+
+        await repo.CommitAsync(message: message, cancellationToken: this.CancellationToken());
+
+        using Repository libGitRepo = new(repoPath);
+        Assert.Equal(expected: message, actual: libGitRepo.Head.Tip.Message.TrimEnd('\n'));
+    }
+
+    [Fact]
+    public async Task CommitNamedAsync_WithFileNameContainingSpaces_CommitsSuccessfully()
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+
+        const string fileName = "named commit test with spaces.txt";
+        await File.WriteAllTextAsync(
+            path: Path.Combine(repoPath, fileName),
+            contents: "test content\n",
+            cancellationToken: this.CancellationToken()
+        );
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepository>()
+        );
+
+        await repo.CommitNamedAsync(
+            message: "Named commit with spaces in filename",
+            files: [fileName],
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.False(
+            condition: repo.HasUncommittedChanges(),
+            userMessage: "Should have no uncommitted changes after named commit"
+        );
+    }
+
+    [Fact]
     public async Task CommitNamedAsync_WithSpecificFile_CommitsSuccessfully()
     {
         string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());

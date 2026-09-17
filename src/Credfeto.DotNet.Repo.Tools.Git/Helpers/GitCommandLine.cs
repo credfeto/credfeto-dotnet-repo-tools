@@ -21,7 +21,7 @@ public static class GitCommandLine
     public static ValueTask<(string[] Output, int ExitCode)> ExecAsync(
         string clonePath,
         string repoPath,
-        string arguments,
+        IReadOnlyList<string> arguments,
         CancellationToken cancellationToken
     )
     {
@@ -31,12 +31,16 @@ public static class GitCommandLine
         {
             FileName = "git",
             WorkingDirectory = repoPath,
-            Arguments = arguments,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
             CreateNoWindow = true,
         };
+
+        foreach (string argument in arguments)
+        {
+            psi.ArgumentList.Add(argument);
+        }
 
         return ProcessRunner.ExecAsync(
             psi: psi,
