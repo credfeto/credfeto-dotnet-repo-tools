@@ -38,41 +38,19 @@ public static class FrameWorkSettingsBuilder
         NuGetVersion templateFramework
     )
     {
-        if (repositoryFramework.IsPrerelease)
+        if (repositoryFramework.IsPrerelease && !IsReleaseCandidate(repositoryFramework))
         {
-            if (IsReleaseCandidate(repositoryFramework))
-            {
-                if (IsReleaseCandidate(templateFramework))
-                {
-                    if (repositoryFramework > templateFramework)
-                    {
-                        // Repo is newer Framework version or newer Pre-Release
-                        return true;
-                    }
-                }
-                else if (repositoryFramework.Version > templateFramework.Version)
-                {
-                    // Repo is newer Framework version
-                    return true;
-                }
-            }
-        }
-        else
-        {
-            if (IsReleaseCandidate(templateFramework))
-            {
-                if (repositoryFramework.Version > templateFramework.Version)
-                {
-                    return true;
-                }
-            }
-            else if (repositoryFramework.Version > templateFramework.Version)
-            {
-                return true;
-            }
+            return false;
         }
 
-        return false;
+        if (IsReleaseCandidate(repositoryFramework) && IsReleaseCandidate(templateFramework))
+        {
+            // Repo is newer Framework version or newer Pre-Release
+            return repositoryFramework > templateFramework;
+        }
+
+        // Repo is newer Framework version
+        return repositoryFramework.Version > templateFramework.Version;
     }
 
     private static bool IsReleaseCandidate(NuGetVersion repositoryFramework)
