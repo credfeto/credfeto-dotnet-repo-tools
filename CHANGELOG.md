@@ -12,10 +12,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
-- Ctrl+C now cleanly cancels a bulk update-packages/formatter run instead of continuing regardless or being torn down non-gracefully mid-operation
-- A single repository's failure during update-template/update-packages/code-cleanup/reduce-dependencies/check-dependencies no longer aborts the whole batch run or leaves the process hung; failures are logged and the run continues to the next repository
-- Git operations that emit large amounts of diagnostic output (fetch/prune with many ref changes, verbose clone or push) no longer hang the tool
-- Git operations no longer break when a file path, branch name, or commit message contains spaces or embedded quotes
 ### Changed
 ### Deprecated
 ### Removed
@@ -24,6 +20,13 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+
+## [1.5.13] - 2026-09-17
+### Fixed
+- Ctrl+C now cleanly cancels a bulk update-packages/formatter run instead of continuing regardless or being torn down non-gracefully mid-operation
+- A single repository's failure during update-template/update-packages/code-cleanup/reduce-dependencies/check-dependencies no longer aborts the whole batch run or leaves the process hung; failures are logged and the run continues to the next repository
+- Git operations that emit large amounts of diagnostic output (fetch/prune with many ref changes, verbose clone or push) no longer hang the tool
+- Git operations no longer break when a file path, branch name, or commit message contains spaces or embedded quotes
 
 ## [1.5.12] - 2026-09-16
 ### Changed
