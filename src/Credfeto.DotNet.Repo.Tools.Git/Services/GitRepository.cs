@@ -17,6 +17,12 @@ namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 [DebuggerDisplay("{ClonePath}: {WorkingDirectory}")]
 public sealed class GitRepository : IGitRepository
 {
+    private static readonly string[] AddAllArguments = ["add", "-A"];
+    private static readonly string[] PushArguments = ["push"];
+    private static readonly string[] ResetHeadHardArguments = ["reset", "HEAD", "--hard"];
+    private static readonly string[] PruneArguments = ["prune", "--verbose"];
+    private static readonly string[] CleanArguments = ["clean", "-f", "-x", "-d"];
+
     private readonly ILogger<GitRepository> _logger;
 
     private Repository? _repo;
@@ -120,7 +126,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                arguments: ["add", "-A"],
+                arguments: AddAllArguments,
                 cancellationToken: cancellationToken
             );
 
@@ -216,7 +222,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                arguments: ["push"],
+                arguments: PushArguments,
                 cancellationToken: cancellationToken
             );
 
@@ -455,7 +461,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                arguments: ["reset", "HEAD", "--hard"],
+                arguments: ResetHeadHardArguments,
                 cancellationToken: cancellationToken
             );
 
@@ -545,7 +551,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                arguments: ["prune", "--verbose"],
+                arguments: PruneArguments,
                 cancellationToken: cancellationToken
             );
 
@@ -567,7 +573,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                arguments: ["clean", "-f", "-x", "-d"],
+                arguments: CleanArguments,
                 cancellationToken: cancellationToken
             );
 

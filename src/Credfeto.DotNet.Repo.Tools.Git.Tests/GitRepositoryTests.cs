@@ -514,12 +514,13 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
         Assert.Equal(expected: message, actual: libGitRepo.Head.Tip.Message.TrimEnd('\n'));
     }
 
-    [Fact]
-    public async Task CommitNamedAsync_WithFileNameContainingSpaces_CommitsSuccessfully()
+    [Theory]
+    [InlineData("named-commit-test.txt")]
+    [InlineData("named commit test with spaces.txt")]
+    public async Task CommitNamedAsync_WithSpecificFile_CommitsSuccessfullyAsync(string fileName)
     {
         string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
 
-        const string fileName = "named commit test with spaces.txt";
         await File.WriteAllTextAsync(
             path: Path.Combine(repoPath, fileName),
             contents: "test content\n",
@@ -534,39 +535,8 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
         );
 
         await repo.CommitNamedAsync(
-            message: "Named commit with spaces in filename",
-            files: [fileName],
-            cancellationToken: this.CancellationToken()
-        );
-
-        Assert.False(
-            condition: repo.HasUncommittedChanges(),
-            userMessage: "Should have no uncommitted changes after named commit"
-        );
-    }
-
-    [Fact]
-    public async Task CommitNamedAsync_WithSpecificFile_CommitsSuccessfully()
-    {
-        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
-
-        string namedFile = Path.Combine(repoPath, "named-commit-test.txt");
-        await File.WriteAllTextAsync(
-            path: namedFile,
-            contents: "test content\n",
-            cancellationToken: this.CancellationToken()
-        );
-
-        using GitRepository repo = new(
-            clonePath: "https://example.com/repo.git",
-            workingDirectory: repoPath,
-            repo: null,
-            logger: this.GetTypedLogger<GitRepository>()
-        );
-
-        await repo.CommitNamedAsync(
             message: "Named test commit",
-            files: ["named-commit-test.txt"],
+            files: [fileName],
             cancellationToken: this.CancellationToken()
         );
 

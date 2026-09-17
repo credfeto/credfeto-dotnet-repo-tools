@@ -21,12 +21,15 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
     public GitRepositoryFactoryTests(ITestOutputHelper output)
         : base(output)
     {
-        IGitRepositoryLocator gitRepositoryLocator = GetSubstitute<IGitRepositoryLocator>();
-        gitRepositoryLocator
-            .GetWorkingDirectory(Arg.Any<string>(), Arg.Any<string>())
-            .Returns(Path.Combine(path1: this.TempFolder, path2: "scratch"));
+        this._gitRepositoryFactory = this.CreateFactory(Path.Combine(path1: this.TempFolder, path2: "scratch"));
+    }
 
-        this._gitRepositoryFactory = new GitRepositoryFactory(
+    private IGitRepositoryFactory CreateFactory(string workingDirectory)
+    {
+        IGitRepositoryLocator gitRepositoryLocator = GetSubstitute<IGitRepositoryLocator>();
+        gitRepositoryLocator.GetWorkingDirectory(Arg.Any<string>(), Arg.Any<string>()).Returns(workingDirectory);
+
+        return new GitRepositoryFactory(
             locator: gitRepositoryLocator,
             loggerFactory: NullLoggerFactory.Instance,
             logger: this.GetTypedLogger<GitRepositoryFactory>()
@@ -100,14 +103,7 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
 
         string destinationPath = Path.Combine(this.TempFolder, "destination with spaces");
 
-        IGitRepositoryLocator gitRepositoryLocator = GetSubstitute<IGitRepositoryLocator>();
-        gitRepositoryLocator.GetWorkingDirectory(Arg.Any<string>(), Arg.Any<string>()).Returns(destinationPath);
-
-        IGitRepositoryFactory factory = new GitRepositoryFactory(
-            locator: gitRepositoryLocator,
-            loggerFactory: NullLoggerFactory.Instance,
-            logger: this.GetTypedLogger<GitRepositoryFactory>()
-        );
+        IGitRepositoryFactory factory = this.CreateFactory(destinationPath);
 
         using IGitRepository repo = await factory.OpenOrCloneAsync(
             workDir: this.TempFolder,
