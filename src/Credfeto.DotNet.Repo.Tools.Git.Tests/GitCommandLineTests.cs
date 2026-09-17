@@ -22,7 +22,7 @@ public sealed class GitCommandLineTests : LoggingFolderCleanupTestBase
         (string[] output, int exitCode) = await GitCommandLine.ExecAsync(
             clonePath: "fake-clone",
             repoPath: workDir,
-            arguments: "--version",
+            arguments: ["--version"],
             cancellationToken: this.CancellationToken()
         );
 
@@ -39,7 +39,7 @@ public sealed class GitCommandLineTests : LoggingFolderCleanupTestBase
         (string[] output, int exitCode) = await GitCommandLine.ExecAsync(
             clonePath: "fake-clone",
             repoPath: workDir,
-            arguments: "status",
+            arguments: ["status"],
             cancellationToken: this.CancellationToken()
         );
 
@@ -60,7 +60,7 @@ public sealed class GitCommandLineTests : LoggingFolderCleanupTestBase
         (_, int exitCode) = await GitCommandLine.ExecAsync(
             clonePath: "fake-clone",
             repoPath: workDir,
-            arguments: "--version",
+            arguments: ["--version"],
             cancellationToken: this.CancellationToken()
         );
 
@@ -84,7 +84,7 @@ public sealed class GitCommandLineTests : LoggingFolderCleanupTestBase
         (_, int exitCode) = await GitCommandLine.ExecAsync(
             clonePath: "fake-clone",
             repoPath: workDir,
-            arguments: "--version",
+            arguments: ["--version"],
             cancellationToken: this.CancellationToken()
         );
 
@@ -109,7 +109,7 @@ public sealed class GitCommandLineTests : LoggingFolderCleanupTestBase
                 .ExecAsync(
                     clonePath: "fake-clone",
                     repoPath: workDir,
-                    arguments: "--version",
+                    arguments: ["--version"],
                     cancellationToken: this.CancellationToken()
                 )
                 .AsTask()

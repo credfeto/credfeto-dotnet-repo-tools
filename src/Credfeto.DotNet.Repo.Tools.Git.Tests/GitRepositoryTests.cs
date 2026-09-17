@@ -489,13 +489,40 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task CommitNamedAsync_WithSpecificFile_CommitsSuccessfully()
+    public async Task CommitAsync_WithMessageContainingQuotesAndShellMetacharacters_CommitsMessageVerbatim()
     {
         string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
 
-        string namedFile = Path.Combine(repoPath, "named-commit-test.txt");
         await File.WriteAllTextAsync(
-            path: namedFile,
+            path: Path.Combine(repoPath, "quoted-message-test.txt"),
+            contents: "test content\n",
+            cancellationToken: this.CancellationToken()
+        );
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: repoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepository>()
+        );
+
+        const string message = "Fix \"broken\" thing; rm -rf / && echo $(whoami) `pwd`";
+
+        await repo.CommitAsync(message: message, cancellationToken: this.CancellationToken());
+
+        using Repository libGitRepo = new(repoPath);
+        Assert.Equal(expected: message, actual: libGitRepo.Head.Tip.Message.TrimEnd('\n'));
+    }
+
+    [Theory]
+    [InlineData("named-commit-test.txt")]
+    [InlineData("named commit test with spaces.txt")]
+    public async Task CommitNamedAsync_WithSpecificFile_CommitsSuccessfullyAsync(string fileName)
+    {
+        string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+
+        await File.WriteAllTextAsync(
+            path: Path.Combine(repoPath, fileName),
             contents: "test content\n",
             cancellationToken: this.CancellationToken()
         );
@@ -509,7 +536,7 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
 
         await repo.CommitNamedAsync(
             message: "Named test commit",
-            files: ["named-commit-test.txt"],
+            files: [fileName],
             cancellationToken: this.CancellationToken()
         );
 

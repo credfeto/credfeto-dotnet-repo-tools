@@ -145,7 +145,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
         (string[] output, int exitCode) = await GitCommandLine.ExecAsync(
             clonePath: sourceUrl,
             repoPath: workdirPath,
-            $"clone --recurse-submodules {sourceUrl} {destinationPath}",
+            ["clone", "--recurse-submodules", sourceUrl, destinationPath],
             cancellationToken: cancellationToken
         );
 

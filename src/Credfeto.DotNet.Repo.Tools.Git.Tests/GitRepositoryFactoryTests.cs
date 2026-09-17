@@ -21,12 +21,15 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
     public GitRepositoryFactoryTests(ITestOutputHelper output)
         : base(output)
     {
-        IGitRepositoryLocator gitRepositoryLocator = GetSubstitute<IGitRepositoryLocator>();
-        gitRepositoryLocator
-            .GetWorkingDirectory(Arg.Any<string>(), Arg.Any<string>())
-            .Returns(Path.Combine(path1: this.TempFolder, path2: "scratch"));
+        this._gitRepositoryFactory = this.CreateFactory(Path.Combine(path1: this.TempFolder, path2: "scratch"));
+    }
 
-        this._gitRepositoryFactory = new GitRepositoryFactory(
+    private IGitRepositoryFactory CreateFactory(string workingDirectory)
+    {
+        IGitRepositoryLocator gitRepositoryLocator = GetSubstitute<IGitRepositoryLocator>();
+        gitRepositoryLocator.GetWorkingDirectory(Arg.Any<string>(), Arg.Any<string>()).Returns(workingDirectory);
+
+        return new GitRepositoryFactory(
             locator: gitRepositoryLocator,
             loggerFactory: NullLoggerFactory.Instance,
             logger: this.GetTypedLogger<GitRepositoryFactory>()
@@ -90,6 +93,29 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
                 )
                 .AsTask()
         );
+    }
+
+    [Fact]
+    public async Task OpenOrCloneAsync_WithDestinationPathContainingSpaces_ClonesSuccessfullyAsync()
+    {
+        string sourceRepoPath = Path.Combine(this.TempFolder, "source-repo");
+        await CreateMinimalGitRepoAsync(repoPath: sourceRepoPath, cancellationToken: this.CancellationToken());
+
+        string destinationPath = Path.Combine(this.TempFolder, "destination with spaces");
+
+        IGitRepositoryFactory factory = this.CreateFactory(destinationPath);
+
+        using IGitRepository repo = await factory.OpenOrCloneAsync(
+            workDir: this.TempFolder,
+            repoUrl: sourceRepoPath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.True(
+            condition: Directory.Exists(destinationPath),
+            userMessage: "Destination directory with spaces should exist after clone"
+        );
+        Assert.NotEmpty(repo.HeadRev);
     }
 
     [Fact(Skip = "Requires SSH to be setup")]

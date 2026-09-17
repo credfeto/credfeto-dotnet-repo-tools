@@ -17,6 +17,12 @@ namespace Credfeto.DotNet.Repo.Tools.Git.Services;
 [DebuggerDisplay("{ClonePath}: {WorkingDirectory}")]
 public sealed class GitRepository : IGitRepository
 {
+    private static readonly string[] AddAllArguments = ["add", "-A"];
+    private static readonly string[] PushArguments = ["push"];
+    private static readonly string[] ResetHeadHardArguments = ["reset", "HEAD", "--hard"];
+    private static readonly string[] PruneArguments = ["prune", "--verbose"];
+    private static readonly string[] CleanArguments = ["clean", "-f", "-x", "-d"];
+
     private readonly ILogger<GitRepository> _logger;
 
     private Repository? _repo;
@@ -120,7 +126,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                arguments: "add -A",
+                arguments: AddAllArguments,
                 cancellationToken: cancellationToken
             );
 
@@ -189,7 +195,7 @@ public sealed class GitRepository : IGitRepository
                 (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                     clonePath: this.ClonePath,
                     repoPath: this.WorkingDirectory,
-                    $"add {file}",
+                    ["add", "--", file],
                     cancellationToken: cancellationToken
                 );
 
@@ -216,7 +222,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                arguments: "push",
+                arguments: PushArguments,
                 cancellationToken: cancellationToken
             );
 
@@ -239,7 +245,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                $"push --set-upstream {upstream} {branchName} -v",
+                ["push", "--set-upstream", upstream, branchName, "-v"],
                 cancellationToken: cancellationToken
             );
 
@@ -278,7 +284,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                $"checkout -b {branchName}",
+                ["checkout", "-b", branchName],
                 cancellationToken: cancellationToken
             );
 
@@ -436,7 +442,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                $"reset {branchName} --hard",
+                ["reset", branchName, "--hard"],
                 cancellationToken: cancellationToken
             );
 
@@ -455,7 +461,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                arguments: "reset HEAD --hard",
+                arguments: ResetHeadHardArguments,
                 cancellationToken: cancellationToken
             );
 
@@ -505,7 +511,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                $"switch {branchName}",
+                ["switch", branchName],
                 cancellationToken: cancellationToken
             );
 
@@ -545,7 +551,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                arguments: "prune --verbose",
+                arguments: PruneArguments,
                 cancellationToken: cancellationToken
             );
 
@@ -567,7 +573,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                arguments: "clean -f -x -d",
+                arguments: CleanArguments,
                 cancellationToken: cancellationToken
             );
 
@@ -589,7 +595,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                $"fetch --prune --recurse-submodules {remote.Name}",
+                ["fetch", "--prune", "--recurse-submodules", remote.Name],
                 cancellationToken: cancellationToken
             );
 
@@ -609,7 +615,7 @@ public sealed class GitRepository : IGitRepository
         (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
             clonePath: this.ClonePath,
             repoPath: this.WorkingDirectory,
-            $"commit -m \"{message}\"",
+            ["commit", "-m", message],
             cancellationToken: cancellationToken
         );
 
@@ -688,7 +694,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                $"push {upstream} \":{branch}\"",
+                ["push", upstream, $":{branch}"],
                 cancellationToken: cancellationToken
             );
 
@@ -737,7 +743,7 @@ public sealed class GitRepository : IGitRepository
             (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
                 clonePath: this.ClonePath,
                 repoPath: this.WorkingDirectory,
-                $"branch -D {branch}",
+                ["branch", "-D", branch],
                 cancellationToken: cancellationToken
             );
 
