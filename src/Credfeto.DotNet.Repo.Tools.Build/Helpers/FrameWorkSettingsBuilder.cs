@@ -42,7 +42,7 @@ public static class FrameWorkSettingsBuilder
         {
             if (IsReleaseCandidate(repositoryFramework))
             {
-                if (templateFramework.IsPrerelease && IsReleaseCandidate(templateFramework))
+                if (IsReleaseCandidate(templateFramework))
                 {
                     if (repositoryFramework > templateFramework)
                     {
@@ -59,7 +59,7 @@ public static class FrameWorkSettingsBuilder
         }
         else
         {
-            if (templateFramework.IsPrerelease && IsReleaseCandidate(templateFramework))
+            if (IsReleaseCandidate(templateFramework))
             {
                 if (repositoryFramework.Version > templateFramework.Version)
                 {
