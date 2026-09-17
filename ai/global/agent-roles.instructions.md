@@ -16,52 +16,54 @@ Load when acting as a named agent. Routing table and model selection: [task-work
 
 When picking up an **Issue** that has no existing PR:
 
-0. Run the [Pre-Work Baseline Check](git.instructions.md#pre-work-baseline-check-mandatory-before-starting-any-work) before anything else in this flow, including before checking for an existing plan comment. Follow its auto-fix/failure/block rules there; only continue to step 1 once the baseline is clean.
+- **P1.** Run the [Pre-Work Baseline Check](git.instructions.md#pre-work-baseline-check-mandatory-before-starting-any-work) before anything else in this flow, including before checking for an existing plan comment. Follow its auto-fix/failure/block rules there; only continue to P2 once the baseline is clean.
 
-1. Check whether you have already posted a plan comment:
+- **P2.** Check whether you have already posted a plan comment:
 
-   ```bash
-   gh issue view <number> --repo <owner/repo> --json comments \
-     --jq '[.comments[].body] | any(test("## Implementation Plan"; "i"))'
-   ```
+  ```bash
+  gh issue view <number> --repo <owner/repo> --json comments \
+    --jq '[.comments[].body] | any(test("## Implementation Plan"; "i"))'
+  ```
 
-   - `false` → Plan mode (steps 2–3 below).
-   - `true` → Plan exists. How approval is signalled depends on whether a Workflow board is configured (the orchestrator passes this context in your CLAUDE.md):
-     - **Board configured**: check whether a human has set the board status to **Approved**. If yes → skip to implementation. If not yet → revise or re-post the plan, mark Blocked, STOP (step 2).
-     - **No board**: check for a human approval comment posted **after** the plan comment (keywords: `approved` / `go ahead` / `looks good` / `lgtm`, case-insensitive, whole word). If found → skip to implementation. If not → revise or re-post, mark Blocked, STOP (step 2).
+  - `false` → Plan mode (P3–P4 below).
+  - `true` → Plan exists. How approval is signalled depends on whether a Workflow board is configured (the orchestrator passes this context in your CLAUDE.md):
+    - **Board configured**: check whether a human has set the board status to **Approved**. If yes → skip to implementation. If not yet → revise or re-post the plan, mark Blocked, STOP (P3).
+    - **No board**: check for a human approval comment posted **after** the plan comment (keywords: `approved` / `go ahead` / `looks good` / `lgtm`, case-insensitive, whole word). If found → skip to implementation. If not → revise or re-post, mark Blocked, STOP (P3).
 
-   Either way, before skipping to implementation, check for an existing branch first (see [git.instructions.md#branching](git.instructions.md#branching)).
+  Either way, before skipping to implementation, check for an existing branch first (see [git.instructions.md#branching](git.instructions.md#branching)).
 
-2. **Plan mode**: produce a concrete implementation plan using `/plan`, then post it as an issue comment in **exactly** this format:
+- **P3.** **Plan mode**: produce a concrete implementation plan using `/plan`, then post it as an issue comment in **exactly** this format:
 
-   ```text
-   ## Implementation Plan
+  ```text
+  ## Implementation Plan
 
-   ### Files to change
-   - `path/to/file`: reason
+  ### Files to change
+  - `path/to/file`: reason
 
-   ### Approach
-   <one-paragraph description>
+  ### Approach
+  <one-paragraph description>
 
-   ### Test strategy
-   <what will be tested and how>
+  ### Test strategy
+  <what will be tested and how>
 
-   ### Assumptions
-   <list or "None">
+  ### Assumptions
+  <list, using a lower-case alpha sequence (a., b., c., ...), or "None">
 
-   ### Open questions
-   <list or "None, ready to proceed pending approval">
-   ```
+  ### Open questions
+  <list, using a Q-prefixed numbered sequence (Q1., Q2., Q3., ...), or "None, ready to proceed pending approval">
+  ```
 
-3. Mark the issue as Blocked and update the Workflow board to **Planning** (if board data is present), then **STOP**:
+  **Open questions vs. embedded conditional decisions:** any conditional or deferred decision point in the Approach or Files-to-change text — a decision the plan does not itself resolve (e.g. "needs policy sign-off", "pending a decision on X", an either/or left open) — must be lifted out into its own `Qn.` entry under Open questions, not left as prose in Approach/Files-to-change. Prose framing hides it from the Blocked/approval gate below, which only inspects Open questions; a `Qn.` entry is what actually forces it through that gate. (Background: `funfair-server-template#857`'s plan left "conversion or policy sign-off needed" for `anchore/*` as Approach prose rather than a `Qn.`; nothing gated on it, and the sign-off was never visibly resolved before the issue closed — see [Pre-Closure Decision Check](task-workflow.instructions.md#pre-closure-decision-check-mandatory).)
 
-   ```bash
-   gh issue edit <number> --repo <owner/repo> --add-label Blocked
-   ```
+- **P4.** Mark the issue as Blocked and update the Workflow board to **Planning** (if board data is present), then **STOP**:
 
-   **Approval requires an explicit human action; the orchestrator never removes `Blocked` automatically:**
-   - **Board configured**: human sets board status to **Approved** and removes `Blocked`.
-   - **No board**: human posts an approval comment (`approved` / `go ahead` / `looks good` / `lgtm`) and removes `Blocked`.
+  ```bash
+  gh issue edit <number> --repo <owner/repo> --add-label Blocked
+  ```
+
+  **Approval requires an explicit human action; the orchestrator never removes `Blocked` automatically:**
+  - **Board configured**: human sets board status to **Approved** and removes `Blocked`.
+  - **No board**: human posts an approval comment (`approved` / `go ahead` / `looks good` / `lgtm`) and removes `Blocked`.
 
 **Check GitHub's live state, not just chat.** A human's approval action may land directly on the issue/PR (a comment, a label change, moving the board card) without also being repeated in chat — they already have to open the item to read the posted plan, so relaying it a second time in chat is not something to wait on. Before treating an item as approved, still blocked, or unchanged, re-check its live state (`gh issue view`/`gh pr view` for labels and comments, plus the board's `Workflow Status` field) rather than relying on stale memory or assuming silence in chat means nothing has happened on GitHub. This cuts both ways: a literal chat-only approval (a human typing an equivalent of the keywords above directly into the chat session, rather than posting them as a GitHub comment) is still valid on its own, but must be mirrored as a GitHub comment per the live-chat rule in [Blocked Label](#blocked-label) so the record survives even if the chat session is lost — do not treat chat-only approval as a substitute for checking GitHub, and do not treat an unexplained GitHub-side state change as approval without confirming a human actually made it (an automated board rule or a stray process flipping a field is not a human decision).
 
@@ -73,30 +75,30 @@ After all code changes are pushed and all required CI checks pass, **before** en
 
 #### Phase A: Simplify (up to `MAX_SIMPLIFY_ITERATIONS` rounds)
 
-1. Update Workflow board to **AI Simplify** (if board data is present in your CLAUDE.md).
-2. Run: `/simplify` against the diff. It applies reuse, simplification, efficiency, and altitude cleanups directly rather than just reporting them.
-3. If `/simplify` changed any files: run Changelog (correction) against the resulting diff; commit the code changes and, if the entry changed, `CHANGELOG.md` as a separate commit; push; then return to step 2 to re-run against the resulting diff.
-4. Once `/simplify` makes no further changes: run the [Pattern Sweep](code-quality.instructions.md#pattern-sweep-mandatory) for each construct in the net Phase A diff (the commits since step 1), not per round, because rounds may revert each other and each sweep would widen the next round's diff. A change with no repeatable construct (a local rename or restructuring) has nothing to sweep. If the sweep changed files: commit, changelog-correct and push as in step 3, then proceed to Phase B instead of returning to step 2 (Phase B re-covers the swept code).
-5. `/simplify` has its own iteration budget, separate from Phase B/C/D's own budgets below, because it is expected to run more rounds and give up without blocking:
-   - Track each round's diff size (lines changed by that round's `/simplify` commit) against the previous round's.
-   - Once `SIMPLIFY_THRASH_LIMIT` rounds have run, if the current round is thrashing (its diff is flat or larger than the previous round's, i.e. not shrinking): give up immediately, even though `MAX_SIMPLIFY_ITERATIONS` has not been reached.
-   - Otherwise, keep re-running up to `MAX_SIMPLIFY_ITERATIONS` rounds total; once that hard cap is reached without converging to no changes, give up regardless of whether the diff was still shrinking.
-   - Either way, giving up means: post a PR comment noting that simplify did not converge, run step 4 in full (sweep, commit, changelog correction, push, and the 25-file gate) on the diff as it currently stands, then proceed to Phase B. Do not add `Blocked` (other than for the 25-file sweep gate, where the sweep hunks stay uncommitted and Phase A waits; on the human's decision the sweep is committed or discarded, then Phase A continues) and do not `STOP`: non-convergence in Phase A never blocks the PR, because `/code-review` in Phase B re-covers the same reuse/simplification/efficiency categories as a safety net (see Conflict Resolution below). Phases B and C below have their own, similarly non-blocking, self-detected-non-convergence exit; exhausting either phase's numeric round cap still blocks (see each phase's step 4). Phase D's coverage gate has its own, separately documented blocking conditions, not limited to cap exhaustion (see Phase D step 3 below).
+- **P1.** Update Workflow board to **AI Simplify** (if board data is present in your CLAUDE.md).
+- **P2.** Run: `/simplify` against the diff. It applies reuse, simplification, efficiency, and altitude cleanups directly rather than just reporting them. Also apply [IDE MCP Code Analysis](code-quality.instructions.md#ide-mcp-code-analysis-mandatory) to the modified files.
+- **P3.** If `/simplify` changed any files: run Changelog (correction) against the resulting diff; commit the code changes and, if the entry changed, `CHANGELOG.md` as a separate commit; push; then return to P2 to re-run against the resulting diff.
+- **P4.** Once `/simplify` makes no further changes: run the [Pattern Sweep](code-quality.instructions.md#pattern-sweep-mandatory) for each construct in the net Phase A diff (the commits since P1), not per round, because rounds may revert each other and each sweep would widen the next round's diff. A change with no repeatable construct (a local rename or restructuring) has nothing to sweep. If the sweep changed files: commit, changelog-correct and push as in P3, then proceed to Phase B instead of returning to P2 (Phase B re-covers the swept code).
+- **P5.** `/simplify` has its own iteration budget, separate from Phase B/C/D's own budgets below, because it is expected to run more rounds and give up without blocking:
+  - Track each round's diff size (lines changed by that round's `/simplify` commit) against the previous round's.
+  - Once `SIMPLIFY_THRASH_LIMIT` rounds have run, if the current round is thrashing (its diff is flat or larger than the previous round's, i.e. not shrinking): give up immediately, even though `MAX_SIMPLIFY_ITERATIONS` has not been reached.
+  - Otherwise, keep re-running up to `MAX_SIMPLIFY_ITERATIONS` rounds total; once that hard cap is reached without converging to no changes, give up regardless of whether the diff was still shrinking.
+  - Either way, giving up means: post a PR comment noting that simplify did not converge, run P4 in full (sweep, commit, changelog correction, push, and the 25-file gate) on the diff as it currently stands, then proceed to Phase B. Do not add `Blocked` (other than for the 25-file sweep gate, where the sweep hunks stay uncommitted and Phase A waits; on the human's decision the sweep is committed or discarded, then Phase A continues) and do not `STOP`: non-convergence in Phase A never blocks the PR, because `/code-review` in Phase B re-covers the same reuse/simplification/efficiency categories as a safety net (see Conflict Resolution below). Phases B and C below have their own, similarly non-blocking, self-detected-non-convergence exit; exhausting either phase's numeric round cap still blocks (see [Phase B's P4](#phase-b-convergence) and [Phase C's P4](#phase-c-convergence)). Phase D's coverage gate has its own, separately documented blocking conditions, not limited to cap exhaustion (see [Phase D's P3](#phase-d-on-failure)).
 
 #### Phase B: Code review (up to `MAX_CODE_REVIEW_ITERATIONS` rounds)
 
-1. Update Workflow board to **AI Review** (if board data is present in your CLAUDE.md).
-2. Run: `/code-review --comment`. This intentionally re-covers the reuse/simplification/efficiency categories Phase A's `/simplify` already applied: `/simplify` fixes silently, and this step verifies nothing was missed and separately checks correctness, which `/simplify` does not (security and compliance are not covered by either command; they remain Phase C's job). Expect step 2 to usually find nothing in the reuse/simplification/efficiency categories Phase A already handled.
-3. If NO findings were posted: proceed to Phase C.
-4. Otherwise, judge convergence yourself from the PR's history of prior code-review comments: are this round's findings substantively new/distinct, or substantially a repeat of findings already reported (and left unresolved, or fixed and now recurring) in an earlier round? `MIN_REVIEW_CONVERGENCE_ROUNDS` must be set below `MAX_CODE_REVIEW_ITERATIONS`; otherwise the round-cap bullet below always fires first and the non-blocking exit can never trigger.
-   - If `MAX_CODE_REVIEW_ITERATIONS` rounds have already run (judged from the PR's history of code-review comments) and findings remain, whether or not this round's findings are themselves new: post a PR comment listing the unresolved findings, add `Blocked` label, and **STOP**:
+- **P1.** Update Workflow board to **AI Review** (if board data is present in your CLAUDE.md).
+- **P2.** Run: `/code-review --comment`. This intentionally re-covers the reuse/simplification/efficiency categories Phase A's `/simplify` already applied: `/simplify` fixes silently, and this step verifies nothing was missed and separately checks correctness, which `/simplify` does not (security and compliance are not covered by either command; they remain Phase C's job). Expect P2 to usually find nothing in the reuse/simplification/efficiency categories Phase A already handled. Also apply [IDE MCP Code Analysis](code-quality.instructions.md#ide-mcp-code-analysis-mandatory) to the modified files.
+- **P3.** If NO findings were posted: proceed to Phase C.
+- **P4.** <a id="phase-b-convergence"></a>Otherwise, judge convergence yourself from the PR's history of prior code-review comments: are this round's findings substantively new/distinct, or substantially a repeat of findings already reported (and left unresolved, or fixed and now recurring) in an earlier round? `MIN_REVIEW_CONVERGENCE_ROUNDS` must be set below `MAX_CODE_REVIEW_ITERATIONS`; otherwise the round-cap bullet below always fires first and the non-blocking exit can never trigger.
+  - If `MAX_CODE_REVIEW_ITERATIONS` rounds have already run (judged from the PR's history of code-review comments) and findings remain, whether or not this round's findings are themselves new: post a PR comment listing the unresolved findings, add `Blocked` label, and **STOP**:
 
-     ```bash
-     gh pr edit <number> --repo <owner/repo> --add-label Blocked
-     ```
+    ```bash
+    gh pr edit <number> --repo <owner/repo> --add-label Blocked
+    ```
 
-   - Otherwise, if substantially repeating a prior round (not finding anything new; not converging) AND at least `MIN_REVIEW_CONVERGENCE_ROUNDS` rounds have now run: post a PR comment summarising the unresolved findings and stating that code review is not converging, advance the board to **AI Security Review** (if board data present), post a one-line status comment, then proceed to Phase C. Do NOT add `Blocked`: this means no new correctness issues are surfacing, not that a known one is safe to ignore; the posted comment is what carries the unresolved findings forward to Human Review.
-   - Otherwise (either substantially new, or a repeat but fewer than `MIN_REVIEW_CONVERGENCE_ROUNDS` rounds have run so far, so one failed fix attempt is not yet enough evidence to give up, and the round cap has not been reached): fix each construct (findings grouped by construct) in its own commit, with a [Pattern Sweep](code-quality.instructions.md#pattern-sweep-mandatory) (a finding that only re-reports the swept construct in files a sweep touched is not substantively new for the convergence judgment above; a new bug in those files is); after each fix and its sweep, run Changelog (correction) and commit `CHANGELOG.md` separately if the entry changed; push; return to step 2.
+  - Otherwise, if substantially repeating a prior round (not finding anything new; not converging) AND at least `MIN_REVIEW_CONVERGENCE_ROUNDS` rounds have now run: post a PR comment summarising the unresolved findings and stating that code review is not converging, advance the board to **AI Security Review** (if board data present), post a one-line status comment, then proceed to Phase C. Do NOT add `Blocked`: this means no new correctness issues are surfacing, not that a known one is safe to ignore; the posted comment is what carries the unresolved findings forward to Human Review.
+  - Otherwise (either substantially new, or a repeat but fewer than `MIN_REVIEW_CONVERGENCE_ROUNDS` rounds have run so far, so one failed fix attempt is not yet enough evidence to give up, and the round cap has not been reached): fix each construct (findings grouped by construct) in its own commit, with a [Pattern Sweep](code-quality.instructions.md#pattern-sweep-mandatory) (a finding that only re-reports the swept construct in files a sweep touched is not substantively new for the convergence judgment above; a new bug in those files is); after each fix and its sweep, run Changelog (correction) and commit `CHANGELOG.md` separately if the entry changed; push; return to P2.
 
 #### Conflict Resolution: Simplify/Code Review vs. Static Analyzer
 
@@ -104,28 +106,28 @@ If a change proposed by `/simplify` (Phase A) or a finding raised by `/code-revi
 
 #### Phase C: Security review (up to `MAX_SECURITY_REVIEW_ITERATIONS` rounds)
 
-1. Update Workflow board to **AI Security Review** (if board data present).
-2. Run: `/security-review`
-3. If NO findings are reported: proceed to Phase D.
-4. This mirrors Phase B step 4 exactly (substituting security-review for code-review); keep both in sync when editing either. Judge convergence yourself from the PR's history of prior security-review comments: are this round's findings substantively new/distinct, or substantially a repeat of findings already reported (and left unresolved, or fixed and now recurring) in an earlier round? `MIN_REVIEW_CONVERGENCE_ROUNDS` must be set below `MAX_SECURITY_REVIEW_ITERATIONS`; otherwise the round-cap bullet below always fires first and the non-blocking exit can never trigger.
-   - If `MAX_SECURITY_REVIEW_ITERATIONS` rounds have already run (judged from the PR's history of security-review comments) and findings remain, whether or not this round's findings are themselves new: post a PR comment listing the unresolved findings, add `Blocked` label, **STOP**.
-   - Otherwise, if substantially repeating a prior round (not finding anything new; not converging) AND at least `MIN_REVIEW_CONVERGENCE_ROUNDS` rounds have now run: post a PR comment summarising the unresolved findings and stating that security review is not converging, advance the board to **AI Coverage** (if board data present), post a one-line status comment, then proceed to Phase D. Do NOT add `Blocked`: the same principle as Phase B's exit applies here (see Phase B step 4 above).
-   - Otherwise (either substantially new, or a repeat but fewer than `MIN_REVIEW_CONVERGENCE_ROUNDS` rounds have run so far, so one failed fix attempt is not yet enough evidence to give up, and the round cap has not been reached): post findings as a PR comment if not already inline, fix each construct (findings grouped by construct) in its own commit, with a [Pattern Sweep](code-quality.instructions.md#pattern-sweep-mandatory) (a finding that only re-reports the swept construct in files a sweep touched is not substantively new for the convergence judgment above; a new bug in those files is); after each fix and its sweep, run Changelog (correction) and commit `CHANGELOG.md` separately if the entry changed; push; return to step 2.
+- **P1.** Update Workflow board to **AI Security Review** (if board data present).
+- **P2.** Run: `/security-review`. Also apply [IDE MCP Code Analysis](code-quality.instructions.md#ide-mcp-code-analysis-mandatory) to the modified files.
+- **P3.** If NO findings are reported: proceed to Phase D.
+- **P4.** <a id="phase-c-convergence"></a>This mirrors Phase B's [P4](#phase-b-convergence) exactly (substituting security-review for code-review); keep both in sync when editing either. Judge convergence yourself from the PR's history of prior security-review comments: are this round's findings substantively new/distinct, or substantially a repeat of findings already reported (and left unresolved, or fixed and now recurring) in an earlier round? `MIN_REVIEW_CONVERGENCE_ROUNDS` must be set below `MAX_SECURITY_REVIEW_ITERATIONS`; otherwise the round-cap bullet below always fires first and the non-blocking exit can never trigger.
+  - If `MAX_SECURITY_REVIEW_ITERATIONS` rounds have already run (judged from the PR's history of security-review comments) and findings remain, whether or not this round's findings are themselves new: post a PR comment listing the unresolved findings, add `Blocked` label, **STOP**.
+  - Otherwise, if substantially repeating a prior round (not finding anything new; not converging) AND at least `MIN_REVIEW_CONVERGENCE_ROUNDS` rounds have now run: post a PR comment summarising the unresolved findings and stating that security review is not converging, advance the board to **AI Coverage** (if board data present), post a one-line status comment, then proceed to Phase D. Do NOT add `Blocked`: the same principle as Phase B's exit applies here (see Phase B's [P4](#phase-b-convergence) above).
+  - Otherwise (either substantially new, or a repeat but fewer than `MIN_REVIEW_CONVERGENCE_ROUNDS` rounds have run so far, so one failed fix attempt is not yet enough evidence to give up, and the round cap has not been reached): post findings as a PR comment if not already inline, fix each construct (findings grouped by construct) in its own commit, with a [Pattern Sweep](code-quality.instructions.md#pattern-sweep-mandatory) (a finding that only re-reports the swept construct in files a sweep touched is not substantively new for the convergence judgment above; a new bug in those files is); after each fix and its sweep, run Changelog (correction) and commit `CHANGELOG.md` separately if the entry changed; push; return to P2.
 
 #### Phase D: AI Coverage (up to `MAX_COVERAGE_ITERATIONS` rounds)
 
-1. Update Workflow board to **AI Coverage** (if board data present).
-2. Run the [AI Coverage Phase Decision Procedure](coverage-ratchet.instructions.md#ai-coverage-phase-decision-procedure-mandatory) from [coverage-ratchet.instructions.md](coverage-ratchet.instructions.md): compare the branch's live per-language coverage against the Overall figures in `COVERAGE.md` on `origin/main` (non-code-only branches — dependency bumps, workflow/SQL/shell/Docker/docs-only changes — and a missing `COVERAGE.md` both skip the comparison and pass automatically — see that file's [Non-Code-Only Branches](coverage-ratchet.instructions.md#non-code-only-branches-skip-dont-measure) and bootstrap rules).
-3. On failure (any language's branch coverage below its baseline): the procedure judges the round cap and the round-over-round trend itself and acts accordingly (full branching, including the round-cap `Blocked` exit and the judged-unlikely-to-close `Blocked` exit, is at [decision procedure step 6](coverage-ratchet.instructions.md#ai-coverage-phase-decision-procedure-mandatory)), unlike Phase B/C's findings-based judgment, because coverage has a natural numeric signal to trend on. **STOP** after the procedure's status/`Blocked` comment either way; a status-comment outcome means the next cycle picks the resulting Development work back up, a `Blocked` outcome needs a human.
-4. On success: the procedure moves the board to **Human Review** and posts a status comment; proceed to Phase E.
+- **P1.** Update Workflow board to **AI Coverage** (if board data present).
+- **P2.** Run the [AI Coverage Phase Decision Procedure](coverage-ratchet.instructions.md#ai-coverage-phase-decision-procedure-mandatory) from [coverage-ratchet.instructions.md](coverage-ratchet.instructions.md): compare the branch's live per-language coverage against the Overall figures in `COVERAGE.md` on `origin/main` (non-code-only branches — dependency bumps, workflow/SQL/shell/Docker/docs-only changes — and a missing `COVERAGE.md` both skip the comparison and pass automatically — see that file's [Non-Code-Only Branches](coverage-ratchet.instructions.md#non-code-only-branches-skip-dont-measure) and bootstrap rules).
+- **P3.** <a id="phase-d-on-failure"></a>On failure (any language's branch coverage below its baseline): the procedure judges the round cap and the round-over-round trend itself and acts accordingly (full branching, including the round-cap `Blocked` exit and the judged-unlikely-to-close `Blocked` exit, is at the decision procedure's [P6](coverage-ratchet.instructions.md#coverage-decision-on-failure)), unlike Phase B/C's findings-based judgment, because coverage has a natural numeric signal to trend on. **STOP** after the procedure's status/`Blocked` comment either way; a status-comment outcome means the next cycle picks the resulting Development work back up, a `Blocked` outcome needs a human.
+- **P4.** On success: the procedure moves the board to **Human Review** and posts a status comment; proceed to Phase E.
 
 #### Phase E: Mark ready
 
 Only once all four phases have completed without a `Blocked` outcome (each phase passed outright, or exited via its own non-blocking convergence path noted in a PR comment, or there were no reviewable changes):
 
-1. Safety net (belt-and-suspenders on top of the Code Reviewer Compliance check above): confirm `.deleteme.now` is not present in `git diff origin/main...HEAD --name-only` (see [Changelog](#changelog)); if it is still present, remove it in its own commit, re-run Code Tester, then continue.
-2. Update Workflow board to **Human Review** (if board data present), unless Phase D already moved it there on success.
-3. Enable auto-merge:
+- **P1.** Safety net (belt-and-suspenders on top of the Code Reviewer Compliance check above): confirm `.deleteme.now` is not present in `git diff origin/main...HEAD --name-only` (see [Changelog](#changelog)); if it is still present, remove it in its own commit, re-run Code Tester, then continue.
+- **P2.** Update Workflow board to **Human Review** (if board data present), unless Phase D already moved it there on success.
+- **P3.** Enable auto-merge:
 
    ```bash
    gh pr merge --auto --merge <number> --repo <owner/repo>
@@ -140,6 +142,7 @@ Each generated `CLAUDE.md` may contain Workflow board data in this format, as a 
 ```text
 Workflow board (see agent-roles.instructions.md for update commands):
   WF_PROJECT_ID=PVT_xxx
+  WF_PROJECT_NUMBER=<number>
   WF_STATUS_FIELD_ID=PVTSSF_xxx
   WF_NOT_STARTED=<option-id>
   WF_PLANNING=<option-id>
@@ -160,11 +163,11 @@ If this section is **absent** from your CLAUDE.md, look up the repo's Workflow b
 Every repo with a board names its GitHub Projects (v2) board **"Workflow"**, linked directly to that repo.
 
 ```bash
-# Step 1: find the "Workflow" project linked to this repo (gives WF_PROJECT_ID)
-WF_PROJECT_ID=$(gh api graphql \
-  -f query='query($owner:String!,$repo:String!){repository(owner:$owner,name:$repo){projectsV2(first:20){nodes{id title}}}}' \
+# Step 1: find the "Workflow" project linked to this repo (gives WF_PROJECT_ID and WF_PROJECT_NUMBER)
+IFS=$'\t' read -r WF_PROJECT_ID WF_PROJECT_NUMBER <<<"$(gh api graphql \
+  -f query='query($owner:String!,$repo:String!){repository(owner:$owner,name:$repo){projectsV2(first:20){nodes{id number title}}}}' \
   -f owner=<owner> -f repo=<repo> \
-  --jq '.data.repository.projectsV2.nodes[] | select(.title=="Workflow") | .id')
+  --jq '.data.repository.projectsV2.nodes[] | select(.title=="Workflow") | [.id,(.number|tostring)] | @tsv')"
 
 # Step 2: resolve the Workflow Status field and its option IDs (gives WF_STATUS_FIELD_ID and each WF_* option id)
 gh api graphql \
@@ -178,39 +181,33 @@ Match each returned option's `name` to its `WF_*` variable: `Not Started`→`WF_
 
 **Only if Step 1 finds no project titled "Workflow" linked to the repo** — there genuinely is no board — skip all board updates silently.
 
-To update the board status, run these two commands in sequence. Replace `<STATUS_OPTION_ID>` with the appropriate `WF_*` value from the CLAUDE.md, and `<ISSUE_OR_PR_NUMBER>` with the issue or PR number:
+**Use the structured `gh project` subcommands below, never raw `gh api graphql` mutations.** A `gh api graphql` call whose query string contains the literal word `mutation` is deterministically denied by the agent sandbox's permission system, even though the equivalent `query`-shaped call succeeds (confirmed live: `credfeto/cs-template#1046`). The `gh project item-add`/`item-edit` subcommands below are pre-approved as ordinary `gh` invocations and cover the add-item/set-status steps without ever constructing a raw mutation string.
+
+To update the board status, replace `<STATUS_OPTION_ID>` with the appropriate `WF_*` value, `<owner>` with the repo owner, and `<ISSUE_OR_PR_URL>` with the issue or PR's full URL:
 
 ```bash
-# Step 1: resolve the item node ID (use 'issues' for issues, 'pulls' for PRs)
-ITEM_NODE_ID=$(gh api repos/<owner/repo>/issues/<number> --jq '.node_id')
+# Step 1: add the item to the project and capture its project item ID
+# (idempotent - if the item is already in the project, this just returns the existing ID)
+ITEM_ID=$(gh project item-add "${WF_PROJECT_NUMBER}" --owner <owner> --url "<ISSUE_OR_PR_URL>" \
+  --format json --jq '.id')
 
-# Step 2: add item to project and capture the project item ID
-PROJECT_ITEM_ID=$(gh api graphql \
-  -f query='mutation($p:ID!,$c:ID!){addProjectV2ItemById(input:{projectId:$p,contentId:$c}){item{id}}}' \
-  -f p="${WF_PROJECT_ID}" -f c="${ITEM_NODE_ID}" \
-  --jq '.data.addProjectV2ItemById.item.id')
+# Step 2: set the Status field
+gh project item-edit --project-id "${WF_PROJECT_ID}" --id "${ITEM_ID}" \
+  --field-id "${WF_STATUS_FIELD_ID}" --single-select-option-id "<STATUS_OPTION_ID>"
 
-# Step 3: set the Status field
-gh api graphql \
-  -f query='mutation($p:ID!,$i:ID!,$f:ID!,$v:String!){updateProjectV2ItemFieldValue(input:{projectId:$p,itemId:$i,fieldId:$f,value:{singleSelectOptionId:$v}}){projectV2Item{id}}}' \
-  -f p="${WF_PROJECT_ID}" -f i="${PROJECT_ITEM_ID}" \
-  -f f="${WF_STATUS_FIELD_ID}" -f v="<STATUS_OPTION_ID>" > /dev/null
-
-# Step 4: verify the write actually persisted; retry up to 3 times with backoff if not
+# Step 3: verify the write actually persisted (querying only the target field, not the whole item); retry up to 3 times with backoff if not.
 for attempt in 1 2 3; do
   ACTUAL=$(gh api graphql \
-    -f query='query($i:ID!){node(id:$i){... on ProjectV2Item{fieldValues(first:50){nodes{... on ProjectV2ItemFieldSingleSelectValue{optionId field{... on ProjectV2SingleSelectField{id}}}}}}}}' \
-    -f i="${PROJECT_ITEM_ID}" \
-    --jq ".data.node.fieldValues.nodes[] | select(.field.id==\"${WF_STATUS_FIELD_ID}\") | .optionId")
+    -f query='query($i:ID!){node(id:$i){... on ProjectV2Item{fieldValueByName(name:"Workflow Status"){... on ProjectV2ItemFieldSingleSelectValue{optionId}}}}}' \
+    -f i="${ITEM_ID}" \
+    --jq '.data.node.fieldValueByName.optionId')
   [ "$ACTUAL" = "<STATUS_OPTION_ID>" ] && break
   sleep "$attempt"
 done
 [ "$ACTUAL" = "<STATUS_OPTION_ID>" ] || echo "::warning::Workflow board write did not persist after 3 attempts"
 ```
 
-`addProjectV2ItemById` is idempotent: calling it again for an item already in the project just returns the existing item ID.
-
-**Step 4 is MANDATORY, not optional.** `updateProjectV2ItemFieldValue` can return success (no GraphQL error) on an item that was just added by `addProjectV2ItemById` in Step 2, without the field write actually persisting: a known eventual-consistency race in the Projects v2 API on freshly-added items. Reporting success (a log line, a `core.notice`, a status comment) without this read-back verification is a real bug that shipped and went unnoticed because nothing threw (see `funfair-tech/funfair-server-template` issue #918, fixed in PR #920, for the incident this rule is drawn from). Never skip the verification step to save a round-trip.
+**Step 3 is MANDATORY, not optional.** `gh project item-edit` can return success on an item that was just added by `gh project item-add` in Step 1, without the field write actually persisting: a known eventual-consistency race in the underlying Projects v2 API on freshly-added items. Reporting success (a log line, a `core.notice`, a status comment) without this read-back verification is a real bug that shipped and went unnoticed because nothing threw (see `funfair-tech/funfair-server-template` issue #918, fixed in PR #920, for the incident this rule is drawn from). Never skip the verification step to save a round-trip.
 
 ### On-Hold Label
 
@@ -220,27 +217,27 @@ An issue labelled `On-Hold` is not ready to be worked on: it needs further thoug
 
 When asking a question in a PR or issue comment and waiting for an answer before continuing:
 
-1. Add the `Blocked` label to the PR or issue immediately after posting the question:
-   - Issue: `gh issue edit <number> --repo <owner/repo> --add-label "Blocked"`
-   - PR: `gh pr edit <number> --repo <owner/repo> --add-label "Blocked"`
-2. Do **not** continue working on the item until the label is removed.
-3. Use **only** the `Blocked` label for this purpose; do **not** use labels like `do not merge`, `needs review`, or any other substitute. The orchestrator only recognises `Blocked` when deciding whether to skip an item.
-4. **Live-chat approval is not sufficient on its own.** If a human answers or approves in a live chat session rather than posting a GitHub comment directly, post the comment yourself, quoting the live instruction, before resuming work (and before asking for `Blocked` to be removed). The record must survive even if the chat session is lost.
+- **P1.** Add the `Blocked` label to the PR or issue immediately after posting the question:
+  - Issue: `gh issue edit <number> --repo <owner/repo> --add-label "Blocked"`
+  - PR: `gh pr edit <number> --repo <owner/repo> --add-label "Blocked"`
+- **P2.** Do **not** continue working on the item until the label is removed.
+- **P3.** Use **only** the `Blocked` label for this purpose; do **not** use labels like `do not merge`, `needs review`, or any other substitute. The orchestrator only recognises `Blocked` when deciding whether to skip an item.
+- **P4.** **Live-chat approval is not sufficient on its own.** If a human answers or approves in a live chat session rather than posting a GitHub comment directly, post the comment yourself, quoting the live instruction, before resuming work (and before asking for `Blocked` to be removed). The record must survive even if the chat session is lost.
 
 ### Environment/Infrastructure Block Marker (MANDATORY, PRs only)
 
 When a Blocked-ing failure is diagnosed as an environment/infrastructure problem, such as a bug in the container image, a missing tool, or a transient infra issue, rather than a bug in the PR's own code, add a machine-readable marker alongside the diagnosis so `oneshot` can auto-clear `Blocked` once the fix has actually shipped, instead of the PR sitting blocked until a human happens to notice (credfeto/credfeto-orchestrator#1118):
 
-1. Post the full human-readable diagnosis as normal: root cause, evidence, and (if known) the fix needed.
-2. Append a single trailer line to that same comment:
+- **P1.** Post the full human-readable diagnosis as normal: root cause, evidence, and (if known) the fix needed.
+- **P2.** Append a single trailer line to that same comment:
 
-   ```text
-   <!-- orchestrator:env-block image-sha=${IMAGE_SHA_DEVELOPMENT_AGENT} -->
-   ```
+  ```text
+  <!-- orchestrator:env-block image-sha=${IMAGE_SHA_DEVELOPMENT_AGENT} -->
+  ```
 
-   Read `IMAGE_SHA_DEVELOPMENT_AGENT` from your own container environment (the same value printed at session start as part of "Image layer provenance"); this records which image build was current when you made the diagnosis.
-3. Apply `Blocked` exactly as in the section above.
-4. Use this marker **only** for a genuine environment/infrastructure diagnosis. `oneshot` auto-clears `Blocked` the moment it observes a differently-built agent image, with no further human involvement; marking a real code question or design decision this way would resume work before a human actually answered it.
+  Read `IMAGE_SHA_DEVELOPMENT_AGENT` from your own container environment (the same value printed at session start as part of "Image layer provenance"); this records which image build was current when you made the diagnosis.
+- **P3.** Apply `Blocked` exactly as in the section above.
+- **P4.** Use this marker **only** for a genuine environment/infrastructure diagnosis. `oneshot` auto-clears `Blocked` the moment it observes a differently-built agent image, with no further human involvement; marking a real code question or design decision this way would resume work before a human actually answered it.
 
 This convention only applies to PRs (there is no container session, and therefore no image to diagnose against, before a PR/branch exists). Everything else about the Blocked-label convention above is unchanged.
 
@@ -252,37 +249,37 @@ A request is identified by any natural-language phrasing such as: "raise an issu
 
 For each such request that has not already been actioned (i.e. no reply from you linking to a newly created issue):
 
-1. Search for an existing open **or closed** issue covering the same topic; do not create duplicates.
-2. If no duplicate exists, create the issue immediately:
+- **P1.** Search for an existing open **or closed** issue covering the same topic; do not create duplicates.
+- **P2.** If no duplicate exists, create the issue immediately:
 
-   ```bash
-   gh issue create --repo <owner/repo> \
-     --title "<concise title from the request>" \
-     --body "<description from the request>" \
-     --label "<priority label from the request, or 'Medium' if unspecified>"
-   ```
+  ```bash
+  gh issue create --repo <owner/repo> \
+    --title "<concise title from the request>" \
+    --body "<description from the request>" \
+    --label "<priority label from the request, or 'Medium' if unspecified>"
+  ```
 
-3. Reply to the original comment with the new issue number. Use the correct command depending on where the request appeared:
+- **P3.** Reply to the original comment with the new issue number. Use the correct command depending on where the request appeared:
 
-   - If the request was on a **PR**:
+  - If the request was on a **PR**:
 
-     ```bash
-     gh pr comment <pr-number> --repo <owner/repo> --body "$(cat <<'COMMENT'
-     Raised as #<new-issue-number>.
-     COMMENT
-     )"
-     ```
+    ```bash
+    gh pr comment <pr-number> --repo <owner/repo> --body "$(cat <<'COMMENT'
+    Raised as #<new-issue-number>.
+    COMMENT
+    )"
+    ```
 
-   - If the request was on an **issue** (including a linked issue):
+  - If the request was on an **issue** (including a linked issue):
 
-     ```bash
-     gh issue comment <issue-number> --repo <owner/repo> --body "$(cat <<'COMMENT'
-     Raised as #<new-issue-number>.
-     COMMENT
-     )"
-     ```
+    ```bash
+    gh issue comment <issue-number> --repo <owner/repo> --body "$(cat <<'COMMENT'
+    Raised as #<new-issue-number>.
+    COMMENT
+    )"
+    ```
 
-4. Only after all such requests are actioned, continue with the normal CI/review workflow.
+- **P4.** Only after all such requests are actioned, continue with the normal CI/review workflow.
 
 The same rule applies when picking up an **issue**: if any comment on that issue requests a sub-issue to be raised, create it and reply (using `gh issue comment`) before proceeding with implementation work.
 
@@ -332,12 +329,14 @@ Invoked by: Code Writer, Code Fixer, Code Reviewer, CI Debugger.
 - Implement the GitHub issue: read all relevant instruction files, write production code and tests.
 - If implementation requires knowledge outside the instruction files (unfamiliar API, complex library usage, etc.), invoke Coding Researcher first; do not guess or fabricate. If Coding Researcher returns **Not possible**, stop, do not partially implement, and escalate to Orchestrator with the explanation and any suggested alternative.
 - After fixing a bug, run the [Pattern Sweep](code-quality.instructions.md#pattern-sweep-mandatory) and append its sweep record to the hand-off report.
+- Apply [IDE MCP Code Analysis](code-quality.instructions.md#ide-mcp-code-analysis-mandatory) to the files written or changed.
 - Do not commit, push, or update the changelog; hand off to Code Tester when done.
 
 ## Code Tester
 
 - Run build and all tests after Code Writer or Code Fixer finishes.
 - Check coverage against `git diff origin/main...HEAD`.
+- Apply [IDE MCP Code Analysis](code-quality.instructions.md#ide-mcp-code-analysis-mandatory) to the changed files.
 - On build failure, test failure, or uncovered code: report file paths/line ranges to the calling agent; stop, do not proceed.
 - Loop with Code Writer until build passes, all tests pass, and all new/changed code is covered.
 - Carry any sweep record in the incoming hand-off through to the outgoing report unchanged.
@@ -346,6 +345,7 @@ Invoked by: Code Writer, Code Fixer, Code Reviewer, CI Debugger.
 ## Code Reviewer
 
 - Run `git diff origin/main...HEAD`.
+- Apply [IDE MCP Code Analysis](code-quality.instructions.md#ide-mcp-code-analysis-mandatory) to the changed files.
 - Launch all the sub-agents **in parallel**: Reuse, Quality, Efficiency, Correctness, Security, Compliance.
 - Each sub-agent reports `{"clean": true}` or `{"clean": false, "findings": [{"file": "...", "line": ..., "issue": "...", "suggestion": "..."}]}`.
 - Fix each construct (real findings grouped by construct) as its own change set, with a [Pattern Sweep](code-quality.instructions.md#pattern-sweep-mandatory) handed over as for Code Writer; skip false positives. Re-run Code Tester after fixes. The outgoing report carries every sweep record, incoming and own, unchanged.
@@ -359,9 +359,9 @@ Invoked by: Code Writer, Code Fixer, Code Reviewer, CI Debugger.
 
 #### Reuse: Critical Instructions
 
-1. MINIMISE FALSE POSITIVES: Only flag cases where an existing utility or helper clearly covers the same need without modification.
-2. FOCUS ON IMPACT: Prioritise reuse that eliminates duplication across multiple call sites.
-3. EXCLUSIONS: Do NOT flag cases where the existing code would require modification to be reused; that is a refactor, not reuse.
+- MINIMISE FALSE POSITIVES: Only flag cases where an existing utility or helper clearly covers the same need without modification.
+- FOCUS ON IMPACT: Prioritise reuse that eliminates duplication across multiple call sites.
+- EXCLUSIONS: Do NOT flag cases where the existing code would require modification to be reused; that is a refactor, not reuse.
 
 #### Reuse: Categories
 
@@ -376,9 +376,9 @@ Invoked by: Code Writer, Code Fixer, Code Reviewer, CI Debugger.
 
 #### Quality: Critical Instructions
 
-1. MINIMISE FALSE POSITIVES: Only flag clear violations, not stylistic preferences.
-2. FOCUS ON IMPACT: Prioritise issues that harm maintainability or introduce technical debt.
-3. EXCLUSIONS: Do NOT report formatting or naming style issues; those are enforced by linting tooling.
+- MINIMISE FALSE POSITIVES: Only flag clear violations, not stylistic preferences.
+- FOCUS ON IMPACT: Prioritise issues that harm maintainability or introduce technical debt.
+- EXCLUSIONS: Do NOT report formatting or naming style issues; those are enforced by linting tooling.
 
 #### Quality: Categories
 
@@ -393,9 +393,9 @@ Invoked by: Code Writer, Code Fixer, Code Reviewer, CI Debugger.
 
 #### Efficiency: Critical Instructions
 
-1. MINIMISE FALSE POSITIVES: Only flag issues with measurable impact, not micro-optimisations.
-2. FOCUS ON IMPACT: Prioritise hot paths, loops, and data access patterns.
-3. EXCLUSIONS: Do NOT report theoretical inefficiencies in cold paths that are not performance-critical.
+- MINIMISE FALSE POSITIVES: Only flag issues with measurable impact, not micro-optimisations.
+- FOCUS ON IMPACT: Prioritise hot paths, loops, and data access patterns.
+- EXCLUSIONS: Do NOT report theoretical inefficiencies in cold paths that are not performance-critical.
 
 #### Efficiency: Categories
 
@@ -410,9 +410,9 @@ Invoked by: Code Writer, Code Fixer, Code Reviewer, CI Debugger.
 
 #### Correctness: Critical Instructions
 
-1. MINIMISE FALSE POSITIVES: Only flag cases where the logic provably does not match the intent of the change.
-2. FOCUS ON IMPACT: Prioritise errors that could cause incorrect results, data corruption, or silent failures.
-3. EXCLUSIONS: Do NOT flag style or structural issues; focus solely on whether the code does what it is supposed to do.
+- MINIMISE FALSE POSITIVES: Only flag cases where the logic provably does not match the intent of the change.
+- FOCUS ON IMPACT: Prioritise errors that could cause incorrect results, data corruption, or silent failures.
+- EXCLUSIONS: Do NOT flag style or structural issues; focus solely on whether the code does what it is supposed to do.
 
 #### Correctness: Categories
 
@@ -427,9 +427,9 @@ Invoked by: Code Writer, Code Fixer, Code Reviewer, CI Debugger.
 
 #### Security: Critical Instructions
 
-1. MINIMISE FALSE POSITIVES: Only flag issues where you're >80% confident of actual exploitability.
-2. FOCUS ON IMPACT: Prioritise vulnerabilities that could lead to unauthorised access, data breaches, or system compromise.
-3. EXCLUSIONS: Do NOT report Denial of Service (DOS) vulnerabilities, rate limiting issues, or secrets/credentials committed in code (private keys, passwords, API keys); these are covered by dedicated non-agentic tooling.
+- MINIMISE FALSE POSITIVES: Only flag issues where you're >80% confident of actual exploitability.
+- FOCUS ON IMPACT: Prioritise vulnerabilities that could lead to unauthorised access, data breaches, or system compromise.
+- EXCLUSIONS: Do NOT report Denial of Service (DOS) vulnerabilities, rate limiting issues, or secrets/credentials committed in code (private keys, passwords, API keys); these are covered by dedicated non-agentic tooling.
 
 #### Security: Categories
 
@@ -444,9 +444,9 @@ Invoked by: Code Writer, Code Fixer, Code Reviewer, CI Debugger.
 
 #### Compliance: Critical Instructions
 
-1. MINIMISE FALSE POSITIVES: Only flag clear violations of explicit rules, not inferred or implied guidance.
-2. FOCUS ON IMPACT: Prioritise violations that would cause the files to fail review or break established conventions.
-3. EXCLUSIONS: Do NOT re-report issues already in scope for Reuse, Quality, Efficiency, Correctness, or Security sub-agents.
+- MINIMISE FALSE POSITIVES: Only flag clear violations of explicit rules, not inferred or implied guidance.
+- FOCUS ON IMPACT: Prioritise violations that would cause the files to fail review or break established conventions.
+- EXCLUSIONS: Do NOT re-report issues already in scope for Reuse, Quality, Efficiency, Correctness, or Security sub-agents.
 
 #### Compliance: Categories
 
@@ -466,7 +466,7 @@ Invoked by: Code Writer, Code Fixer, Code Reviewer, CI Debugger.
   - All `*.sql` files as a single separate group, regardless of location.
   - All `.ai-instructions` and `ai/**` instruction files as a single separate group.
   - Remaining files (shell scripts, GitHub workflows, config) as a repo-level group.
-- Process groups sequentially. For each group, launch the Code Reviewer sub-agents (Reuse, Quality, Efficiency, Correctness, Security, Compliance) **in parallel**.
+- Process groups sequentially. For each group, apply [IDE MCP Code Analysis](code-quality.instructions.md#ide-mcp-code-analysis-mandatory) to the group's files, then launch the Code Reviewer sub-agents (Reuse, Quality, Efficiency, Correctness, Security, Compliance) **in parallel**.
   - The "newly changed files" scope does not apply; sub-agents review the full file set for the group.
 - Do NOT fix findings. For each group that has findings, raise one GitHub issue:
   - Title: `Audit: <group-name> - <brief summary>`
@@ -480,7 +480,7 @@ Invoked by: Code Writer, Code Fixer, Code Reviewer, CI Debugger.
 - Fetch **both** comment surfaces before deciding there is nothing to address: top-level PR comments and review summaries (`gh pr view <n> --repo <owner/repo> --json comments,reviews,reviewDecision`) **and** inline/diff-level review comments (`gh api repos/<owner>/<repo>/pulls/<n>/comments`). A reviewer can submit a `CHANGES_REQUESTED` review with an empty top-level summary and put their actual feedback only in an inline diff comment; the review decision alone is enough to treat the PR as having unaddressed work, and the inline-comment endpoint is the only place its content is visible.
 - If a fix requires knowledge outside the instruction files, invoke Coding Researcher first; do not guess or fabricate. If Coding Researcher returns **Not possible**, stop and escalate to Orchestrator with the explanation; do not partially apply the fix.
 - Convert to draft before starting (`gh pr ready <number> --undo`).
-- One fix change set per construct (comments grouped by construct), with a [Pattern Sweep](code-quality.instructions.md#pattern-sweep-mandatory) handed over as for Code Writer. Hand off to Code Tester after each fix and its sweep.
+- One fix change set per construct (comments grouped by construct), with a [Pattern Sweep](code-quality.instructions.md#pattern-sweep-mandatory) handed over as for Code Writer. Apply [IDE MCP Code Analysis](code-quality.instructions.md#ide-mcp-code-analysis-mandatory) to the fixed files. Hand off to Code Tester after each fix and its sweep.
 - Respond to **every** review comment without exception, per [Comment Replies](#comment-replies-mandatory). A reply that cites a SHA is posted once Committer has pushed, so the sweep record's file placement is final.
 
 ## Rebase Agent
@@ -494,7 +494,7 @@ Invoked by: Code Writer, Code Fixer, Code Reviewer, CI Debugger.
 ## CI Debugger
 
 - Read full logs (`gh run view --log-failed`), identify root cause.
-- Fix if code-related, with a [Pattern Sweep](code-quality.instructions.md#pattern-sweep-mandatory) committed after the fix per [Pattern Sweep Commits](git-commits.instructions.md#pattern-sweep-commits), since no Committer follows this role; escalate to Orchestrator with a clear description if environmental or infrastructure; use the Environment/Infrastructure Block Marker convention above so the block can auto-clear once the fix ships.
+- Fix if code-related, with a [Pattern Sweep](code-quality.instructions.md#pattern-sweep-mandatory) committed after the fix per [Pattern Sweep Commits](git-commits.instructions.md#pattern-sweep-commits), since no Committer follows this role; apply [IDE MCP Code Analysis](code-quality.instructions.md#ide-mcp-code-analysis-mandatory) to the fixed files; escalate to Orchestrator with a clear description if environmental or infrastructure; use the Environment/Infrastructure Block Marker convention above so the block can auto-clear once the fix ships.
 - If a code-related fix requires knowledge outside the instruction files, invoke Coding Researcher first; do not guess or fabricate. If Coding Researcher returns **Not possible**, escalate to Orchestrator with the explanation.
 
 ## Changelog
