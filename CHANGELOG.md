@@ -13,7 +13,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Dependencies - Updated FunFair.BuildCheck to 474.2.16.2711
 ### Deprecated
 ### Removed
 ### Deployment Changes
@@ -21,6 +20,10 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+
+## [1.5.14] - 2026-09-18
+### Changed
+- Dependencies - Updated FunFair.BuildCheck to 474.2.16.2711
 
 ## [1.5.13] - 2026-09-17
 ### Fixed
