@@ -38,12 +38,14 @@ public static class FrameWorkSettingsBuilder
         NuGetVersion templateFramework
     )
     {
-        if (repositoryFramework.IsPrerelease && !IsReleaseCandidate(repositoryFramework))
+        bool repositoryIsReleaseCandidate = IsReleaseCandidate(repositoryFramework);
+
+        if (repositoryFramework.IsPrerelease && !repositoryIsReleaseCandidate)
         {
             return false;
         }
 
-        if (IsReleaseCandidate(repositoryFramework) && IsReleaseCandidate(templateFramework))
+        if (repositoryIsReleaseCandidate && IsReleaseCandidate(templateFramework))
         {
             // Repo is newer Framework version or newer Pre-Release
             return repositoryFramework > templateFramework;
