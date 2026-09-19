@@ -96,6 +96,16 @@ public sealed class FrameWorkSettingsBuilderTests : TestBase
         "9.0.305",
         "false"
     )]
+    [InlineData(
+        "10.0.100-rc.1.123456.789",
+        true,
+        "latestPatch",
+        "10.0.100-preview.7.123456.789",
+        true,
+        "latestPatch",
+        "10.0.100-preview.7.123456.789",
+        "true"
+    )]
     public static void CheckUpgradeSettings(
         string? repoSdkVersion,
         bool repoAllowPreRelease,
