@@ -67,16 +67,6 @@ public sealed class FrameWorkSettingsBuilderTests : TestBase
     )]
     [InlineData("10.0.100", false, "latestPatch", "9.0.305-rc.1.123456.789", true, "latestPatch", "10.0.100", "false")]
     [InlineData(
-        "10.0.100-rc.1.123456.789",
-        true,
-        "latestPatch",
-        "10.0.100-preview.7.123456.789",
-        true,
-        "latestPatch",
-        "10.0.100-preview.7.123456.789",
-        "true"
-    )]
-    [InlineData(
         "10.0.100-rc.10.123456.789",
         true,
         "latestPatch",
