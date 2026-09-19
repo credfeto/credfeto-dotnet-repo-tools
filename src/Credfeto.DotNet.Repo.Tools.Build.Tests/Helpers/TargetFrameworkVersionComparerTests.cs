@@ -21,7 +21,12 @@ public sealed class TargetFrameworkVersionComparerTests : TestBase
     [InlineData("net9.0", "net48", 1)]
     [InlineData("netstandard2.0", "net10.0", -1)]
     [InlineData("net10.0", "netstandard2.0", 1)]
-    public static void Compare(string x, string y, int expectedSign)
+    [InlineData("net472", "net48", -1)]
+    [InlineData("net48", "net472", 1)]
+    [InlineData(null, "net10.0", -1)]
+    [InlineData("net10.0", null, 1)]
+    [InlineData(null, null, 0)]
+    public static void Compare(string? x, string? y, int expectedSign)
     {
         int result = TargetFrameworkVersionComparer.Instance.Compare(x: x, y: y);
 
