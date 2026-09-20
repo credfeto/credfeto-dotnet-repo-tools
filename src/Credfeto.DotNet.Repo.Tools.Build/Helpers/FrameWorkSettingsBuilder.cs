@@ -38,53 +38,21 @@ public static class FrameWorkSettingsBuilder
         NuGetVersion templateFramework
     )
     {
-        if (repositoryFramework.IsPrerelease)
-        {
-            if (IsReleaseCandidate(repositoryFramework))
-            {
-                if (templateFramework.IsPrerelease && IsReleaseCandidate(repositoryFramework))
-                {
-                    if (repositoryFramework.Version > templateFramework.Version)
-                    {
-                        // Repo is newer Framework version
-                        return true;
-                    }
+        bool repositoryIsReleaseCandidate = IsReleaseCandidate(repositoryFramework);
 
-                    if (repositoryFramework.Version == templateFramework.Version)
-                    {
-                        if (
-                            StringComparer.Ordinal.Compare(x: repositoryFramework.Release, y: templateFramework.Release)
-                            > 0
-                        )
-                        {
-                            // repo Pre-Release is newer or same as template
-                            return true;
-                        }
-                    }
-                }
-                else if (repositoryFramework.Version > templateFramework.Version)
-                {
-                    // Repo is newer Framework version
-                    return true;
-                }
-            }
-        }
-        else
+        if (repositoryFramework.IsPrerelease && !repositoryIsReleaseCandidate)
         {
-            if (templateFramework.IsPrerelease && IsReleaseCandidate(templateFramework))
-            {
-                if (repositoryFramework.Version > templateFramework.Version)
-                {
-                    return true;
-                }
-            }
-            else if (repositoryFramework.Version > templateFramework.Version)
-            {
-                return true;
-            }
+            return false;
         }
 
-        return false;
+        if (repositoryIsReleaseCandidate && IsReleaseCandidate(templateFramework))
+        {
+            // Repo is newer Framework version or newer Pre-Release
+            return repositoryFramework > templateFramework;
+        }
+
+        // Repo is newer Framework version
+        return repositoryFramework.Version > templateFramework.Version;
     }
 
     private static bool IsReleaseCandidate(NuGetVersion repositoryFramework)
