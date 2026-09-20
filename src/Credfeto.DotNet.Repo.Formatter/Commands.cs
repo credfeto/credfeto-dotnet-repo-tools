@@ -385,6 +385,11 @@ public sealed class Commands
             }
         }
 
+        if (missing.Count != 0)
+        {
+            return ([], missing);
+        }
+
         IReadOnlyList<string> files =
         [
             .. resolved.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase),
