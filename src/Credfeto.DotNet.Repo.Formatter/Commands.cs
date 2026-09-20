@@ -389,12 +389,8 @@ public sealed class Commands
         [
             .. resolved.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase),
         ];
-        IReadOnlyList<string> missingFiles =
-        [
-            .. missing.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase),
-        ];
 
-        return (files, missingFiles);
+        return (files, missing);
     }
 
     private static IEnumerable<string> ScanDirectory(string directory)
