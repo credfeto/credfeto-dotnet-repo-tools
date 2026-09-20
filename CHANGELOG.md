@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - Dependencies - Updated Microsoft.Sbom.Targets to 4.1.12
 - Dependencies - Updated Meziantou.Analyzer to 3.0.264
+- Dependencies - Updated FunFair.BuildCheck to 474.2.17.2723
 ### Deprecated
 ### Removed
 ### Deployment Changes
