@@ -12,11 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
-- Framework SDK selection no longer prefers the repository's prerelease SDK over the template's when the repository is on a release-candidate build but the template isn't, and release-candidate builds now compare correctly (e.g. rc.10 is treated as newer than rc.9)
 ### Changed
-- Dependencies - Updated Microsoft.Sbom.Targets to 4.1.12
-- Dependencies - Updated Meziantou.Analyzer to 3.0.264
-- Dependencies - Updated FunFair.BuildCheck to 474.2.17.2723
 ### Deprecated
 ### Removed
 ### Deployment Changes
@@ -24,6 +20,14 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+
+## [1.5.15] - 2026-09-20
+### Fixed
+- Framework SDK selection no longer prefers the repository's prerelease SDK over the template's when the repository is on a release-candidate build but the template isn't, and release-candidate builds now compare correctly (e.g. rc.10 is treated as newer than rc.9)
+### Changed
+- Dependencies - Updated Microsoft.Sbom.Targets to 4.1.12
+- Dependencies - Updated Meziantou.Analyzer to 3.0.264
+- Dependencies - Updated FunFair.BuildCheck to 474.2.17.2723
 
 ## [1.5.14] - 2026-09-18
 ### Changed
