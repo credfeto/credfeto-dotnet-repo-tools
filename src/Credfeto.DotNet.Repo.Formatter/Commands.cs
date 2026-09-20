@@ -395,7 +395,7 @@ public sealed class Commands
             .. resolved.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase),
         ];
 
-        return (files, missing);
+        return (files, []);
     }
 
     private static IEnumerable<string> ScanDirectory(string directory)
