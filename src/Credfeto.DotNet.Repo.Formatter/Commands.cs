@@ -101,7 +101,14 @@ public sealed class Commands
             return Constants.ExitCodes.Error;
         }
 
-        IReadOnlyList<string> resolvedFiles = ResolveInputs(inputs);
+        (IReadOnlyList<string> resolvedFiles, IReadOnlyList<string> missingFiles) = ResolveInputs(inputs);
+
+        if (missingFiles.Count != 0)
+        {
+            this.LogMissingFiles(missingFiles);
+
+            return Constants.ExitCodes.Error;
+        }
 
         if (resolvedFiles is [])
         {
@@ -122,14 +129,14 @@ public sealed class Commands
                 buildRoot: buildRoot
             );
 
-            int updatedCount = await this.ProcessAllFilesAsync(
+            (int updatedCount, bool hadFailures) = await this.ProcessAllFilesAsync(
                 resolvedFiles: resolvedFiles,
                 buildContext: buildContext
             );
 
             this._logger.LogCompleted(fileCount: resolvedFiles.Count, updatedCount: updatedCount);
 
-            return Constants.ExitCodes.Success;
+            return hadFailures ? Constants.ExitCodes.Error : Constants.ExitCodes.Success;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -139,9 +146,21 @@ public sealed class Commands
         }
     }
 
-    private async Task<int> ProcessAllFilesAsync(IReadOnlyList<string> resolvedFiles, BuildContext? buildContext)
+    private void LogMissingFiles(IReadOnlyList<string> missingFiles)
+    {
+        foreach (string missingFile in missingFiles)
+        {
+            this._logger.LogFileNotFound(missingFile);
+        }
+    }
+
+    private async Task<(int UpdatedCount, bool HadFailures)> ProcessAllFilesAsync(
+        IReadOnlyList<string> resolvedFiles,
+        BuildContext? buildContext
+    )
     {
         int updatedCount = 0;
+        int failureCount = 0;
 
         // Parallelise when no build context — suppression removal requires serial dotnet build per file
         int maxDegree = buildContext is null ? Environment.ProcessorCount : 1;
@@ -157,21 +176,33 @@ public sealed class Commands
             {
                 this._logger.LogProcessingFile(file);
 
-                bool updated = await this.ProcessFileAsync(filePath: file, buildContext: buildContext);
+                try
+                {
+                    bool updated = await this.ProcessFileAsync(filePath: file, buildContext: buildContext);
 
-                if (updated)
-                {
-                    Interlocked.Increment(ref updatedCount);
-                    this._logger.LogFileUpdated(file);
+                    if (updated)
+                    {
+                        Interlocked.Increment(ref updatedCount);
+                        this._logger.LogFileUpdated(file);
+                    }
+                    else
+                    {
+                        this._logger.LogFileUnchanged(file);
+                    }
                 }
-                else
+                catch (Exception exception) when (exception is not OperationCanceledException)
                 {
-                    this._logger.LogFileUnchanged(file);
+                    Interlocked.Increment(ref failureCount);
+                    this._logger.LogFileProcessingFailed(
+                        fileName: file,
+                        message: exception.Message,
+                        exception: exception
+                    );
                 }
             }
         );
 
-        return updatedCount;
+        return (updatedCount, failureCount != 0);
     }
 
     private async ValueTask<BuildContext?> BuildContextOrNullAsync(bool removeSuppressions, string? buildRoot)
@@ -327,9 +358,12 @@ public sealed class Commands
         return valid;
     }
 
-    private static IReadOnlyList<string> ResolveInputs(IEnumerable<string> inputs)
+    private static (IReadOnlyList<string> Files, IReadOnlyList<string> MissingFiles) ResolveInputs(
+        IEnumerable<string> inputs
+    )
     {
         List<string> resolved = [];
+        List<string> missing = [];
 
         foreach (string input in inputs)
         {
@@ -341,13 +375,26 @@ public sealed class Commands
             {
                 resolved.AddRange(ExpandGlob(input));
             }
-            else
+            else if (File.Exists(input))
             {
                 resolved.Add(input);
             }
+            else
+            {
+                missing.Add(input);
+            }
         }
 
-        return [.. resolved.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase)];
+        IReadOnlyList<string> files =
+        [
+            .. resolved.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase),
+        ];
+        IReadOnlyList<string> missingFiles =
+        [
+            .. missing.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase),
+        ];
+
+        return (files, missingFiles);
     }
 
     private static IEnumerable<string> ScanDirectory(string directory)
