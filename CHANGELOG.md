@@ -13,7 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 - Framework SDK selection no longer prefers the repository's prerelease SDK over the template's when the repository is on a release-candidate build but the template isn't, and release-candidate builds now compare correctly (e.g. rc.10 is treated as newer than rc.9)
-- TBD - to be finalized after review
+- Formatter cleanup no longer aborts the whole batch when one file fails to process (e.g. a duplicate MSBuild property); other files still get processed and the run reports an error. A missing explicit input path is now detected upfront and reported before any file is touched
 ### Changed
 - Dependencies - Updated Microsoft.Sbom.Targets to 4.1.12
 - Dependencies - Updated Meziantou.Analyzer to 3.0.264

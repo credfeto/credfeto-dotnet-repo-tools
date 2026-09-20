@@ -486,4 +486,35 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         await this._dotNetFilesDetector.DidNotReceive().FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task CleanupAsyncContinuesBatchWhenOneFileFailsToProcessAsync()
+    {
+        const string projectXml = "<Project Sdk=\"Microsoft.NET.Sdk\"></Project>";
+        string badProject = await this.CreateFileAsync(relativePath: "Bad.csproj", content: projectXml);
+        string goodFile = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
+        this._projectXmlRewriter.ReOrderPropertyGroups(Arg.Any<XmlDocument>(), badProject)
+            .Returns(_ => throw new XmlException("Duplicate property"));
+
+        int result = await this._commands.CleanupAsync(inputs: [badProject, goodFile]);
+
+        Assert.Equal(expected: ExitCodes.Error, actual: result);
+        await this
+            ._sourceFileReformatter.Received(1)
+            .ReformatAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CleanupAsyncReturnsErrorWithoutProcessingAnyFileWhenExplicitInputIsMissingAsync()
+    {
+        string missingFile = Path.Combine(path1: this.TempFolder, path2: "does-not-exist.cs");
+        string goodFile = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
+
+        int result = await this._commands.CleanupAsync(inputs: [missingFile, goodFile]);
+
+        Assert.Equal(expected: ExitCodes.Error, actual: result);
+        await this
+            ._sourceFileReformatter.DidNotReceive()
+            .ReformatAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
 }

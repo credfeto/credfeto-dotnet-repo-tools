@@ -50,4 +50,15 @@ internal static partial class CommandsLoggingExtensions
 
     [LoggerMessage(EventId = 10, Level = LogLevel.Critical, Message = "Command failed: {message}")]
     public static partial void LogCommandFailed(this ILogger logger, string message, Exception exception);
+
+    [LoggerMessage(EventId = 11, Level = LogLevel.Error, Message = "File not found: {fileName}")]
+    public static partial void LogFileNotFound(this ILogger logger, string fileName);
+
+    [LoggerMessage(EventId = 12, Level = LogLevel.Error, Message = "Failed to process file: {fileName}: {message}")]
+    public static partial void LogFileProcessingFailed(
+        this ILogger logger,
+        string fileName,
+        string message,
+        Exception exception
+    );
 }
