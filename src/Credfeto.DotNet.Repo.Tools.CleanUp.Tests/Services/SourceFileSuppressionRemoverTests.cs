@@ -279,28 +279,11 @@ public static class Test {
 }
 ";
 
-        string expected =
-            @"
-using System.Diagnostics;
-
-namespace Test;
-
-public static class Test {
-
-"
-            + Tab
-            + @"
-    public static void DoesNothing() {
-          // Example
-    }
-}
-";
-
         this.MockSuccessfulBuild();
 
         string actual = await this.CleanupAsync(source);
 
-        Assert.Equal(expected: expected, actual: actual);
+        Assert.Equal(expected: ExpectedWithSuppressionRemoved, actual: actual);
 
         await this.ReceivedBuildAsync(1);
     }
