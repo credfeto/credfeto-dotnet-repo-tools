@@ -87,7 +87,11 @@ public sealed partial class SourceFileSuppressionRemover : ISourceFileSuppressio
 
     [GeneratedRegex(
         pattern: "\\[\\s*(assembly:)?\\s*SuppressMessage\\(.*?\\)\\s*\\]",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline | RegexOptions.ExplicitCapture,
+        RegexOptions.Compiled
+            | RegexOptions.CultureInvariant
+            | RegexOptions.Multiline
+            | RegexOptions.Singleline
+            | RegexOptions.ExplicitCapture,
         matchTimeoutMilliseconds: 5000
     )]
     private static partial Regex SuppressMessages();

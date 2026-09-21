@@ -257,6 +257,37 @@ public static class Test {
         await this.ReceivedBuildAsync(1);
     }
 
+    [Fact]
+    public async Task MultiLineSuppressionShouldBeRemovedIfBuildSucceedsAsync()
+    {
+        const string source =
+            @"
+using System.Diagnostics;
+
+namespace Test;
+
+public static class Test {
+
+    [SuppressMessage(
+        category: ""Meziantou.Analyzer"",
+        checkId: ""MA0051: Method is too long"",
+        Justification = ""Unit tests""
+    )]
+    public static void DoesNothing() {
+          // Example
+    }
+}
+";
+
+        this.MockSuccessfulBuild();
+
+        string actual = await this.CleanupAsync(source);
+
+        Assert.Equal(expected: ExpectedWithSuppressionRemoved, actual: actual);
+
+        await this.ReceivedBuildAsync(1);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
