@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Formatter cleanup no longer aborts the whole batch when one file fails to process (e.g. a duplicate MSBuild property); other files still get processed and the run reports an error. A missing explicit input path is now detected upfront and reported before any file is touched
 ### Changed
 - Dependencies - Updated Meziantou.Analyzer to 3.0.266
 ### Deprecated
