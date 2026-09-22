@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Cleanup: redundant SuppressMessage attribute removal now correctly detects attributes wrapped across multiple lines by CSharpier formatting, instead of silently skipping almost all of them
 ### Changed
 - Dependencies - Updated Meziantou.Analyzer to 3.0.270
+- Dependencies - Updated Microsoft.Sbom.Targets to 4.1.13
 ### Deprecated
 ### Removed
 ### Deployment Changes
