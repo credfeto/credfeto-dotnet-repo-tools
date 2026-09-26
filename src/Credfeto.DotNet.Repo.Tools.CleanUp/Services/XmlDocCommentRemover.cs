@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
@@ -10,6 +9,8 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
 public sealed class XmlDocCommentRemover : IXmlDocCommentRemover
 {
+    private const string HorizontalWhitespace = " \t";
+
     public string RemoveXmlDocComments(string content)
     {
         // Cheap textual pre-check so files with no doc comments are never parsed.
@@ -21,17 +22,17 @@ public sealed class XmlDocCommentRemover : IXmlDocCommentRemover
             return content;
         }
 
-        IReadOnlyList<TextSpan> removals =
+        IReadOnlyList<TextChange> removals =
         [
             .. CSharpSyntaxTree
                 .ParseText(content)
                 .GetRoot()
                 .DescendantTrivia(descendIntoTrivia: false)
                 .Where(IsXmlDocComment)
-                .Select(trivia => GetRemovalSpan(content: content, commentSpan: trivia.FullSpan)),
+                .Select(trivia => GetRemoval(content: content, commentSpan: trivia.FullSpan)),
         ];
 
-        return removals is [] ? content : ApplyRemovals(content: content, removals: removals);
+        return removals is [] ? content : SourceText.From(content).WithChanges(removals).ToString();
     }
 
     private static bool IsXmlDocComment(SyntaxTrivia trivia)
@@ -40,48 +41,30 @@ public sealed class XmlDocCommentRemover : IXmlDocCommentRemover
             || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia);
     }
 
-    private static string ApplyRemovals(string content, IReadOnlyList<TextSpan> removals)
+    private static TextChange GetRemoval(string content, in TextSpan commentSpan)
     {
-        StringBuilder result = new(content.Length);
-        int position = 0;
-
-        foreach (TextSpan removal in removals)
-        {
-            result.Append(value: content, startIndex: position, count: removal.Start - position);
-
-            // A comment squeezed between two tokens must not let them fuse together.
-            if (IsBetweenTokens(content: content, removal: removal))
-            {
-                result.Append(' ');
-            }
-
-            position = removal.End;
-        }
-
-        result.Append(value: content, startIndex: position, count: content.Length - position);
-
-        return result.ToString();
-    }
-
-    private static TextSpan GetRemovalSpan(string content, in TextSpan commentSpan)
-    {
-        int start = SkipHorizontalWhitespaceBackwards(content: content, position: commentSpan.Start);
+        int start = content.AsSpan(start: 0, length: commentSpan.Start).TrimEnd(HorizontalWhitespace).Length;
         int contentEnd = TrimLineBreak(content: content, commentSpan: commentSpan);
-        int lineBreakStart = SkipHorizontalWhitespaceForwards(content: content, position: contentEnd);
+        int lineBreakStart = content.Length - content.AsSpan(contentEnd).TrimStart(HorizontalWhitespace).Length;
 
         if (!IsEndOfLine(content: content, position: lineBreakStart))
         {
             // Code shares the line after the comment, so only the comment itself goes.
-            return commentSpan;
+            return ToRemoval(content: content, span: commentSpan);
         }
 
         // Taking the line break too stops a blank line being left behind, but only when nothing else was on the line.
-        return IsLineStart(content: content, position: start)
-            ? TextSpan.FromBounds(
-                start: start,
-                end: lineBreakStart + GetLineBreakLength(content: content, position: lineBreakStart)
-            )
-            : TextSpan.FromBounds(start: start, end: lineBreakStart);
+        int end = IsLineStart(content: content, position: start)
+            ? lineBreakStart + GetLineBreakLength(content: content, position: lineBreakStart)
+            : lineBreakStart;
+
+        return ToRemoval(content: content, span: TextSpan.FromBounds(start: start, end: end));
+    }
+
+    private static TextChange ToRemoval(string content, in TextSpan span)
+    {
+        // A comment squeezed between two tokens must not let them fuse together.
+        return new(span: span, newText: IsBetweenTokens(content: content, removal: span) ? " " : string.Empty);
     }
 
     // Single line doc comment trivia owns its trailing line break; multi line ones do not.
@@ -89,27 +72,12 @@ public sealed class XmlDocCommentRemover : IXmlDocCommentRemover
     {
         int end = commentSpan.End;
 
-        if (end > commentSpan.Start && content[end - 1] == '\n')
-        {
-            --end;
-        }
-
-        if (end > commentSpan.Start && content[end - 1] == '\r')
+        while (end > commentSpan.Start && IsLineEnding(content[end - 1]))
         {
             --end;
         }
 
         return end;
-    }
-
-    private static int SkipHorizontalWhitespaceForwards(string content, int position)
-    {
-        while (position < content.Length && IsHorizontalWhitespace(content[position]))
-        {
-            ++position;
-        }
-
-        return position;
     }
 
     private static bool IsEndOfLine(string content, int position)
@@ -125,16 +93,6 @@ public sealed class XmlDocCommentRemover : IXmlDocCommentRemover
         }
 
         return content[position] == '\r' && position + 1 < content.Length && content[position + 1] == '\n' ? 2 : 1;
-    }
-
-    private static int SkipHorizontalWhitespaceBackwards(string content, int position)
-    {
-        while (position > 0 && IsHorizontalWhitespace(content[position - 1]))
-        {
-            --position;
-        }
-
-        return position;
     }
 
     private static bool IsLineStart(string content, int position)
@@ -153,10 +111,5 @@ public sealed class XmlDocCommentRemover : IXmlDocCommentRemover
     private static bool IsLineEnding(char character)
     {
         return character is '\r' or '\n';
-    }
-
-    private static bool IsHorizontalWhitespace(char character)
-    {
-        return character is ' ' or '\t';
     }
 }
