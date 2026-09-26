@@ -32,7 +32,25 @@ public sealed partial class XmlDocCommentRemover : IXmlDocCommentRemover
                 .SelectMany(trivia => GetRemovals(content: content, trivia: trivia)),
         ];
 
-        return removals is [] ? content : SourceText.From(content).WithChanges(removals).ToString();
+        return removals is [] ? content : SourceText.From(content).WithChanges(TrimOverlaps(removals)).ToString();
+    }
+
+    // Neighbouring comments on one line each claim the whitespace between them; WithChanges rejects overlapping edits.
+    private static IEnumerable<TextChange> TrimOverlaps(IReadOnlyList<TextChange> removals)
+    {
+        int previousEnd = 0;
+
+        foreach (TextChange removal in removals)
+        {
+            int start = Math.Max(val1: removal.Span.Start, val2: previousEnd);
+            int end = Math.Max(val1: removal.Span.End, val2: start);
+            previousEnd = end;
+
+            yield return new(
+                span: TextSpan.FromBounds(start: start, end: end),
+                newText: removal.NewText ?? string.Empty
+            );
+        }
     }
 
     private static IEnumerable<TextChange> GetRemovals(string content, in SyntaxTrivia trivia)

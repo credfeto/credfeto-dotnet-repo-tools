@@ -120,6 +120,14 @@ public sealed class XmlDocCommentRemoverTests : TestBase
         "public class Example\n{\n#if NET8_0\n    //// commented out\n    /// <summary>Conditional</summary>\n    /// <returns>x</returns>\n    public void Method() { }\n#endif\n}\n",
         "public class Example\n{\n#if NET8_0\n    //// commented out\n    public void Method() { }\n#endif\n}\n"
     )]
+    [InlineData(
+        "public class Example\n{\n    /** a */ /** b */\n    public int Value { get; }\n}\n",
+        "public class Example\n{\n    \n    public int Value { get; }\n}\n"
+    )]
+    [InlineData(
+        "public class Example\n{\n    public int Value { get; } /** a */ /** b */\n}\n",
+        "public class Example\n{\n    public int Value { get; } \n}\n"
+    )]
     [InlineData("public class Example { }\n/// <summary>Dangling</summary>", "public class Example { }\n")]
     [InlineData("public class Example { }\n/// <summary>Dangling</summary>\n", "public class Example { }\n")]
     public void RemoveXmlDocCommentsShouldRemoveDocCommentsAndKeepEverythingElse(string input, string expected)
