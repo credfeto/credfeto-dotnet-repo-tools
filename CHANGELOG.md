@@ -12,12 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
-- Formatter cleanup no longer aborts the whole batch when one file fails to process (e.g. a duplicate MSBuild property); other files still get processed and the run reports an error. A missing explicit input path is now detected upfront and reported before any file is touched
-- Cleanup: redundant SuppressMessage attribute removal now correctly detects attributes wrapped across multiple lines by CSharpier formatting, instead of silently skipping almost all of them
-- XML doc comments are now actually removed by cscleanup and the bulk clean-up, instead of being passed through unchanged
 ### Changed
-- Dependencies - Updated Microsoft.Sbom.Targets to 4.1.13
-- Dependencies - Updated Meziantou.Analyzer to 3.0.284
 ### Deprecated
 ### Removed
 ### Deployment Changes
@@ -25,6 +20,15 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+
+## [1.5.16] - 2026-09-26
+### Fixed
+- Formatter cleanup no longer aborts the whole batch when one file fails to process (e.g. a duplicate MSBuild property); other files still get processed and the run reports an error. A missing explicit input path is now detected upfront and reported before any file is touched
+- Cleanup: redundant SuppressMessage attribute removal now correctly detects attributes wrapped across multiple lines by CSharpier formatting, instead of silently skipping almost all of them
+- XML doc comments are now actually removed by cscleanup and the bulk clean-up, instead of being passed through unchanged
+### Changed
+- Dependencies - Updated Microsoft.Sbom.Targets to 4.1.13
+- Dependencies - Updated Meziantou.Analyzer to 3.0.284
 
 ## [1.5.15] - 2026-09-20
 ### Fixed
