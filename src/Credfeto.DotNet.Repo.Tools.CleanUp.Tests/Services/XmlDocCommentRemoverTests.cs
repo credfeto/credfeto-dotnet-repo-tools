@@ -73,7 +73,7 @@ public sealed class XmlDocCommentRemoverTests : TestBase
     )]
     [InlineData(
         "public class Example\n{\n    /** <summary>The value</summary> */ public int Value { get; }\n}\n",
-        "public class Example\n{\n     public int Value { get; }\n}\n"
+        "public class Example\n{\n    public int Value { get; }\n}\n"
     )]
     [InlineData(
         "public class Example\n{\n    public int/** x */Value { get; }\n}\n",
@@ -135,13 +135,13 @@ public sealed class XmlDocCommentRemoverTests : TestBase
     public void RemoveXmlDocCommentsShouldPreserveLineEndings(string lineEnding)
     {
         string input =
-            "public class Example\n{\n    /// <summary>\n    /// The value\n    /// </summary>\n    public int Value { get; }\n\n    /** <summary>Other</summary> */\n    public int Other { get; }\n}\n".Replace(
+            "public class Example\n{\n    /// <summary>\n    /// The value\n    /// </summary>\n    public int Value { get; }\n\n    /** <summary>Other</summary> */\n    public int Other { get; }\n#if NET8_0\n    /// <summary>Third</summary>\n    public int Third { get; }\n#endif\n}\n".Replace(
                 oldValue: "\n",
                 newValue: lineEnding,
                 comparisonType: StringComparison.Ordinal
             );
         string expected =
-            "public class Example\n{\n    public int Value { get; }\n\n    public int Other { get; }\n}\n".Replace(
+            "public class Example\n{\n    public int Value { get; }\n\n    public int Other { get; }\n#if NET8_0\n    public int Third { get; }\n#endif\n}\n".Replace(
                 oldValue: "\n",
                 newValue: lineEnding,
                 comparisonType: StringComparison.Ordinal

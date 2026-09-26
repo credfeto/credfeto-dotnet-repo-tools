@@ -76,8 +76,11 @@ public sealed partial class XmlDocCommentRemover : IXmlDocCommentRemover
 
         if (!IsEndOfLine(content: content, position: lineBreakStart))
         {
-            // Code shares the line after the comment, so only the comment itself goes.
-            return ToRemoval(content: content, span: commentSpan);
+            // Code shares the line after the comment, so only the comment and the gap before that code go.
+            return ToRemoval(
+                content: content,
+                span: TextSpan.FromBounds(start: commentSpan.Start, end: lineBreakStart)
+            );
         }
 
         // Taking the line break too stops a blank line being left behind, but only when nothing else was on the line.
@@ -141,8 +144,8 @@ public sealed partial class XmlDocCommentRemover : IXmlDocCommentRemover
     }
 
     [GeneratedRegex(
-        pattern: "^[ \\t]*///(?!/)[^\\r\\n]*(\\r\\n|\\r|\\n)?",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline | RegexOptions.ExplicitCapture,
+        pattern: "(?<![^\\r\\n])[ \\t]*///(?!/)[^\\r\\n]*(\\r\\n|\\r|\\n)?",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture,
         matchTimeoutMilliseconds: 5000
     )]
     private static partial Regex DocCommentLines();
