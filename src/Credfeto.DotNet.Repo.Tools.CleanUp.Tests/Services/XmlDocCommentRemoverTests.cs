@@ -107,6 +107,11 @@ public sealed class XmlDocCommentRemoverTests : TestBase
         "public class Example\n{\n    public string Value => \"/// text\"; /// <summary>Doc</summary>\n}\n",
         "public class Example\n{\n    public string Value => \"/// text\";\n}\n"
     )]
+    [InlineData("/// <summary>unclosed & <b>bad</c>\npublic class Example { }\n", "public class Example { }\n")]
+    [InlineData(
+        "public class Example\n{\n    /// <summary\n    /// <param name=\"x>\n    public void Method() { }\n}\n",
+        "public class Example\n{\n    public void Method() { }\n}\n"
+    )]
     [InlineData("public class Example { }\n/// <summary>Dangling</summary>", "public class Example { }\n")]
     [InlineData("public class Example { }\n/// <summary>Dangling</summary>\n", "public class Example { }\n")]
     public void RemoveXmlDocCommentsShouldRemoveDocCommentsAndKeepEverythingElse(string input, string expected)
