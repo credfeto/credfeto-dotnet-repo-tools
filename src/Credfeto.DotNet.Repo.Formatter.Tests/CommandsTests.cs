@@ -296,6 +296,21 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task CleanupAsyncWritesCSharpFileContentWithXmlDocCommentsRemovedAsync()
+    {
+        string file = await this.CreateFileAsync(
+            relativePath: "Foo.cs",
+            content: "/// <summary>Foo</summary>\npublic class Foo { }"
+        );
+        this._xmlDocCommentRemover.RemoveXmlDocComments(Arg.Any<string>()).Returns("public class Foo { }");
+
+        int result = await this._commands.CleanupAsync(inputs: [file]);
+
+        Assert.Equal(expected: ExitCodes.Success, actual: result);
+        Assert.Equal(expected: "public class Foo { }", actual: await this.ReadFileAsync(file));
+    }
+
+    [Fact]
     public async Task CleanupAsyncDoesNotWriteFileWhenResultWouldBecomeUnparseableAsync()
     {
         const string original = "public class Foo { }";

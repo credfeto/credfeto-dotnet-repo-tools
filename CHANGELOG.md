@@ -14,6 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 - Formatter cleanup no longer aborts the whole batch when one file fails to process (e.g. a duplicate MSBuild property); other files still get processed and the run reports an error. A missing explicit input path is now detected upfront and reported before any file is touched
 - Cleanup: redundant SuppressMessage attribute removal now correctly detects attributes wrapped across multiple lines by CSharpier formatting, instead of silently skipping almost all of them
+- XML doc comments are now actually removed by cscleanup and the bulk clean-up, instead of being passed through unchanged
 ### Changed
 - Dependencies - Updated Microsoft.Sbom.Targets to 4.1.13
 - Dependencies - Updated Meziantou.Analyzer to 3.0.284
