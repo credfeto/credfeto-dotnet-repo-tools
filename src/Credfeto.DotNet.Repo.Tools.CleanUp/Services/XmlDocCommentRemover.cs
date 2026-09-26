@@ -1,13 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
-public sealed class XmlDocCommentRemover : IXmlDocCommentRemover
+public sealed partial class XmlDocCommentRemover : IXmlDocCommentRemover
 {
     private const string HorizontalWhitespace = " \t";
 
@@ -28,17 +29,43 @@ public sealed class XmlDocCommentRemover : IXmlDocCommentRemover
                 .ParseText(content)
                 .GetRoot()
                 .DescendantTrivia(descendIntoTrivia: false)
-                .Where(IsXmlDocComment)
-                .Select(trivia => GetRemoval(content: content, commentSpan: trivia.FullSpan)),
+                .SelectMany(trivia => GetRemovals(content: content, trivia: trivia)),
         ];
 
         return removals is [] ? content : SourceText.From(content).WithChanges(removals).ToString();
     }
 
-    private static bool IsXmlDocComment(SyntaxTrivia trivia)
+    private static IEnumerable<TextChange> GetRemovals(string content, in SyntaxTrivia trivia)
     {
-        return trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
-            || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia);
+        if (
+            trivia.IsKind(SyntaxKind.SingleLineDocumentationCommentTrivia)
+            || trivia.IsKind(SyntaxKind.MultiLineDocumentationCommentTrivia)
+        )
+        {
+            return [GetRemoval(content: content, commentSpan: trivia.FullSpan)];
+        }
+
+        // Roslyn leaves code in inactive #if branches as opaque text, so doc comments there are not trivia.
+        return trivia.IsKind(SyntaxKind.DisabledTextTrivia)
+            ? GetDisabledTextRemovals(content: content, disabledSpan: trivia.FullSpan)
+            : [];
+    }
+
+    private static IEnumerable<TextChange> GetDisabledTextRemovals(string content, in TextSpan disabledSpan)
+    {
+        List<TextChange> removals = [];
+
+        foreach (
+            ValueMatch match in DocCommentLines()
+                .EnumerateMatches(content.AsSpan(start: disabledSpan.Start, length: disabledSpan.Length))
+        )
+        {
+            removals.Add(
+                new(span: new(start: disabledSpan.Start + match.Index, length: match.Length), newText: string.Empty)
+            );
+        }
+
+        return removals;
     }
 
     private static TextChange GetRemoval(string content, in TextSpan commentSpan)
@@ -112,4 +139,11 @@ public sealed class XmlDocCommentRemover : IXmlDocCommentRemover
     {
         return character is '\r' or '\n';
     }
+
+    [GeneratedRegex(
+        pattern: "^[ \\t]*///(?!/)[^\\r\\n]*(\\r\\n|\\r|\\n)?",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline | RegexOptions.ExplicitCapture,
+        matchTimeoutMilliseconds: 5000
+    )]
+    private static partial Regex DocCommentLines();
 }
