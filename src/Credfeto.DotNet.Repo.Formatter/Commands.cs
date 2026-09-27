@@ -443,7 +443,7 @@ public sealed class Commands
             return (currentDirectory, glob);
         }
 
-        string baseDirectory = glob[..lastSeparator];
+        string baseDirectory = Path.GetFullPath(glob[..lastSeparator], currentDirectory);
         string pattern = glob[lastSeparator..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
         return (baseDirectory, pattern);

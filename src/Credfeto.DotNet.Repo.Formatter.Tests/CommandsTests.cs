@@ -563,6 +563,22 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task ExpandGlobMatchesRelativeDirectoryPrefixedGlobAgainstProvidedCurrentDirectoryAsync()
+    {
+        string matchingFile = await this.CreateFileAsync(
+            relativePath: Path.Combine("sub", "Foo.cs"),
+            content: "public class Foo { }"
+        );
+        await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo2 { }");
+        string glob = Path.Combine("sub", "Foo*.cs");
+
+        string[] results = [.. Commands.ExpandGlob(glob: glob, currentDirectory: this.TempFolder)];
+
+        string result = Assert.Single(results);
+        Assert.Equal(expected: matchingFile, actual: result);
+    }
+
+    [Fact]
     public async Task ExpandGlobRecursesForBareDoubleWildcardPatternAgainstProvidedCurrentDirectoryAsync()
     {
         string rootFile = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
