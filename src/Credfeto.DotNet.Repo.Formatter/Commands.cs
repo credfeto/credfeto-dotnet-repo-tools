@@ -362,6 +362,7 @@ public sealed class Commands
         IEnumerable<string> inputs
     )
     {
+        string currentDirectory = Directory.GetCurrentDirectory();
         List<string> resolved = [];
         List<string> missing = [];
 
@@ -373,7 +374,7 @@ public sealed class Commands
             }
             else if (ContainsWildcard(input))
             {
-                resolved.AddRange(ExpandGlob(input));
+                resolved.AddRange(ExpandGlob(glob: input, currentDirectory: currentDirectory));
             }
             else if (File.Exists(input))
             {
@@ -413,13 +414,15 @@ public sealed class Commands
             });
     }
 
-    private static IEnumerable<string> ExpandGlob(string glob)
+    public static IEnumerable<string> ExpandGlob(string glob, string currentDirectory)
     {
-        string baseDirectory = GetGlobBaseDirectory(glob);
-        string pattern =
-            glob.Length > baseDirectory.Length
-                ? glob[baseDirectory.Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                : glob;
+        (string baseDirectory, bool derivedFromGlob) = GetGlobBaseDirectory(
+            glob: glob,
+            currentDirectory: currentDirectory
+        );
+        string pattern = derivedFromGlob
+            ? glob[baseDirectory.Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            : glob;
 
         Matcher matcher = new();
         matcher.AddInclude(pattern);
@@ -427,13 +430,16 @@ public sealed class Commands
         return matcher.GetResultsInFullPath(baseDirectory);
     }
 
-    private static string GetGlobBaseDirectory(string glob)
+    private static (string BaseDirectory, bool DerivedFromGlob) GetGlobBaseDirectory(
+        string glob,
+        string currentDirectory
+    )
     {
         int firstWildcard = glob.IndexOfAny(['*', '?']);
 
         if (firstWildcard < 0)
         {
-            return Directory.GetCurrentDirectory();
+            return (currentDirectory, false);
         }
 
         string beforeWildcard = glob[..firstWildcard];
@@ -442,7 +448,7 @@ public sealed class Commands
             Path.AltDirectorySeparatorChar,
         ]);
 
-        return lastSeparator < 0 ? Directory.GetCurrentDirectory() : glob[..lastSeparator];
+        return lastSeparator < 0 ? (currentDirectory, false) : (glob[..lastSeparator], true);
     }
 
     private static bool ContainsWildcard(string input)
