@@ -433,17 +433,10 @@ public sealed class Commands
     )
     {
         int firstWildcard = glob.IndexOfAny(['*', '?']);
-
-        if (firstWildcard < 0)
-        {
-            return (currentDirectory, glob);
-        }
-
-        string beforeWildcard = glob[..firstWildcard];
-        int lastSeparator = beforeWildcard.LastIndexOfAny([
-            Path.DirectorySeparatorChar,
-            Path.AltDirectorySeparatorChar,
-        ]);
+        int lastSeparator =
+            firstWildcard < 0
+                ? -1
+                : glob[..firstWildcard].LastIndexOfAny([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]);
 
         if (lastSeparator < 0)
         {
