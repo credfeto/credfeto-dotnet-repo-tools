@@ -416,13 +416,10 @@ public sealed class Commands
 
     public static IEnumerable<string> ExpandGlob(string glob, string currentDirectory)
     {
-        (string baseDirectory, bool derivedFromGlob) = GetGlobBaseDirectory(
+        (string baseDirectory, string pattern) = GetGlobBaseDirectoryAndPattern(
             glob: glob,
             currentDirectory: currentDirectory
         );
-        string pattern = derivedFromGlob
-            ? glob[baseDirectory.Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-            : glob;
 
         Matcher matcher = new();
         matcher.AddInclude(pattern);
@@ -430,7 +427,7 @@ public sealed class Commands
         return matcher.GetResultsInFullPath(baseDirectory);
     }
 
-    private static (string BaseDirectory, bool DerivedFromGlob) GetGlobBaseDirectory(
+    private static (string BaseDirectory, string Pattern) GetGlobBaseDirectoryAndPattern(
         string glob,
         string currentDirectory
     )
@@ -439,7 +436,7 @@ public sealed class Commands
 
         if (firstWildcard < 0)
         {
-            return (currentDirectory, false);
+            return (currentDirectory, glob);
         }
 
         string beforeWildcard = glob[..firstWildcard];
@@ -448,7 +445,15 @@ public sealed class Commands
             Path.AltDirectorySeparatorChar,
         ]);
 
-        return lastSeparator < 0 ? (currentDirectory, false) : (glob[..lastSeparator], true);
+        if (lastSeparator < 0)
+        {
+            return (currentDirectory, glob);
+        }
+
+        string baseDirectory = glob[..lastSeparator];
+        string pattern = glob[lastSeparator..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+
+        return (baseDirectory, pattern);
     }
 
     private static bool ContainsWildcard(string input)
