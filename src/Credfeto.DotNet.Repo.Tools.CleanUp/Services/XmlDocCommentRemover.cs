@@ -10,7 +10,7 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
 public sealed partial class XmlDocCommentRemover : IXmlDocCommentRemover
 {
-    private const string HorizontalWhitespace = " \t";
+    private const string HORIZONTAL_WHITESPACE = " \t";
 
     public string RemoveXmlDocComments(string content)
     {
@@ -88,9 +88,9 @@ public sealed partial class XmlDocCommentRemover : IXmlDocCommentRemover
 
     private static TextChange GetRemoval(string content, in TextSpan commentSpan)
     {
-        int start = content.AsSpan(start: 0, length: commentSpan.Start).TrimEnd(HorizontalWhitespace).Length;
+        int start = content.AsSpan(start: 0, length: commentSpan.Start).TrimEnd(HORIZONTAL_WHITESPACE).Length;
         int contentEnd = TrimLineBreak(content: content, commentSpan: commentSpan);
-        int lineBreakStart = content.Length - content.AsSpan(contentEnd).TrimStart(HorizontalWhitespace).Length;
+        int lineBreakStart = content.Length - content.AsSpan(contentEnd).TrimStart(HORIZONTAL_WHITESPACE).Length;
 
         if (!IsEndOfLine(content: content, position: lineBreakStart))
         {
