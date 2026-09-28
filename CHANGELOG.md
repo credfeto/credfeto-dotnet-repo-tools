@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 - Formatter glob patterns without a directory prefix (e.g. "Foo*.cs") are matched against the current directory correctly instead of being mis-sliced by its length, which previously caused no-match or wrong-file results
+- TBD - to be finalized after review
 ### Changed
 - Rewrote README.md into the required section order, fixed the packages.json/release.json TODO placeholders and the stale Code Cleanup status, documented reduce-dependencies, check-dependencies, and --template-config, and split reference material into a new docs/ folder
 ### Deprecated
