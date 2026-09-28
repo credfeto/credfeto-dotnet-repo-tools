@@ -12,8 +12,9 @@ Bulk-manages a fleet of .NET/C# git repositories: keeps their NuGet packages up 
 
 ## Quick Start
 
+After [installing](#installation) the tool:
+
 ```bash
-dotnet tool install --global Credfeto.DotNet.Repo.Tools.Cmd
 dotnet updaterepo update-packages \
     --repositories repos.lst \
     --work ~/temp \

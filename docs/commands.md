@@ -2,6 +2,17 @@
 
 All commands are invoked through the `updaterepo` tool (`Credfeto.DotNet.Repo.Tools.Cmd`). Every command except `check-dependencies` operates on a list of git repositories loaded from a `repos.lst` file (see [Configuration Reference](configuration.md)).
 
+## Common Options
+
+`update-packages`, `update-template`, `code-cleanup`, and `reduce-dependencies` all accept these options:
+
+| Option | Short | Required | Description |
+| --- | --- | --- | --- |
+| `--repositories` | `-r` | Yes | `repos.lst` file containing the list of repositories |
+| `--template` | `-m` | Yes | Template repository to clone; excluded from `repos.lst` if present there |
+| `--work` | `-w` | Yes | Folder where repositories are cloned |
+| `--tracking` | `-t` | Yes | Folder where to write the `tracking.json` file |
+
 ## update-packages
 
 Update all packages specified in a `packages.json` file across every repository in `repos.lst`.
@@ -18,12 +29,10 @@ dotnet updaterepo \
     --release ~/work/personal/auto-update-config/release.json
 ```
 
+Also accepts the [Common Options](#common-options).
+
 | Option | Short | Required | Description |
 | --- | --- | --- | --- |
-| `--repositories` | `-r` | Yes | `repos.lst` file containing the list of repositories |
-| `--template` | `-m` | Yes | Template repository to clone; excluded from `repos.lst` if present there |
-| `--work` | `-w` | Yes | Folder where repositories are cloned |
-| `--tracking` | `-t` | Yes | Folder where to write the `tracking.json` file |
 | `--packages` | `-p` | Yes | `packages.json` file to load |
 | `--release` | `-l` | Yes | `release.json` config file to load |
 | `--cache` | `-c` | No | Package cache file |
@@ -45,13 +54,11 @@ dotnet updaterepo \
     --release ~/work/personal/auto-update-config/release.json
 ```
 
+Also accepts the [Common Options](#common-options).
+
 | Option | Short | Required | Description |
 | --- | --- | --- | --- |
-| `--repositories` | `-r` | Yes | `repos.lst` file containing the list of repositories |
-| `--template` | `-m` | Yes | Template repository to clone; excluded from `repos.lst` if present there |
 | `--template-config` | `-c` | Yes | `template.json` file to load (see [Configuration Reference](configuration.md)) |
-| `--work` | `-w` | Yes | Folder where repositories are cloned |
-| `--tracking` | `-t` | Yes | Folder where to write the `tracking.json` file |
 | `--packages` | `-p` | Yes | `packages.json` file to load |
 | `--release` | `-l` | Yes | `release.json` config file to load |
 
@@ -70,12 +77,10 @@ dotnet updaterepo \
     --release ~/work/personal/auto-update-config/release.json
 ```
 
+Also accepts the [Common Options](#common-options).
+
 | Option | Short | Required | Description |
 | --- | --- | --- | --- |
-| `--repositories` | `-r` | Yes | `repos.lst` file containing the list of repositories |
-| `--template` | `-m` | Yes | Template repository to clone; excluded from `repos.lst` if present there |
-| `--work` | `-w` | Yes | Folder where repositories are cloned |
-| `--tracking` | `-t` | Yes | Folder where to write the `tracking.json` file |
 | `--packages` | `-p` | Yes | Accepted but currently has no effect ([#319](https://github.com/credfeto/credfeto-dotnet-repo-tools/issues/319)) |
 | `--release` | `-l` | Yes | Accepted but currently has no effect ([#320](https://github.com/credfeto/credfeto-dotnet-repo-tools/issues/320)) |
 
@@ -92,12 +97,7 @@ dotnet updaterepo \
     --template git@github.com:credfeto/cs-template.git
 ```
 
-| Option | Short | Required | Description |
-| --- | --- | --- | --- |
-| `--repositories` | `-r` | Yes | `repos.lst` file containing the list of repositories |
-| `--template` | `-m` | Yes | Template repository to clone; excluded from `repos.lst` if present there |
-| `--work` | `-w` | Yes | Folder where repositories are cloned |
-| `--tracking` | `-t` | Yes | Folder where to write the `tracking.json` file |
+Accepts only the [Common Options](#common-options); no additional options.
 
 ## check-dependencies
 
