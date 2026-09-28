@@ -194,6 +194,13 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
         config.AddRange(["    allow:", "      - dependency-type: all"]);
     }
 
+    private static string NormalizeDirectory(string directory)
+    {
+        string normalized = directory.Replace(oldChar: '\\', newChar: '/');
+
+        return normalized.Length == 0 ? "/" : normalized;
+    }
+
     private void AddBaseConfig(
         List<string> config,
         string ecoSystem,
@@ -202,7 +209,9 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
         string reviewer
     )
     {
-        this._logger.LogAddingConfigForEcosystem(ecoSystem: ecoSystem, directory: directory);
+        string normalizedDirectory = NormalizeDirectory(directory);
+
+        this._logger.LogAddingConfigForEcosystem(ecoSystem: ecoSystem, directory: normalizedDirectory);
 
         if (!StringComparer.Ordinal.Equals(x: config[^1], y: "updates:"))
         {
@@ -211,7 +220,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 
         config.AddRange([
             $"  - package-ecosystem: {ecoSystem}",
-            $"    directory: \"{directory}\"",
+            $"    directory: \"{normalizedDirectory}\"",
             "    schedule:",
             "      interval: daily",
             "      time: \"03:00\"",
