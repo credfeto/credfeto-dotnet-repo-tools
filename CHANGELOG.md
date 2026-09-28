@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Generated dependabot npm section now emits a valid directory value (e.g. "/") for a root-level package.json instead of an empty string, and normalizes directory separators to forward slashes, so GitHub no longer rejects the generated dependabot.yml
 ### Changed
 - Rewrote README.md into the required section order, fixed the packages.json/release.json TODO placeholders and the stale Code Cleanup status, documented reduce-dependencies, check-dependencies, and --template-config, and split reference material into a new docs/ folder
+- Generated Dependabot config now groups vitest and @vitest/* updates into a single PR for each npm/yarn directory
 ### Deprecated
 ### Removed
 ### Deployment Changes
