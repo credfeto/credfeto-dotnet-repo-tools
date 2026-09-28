@@ -7,7 +7,7 @@ The `update-template` command generates two GitHub configuration files for each 
 
 ## Static labels
 
-These labels are applied to every managed repository regardless of content:
+These labels are applied to every managed repository regardless of content. This table mirrors the generated source of truth in [`.github/labels.yml`](../.github/labels.yml); update that file (via `LabelsBuilder`) first, then keep this table in sync:
 
 | Label | Colour | Description |
 | ----- | ------ | ----------- |

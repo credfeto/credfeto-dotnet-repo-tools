@@ -72,9 +72,7 @@ dotnet updaterepo \
     --repositories ~/work/personal/auto-update-config/personal/repos.lst \
     --work ~/temp \
     --tracking ~/temp/tracking.json \
-    --packages ~/work/personal/auto-update-config/packages.json \
-    --template git@github.com:credfeto/cs-template.git \
-    --release ~/work/personal/auto-update-config/release.json
+    --template git@github.com:credfeto/cs-template.git
 ```
 
 Also accepts the [Common Options](#common-options).
