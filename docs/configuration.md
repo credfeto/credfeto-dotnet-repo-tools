@@ -154,6 +154,6 @@ Used by `update-template` (`--template-config`) to describe which files, folders
 | `gitHub.actions` | Whether to sync GitHub Actions workflows |
 | `gitHub.linters` | Whether to sync linter configuration |
 | `gitHub.files` | Additional GitHub-specific files to sync |
-| `gitHub.dependabot.generate` | Whether to (re)generate Dependabot configuration; see [GitHub Labels Reference](github-labels.md) |
+| `gitHub.dependabot.generate` | Whether to (re)generate Dependabot configuration |
 | `gitHub.labels.generate` | Whether to (re)generate `labels.yml` / `labeler.yml`; see [GitHub Labels Reference](github-labels.md) |
 | `cleanup.files` | Files to remove/clean up in the managed repository |
