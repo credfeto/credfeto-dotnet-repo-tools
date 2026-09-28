@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Models.Packages;
+using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Models;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services.LoggingExtensions;
 using Microsoft.Extensions.Logging;
 
@@ -14,6 +15,11 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 
 public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 {
+    private static readonly IReadOnlyList<DependabotGroup> NpmGroups =
+    [
+        new(Name: "vitest", Patterns: ["vitest", "@vitest/*"]),
+    ];
+
     private readonly ILogger<DependaBotConfigBuilder> _logger;
 
     public DependaBotConfigBuilder(ILogger<DependaBotConfigBuilder> logger)
@@ -59,6 +65,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
                 );
                 config.Add("    versioning-strategy: increase-if-necessary");
                 AllowAllDependencies(config);
+                AddGroups(config: config, groups: NpmGroups);
             }
         }
 
@@ -186,6 +193,23 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
     {
         return StringComparer.OrdinalIgnoreCase.Equals(x: package.PackageId, y: wildcardPackage)
             || package.PackageId.StartsWith(wildcardPackage + ".", comparisonType: StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static void AddGroups(List<string> config, IReadOnlyList<DependabotGroup> groups)
+    {
+        if (groups is [])
+        {
+            return;
+        }
+
+        config.Add("    groups:");
+
+        foreach (DependabotGroup group in groups)
+        {
+            config.Add($"      {group.Name}:");
+            config.Add("        patterns:");
+            config.AddRange(group.Patterns.Select(pattern => $"          - \"{pattern}\""));
+        }
     }
 
     private static void AllowAllDependencies(List<string> config)
