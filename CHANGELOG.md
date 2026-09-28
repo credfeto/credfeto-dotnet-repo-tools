@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Formatter glob patterns without a directory prefix (e.g. "Foo*.cs") are matched against the current directory correctly instead of being mis-sliced by its length, which previously caused no-match or wrong-file results
 ### Changed
 ### Deprecated
 ### Removed

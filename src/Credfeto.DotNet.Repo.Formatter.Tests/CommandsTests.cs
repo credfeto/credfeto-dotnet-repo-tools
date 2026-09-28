@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -531,5 +532,80 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         await this
             ._sourceFileReformatter.DidNotReceive()
             .ReformatAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ExpandGlobMatchesBareWildcardPatternAgainstProvidedCurrentDirectoryAsync()
+    {
+        string file = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
+        await this.CreateFileAsync(relativePath: "readme.txt", content: "hello");
+
+        string[] results = [.. Commands.ExpandGlob(glob: "Foo*.cs", currentDirectory: this.TempFolder)];
+
+        string result = Assert.Single(results);
+        Assert.Equal(expected: file, actual: result);
+    }
+
+    [Fact]
+    public async Task ExpandGlobMatchesDirectoryPrefixedGlobOnlyInThatSubdirectoryAsync()
+    {
+        string matchingFile = await this.CreateFileAsync(
+            relativePath: Path.Combine("sub", "Foo.cs"),
+            content: "public class Foo { }"
+        );
+        await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo2 { }");
+        string glob = Path.Combine(path1: this.TempFolder, path2: "sub", path3: "Foo*.cs");
+
+        string[] results = [.. Commands.ExpandGlob(glob: glob, currentDirectory: this.TempFolder)];
+
+        string result = Assert.Single(results);
+        Assert.Equal(expected: matchingFile, actual: result);
+    }
+
+    [Fact]
+    public async Task ExpandGlobMatchesRelativeDirectoryPrefixedGlobAgainstProvidedCurrentDirectoryAsync()
+    {
+        string matchingFile = await this.CreateFileAsync(
+            relativePath: Path.Combine("sub", "Foo.cs"),
+            content: "public class Foo { }"
+        );
+        await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo2 { }");
+        string glob = Path.Combine("sub", "Foo*.cs");
+
+        string[] results = [.. Commands.ExpandGlob(glob: glob, currentDirectory: this.TempFolder)];
+
+        string result = Assert.Single(results);
+        Assert.Equal(expected: matchingFile, actual: result);
+    }
+
+    [Fact]
+    public async Task ExpandGlobRecursesForBareDoubleWildcardPatternAgainstProvidedCurrentDirectoryAsync()
+    {
+        string rootFile = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
+        string nestedFile = await this.CreateFileAsync(
+            relativePath: Path.Combine("sub", "Bar.cs"),
+            content: "public class Bar { }"
+        );
+
+        string[] results =
+        [
+            .. Commands.ExpandGlob(glob: "**/*.cs", currentDirectory: this.TempFolder).Order(StringComparer.Ordinal),
+        ];
+
+        Assert.Equal(
+            expected: new[] { rootFile, nestedFile }.Order(StringComparer.Ordinal),
+            actual: results,
+            comparer: StringComparer.Ordinal
+        );
+    }
+
+    [Fact]
+    public async Task ExpandGlobReturnsNoResultsWhenBareWildcardPatternMatchesNothingAsync()
+    {
+        await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
+
+        string[] results = [.. Commands.ExpandGlob(glob: "*.doesnotexist", currentDirectory: this.TempFolder)];
+
+        Assert.Empty(results);
     }
 }
