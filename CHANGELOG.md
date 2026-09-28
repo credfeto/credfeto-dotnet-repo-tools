@@ -20,6 +20,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.BuildCheck to 474.2.21.2862
 - SDK - Updated DotNet SDK to 10.0.403
 - Dependencies - Updated Meziantou.Analyzer to 3.0.317
+- Generated Dependabot config now groups vitest and @vitest/* updates into a single PR for each npm/yarn directory
 ### Deprecated
 ### Removed
 ### Deployment Changes
