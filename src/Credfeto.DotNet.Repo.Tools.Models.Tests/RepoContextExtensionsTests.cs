@@ -190,4 +190,34 @@ public sealed class RepoContextExtensionsTests : LoggingFolderCleanupTestBase
             comparer: StringComparer.Ordinal
         );
     }
+
+    [Fact]
+    public void HasNpmAndYarnReturnsRootSlashForRootPackageJson()
+    {
+        File.WriteAllText(path: Path.Combine(path1: this.TempFolder, path2: "package.json"), contents: "{}");
+
+        RepoContext context = this.CreateContext();
+
+        bool result = context.HasNpmAndYarn(out IReadOnlyList<string>? directories);
+
+        Assert.True(condition: result, userMessage: "Should have npm/yarn");
+        Assert.NotNull(directories);
+        Assert.Equal(expected: ["/"], actual: directories);
+    }
+
+    [Fact]
+    public void HasNpmAndYarnReturnsSlashPrefixedPathForSubfolderPackageJson()
+    {
+        string webDir = Path.Combine(path1: this.TempFolder, path2: "web");
+        Directory.CreateDirectory(webDir);
+        File.WriteAllText(path: Path.Combine(path1: webDir, path2: "package.json"), contents: "{}");
+
+        RepoContext context = this.CreateContext();
+
+        bool result = context.HasNpmAndYarn(out IReadOnlyList<string>? directories);
+
+        Assert.True(condition: result, userMessage: "Should have npm/yarn");
+        Assert.NotNull(directories);
+        Assert.Equal(expected: ["/web"], actual: directories);
+    }
 }

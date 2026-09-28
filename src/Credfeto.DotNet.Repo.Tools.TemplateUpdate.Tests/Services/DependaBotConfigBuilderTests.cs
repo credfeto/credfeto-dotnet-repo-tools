@@ -353,7 +353,7 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
         lines.AddRange(
             EcosystemBlock(
                 ecoSystem: "npm",
-                directory: "",
+                directory: "/",
                 packageTypeLabel: "npm",
                 versioningStrategy: "increase-if-necessary"
             )

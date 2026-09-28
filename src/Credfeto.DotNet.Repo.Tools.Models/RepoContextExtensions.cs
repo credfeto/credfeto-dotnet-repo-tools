@@ -93,6 +93,11 @@ public static class RepoContextExtensions
         return source.Select(file => file[prefix..]);
     }
 
+    private static string AsRootedDirectory(string relativeDirectory)
+    {
+        return string.IsNullOrEmpty(relativeDirectory) ? "/" : relativeDirectory;
+    }
+
     public static bool HasNpmAndYarn(
         this in RepoContext repoContext,
         [NotNullWhen(true)] out IReadOnlyList<string>? directories
@@ -103,7 +108,8 @@ public static class RepoContextExtensions
             .. repoContext
                 .GetFiles("package.json")
                 .GetDirectoriesOfFiles()
-                .WithoutPrefix(repoContext.WorkingDirectory.Length),
+                .WithoutPrefix(repoContext.WorkingDirectory.Length)
+                .Select(AsRootedDirectory),
         ];
 
         if (dirs is [])
