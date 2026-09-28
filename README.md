@@ -1,247 +1,83 @@
 # credfeto-dotnet-repo-tools
 
-Dotnet/C# repository tools
+Bulk-manages a fleet of .NET/C# git repositories: keeps their NuGet packages up to date, syncs common files from a shared template repository, prunes unnecessary dependencies, and cleans up code style — all across many repositories in one run.
 
-## Running (Package Update)
+[![Build: Pre-Release][pre-release-img]][pre-release]
+[![Build: Release][release-img]][release]
+[![Licence][licence-img]][licence]
 
-Updates all the packages specified in the ``packages.json`` file in the repositories in ``repos.txt``.
+## Overview
 
-* ``release.json`` defines the configuration for generating releases when multiple packages have been updated
-* the template repo specified by ``--template`` is excluded from ``repos.txt`` if it is present
+`updaterepo` clones every repository listed in a `repos.lst` file, applies the requested operation (package updates, template sync, dependency reduction, or code cleanup), and pushes the results back as commits — tracking progress in a `tracking.json` file so repeated runs are incremental. A standalone companion tool, `cscleanup`, formats individual C# files or projects without needing a git repository at all.
+
+## Quick Start
+
+After [installing](#installation) the tool:
 
 ```bash
-dotnet updaterepo \
-    update-packages \
-    --repositories ~/work/personal/auto-update-config/personal/repos.lst \
+dotnet updaterepo update-packages \
+    --repositories repos.lst \
     --work ~/temp \
     --tracking ~/temp/tracking.json \
-    --cache ~/temp/cache.json \
-    --packages ~/work/personal/auto-update-config/packages.json \
+    --packages packages.json \
     --template git@github.com:credfeto/cs-template.git \
-    --release ~/work/personal/auto-update-config/release.json
+    --release release.json
 ```
 
-## Running (Template Update)
-
-Updates common files in a repository to match the files defined template repository specified by ``--template``.
+## Installation
 
 ```bash
-dotnet updaterepo \
-    update-template \
-    --repositories ~/work/personal/auto-update-config/personal/repos.lst \
-    --work ~/temp \
-    --tracking ~/temp/tracking.json \
-    --packages ~/work/personal/auto-update-config/packages.json \
-    --template git@github.com:credfeto/cs-template.git \
-    --release ~/work/personal/auto-update-config/release.json
-```
-
-## Running (Code Cleanup)
-
-TODO - this is not yet implemented
-
-```bash
-dotnet updaterepo \
-    code-cleanup \
-    --repositories ~/work/personal/auto-update-config/personal/repos.lst \
-    --work ~/temp \
-    --tracking ~/temp/tracking.json
-```
-
-## cscleanup — Standalone C# Formatter
-
-`cscleanup` is a standalone dotnet tool that formats C# source files (`.cs`) and project files (`.csproj`) without requiring a git repository or making any commits. It is suitable for use as a pre-commit hook or in CI pipelines.
-
-### Installation
-
-```bash
+dotnet tool install --global Credfeto.DotNet.Repo.Tools.Cmd
 dotnet tool install --global Credfeto.DotNet.Repo.Formatter
 ```
 
-### Usage
+## Usage
 
-```text
-cscleanup [--remove-suppressions] [--build-root <path>] <inputs...>
-```
+`updaterepo` exposes five commands: `update-packages`, `update-template`, `code-cleanup`, `reduce-dependencies`, and `check-dependencies`. See the [CLI Command Reference][commands] for the full option tables and examples.
 
-| Argument / Option | Required | Description |
-| --- | --- | --- |
-| `inputs` | Yes | One or more files, glob patterns, or folders to process |
-| `--remove-suppressions` | No | Remove redundant `[SuppressMessage]` attributes (requires `--build-root`) |
-| `--build-root <path>` | Conditional | Root directory used for `dotnet build` when `--remove-suppressions` is enabled |
-
-### Input resolution
-
-* **File path** — processed directly; must be a `.cs` or `.csproj` file
-* **Glob pattern** — expanded relative to the current working directory (e.g. `"src/**/*.cs"`)
-* **Directory** — scanned recursively for all `.cs` and `.csproj` files, excluding generated files (paths containing `/obj/`, `/generated/`, or `.generated.` in the filename)
-
-Passing any other file type is an error.
-
-### Examples
-
-Format a single file:
-
-```bash
-cscleanup src/MyProject/Foo.cs
-```
-
-Format all C# files in a folder:
+`cscleanup` formats one or more `.cs`/`.csproj` files or folders directly:
 
 ```bash
 cscleanup src/MyProject/
 ```
 
-Format files matching a glob:
+See the [cscleanup Reference][cscleanup] for all options, input resolution rules, and pre-commit hook setup.
 
-```bash
-cscleanup "src/**/*.cs"
-```
+## Documentation
 
-Format multiple inputs at once:
-
-```bash
-cscleanup src/MyProject/ src/MyProject.Tests/
-```
-
-Remove suppression attributes (requires a successful build to verify each removal is safe):
-
-```bash
-cscleanup --remove-suppressions --build-root /path/to/solution src/MyProject/
-```
-
-### What it does
-
-For each `.cs` file:
-
-1. Converts Resharper suppression comments to `[SuppressMessage]` attributes
-2. Removes XML doc comments
-3. Reformats the file using CSharpier
-4. Optionally removes redundant `[SuppressMessage]` attributes (only when `--remove-suppressions` and `--build-root` are set)
-
-For each `.csproj` file:
-
-1. Reorders `<PropertyGroup>` elements into a canonical order
-2. Reorders `<ItemGroup>` includes into a canonical order
-
-### Use as a pre-commit hook
-
-Add to `.git/hooks/pre-commit` (or via a hook manager such as [pre-commit](https://pre-commit.com/)):
-
-```bash
-#!/bin/sh
-git diff --cached --name-only --diff-filter=ACM | grep -E '\.(cs|csproj)$' | xargs cscleanup
-```
-
-## File formats
-
-### repos.lst
-
-One line per repo to process e.g:
-
-```text
-git@github.com:credfeto/repo1.git
-git@github.com:credfeto/repo2.git
-git@github.com:credfeto/repo3.git
-```
-
-### tracking.json
-
-This is generated by the tool
-
-### cache.json
-
-This is generated by the tool
-
-### packages.json
-
-```json
-TODO
-```
-
-### release.json
-
-```json
-TODO
-```
-
-## GitHub Labels
-
-The `update-template` command generates two GitHub configuration files for each managed repository:
-
-* **`labels.yml`** — defines all labels (name, colour, description) used in the repository
-* **`labeler.yml`** — maps file path patterns to labels so pull requests are labelled automatically
-
-### Static labels
-
-These labels are applied to every managed repository regardless of content:
-
-| Label | Colour | Description |
-| ----- | ------ | ----------- |
-| `.NET update` | `a870c9` | Update to .NET SDK version in global.json |
-| `AI-Work` | `ffa500` | Work for an AI Agent |
-| `auto-pr` | `0000aa` | Pull request created automatically |
-| `Bug` | `d73a4a` | Generic bug fix |
-| `C#` | `db6baa` | C# source files |
-| `C# Project` | `db6baa` | C# project files (`.csproj`) |
-| `C# Solution` | `db6baa` | C# solution files (`.sln` / `.slnx`) |
-| `Change Log` | `53fcd4` | Changelog tracking file |
-| `Changelog Not Required` | `08f5f8` | No changelog entry required for this pull request |
-| `Config Change` | `d8bb50` | Configuration file changes |
-| `dependencies` | `0366d6` | Updates to dependencies |
-| `DO NOT MERGE` | `ff0000` | This pull request should not be merged yet |
-| `dotnet` | `db6baa` | .NET package updates |
-| `Editorconfig` | `00dead` | Editor config file change |
-| `Enhancement` | `a2eeef` | Enhancement to project |
-| `github-actions` | `e09cf4` | GitHub Actions workflow files |
-| `High` | `ffa500` | High priority |
-| `Low` | `cc8899` | Low priority |
-| `Markdown` | `5319e7` | Markdown files |
-| `Medium` | `ffff00` | Medium priority |
-| `Migration Script` | `b680e5` | SQL migration scripts |
-| `no-pr-activity` | `ffff00` | Pull request has had no activity for a long time |
-| `npm` | `e99695` | npm package update |
-| `On Hold` | `ff0000` | Do not work on this |
-| `Performance` | `0075ca` | Performance enhancement or issue |
-| `Powershell` | `23bc12` | PowerShell source files |
-| `Read Me` | `5319e7` | Repository readme file |
-| `Security` | `ee0701` | Security issue, e.g. use of insecure packages, or security fix |
-| `Setup` | `5319e7` | Setup instructions |
-| `Solidity` | `413cd1` | Solidity source files |
-| `SQL` | `413cd1` | SQL source files |
-| `Static Code Analysis Rules` | `00dead` | Static code analysis ruleset files |
-| `Tech Debt` | `30027a` | Technical debt |
-| `Unit Tests` | `0e8a16` | Unit test and integration test projects |
-| `Urgent` | `ff0000` | Urgent priority |
-
-### Dynamic labels (per project)
-
-For each `.csproj` found in the repository, a label is created named after the project (dots and spaces replaced with hyphens, lowercased). The colour indicates the project type:
-
-| Pattern | Colour | Meaning |
-| ------- | ------ | ------- |
-| `*.Tests` / `*.Tests.*` | `0e8a16` | Test project |
-| `*.Mocks` | `0e8a16` | Mock/test-helper project |
-| Everything else | `96f7d2` | Production source project |
-
-## Build Status
-
-| Branch  | Status                                                                                                                                                                                                                                                    |
-|---------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| main    | [![Build: Pre-Release](https://github.com/credfeto/credfeto-dotnet-repo-tools/actions/workflows/build-and-publish-pre-release.yml/badge.svg)](https://github.com/credfeto/credfeto-dotnet-repo-tools/actions/workflows/build-and-publish-pre-release.yml) |
-| release | [![Build: Release](https://github.com/credfeto/credfeto-dotnet-repo-tools/actions/workflows/build-and-publish-release.yml/badge.svg)](https://github.com/credfeto/credfeto-dotnet-repo-tools/actions/workflows/build-and-publish-release.yml)             |
+* [Architecture][architecture] — solution layout and command flow
+* [CLI Command Reference][commands] — all `updaterepo` commands and options
+* [Configuration Reference][configuration] — `repos.lst`, `tracking.json`, `cache.json`, `packages.json`, `release.json`, `template.json`
+* [cscleanup Reference][cscleanup] — the standalone C# formatter tool
+* [GitHub Labels Reference][github-labels] — labels generated by `update-template`
 
 ## Changelog
 
-View [changelog](CHANGELOG.md)
+View [changelog][changelog].
 
-## Contributors
+## Contributing
 
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
+See [CONTRIBUTING][contributing].
 
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
+## Security
 
-<!-- ALL-CONTRIBUTORS-LIST:END -->
+See [SECURITY][security].
+
+## Licence
+
+See [LICENSE][licence].
+
+[architecture]: docs/architecture.md
+[changelog]: CHANGELOG.md
+[commands]: docs/commands.md
+[configuration]: docs/configuration.md
+[contributing]: CONTRIBUTING.md
+[cscleanup]: docs/cscleanup.md
+[github-labels]: docs/github-labels.md
+[licence]: LICENSE
+[licence-img]: https://img.shields.io/github/license/credfeto/credfeto-dotnet-repo-tools
+[pre-release]: https://github.com/credfeto/credfeto-dotnet-repo-tools/actions/workflows/build-and-publish-pre-release.yml
+[pre-release-img]: https://github.com/credfeto/credfeto-dotnet-repo-tools/actions/workflows/build-and-publish-pre-release.yml/badge.svg
+[release]: https://github.com/credfeto/credfeto-dotnet-repo-tools/actions/workflows/build-and-publish-release.yml
+[release-img]: https://github.com/credfeto/credfeto-dotnet-repo-tools/actions/workflows/build-and-publish-release.yml/badge.svg
+[security]: SECURITY.md
