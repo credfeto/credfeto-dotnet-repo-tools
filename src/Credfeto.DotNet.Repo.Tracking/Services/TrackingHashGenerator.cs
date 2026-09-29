@@ -23,9 +23,10 @@ public sealed class TrackingHashGenerator : ITrackingHashGenerator
         "*.ruleset",
     ];
 
-    private static readonly IReadOnlyList<string> ExcludedDirectoryNames = ["obj", "bin", ".git"];
-
-    private static readonly char[] PathSeparators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
+    private static readonly HashSet<string> ExcludedDirectoryNames = new(
+        ["obj", "bin", ".git"],
+        StringComparer.OrdinalIgnoreCase
+    );
 
     public async ValueTask<string> GenerateTrackingHashAsync(
         RepoContext repoContext,
@@ -83,27 +84,30 @@ public sealed class TrackingHashGenerator : ITrackingHashGenerator
 
     private static IReadOnlyList<string> GetFileList(string sourceFolder)
     {
-        return
-        [
-            .. FileMasks
-                .SelectMany(filter =>
-                    Directory.GetFiles(
-                        path: sourceFolder,
-                        searchPattern: filter,
-                        searchOption: SearchOption.AllDirectories
-                    )
-                )
-                .Where(fileName => !IsUnderExcludedDirectory(fullPath: fileName, sourceFolder: sourceFolder))
-                .Order(StringComparer.OrdinalIgnoreCase),
-        ];
+        return [.. EnumerateSourceFiles(sourceFolder).Order(StringComparer.OrdinalIgnoreCase)];
     }
 
-    private static bool IsUnderExcludedDirectory(string fullPath, string sourceFolder)
+    private static IEnumerable<string> EnumerateSourceFiles(string folder)
     {
-        string relativePath = Path.GetRelativePath(relativeTo: sourceFolder, path: fullPath);
+        foreach (string filter in FileMasks)
+        {
+            foreach (string file in Directory.EnumerateFiles(path: folder, searchPattern: filter))
+            {
+                yield return file;
+            }
+        }
 
-        return relativePath
-            .Split(PathSeparators)
-            .Any(segment => ExcludedDirectoryNames.Contains(segment, StringComparer.OrdinalIgnoreCase));
+        foreach (string subDirectory in Directory.EnumerateDirectories(folder))
+        {
+            if (ExcludedDirectoryNames.Contains(Path.GetFileName(subDirectory)))
+            {
+                continue;
+            }
+
+            foreach (string file in EnumerateSourceFiles(subDirectory))
+            {
+                yield return file;
+            }
+        }
     }
 }
