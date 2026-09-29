@@ -148,4 +148,106 @@ public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
 
         Assert.Equal(expected: firstHash, actual: secondHash);
     }
+
+    [Fact]
+    public async Task GenerateTrackingHashAsyncIgnoresFilesInObjBinAndGitDirectoriesAsync()
+    {
+        // Files under obj/, bin/ and .git/ are generated or metadata content that varies
+        // between a freshly built tree and a freshly cleaned tree for identical source,
+        // so they must not influence the tracking hash.
+        string workDir = Path.Combine(this.TempFolder, Guid.NewGuid().ToString());
+        Directory.CreateDirectory(workDir);
+
+        await File.WriteAllTextAsync(
+            path: Path.Combine(workDir, "test.csproj"),
+            contents: "<Project />",
+            cancellationToken: this.CancellationToken()
+        );
+
+        RepoContext repoContext = new(
+            ClonePath: workDir,
+            Repository: GetSubstitute<IGitRepository>(),
+            WorkingDirectory: workDir,
+            DefaultBranch: "main",
+            ChangeLogFileName: "CHANGELOG.md"
+        );
+
+        string hashBeforeGeneratedFiles = await this._hashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: this.CancellationToken()
+        );
+
+        string objDir = Path.Combine(workDir, "obj");
+        Directory.CreateDirectory(objDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(objDir, "test.csproj.nuget.g.props"),
+            contents: "<Project />",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string binDir = Path.Combine(workDir, "bin");
+        Directory.CreateDirectory(binDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(binDir, "whatever.props"),
+            contents: "<Project />",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string gitDir = Path.Combine(workDir, ".git");
+        Directory.CreateDirectory(gitDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(gitDir, "some.props"),
+            contents: "<Project />",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string hashAfterGeneratedFiles = await this._hashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.Equal(expected: hashBeforeGeneratedFiles, actual: hashAfterGeneratedFiles);
+    }
+
+    [Fact]
+    public async Task GenerateTrackingHashAsyncChangesWhenSourceLevelPropsFileChangesAsync()
+    {
+        // Source-level files outside obj/, bin/ and .git/ must still be hashed, so a change
+        // to one must change the resulting hash.
+        string workDir = Path.Combine(this.TempFolder, Guid.NewGuid().ToString());
+        Directory.CreateDirectory(workDir);
+
+        string propsPath = Path.Combine(workDir, "test.props");
+        await File.WriteAllTextAsync(
+            path: propsPath,
+            contents: "<Project />",
+            cancellationToken: this.CancellationToken()
+        );
+
+        RepoContext repoContext = new(
+            ClonePath: workDir,
+            Repository: GetSubstitute<IGitRepository>(),
+            WorkingDirectory: workDir,
+            DefaultBranch: "main",
+            ChangeLogFileName: "CHANGELOG.md"
+        );
+
+        string firstHash = await this._hashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await File.WriteAllTextAsync(
+            path: propsPath,
+            contents: "<Project><PropertyGroup /></Project>",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string secondHash = await this._hashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.NotEqual(expected: firstHash, actual: secondHash, comparer: StringComparer.Ordinal);
+    }
 }
