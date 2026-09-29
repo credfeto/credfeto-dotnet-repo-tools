@@ -25,21 +25,33 @@ public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
         }
     }
 
+    private string CreateWorkDir()
+    {
+        string workDir = Path.Combine(this.TempFolder, Guid.NewGuid().ToString());
+        Directory.CreateDirectory(workDir);
+
+        return workDir;
+    }
+
+    private static RepoContext CreateRepoContext(string workDir)
+    {
+        return new(
+            ClonePath: workDir,
+            Repository: GetSubstitute<IGitRepository>(),
+            WorkingDirectory: workDir,
+            DefaultBranch: "main",
+            ChangeLogFileName: "CHANGELOG.md"
+        );
+    }
+
     [Fact]
     public async Task GenerateTrackingHashAsyncWithEmptyDirectoryReturnsNonEmptyStringAsync()
     {
         // An empty working directory contains no files matching the masks.
         // The hash must still be returned as a non-null, non-empty base64 string.
-        string emptyDir = Path.Combine(this.TempFolder, Guid.NewGuid().ToString());
-        Directory.CreateDirectory(emptyDir);
+        string emptyDir = this.CreateWorkDir();
 
-        RepoContext repoContext = new(
-            ClonePath: emptyDir,
-            Repository: GetSubstitute<IGitRepository>(),
-            WorkingDirectory: emptyDir,
-            DefaultBranch: "main",
-            ChangeLogFileName: "CHANGELOG.md"
-        );
+        RepoContext repoContext = CreateRepoContext(emptyDir);
 
         string hash = await this._hashGenerator.GenerateTrackingHashAsync(
             repoContext: repoContext,
@@ -55,11 +67,9 @@ public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
     {
         // A working directory containing files matching the tracked masks must produce
         // a different hash from an empty directory.
-        string emptyDir = Path.Combine(this.TempFolder, Guid.NewGuid().ToString());
-        Directory.CreateDirectory(emptyDir);
+        string emptyDir = this.CreateWorkDir();
 
-        string populatedDir = Path.Combine(this.TempFolder, Guid.NewGuid().ToString());
-        Directory.CreateDirectory(populatedDir);
+        string populatedDir = this.CreateWorkDir();
 
         await File.WriteAllTextAsync(
             path: Path.Combine(populatedDir, "test.sln"),
@@ -79,21 +89,9 @@ public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
             cancellationToken: this.CancellationToken()
         );
 
-        RepoContext emptyContext = new(
-            ClonePath: emptyDir,
-            Repository: GetSubstitute<IGitRepository>(),
-            WorkingDirectory: emptyDir,
-            DefaultBranch: "main",
-            ChangeLogFileName: "CHANGELOG.md"
-        );
+        RepoContext emptyContext = CreateRepoContext(emptyDir);
 
-        RepoContext populatedContext = new(
-            ClonePath: populatedDir,
-            Repository: GetSubstitute<IGitRepository>(),
-            WorkingDirectory: populatedDir,
-            DefaultBranch: "main",
-            ChangeLogFileName: "CHANGELOG.md"
-        );
+        RepoContext populatedContext = CreateRepoContext(populatedDir);
 
         string emptyHash = await this._hashGenerator.GenerateTrackingHashAsync(
             repoContext: emptyContext,
@@ -113,8 +111,7 @@ public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
     {
         // Calling the hash generator twice on the same directory with the same files
         // must return the same hash both times.
-        string workDir = Path.Combine(this.TempFolder, Guid.NewGuid().ToString());
-        Directory.CreateDirectory(workDir);
+        string workDir = this.CreateWorkDir();
 
         await File.WriteAllTextAsync(
             path: Path.Combine(workDir, "test.sln"),
@@ -128,13 +125,7 @@ public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
             cancellationToken: this.CancellationToken()
         );
 
-        RepoContext repoContext = new(
-            ClonePath: workDir,
-            Repository: GetSubstitute<IGitRepository>(),
-            WorkingDirectory: workDir,
-            DefaultBranch: "main",
-            ChangeLogFileName: "CHANGELOG.md"
-        );
+        RepoContext repoContext = CreateRepoContext(workDir);
 
         string firstHash = await this._hashGenerator.GenerateTrackingHashAsync(
             repoContext: repoContext,
@@ -155,8 +146,7 @@ public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
         // Files under obj/, bin/ and .git/ are generated or metadata content that varies
         // between a freshly built tree and a freshly cleaned tree for identical source,
         // so they must not influence the tracking hash.
-        string workDir = Path.Combine(this.TempFolder, Guid.NewGuid().ToString());
-        Directory.CreateDirectory(workDir);
+        string workDir = this.CreateWorkDir();
 
         await File.WriteAllTextAsync(
             path: Path.Combine(workDir, "test.csproj"),
@@ -164,13 +154,7 @@ public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
             cancellationToken: this.CancellationToken()
         );
 
-        RepoContext repoContext = new(
-            ClonePath: workDir,
-            Repository: GetSubstitute<IGitRepository>(),
-            WorkingDirectory: workDir,
-            DefaultBranch: "main",
-            ChangeLogFileName: "CHANGELOG.md"
-        );
+        RepoContext repoContext = CreateRepoContext(workDir);
 
         string hashBeforeGeneratedFiles = await this._hashGenerator.GenerateTrackingHashAsync(
             repoContext: repoContext,
@@ -208,8 +192,7 @@ public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
     {
         // Source-level files outside obj/, bin/ and .git/ must still be hashed, so a change
         // to one must change the resulting hash.
-        string workDir = Path.Combine(this.TempFolder, Guid.NewGuid().ToString());
-        Directory.CreateDirectory(workDir);
+        string workDir = this.CreateWorkDir();
 
         string propsPath = Path.Combine(workDir, "test.props");
         await File.WriteAllTextAsync(
@@ -218,13 +201,7 @@ public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
             cancellationToken: this.CancellationToken()
         );
 
-        RepoContext repoContext = new(
-            ClonePath: workDir,
-            Repository: GetSubstitute<IGitRepository>(),
-            WorkingDirectory: workDir,
-            DefaultBranch: "main",
-            ChangeLogFileName: "CHANGELOG.md"
-        );
+        RepoContext repoContext = CreateRepoContext(workDir);
 
         string firstHash = await this._hashGenerator.GenerateTrackingHashAsync(
             repoContext: repoContext,
