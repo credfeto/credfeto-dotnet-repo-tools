@@ -305,6 +305,67 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 
         this.Output.WriteLine(result);
         Assert.Contains("- package-ecosystem: npm", result, StringComparison.Ordinal);
+        Assert.Contains("    directory: \"/\"", result, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WithNestedNpmFileGeneratesNpmSectionWithForwardSlashDirectory()
+    {
+        IGitRepository repository = this.CreateRepository();
+        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
+
+        string webDir = Path.Combine(this._tempFolder, "web");
+        Directory.CreateDirectory(webDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(webDir, "package.json"),
+            contents: "{}",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
+            repoContext: repoContext,
+            templateFolder: this._tempFolder,
+            dotNetFiles: EmptyDotNetFiles(),
+            packages: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        this.Output.WriteLine(result);
+        Assert.Contains("- package-ecosystem: npm", result, StringComparison.Ordinal);
+        Assert.Contains("    directory: \"/web\"", result, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WithMultipleNpmFilesGeneratesNpmSectionForEachDirectory()
+    {
+        IGitRepository repository = this.CreateRepository();
+        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
+
+        await File.WriteAllTextAsync(
+            path: Path.Combine(this._tempFolder, "package.json"),
+            contents: "{}",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string webDir = Path.Combine(this._tempFolder, "web");
+        Directory.CreateDirectory(webDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(webDir, "package.json"),
+            contents: "{}",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
+            repoContext: repoContext,
+            templateFolder: this._tempFolder,
+            dotNetFiles: EmptyDotNetFiles(),
+            packages: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        this.Output.WriteLine(result);
+        Assert.Contains("    directory: \"/\"", result, StringComparison.Ordinal);
+        Assert.Contains("    directory: \"/web\"", result, StringComparison.Ordinal);
     }
 
     [Fact]

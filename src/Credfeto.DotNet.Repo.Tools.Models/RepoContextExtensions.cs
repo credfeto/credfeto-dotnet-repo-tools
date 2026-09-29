@@ -93,6 +93,13 @@ public static class RepoContextExtensions
         return source.Select(file => file[prefix..]);
     }
 
+    private static string NormalizeDependabotDirectory(string relativeDirectory)
+    {
+        string normalized = relativeDirectory.Replace(oldChar: Path.DirectorySeparatorChar, newChar: '/');
+
+        return normalized.Length == 0 ? "/" : normalized;
+    }
+
     public static bool HasNpmAndYarn(
         this in RepoContext repoContext,
         [NotNullWhen(true)] out IReadOnlyList<string>? directories
@@ -103,7 +110,8 @@ public static class RepoContextExtensions
             .. repoContext
                 .GetFiles("package.json")
                 .GetDirectoriesOfFiles()
-                .WithoutPrefix(repoContext.WorkingDirectory.Length),
+                .WithoutPrefix(repoContext.WorkingDirectory.Length)
+                .Select(NormalizeDependabotDirectory),
         ];
 
         if (dirs is [])
