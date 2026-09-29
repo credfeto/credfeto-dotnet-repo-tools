@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Enumeration;
@@ -23,9 +24,11 @@ public sealed class TrackingHashGenerator : ITrackingHashGenerator
         "*.ruleset",
     ];
 
-    private static readonly HashSet<string> ExcludedDirectoryNames = new(
-        ["obj", "bin", ".git"],
-        StringComparer.OrdinalIgnoreCase
+    private static readonly FrozenSet<string> ExcludedDirectoryNames = FrozenSet.Create(
+        StringComparer.OrdinalIgnoreCase,
+        "obj",
+        "bin",
+        ".git"
     );
 
     // Matches the case sensitivity of the previous Directory.EnumerateFiles(path, searchPattern)
