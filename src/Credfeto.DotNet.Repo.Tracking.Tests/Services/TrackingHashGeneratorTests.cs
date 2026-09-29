@@ -177,29 +177,23 @@ public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
             cancellationToken: this.CancellationToken()
         );
 
-        string objDir = Path.Combine(workDir, "obj");
-        Directory.CreateDirectory(objDir);
-        await File.WriteAllTextAsync(
-            path: Path.Combine(objDir, "test.csproj.nuget.g.props"),
-            contents: "<Project />",
-            cancellationToken: this.CancellationToken()
-        );
+        (string DirName, string FileName)[] excludedDirectoryFiles =
+        [
+            ("obj", "test.csproj.nuget.g.props"),
+            ("bin", "whatever.props"),
+            (".git", "some.props"),
+        ];
 
-        string binDir = Path.Combine(workDir, "bin");
-        Directory.CreateDirectory(binDir);
-        await File.WriteAllTextAsync(
-            path: Path.Combine(binDir, "whatever.props"),
-            contents: "<Project />",
-            cancellationToken: this.CancellationToken()
-        );
-
-        string gitDir = Path.Combine(workDir, ".git");
-        Directory.CreateDirectory(gitDir);
-        await File.WriteAllTextAsync(
-            path: Path.Combine(gitDir, "some.props"),
-            contents: "<Project />",
-            cancellationToken: this.CancellationToken()
-        );
+        foreach ((string dirName, string fileName) in excludedDirectoryFiles)
+        {
+            string dir = Path.Combine(workDir, dirName);
+            Directory.CreateDirectory(dir);
+            await File.WriteAllTextAsync(
+                path: Path.Combine(dir, fileName),
+                contents: "<Project />",
+                cancellationToken: this.CancellationToken()
+            );
+        }
 
         string hashAfterGeneratedFiles = await this._hashGenerator.GenerateTrackingHashAsync(
             repoContext: repoContext,
