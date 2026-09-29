@@ -216,17 +216,11 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 
     private static IEnumerable<string> EcosystemBlock(string ecoSystem, string packageTypeLabel)
     {
-        return EcosystemBlock(
-            ecoSystem: ecoSystem,
-            directory: "/",
-            packageTypeLabel: packageTypeLabel,
-            versioningStrategy: null
-        );
+        return EcosystemBlock(ecoSystem: ecoSystem, packageTypeLabel: packageTypeLabel, versioningStrategy: null);
     }
 
     private static IEnumerable<string> EcosystemBlock(
         string ecoSystem,
-        string directory,
         string packageTypeLabel,
         string? versioningStrategy
     )
@@ -234,7 +228,7 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
         return
         [
             $"  - package-ecosystem: {ecoSystem}",
-            $"    directory: \"{directory}\"",
+            "    directory: \"/\"",
             "    schedule:",
             "      interval: daily",
             "      time: \"03:00\"",
@@ -412,12 +406,7 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 
         List<string> lines = ["---", "version: 2", "updates:"];
         lines.AddRange(
-            EcosystemBlock(
-                ecoSystem: "npm",
-                directory: "",
-                packageTypeLabel: "npm",
-                versioningStrategy: "increase-if-necessary"
-            )
+            EcosystemBlock(ecoSystem: "npm", packageTypeLabel: "npm", versioningStrategy: "increase-if-necessary")
         );
         lines.AddRange([
             "    groups:",
