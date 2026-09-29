@@ -65,7 +65,7 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
                 );
                 config.Add("    versioning-strategy: increase-if-necessary");
                 AllowAllDependencies(config);
-                AddGroups(config: config, groups: NpmGroups);
+                DependabotGroupWriter.AddGroups(config: config, groups: NpmGroups);
             }
         }
 
@@ -193,18 +193,6 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
     {
         return StringComparer.OrdinalIgnoreCase.Equals(x: package.PackageId, y: wildcardPackage)
             || package.PackageId.StartsWith(wildcardPackage + ".", comparisonType: StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static void AddGroups(List<string> config, IReadOnlyList<DependabotGroup> groups)
-    {
-        config.Add("    groups:");
-
-        foreach (DependabotGroup group in groups)
-        {
-            config.Add($"      {group.Name}:");
-            config.Add("        patterns:");
-            config.AddRange(group.Patterns.Select(pattern => $"          - \"{pattern}\""));
-        }
     }
 
     private static void AllowAllDependencies(List<string> config)
