@@ -216,6 +216,15 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 
     private static IEnumerable<string> EcosystemBlock(string ecoSystem, string packageTypeLabel)
     {
+        return EcosystemBlock(ecoSystem: ecoSystem, packageTypeLabel: packageTypeLabel, versioningStrategy: null);
+    }
+
+    private static IEnumerable<string> EcosystemBlock(
+        string ecoSystem,
+        string packageTypeLabel,
+        string? versioningStrategy
+    )
+    {
         return
         [
             $"  - package-ecosystem: {ecoSystem}",
@@ -233,9 +242,15 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
             $"      - \"{packageTypeLabel}\"",
             "      - \"dependencies\"",
             "      - \"Changelog Not Required\"",
+            .. VersioningStrategy(versioningStrategy),
             "    allow:",
             "      - dependency-type: all",
         ];
+    }
+
+    private static IEnumerable<string> VersioningStrategy(string? versioningStrategy)
+    {
+        return versioningStrategy is null ? [] : [$"    versioning-strategy: {versioningStrategy}"];
     }
 
     [Fact]
@@ -366,6 +381,123 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
         this.Output.WriteLine(result);
         Assert.Contains("    directory: \"/\"", result, StringComparison.Ordinal);
         Assert.Contains("    directory: \"/web\"", result, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WithRootNpmFileGeneratesNpmSectionWithVitestGroup()
+    {
+        IGitRepository repository = this.CreateRepository();
+        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
+        await File.WriteAllTextAsync(
+            path: Path.Combine(this._tempFolder, "package.json"),
+            contents: "{}",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
+            repoContext: repoContext,
+            templateFolder: this._tempFolder,
+            dotNetFiles: EmptyDotNetFiles(),
+            packages: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        this.Output.WriteLine(result);
+
+        List<string> lines = ["---", "version: 2", "updates:"];
+        lines.AddRange(
+            EcosystemBlock(ecoSystem: "npm", packageTypeLabel: "npm", versioningStrategy: "increase-if-necessary")
+        );
+        lines.AddRange([
+            "    groups:",
+            "      vitest:",
+            "        patterns:",
+            "          - \"vitest\"",
+            "          - \"@vitest/*\"",
+        ]);
+
+        string expected = string.Join(separator: Environment.NewLine, values: lines) + Environment.NewLine;
+
+        Assert.Equal(expected: expected, actual: result, StringComparer.Ordinal);
+    }
+
+    [Fact]
+    public async Task WithMultipleNpmFilesGeneratesVitestGroupForEachNpmSection()
+    {
+        IGitRepository repository = this.CreateRepository();
+        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
+        await File.WriteAllTextAsync(
+            path: Path.Combine(this._tempFolder, "package.json"),
+            contents: "{}",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string webFolder = Path.Combine(this._tempFolder, "web");
+        Directory.CreateDirectory(webFolder);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(webFolder, "package.json"),
+            contents: "{}",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
+            repoContext: repoContext,
+            templateFolder: this._tempFolder,
+            dotNetFiles: EmptyDotNetFiles(),
+            packages: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        this.Output.WriteLine(result);
+
+        Assert.Equal(expected: 2, actual: CountOccurrences(text: result, value: "- package-ecosystem: npm"));
+        Assert.Equal(expected: 2, actual: CountOccurrences(text: result, value: "    groups:"));
+        Assert.Equal(expected: 2, actual: CountOccurrences(text: result, value: "      vitest:"));
+        Assert.Equal(expected: 2, actual: CountOccurrences(text: result, value: "          - \"vitest\""));
+        Assert.Equal(expected: 2, actual: CountOccurrences(text: result, value: "          - \"@vitest/*\""));
+    }
+
+    [Fact]
+    public async Task WithNonNpmEcosystemsDoesNotGenerateGroups()
+    {
+        IGitRepository repository = this.CreateRepository();
+        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
+        await File.WriteAllTextAsync(
+            path: Path.Combine(this._tempFolder, "Dockerfile"),
+            contents: "FROM ubuntu:latest",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
+            repoContext: repoContext,
+            templateFolder: this._tempFolder,
+            dotNetFiles: DotNetFilesWithSolutionsAndProjects(),
+            packages: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        this.Output.WriteLine(result);
+        Assert.Contains("- package-ecosystem: nuget", result, StringComparison.Ordinal);
+        Assert.Contains("- package-ecosystem: docker", result, StringComparison.Ordinal);
+        Assert.DoesNotContain("groups:", result, StringComparison.Ordinal);
+    }
+
+    private static int CountOccurrences(string text, string value)
+    {
+        int count = 0;
+        int index = text.IndexOf(value: value, comparisonType: StringComparison.Ordinal);
+
+        while (index >= 0)
+        {
+            ++count;
+            index = text.IndexOf(
+                value: value,
+                startIndex: index + value.Length,
+                comparisonType: StringComparison.Ordinal
+            );
+        }
+
+        return count;
     }
 
     [Fact]
