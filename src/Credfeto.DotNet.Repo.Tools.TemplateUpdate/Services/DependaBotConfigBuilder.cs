@@ -197,11 +197,6 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 
     private static void AddGroups(List<string> config, IReadOnlyList<DependabotGroup> groups)
     {
-        if (groups is [])
-        {
-            return;
-        }
-
         config.Add("    groups:");
 
         foreach (DependabotGroup group in groups)
