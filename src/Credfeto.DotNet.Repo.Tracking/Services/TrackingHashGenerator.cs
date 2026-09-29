@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Enumeration;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
@@ -17,7 +18,6 @@ public sealed class TrackingHashGenerator : ITrackingHashGenerator
         "*.sln",
         "*.slnx",
         "*.csproj",
-        "*.csproj",
         "global.json",
         "*.props",
         "*.ruleset",
@@ -27,6 +27,11 @@ public sealed class TrackingHashGenerator : ITrackingHashGenerator
         ["obj", "bin", ".git"],
         StringComparer.OrdinalIgnoreCase
     );
+
+    // Matches the case sensitivity of the previous Directory.EnumerateFiles(path, searchPattern)
+    // matching, which uses MatchCasing.PlatformDefault: case-insensitive on Windows/macOS,
+    // case-sensitive on Linux.
+    private static readonly bool IgnoreCase = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS();
 
     public async ValueTask<string> GenerateTrackingHashAsync(
         RepoContext repoContext,
@@ -89,9 +94,11 @@ public sealed class TrackingHashGenerator : ITrackingHashGenerator
 
     private static IEnumerable<string> EnumerateSourceFiles(string folder)
     {
-        foreach (string filter in FileMasks)
+        foreach (string file in Directory.EnumerateFiles(folder))
         {
-            foreach (string file in Directory.EnumerateFiles(path: folder, searchPattern: filter))
+            string fileName = Path.GetFileName(file);
+
+            if (FileMasks.Any(mask => FileSystemName.MatchesSimpleExpression(mask, fileName, ignoreCase: IgnoreCase)))
             {
                 yield return file;
             }
