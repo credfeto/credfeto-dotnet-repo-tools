@@ -23,6 +23,10 @@ public sealed class TrackingHashGenerator : ITrackingHashGenerator
         "*.ruleset",
     ];
 
+    private static readonly IReadOnlyList<string> ExcludedDirectoryNames = ["obj", "bin", ".git"];
+
+    private static readonly char[] PathSeparators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
+
     public async ValueTask<string> GenerateTrackingHashAsync(
         RepoContext repoContext,
         CancellationToken cancellationToken
@@ -89,7 +93,17 @@ public sealed class TrackingHashGenerator : ITrackingHashGenerator
                         searchOption: SearchOption.AllDirectories
                     )
                 )
+                .Where(fileName => !IsUnderExcludedDirectory(fullPath: fileName, sourceFolder: sourceFolder))
                 .Order(StringComparer.OrdinalIgnoreCase),
         ];
+    }
+
+    private static bool IsUnderExcludedDirectory(string fullPath, string sourceFolder)
+    {
+        string relativePath = Path.GetRelativePath(relativeTo: sourceFolder, path: fullPath);
+
+        return relativePath
+            .Split(PathSeparators)
+            .Any(segment => ExcludedDirectoryNames.Contains(segment, StringComparer.OrdinalIgnoreCase));
     }
 }
