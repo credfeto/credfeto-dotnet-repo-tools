@@ -17,6 +17,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - Rewrote README.md into the required section order, fixed the packages.json/release.json TODO placeholders and the stale Code Cleanup status, documented reduce-dependencies, check-dependencies, and --template-config, and split reference material into a new docs/ folder
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.35.0.4138
+- Dependencies - Updated FunFair.BuildCheck to 474.2.18.2754
 ### Deprecated
 ### Removed
 ### Deployment Changes
