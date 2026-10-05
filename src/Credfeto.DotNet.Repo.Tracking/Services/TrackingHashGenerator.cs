@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Enumeration;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Threading;
@@ -17,11 +19,22 @@ public sealed class TrackingHashGenerator : ITrackingHashGenerator
         "*.sln",
         "*.slnx",
         "*.csproj",
-        "*.csproj",
         "global.json",
         "*.props",
         "*.ruleset",
     ];
+
+    private static readonly FrozenSet<string> ExcludedDirectoryNames = FrozenSet.Create(
+        StringComparer.OrdinalIgnoreCase,
+        "obj",
+        "bin",
+        ".git"
+    );
+
+    // Matches the case sensitivity of the previous Directory.EnumerateFiles(path, searchPattern)
+    // matching, which uses MatchCasing.PlatformDefault: case-insensitive on Windows/macOS,
+    // case-sensitive on Linux.
+    private static readonly bool IgnoreCase = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS();
 
     public async ValueTask<string> GenerateTrackingHashAsync(
         RepoContext repoContext,
@@ -79,17 +92,32 @@ public sealed class TrackingHashGenerator : ITrackingHashGenerator
 
     private static IReadOnlyList<string> GetFileList(string sourceFolder)
     {
-        return
-        [
-            .. FileMasks
-                .SelectMany(filter =>
-                    Directory.GetFiles(
-                        path: sourceFolder,
-                        searchPattern: filter,
-                        searchOption: SearchOption.AllDirectories
-                    )
-                )
-                .Order(StringComparer.OrdinalIgnoreCase),
-        ];
+        return [.. EnumerateSourceFiles(sourceFolder).Order(StringComparer.OrdinalIgnoreCase)];
+    }
+
+    private static IEnumerable<string> EnumerateSourceFiles(string folder)
+    {
+        foreach (string file in Directory.EnumerateFiles(folder))
+        {
+            string fileName = Path.GetFileName(file);
+
+            if (FileMasks.Any(mask => FileSystemName.MatchesSimpleExpression(mask, fileName, ignoreCase: IgnoreCase)))
+            {
+                yield return file;
+            }
+        }
+
+        foreach (string subDirectory in Directory.EnumerateDirectories(folder))
+        {
+            if (ExcludedDirectoryNames.Contains(Path.GetFileName(subDirectory)))
+            {
+                continue;
+            }
+
+            foreach (string file in EnumerateSourceFiles(subDirectory))
+            {
+                yield return file;
+            }
+        }
     }
 }
