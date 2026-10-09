@@ -214,7 +214,7 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
         this.Output.WriteLine(trackingFile);
 
-        // Do not call Set: the cache has never been modified.
+        // Set is not called, so the cache has never been modified.
         await this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: this.CancellationToken());
 
         Assert.False(
