@@ -61,7 +61,7 @@ public sealed class LabelsBuilder : ILabelsBuilder
         ),
         new(
             Name: "never-close",
-            Description: "This issue should never be closed - it is a permanent tracking issue",
+            Description: "This issue should never be closed; it is a permanent tracking issue",
             Colour: "1d76db",
             [],
             []
