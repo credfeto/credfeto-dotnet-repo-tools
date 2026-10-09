@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Replaced em dash characters with plain punctuation in the generated never-close label description, documentation, and code comments
 ### Changed
 ### Deprecated
 ### Removed
@@ -218,7 +219,7 @@ Releases that have at least been deployed to staging, BUT NOT necessarily releas
 - Add Bug, Enhancement, Performance, and Security labels to LabelBuilder with appropriate colours and descriptions; fix Changelog Not Required label description; refactor label builder tests to use builder pattern; document labels in README
 - Added cscleanup standalone tool for formatting C# source and project files without git operations
 ### Fixed
-- Detect when a file is listed in `cleanup.files` but still exists in the template; this would cause repeated add/remove cycles on every run — report an error and abort immediately
+- Detect when a file is listed in `cleanup.files` but still exists in the template; this would cause repeated add/remove cycles on every run, so report an error and abort immediately
 
 ## [1.4.10] - 2026-04-24
 ### Added
