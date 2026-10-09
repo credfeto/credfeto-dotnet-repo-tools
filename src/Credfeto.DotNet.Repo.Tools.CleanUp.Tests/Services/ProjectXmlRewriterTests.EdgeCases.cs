@@ -105,7 +105,7 @@ public sealed partial class ProjectXmlRewriterTests
     [Fact]
     public void ReOrderPropertyGroupsShouldThrowXmlExceptionForDuplicatePropertyAcrossGroups()
     {
-        // Two combinable groups that each have <Nullable> — when merged, this causes a duplicate
+        // Two combinable groups that each have <Nullable>: when merged, this causes a duplicate
         const string xml =
             @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
@@ -264,7 +264,7 @@ public sealed partial class ProjectXmlRewriterTests
     [Fact]
     public Task ReOrderPropertyGroupsShouldNotMergeGroupWithDuplicateChildNamesAndNoAttributesAsync()
     {
-        // PropertyGroup without attributes but with duplicate child names — IsCombinableGroup should return false
+        // PropertyGroup without attributes but with duplicate child names, so IsCombinableGroup should return false
         const string originalXml =
             @"<Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
