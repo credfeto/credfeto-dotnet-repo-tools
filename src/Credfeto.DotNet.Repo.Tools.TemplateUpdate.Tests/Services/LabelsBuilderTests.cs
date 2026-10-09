@@ -67,14 +67,17 @@ public sealed class LabelsBuilderTests : LoggingTestBase
     }
 
     [Fact]
-    public void BuildLabelsYmlHasNoEmOrEnDashesInDescriptions()
+    public void BuildLabelsConfigContainsNoEmOrEnDashes()
     {
-        (string actual, string _) = this._labelsBuilder.BuildLabelsConfig(["Foo.Bar.csproj"]);
+        (string labelsYaml, string labelerYaml) = this._labelsBuilder.BuildLabelsConfig(["Foo.Bar.csproj"]);
 
-        this.Output.WriteLine(actual);
+        this.Output.WriteLine(labelsYaml);
+        this.Output.WriteLine(labelerYaml);
 
-        Assert.DoesNotContain("\u2014", actual, StringComparison.Ordinal);
-        Assert.DoesNotContain("\u2013", actual, StringComparison.Ordinal);
+        Assert.DoesNotContain("\u2014", labelsYaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("\u2013", labelsYaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("\u2014", labelerYaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("\u2013", labelerYaml, StringComparison.Ordinal);
     }
 
     [Fact]
