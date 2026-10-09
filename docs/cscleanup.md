@@ -1,4 +1,4 @@
-# cscleanup — Standalone C# Formatter
+# cscleanup: Standalone C# Formatter
 
 `cscleanup` is a standalone dotnet tool that formats C# source files (`.cs`) and project files (`.csproj`) without requiring a git repository or making any commits. It is suitable for use as a pre-commit hook or in CI pipelines.
 
@@ -16,9 +16,9 @@ cscleanup [--remove-suppressions] [--build-root <path>] <inputs...>
 
 ## Input resolution
 
-* **File path** — processed directly; must be a `.cs` or `.csproj` file
-* **Glob pattern** — expanded relative to the current working directory (e.g. `"src/**/*.cs"`)
-* **Directory** — scanned recursively for all `.cs` and `.csproj` files, excluding generated files (paths containing `/obj/`, `/generated/`, or `.generated.` in the filename)
+* **File path**: processed directly; must be a `.cs` or `.csproj` file
+* **Glob pattern**: expanded relative to the current working directory (e.g. `"src/**/*.cs"`)
+* **Directory**: scanned recursively for all `.cs` and `.csproj` files, excluding generated files (paths containing `/obj/`, `/generated/`, or `.generated.` in the filename)
 
 Passing any other file type is an error.
 
