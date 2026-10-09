@@ -33,7 +33,7 @@ These labels are applied to every managed repository regardless of content. This
 | `Markdown` | `5319e7` | Markdown files |
 | `Medium` | `ffff00` | Medium priority |
 | `Migration Script` | `b680e5` | SQL migration scripts |
-| `never-close` | `1d76db` | This issue should never be closed - it is a permanent tracking issue |
+| `never-close` | `1d76db` | This issue should never be closed; it is a permanent tracking issue |
 | `no-pr-activity` | `ffff00` | Pull request has had no activity for a long time |
 | `npm` | `e99695` | npm package update |
 | `On Hold` | `ff0000` | Do not work on this |
