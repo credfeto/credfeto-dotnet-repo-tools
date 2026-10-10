@@ -14,6 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 - Formatter glob patterns without a directory prefix (e.g. "Foo*.cs") are matched against the current directory correctly instead of being mis-sliced by its length, which previously caused no-match or wrong-file results
 - Generated dependabot npm section now emits a valid directory value (e.g. "/") for a root-level package.json instead of an empty string, and normalizes directory separators to forward slashes, so GitHub no longer rejects the generated dependabot.yml
+- Replaced em dash characters with plain punctuation in the generated never-close label description, documentation, and code comments
 ### Changed
 - Rewrote README.md into the required section order, fixed the packages.json/release.json TODO placeholders and the stale Code Cleanup status, documented reduce-dependencies, check-dependencies, and --template-config, and split reference material into a new docs/ folder
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.35.0.4138
@@ -204,7 +205,7 @@ Releases that have at least been deployed to staging, BUT NOT necessarily releas
 - Add Bug, Enhancement, Performance, and Security labels to LabelBuilder with appropriate colours and descriptions; fix Changelog Not Required label description; refactor label builder tests to use builder pattern; document labels in README
 - Added cscleanup standalone tool for formatting C# source and project files without git operations
 ### Fixed
-- Detect when a file is listed in `cleanup.files` but still exists in the template; this would cause repeated add/remove cycles on every run — report an error and abort immediately
+- Detect when a file is listed in `cleanup.files` but still exists in the template; this would cause repeated add/remove cycles on every run, so report an error and abort immediately
 
 ## [1.4.10] - 2026-04-24
 ### Added

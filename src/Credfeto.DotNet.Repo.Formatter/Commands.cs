@@ -162,7 +162,7 @@ public sealed class Commands
         int updatedCount = 0;
         int failureCount = 0;
 
-        // Parallelise when no build context — suppression removal requires serial dotnet build per file
+        // Parallelise when no build context; with one, suppression removal requires a serial dotnet build per file
         int maxDegree = buildContext is null ? Environment.ProcessorCount : 1;
 
         await Parallel.ForEachAsync(
