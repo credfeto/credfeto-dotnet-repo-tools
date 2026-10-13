@@ -17,11 +17,11 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - Rewrote README.md into the required section order, fixed the packages.json/release.json TODO placeholders and the stale Code Cleanup status, documented reduce-dependencies, check-dependencies, and --template-config, and split reference material into a new docs/ folder
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.35.0.4138
-- Dependencies - Updated FunFair.BuildCheck to 474.2.18.2754
 - Dependencies - Updated Roslynator.Analyzers to 5.0.1
 - Dependencies - Updated xunit.analyzers to 2.2.0
 - Dependencies - Updated xunit.v3 to 4.0.2
 - Dependencies - Updated Microsoft.VisualStudio.Threading.Analyzers to 18.12.1
+- Dependencies - Updated FunFair.BuildCheck to 474.2.19.2787
 ### Deprecated
 ### Removed
 ### Deployment Changes
