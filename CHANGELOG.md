@@ -25,6 +25,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Microsoft.Extensions to 10.0.13
 - SDK - Updated DotNet SDK to 10.0.402
 - Dependencies - Updated FunFair.CodeAnalysis to 7.2.20.2501
+- Dependencies - Updated Meziantou.Analyzer to 3.0.305
 ### Deprecated
 ### Removed
 ### Deployment Changes
