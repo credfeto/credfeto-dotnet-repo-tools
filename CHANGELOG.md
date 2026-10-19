@@ -27,6 +27,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.208.2725
 - Dependencies - Updated Microsoft.Extensions to 10.0.13
 - Dependencies - Updated Nullable.Extended.Analyzer to 1.17.0
+- Dependencies - Updated Meziantou.Analyzer to 3.0.313
 ### Deprecated
 ### Removed
 ### Deployment Changes
