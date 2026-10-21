@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Cocona;
+using Cocona.Builder;
 using Credfeto.DotNet.Repo.Tools.Cmd.Setup;
 using FunFair.Test.Common;
 using Microsoft.Extensions.Configuration;
@@ -20,23 +21,7 @@ public sealed class CoconaAppBuilderFactoryTests : TestBase
     {
         using (CoconaApp app = CoconaAppBuilderFactory.Create([]).Build())
         {
-            IConfigurationRoot configuration = (IConfigurationRoot)app.Services.GetRequiredService<IConfiguration>();
-
-            IReadOnlyList<FileConfigurationProvider> fileProviders =
-            [
-                .. configuration.Providers.OfType<FileConfigurationProvider>(),
-            ];
-
-            Assert.NotEmpty(fileProviders);
-
-            IReadOnlyList<string?> reloadingFiles =
-            [
-                .. fileProviders
-                    .Where(provider => provider.Source.ReloadOnChange)
-                    .Select(provider => provider.Source.Path),
-            ];
-
-            Assert.Empty(reloadingFiles);
+            AssertNoConfigurationFileReloadsOnChange(app);
         }
     }
 
@@ -51,16 +36,40 @@ public sealed class CoconaAppBuilderFactoryTests : TestBase
         {
             Environment.SetEnvironmentVariable(variable: RELOAD_CONFIG_ON_CHANGE_VARIABLE, value: valueBeforeCreate);
 
-            _ = CoconaAppBuilderFactory.Create([]);
+            CoconaAppBuilder builder = CoconaAppBuilderFactory.Create([]);
 
             Assert.Equal(
                 expected: valueBeforeCreate,
                 Environment.GetEnvironmentVariable(RELOAD_CONFIG_ON_CHANGE_VARIABLE)
             );
+
+            using (CoconaApp app = builder.Build())
+            {
+                AssertNoConfigurationFileReloadsOnChange(app);
+            }
         }
         finally
         {
             Environment.SetEnvironmentVariable(variable: RELOAD_CONFIG_ON_CHANGE_VARIABLE, value: originalValue);
         }
+    }
+
+    private static void AssertNoConfigurationFileReloadsOnChange(CoconaApp app)
+    {
+        IConfigurationRoot configuration = (IConfigurationRoot)app.Services.GetRequiredService<IConfiguration>();
+
+        IReadOnlyList<FileConfigurationProvider> fileProviders =
+        [
+            .. configuration.Providers.OfType<FileConfigurationProvider>(),
+        ];
+
+        Assert.NotEmpty(fileProviders);
+
+        IReadOnlyList<string?> reloadingFiles =
+        [
+            .. fileProviders.Where(provider => provider.Source.ReloadOnChange).Select(provider => provider.Source.Path),
+        ];
+
+        Assert.Empty(reloadingFiles);
     }
 }
