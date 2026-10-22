@@ -198,4 +198,35 @@ public sealed class TrackingHashGeneratorTests : LoggingFolderCleanupTestBase
 
         Assert.NotEqual(expected: firstHash, actual: secondHash, comparer: StringComparer.Ordinal);
     }
+
+    [Fact]
+    public async Task GenerateTrackingHashAsyncChangesWhenFileInNonExcludedSubdirectoryChangesAsync()
+    {
+        // Files in ordinary subdirectories (not obj/, bin/ or .git/) must still be hashed.
+        string workDir = this.CreateWorkDir();
+        string subDirectory = Path.Combine(path1: workDir, path2: "src", path3: "Example");
+        Directory.CreateDirectory(subDirectory);
+
+        await this.WriteFileAsync(directory: subDirectory, fileName: "Example.props", contents: "<Project />");
+
+        RepoContext repoContext = CreateRepoContext(workDir);
+
+        string firstHash = await this._hashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await this.WriteFileAsync(
+            directory: subDirectory,
+            fileName: "Example.props",
+            contents: "<Project><PropertyGroup /></Project>"
+        );
+
+        string secondHash = await this._hashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.NotEqual(expected: firstHash, actual: secondHash, comparer: StringComparer.Ordinal);
+    }
 }
