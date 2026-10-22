@@ -59,7 +59,7 @@ internal static class Program
 
     private static CoconaApp CreateApp(string[] args)
     {
-        CoconaAppBuilder builder = CoconaApp.CreateBuilder(args);
+        CoconaAppBuilder builder = CoconaAppBuilderFactory.Create(args);
         builder.Services.AddServices();
         builder
             .Logging.AddFilter(category: "Microsoft", level: LogLevel.Warning)
