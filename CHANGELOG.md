@@ -13,6 +13,9 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+- Replaced em dash characters with plain punctuation across this repository's own documentation, code comments, tests, and label definitions, so generated text no longer contains them
+- The never-close label description now uses a semicolon instead of an em dash; managed repositories pick up the new description on their next update-template run
+- Resynced the label descriptions in docs/github-labels.md to match the generated labels
 ### Deprecated
 ### Removed
 ### Deployment Changes
@@ -218,7 +221,7 @@ Releases that have at least been deployed to staging, BUT NOT necessarily releas
 - Add Bug, Enhancement, Performance, and Security labels to LabelBuilder with appropriate colours and descriptions; fix Changelog Not Required label description; refactor label builder tests to use builder pattern; document labels in README
 - Added cscleanup standalone tool for formatting C# source and project files without git operations
 ### Fixed
-- Detect when a file is listed in `cleanup.files` but still exists in the template; this would cause repeated add/remove cycles on every run — report an error and abort immediately
+- Detect when a file is listed in `cleanup.files` but still exists in the template; this would cause repeated add/remove cycles on every run, so report an error and abort immediately
 
 ## [1.4.10] - 2026-04-24
 ### Added
