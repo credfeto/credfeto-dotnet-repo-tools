@@ -12,8 +12,10 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
-- Replaced em dash characters with plain punctuation in the generated never-close label description, documentation, and code comments
 ### Changed
+- Replaced em dash characters with plain punctuation across this repository's own documentation, code comments, tests, and label definitions, so generated text no longer contains them
+- The never-close label description now uses a semicolon instead of an em dash; managed repositories pick up the new description on their next update-template run
+- Resynced the label descriptions in docs/github-labels.md to match the generated labels
 ### Deprecated
 ### Removed
 ### Deployment Changes
