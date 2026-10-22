@@ -12,6 +12,17 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+
+## [1.5.17] - 2026-10-22
+### Fixed
 - Formatter glob patterns without a directory prefix (e.g. "Foo*.cs") are matched against the current directory correctly instead of being mis-sliced by its length, which previously caused no-match or wrong-file results
 - Generated dependabot npm section now emits a valid directory value (e.g. "/") for a root-level package.json instead of an empty string, and normalizes directory separators to forward slashes, so GitHub no longer rejects the generated dependabot.yml
 - Credfeto.DotNet.Repo.Tools.Cmd and Credfeto.DotNet.Repo.Formatter no longer hang on exit on Linux: configuration reload-on-change is disabled so no file watcher is created over the working directory
@@ -28,13 +39,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.208.2725
 - Dependencies - Updated Microsoft.Extensions to 10.0.13
 - Dependencies - Updated Nullable.Extended.Analyzer to 1.17.0
-### Deprecated
-### Removed
-### Deployment Changes
-
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 
 ## [1.5.16] - 2026-09-26
 ### Fixed
