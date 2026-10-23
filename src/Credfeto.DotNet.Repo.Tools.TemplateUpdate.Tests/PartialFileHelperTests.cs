@@ -173,11 +173,11 @@ public sealed class PartialFileHelperTests : TestBase
 
         Assert.Equal(
             expected: 1,
-            actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultGloballyMaintainedMarker)
+            actual: TextOccurrences.Count(text: result, value: PartialFileHelper.DefaultGloballyMaintainedMarker)
         );
         Assert.Equal(
             expected: 1,
-            actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultLocallyMaintainedMarker)
+            actual: TextOccurrences.Count(text: result, value: PartialFileHelper.DefaultLocallyMaintainedMarker)
         );
         Assert.Contains("# Local instructions", result, StringComparison.Ordinal);
     }
@@ -200,7 +200,7 @@ public sealed class PartialFileHelperTests : TestBase
 
         Assert.Equal(
             expected: 1,
-            actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultLocallyMaintainedMarker)
+            actual: TextOccurrences.Count(text: result, value: PartialFileHelper.DefaultLocallyMaintainedMarker)
         );
     }
 
@@ -213,7 +213,7 @@ public sealed class PartialFileHelperTests : TestBase
 
         Assert.Equal(
             expected: 1,
-            actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultGloballyMaintainedMarker)
+            actual: TextOccurrences.Count(text: result, value: PartialFileHelper.DefaultGloballyMaintainedMarker)
         );
         Assert.Contains("# Local instructions", result, StringComparison.Ordinal);
     }
@@ -227,31 +227,8 @@ public sealed class PartialFileHelperTests : TestBase
 
         Assert.Equal(
             expected: 1,
-            actual: CountOccurrences(result: result, marker: PartialFileHelper.DefaultLocallyMaintainedMarker)
+            actual: TextOccurrences.Count(text: result, value: PartialFileHelper.DefaultLocallyMaintainedMarker)
         );
         Assert.Contains("# Local instructions", result, StringComparison.Ordinal);
-    }
-
-    private static int CountOccurrences(string result, string marker)
-    {
-        int count = 0;
-        int startIndex = 0;
-
-        while (true)
-        {
-            int markerIndex = result.IndexOf(
-                value: marker,
-                startIndex: startIndex,
-                comparisonType: StringComparison.Ordinal
-            );
-
-            if (markerIndex < 0)
-            {
-                return count;
-            }
-
-            ++count;
-            startIndex = markerIndex + marker.Length;
-        }
     }
 }
