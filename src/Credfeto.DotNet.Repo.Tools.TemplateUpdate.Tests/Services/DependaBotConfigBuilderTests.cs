@@ -450,11 +450,11 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 
         this.Output.WriteLine(result);
 
-        Assert.Equal(expected: 2, actual: CountOccurrences(text: result, value: "- package-ecosystem: npm"));
-        Assert.Equal(expected: 2, actual: CountOccurrences(text: result, value: "    groups:"));
-        Assert.Equal(expected: 2, actual: CountOccurrences(text: result, value: "      vitest:"));
-        Assert.Equal(expected: 2, actual: CountOccurrences(text: result, value: "          - \"vitest\""));
-        Assert.Equal(expected: 2, actual: CountOccurrences(text: result, value: "          - \"@vitest/*\""));
+        Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "- package-ecosystem: npm"));
+        Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "    groups:"));
+        Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "      vitest:"));
+        Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "          - \"vitest\""));
+        Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "          - \"@vitest/*\""));
     }
 
     [Fact]
@@ -480,24 +480,6 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
         Assert.Contains("- package-ecosystem: nuget", result, StringComparison.Ordinal);
         Assert.Contains("- package-ecosystem: docker", result, StringComparison.Ordinal);
         Assert.DoesNotContain("groups:", result, StringComparison.Ordinal);
-    }
-
-    private static int CountOccurrences(string text, string value)
-    {
-        int count = 0;
-        int index = text.IndexOf(value: value, comparisonType: StringComparison.Ordinal);
-
-        while (index >= 0)
-        {
-            ++count;
-            index = text.IndexOf(
-                value: value,
-                startIndex: index + value.Length,
-                comparisonType: StringComparison.Ordinal
-            );
-        }
-
-        return count;
     }
 
     [Fact]
