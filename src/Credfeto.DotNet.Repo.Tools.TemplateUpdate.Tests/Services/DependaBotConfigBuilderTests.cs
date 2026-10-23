@@ -216,15 +216,6 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 
     private static IEnumerable<string> EcosystemBlock(string ecoSystem, string packageTypeLabel)
     {
-        return EcosystemBlock(ecoSystem: ecoSystem, packageTypeLabel: packageTypeLabel, versioningStrategy: null);
-    }
-
-    private static IEnumerable<string> EcosystemBlock(
-        string ecoSystem,
-        string packageTypeLabel,
-        string? versioningStrategy
-    )
-    {
         return
         [
             $"  - package-ecosystem: {ecoSystem}",
@@ -242,15 +233,9 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
             $"      - \"{packageTypeLabel}\"",
             "      - \"dependencies\"",
             "      - \"Changelog Not Required\"",
-            .. VersioningStrategy(versioningStrategy),
             "    allow:",
             "      - dependency-type: all",
         ];
-    }
-
-    private static IEnumerable<string> VersioningStrategy(string? versioningStrategy)
-    {
-        return versioningStrategy is null ? [] : [$"    versioning-strategy: {versioningStrategy}"];
     }
 
     [Fact]
@@ -404,10 +389,14 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 
         this.Output.WriteLine(result);
 
-        List<string> lines = ["---", "version: 2", "updates:"];
-        lines.AddRange(
-            EcosystemBlock(ecoSystem: "npm", packageTypeLabel: "npm", versioningStrategy: "increase-if-necessary")
-        );
+        List<string> lines =
+        [
+            "---",
+            "version: 2",
+            "updates:",
+            .. EcosystemBlock(ecoSystem: "npm", packageTypeLabel: "npm"),
+        ];
+        lines.Insert(index: lines.IndexOf("    allow:"), item: "    versioning-strategy: increase-if-necessary");
         lines.AddRange([
             "    groups:",
             "      vitest:",
