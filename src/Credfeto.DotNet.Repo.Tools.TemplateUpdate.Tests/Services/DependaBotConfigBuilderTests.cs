@@ -456,20 +456,14 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 
         this.Output.WriteLine(result);
 
-        Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "- package-ecosystem: npm"));
-        Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "    groups:"));
-        Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "      vitest:"));
-        Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "      vitest-security:"));
-        Assert.Equal(
-            expected: 2,
-            actual: TextOccurrences.Count(text: result, value: "        applies-to: version-updates")
-        );
-        Assert.Equal(
-            expected: 2,
-            actual: TextOccurrences.Count(text: result, value: "        applies-to: security-updates")
-        );
-        Assert.Equal(expected: 4, actual: TextOccurrences.Count(text: result, value: "          - \"vitest\""));
-        Assert.Equal(expected: 4, actual: TextOccurrences.Count(text: result, value: "          - \"@vitest/*\""));
+        Assert.Equal(expected: 2, actual: result.AsSpan().Count(value: "- package-ecosystem: npm"));
+        Assert.Equal(expected: 2, actual: result.AsSpan().Count(value: "    groups:"));
+        Assert.Equal(expected: 2, actual: result.AsSpan().Count(value: "      vitest:"));
+        Assert.Equal(expected: 2, actual: result.AsSpan().Count(value: "      vitest-security:"));
+        Assert.Equal(expected: 2, actual: result.AsSpan().Count(value: "        applies-to: version-updates"));
+        Assert.Equal(expected: 2, actual: result.AsSpan().Count(value: "        applies-to: security-updates"));
+        Assert.Equal(expected: 4, actual: result.AsSpan().Count(value: "          - \"vitest\""));
+        Assert.Equal(expected: 4, actual: result.AsSpan().Count(value: "          - \"@vitest/*\""));
     }
 
     [Fact]
