@@ -21,6 +21,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - SDK - Updated DotNet SDK to 10.0.403
 - Dependencies - Updated Meziantou.Analyzer to 3.0.317
 - Generated Dependabot config now groups vitest and @vitest/* updates into a single PR for each npm/yarn directory
+- Switched projects to EnableConfigurationBindingGenerator so dotnet buildcheck passes
 ### Deprecated
 ### Removed
 ### Deployment Changes
