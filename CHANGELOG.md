@@ -11,6 +11,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+- Generated Dependabot config now groups vitest and @vitest/* version and security updates into a single PR for each npm/yarn directory
 ### Fixed
 ### Changed
 - Replaced em dash characters with plain punctuation across this repository's own documentation, code comments, tests, and label definitions, so generated text no longer contains them
@@ -20,9 +21,8 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.BuildCheck to 474.2.21.2862
 - SDK - Updated DotNet SDK to 10.0.403
 - Dependencies - Updated Meziantou.Analyzer to 3.0.317
-- Generated Dependabot config now groups vitest and @vitest/* updates into a single PR for each npm/yarn directory
-- Switched projects to EnableConfigurationBindingGenerator so dotnet buildcheck passes
 - Dependencies - Updated FunFair.BuildCheck.Runner to 474.2.21.2862
+- Replaced obsolete EnableMicrosoftExtensionsConfigurationBinderSourceGenerator with EnableConfigurationBindingGenerator in non-test projects and removed it from test projects, as required by dotnet buildcheck
 ### Deprecated
 ### Removed
 ### Deployment Changes
