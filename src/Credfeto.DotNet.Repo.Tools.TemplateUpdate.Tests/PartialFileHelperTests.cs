@@ -173,11 +173,11 @@ public sealed class PartialFileHelperTests : TestBase
 
         Assert.Equal(
             expected: 1,
-            actual: TextOccurrences.Count(text: result, value: PartialFileHelper.DefaultGloballyMaintainedMarker)
+            actual: result.AsSpan().Count(value: PartialFileHelper.DefaultGloballyMaintainedMarker)
         );
         Assert.Equal(
             expected: 1,
-            actual: TextOccurrences.Count(text: result, value: PartialFileHelper.DefaultLocallyMaintainedMarker)
+            actual: result.AsSpan().Count(value: PartialFileHelper.DefaultLocallyMaintainedMarker)
         );
         Assert.Contains("# Local instructions", result, StringComparison.Ordinal);
     }
@@ -200,7 +200,7 @@ public sealed class PartialFileHelperTests : TestBase
 
         Assert.Equal(
             expected: 1,
-            actual: TextOccurrences.Count(text: result, value: PartialFileHelper.DefaultLocallyMaintainedMarker)
+            actual: result.AsSpan().Count(value: PartialFileHelper.DefaultLocallyMaintainedMarker)
         );
     }
 
@@ -213,7 +213,7 @@ public sealed class PartialFileHelperTests : TestBase
 
         Assert.Equal(
             expected: 1,
-            actual: TextOccurrences.Count(text: result, value: PartialFileHelper.DefaultGloballyMaintainedMarker)
+            actual: result.AsSpan().Count(value: PartialFileHelper.DefaultGloballyMaintainedMarker)
         );
         Assert.Contains("# Local instructions", result, StringComparison.Ordinal);
     }
@@ -227,7 +227,7 @@ public sealed class PartialFileHelperTests : TestBase
 
         Assert.Equal(
             expected: 1,
-            actual: TextOccurrences.Count(text: result, value: PartialFileHelper.DefaultLocallyMaintainedMarker)
+            actual: result.AsSpan().Count(value: PartialFileHelper.DefaultLocallyMaintainedMarker)
         );
         Assert.Contains("# Local instructions", result, StringComparison.Ordinal);
     }
