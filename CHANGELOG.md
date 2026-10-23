@@ -11,14 +11,14 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+- Generated Dependabot config now groups vitest and @vitest/* version and security updates into a single PR for each npm/yarn directory
 ### Fixed
 ### Changed
 - Replaced em dash characters with plain punctuation across this repository's own documentation, code comments, tests, and label definitions, so generated text no longer contains them
 - The never-close label description now uses a semicolon instead of an em dash; managed repositories pick up the new description on their next update-template run
 - Resynced the label descriptions in docs/github-labels.md to match the generated labels
-- Generated Dependabot config now groups vitest and @vitest/* updates into a single PR for each npm/yarn directory
-- Switched projects to EnableConfigurationBindingGenerator so dotnet buildcheck passes
 - Dependencies - Updated FunFair.BuildCheck.Runner to 474.2.21.2862
+- Replaced obsolete EnableMicrosoftExtensionsConfigurationBinderSourceGenerator with EnableConfigurationBindingGenerator in non-test projects and removed it from test projects, as required by dotnet buildcheck
 ### Deprecated
 ### Removed
 ### Deployment Changes
