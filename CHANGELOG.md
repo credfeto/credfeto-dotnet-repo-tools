@@ -22,6 +22,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Meziantou.Analyzer to 3.0.317
 - Generated Dependabot config now groups vitest and @vitest/* updates into a single PR for each npm/yarn directory
 - Switched projects to EnableConfigurationBindingGenerator so dotnet buildcheck passes
+- Dependencies - Updated FunFair.BuildCheck.Runner to 474.2.21.2862
 ### Deprecated
 ### Removed
 ### Deployment Changes
