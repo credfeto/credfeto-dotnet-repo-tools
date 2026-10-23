@@ -15,9 +15,12 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 
 public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 {
+    private static readonly IReadOnlyList<string> VitestPatterns = ["vitest", "@vitest/*"];
+
     private static readonly IReadOnlyList<DependabotGroup> NpmGroups =
     [
-        new(Name: "vitest", Patterns: ["vitest", "@vitest/*"]),
+        new(Name: "vitest", AppliesTo: "version-updates", Patterns: VitestPatterns),
+        new(Name: "vitest-security", AppliesTo: "security-updates", Patterns: VitestPatterns),
     ];
 
     private readonly ILogger<DependaBotConfigBuilder> _logger;

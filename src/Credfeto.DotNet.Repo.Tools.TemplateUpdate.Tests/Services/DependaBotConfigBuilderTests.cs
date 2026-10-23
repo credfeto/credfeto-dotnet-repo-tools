@@ -411,6 +411,12 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
         lines.AddRange([
             "    groups:",
             "      vitest:",
+            "        applies-to: version-updates",
+            "        patterns:",
+            "          - \"vitest\"",
+            "          - \"@vitest/*\"",
+            "      vitest-security:",
+            "        applies-to: security-updates",
             "        patterns:",
             "          - \"vitest\"",
             "          - \"@vitest/*\"",
@@ -453,8 +459,17 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
         Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "- package-ecosystem: npm"));
         Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "    groups:"));
         Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "      vitest:"));
-        Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "          - \"vitest\""));
-        Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "          - \"@vitest/*\""));
+        Assert.Equal(expected: 2, actual: TextOccurrences.Count(text: result, value: "      vitest-security:"));
+        Assert.Equal(
+            expected: 2,
+            actual: TextOccurrences.Count(text: result, value: "        applies-to: version-updates")
+        );
+        Assert.Equal(
+            expected: 2,
+            actual: TextOccurrences.Count(text: result, value: "        applies-to: security-updates")
+        );
+        Assert.Equal(expected: 4, actual: TextOccurrences.Count(text: result, value: "          - \"vitest\""));
+        Assert.Equal(expected: 4, actual: TextOccurrences.Count(text: result, value: "          - \"@vitest/*\""));
     }
 
     [Fact]

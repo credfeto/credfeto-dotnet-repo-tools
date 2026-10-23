@@ -24,8 +24,8 @@ public sealed class DependabotGroupWriterTests : TestBase
         List<string> config = ["existing"];
         IReadOnlyList<DependabotGroup> groups =
         [
-            new(Name: "vitest", Patterns: ["vitest", "@vitest/*"]),
-            new(Name: "eslint", Patterns: ["eslint"]),
+            new(Name: "vitest", AppliesTo: "version-updates", Patterns: ["vitest", "@vitest/*"]),
+            new(Name: "eslint-security", AppliesTo: "security-updates", Patterns: ["eslint"]),
         ];
 
         DependabotGroupWriter.AddGroups(config: config, groups: groups);
@@ -36,10 +36,12 @@ public sealed class DependabotGroupWriterTests : TestBase
                 "existing",
                 "    groups:",
                 "      vitest:",
+                "        applies-to: version-updates",
                 "        patterns:",
                 "          - \"vitest\"",
                 "          - \"@vitest/*\"",
-                "      eslint:",
+                "      eslint-security:",
+                "        applies-to: security-updates",
                 "        patterns:",
                 "          - \"eslint\"",
             ],
