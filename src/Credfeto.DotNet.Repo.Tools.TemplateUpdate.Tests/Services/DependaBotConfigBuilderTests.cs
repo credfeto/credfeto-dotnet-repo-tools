@@ -15,6 +15,21 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests.Services;
 
 public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 {
+    private static readonly IReadOnlyList<string> VitestGroupLines =
+    [
+        "    groups:",
+        "      vitest:",
+        "        applies-to: version-updates",
+        "        patterns:",
+        "          - \"vitest\"",
+        "          - \"@vitest/*\"",
+        "      vitest-security:",
+        "        applies-to: security-updates",
+        "        patterns:",
+        "          - \"vitest\"",
+        "          - \"@vitest/*\"",
+    ];
+
     private readonly string _tempFolder;
     private readonly IDependaBotConfigBuilder _dependaBotConfigBuilder;
 
@@ -366,6 +381,121 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
         this.Output.WriteLine(result);
         Assert.Contains("    directory: \"/\"", result, StringComparison.Ordinal);
         Assert.Contains("    directory: \"/web\"", result, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task WithRootNpmFileGeneratesNpmSectionWithVitestGroup()
+    {
+        IGitRepository repository = this.CreateRepository();
+        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
+        await File.WriteAllTextAsync(
+            path: Path.Combine(this._tempFolder, "package.json"),
+            contents: "{}",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
+            repoContext: repoContext,
+            templateFolder: this._tempFolder,
+            dotNetFiles: EmptyDotNetFiles(),
+            packages: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        this.Output.WriteLine(result);
+
+        List<string> lines =
+        [
+            "---",
+            "version: 2",
+            "updates:",
+            .. EcosystemBlock(ecoSystem: "npm", packageTypeLabel: "npm"),
+        ];
+        lines.Insert(index: lines.IndexOf("    allow:"), item: "    versioning-strategy: increase-if-necessary");
+        lines.AddRange(VitestGroupLines);
+
+        string expected = string.Join(separator: Environment.NewLine, values: lines) + Environment.NewLine;
+
+        Assert.Equal(expected: expected, actual: result, StringComparer.Ordinal);
+    }
+
+    [Fact]
+    public async Task WithMultipleNpmFilesGeneratesVitestGroupForEachNpmSection()
+    {
+        IGitRepository repository = this.CreateRepository();
+        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
+        await File.WriteAllTextAsync(
+            path: Path.Combine(this._tempFolder, "package.json"),
+            contents: "{}",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string webFolder = Path.Combine(this._tempFolder, "web");
+        Directory.CreateDirectory(webFolder);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(webFolder, "package.json"),
+            contents: "{}",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
+            repoContext: repoContext,
+            templateFolder: this._tempFolder,
+            dotNetFiles: EmptyDotNetFiles(),
+            packages: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        this.Output.WriteLine(result);
+
+        IReadOnlyList<string> sections = result.Split(
+            separator: "  - package-ecosystem: ",
+            options: StringSplitOptions.None
+        );
+
+        Assert.Equal(expected: 3, actual: sections.Count);
+        AssertNpmSectionHasVitestGroups(sections: sections, directory: "/");
+        AssertNpmSectionHasVitestGroups(sections: sections, directory: "/web");
+    }
+
+    private static void AssertNpmSectionHasVitestGroups(IReadOnlyList<string> sections, string directory)
+    {
+        string section = Assert.Single(
+            sections,
+            candidate => candidate.Contains($"    directory: \"{directory}\"", StringComparison.Ordinal)
+        );
+
+        Assert.StartsWith("npm", section, StringComparison.Ordinal);
+        Assert.Contains(
+            string.Join(separator: Environment.NewLine, values: VitestGroupLines),
+            section,
+            StringComparison.Ordinal
+        );
+    }
+
+    [Fact]
+    public async Task WithNonNpmEcosystemsDoesNotGenerateGroups()
+    {
+        IGitRepository repository = this.CreateRepository();
+        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
+        await File.WriteAllTextAsync(
+            path: Path.Combine(this._tempFolder, "Dockerfile"),
+            contents: "FROM ubuntu:latest",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
+            repoContext: repoContext,
+            templateFolder: this._tempFolder,
+            dotNetFiles: DotNetFilesWithSolutionsAndProjects(),
+            packages: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        this.Output.WriteLine(result);
+        Assert.Contains("- package-ecosystem: nuget", result, StringComparison.Ordinal);
+        Assert.Contains("- package-ecosystem: docker", result, StringComparison.Ordinal);
+        Assert.DoesNotContain("groups:", result, StringComparison.Ordinal);
     }
 
     [Fact]
