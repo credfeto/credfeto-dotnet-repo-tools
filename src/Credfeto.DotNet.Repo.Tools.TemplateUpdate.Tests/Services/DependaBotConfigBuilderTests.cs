@@ -15,6 +15,21 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests.Services;
 
 public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 {
+    private static readonly IReadOnlyList<string> VitestGroupLines =
+    [
+        "    groups:",
+        "      vitest:",
+        "        applies-to: version-updates",
+        "        patterns:",
+        "          - \"vitest\"",
+        "          - \"@vitest/*\"",
+        "      vitest-security:",
+        "        applies-to: security-updates",
+        "        patterns:",
+        "          - \"vitest\"",
+        "          - \"@vitest/*\"",
+    ];
+
     private readonly string _tempFolder;
     private readonly IDependaBotConfigBuilder _dependaBotConfigBuilder;
 
@@ -397,19 +412,7 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
             .. EcosystemBlock(ecoSystem: "npm", packageTypeLabel: "npm"),
         ];
         lines.Insert(index: lines.IndexOf("    allow:"), item: "    versioning-strategy: increase-if-necessary");
-        lines.AddRange([
-            "    groups:",
-            "      vitest:",
-            "        applies-to: version-updates",
-            "        patterns:",
-            "          - \"vitest\"",
-            "          - \"@vitest/*\"",
-            "      vitest-security:",
-            "        applies-to: security-updates",
-            "        patterns:",
-            "          - \"vitest\"",
-            "          - \"@vitest/*\"",
-        ]);
+        lines.AddRange(VitestGroupLines);
 
         string expected = string.Join(separator: Environment.NewLine, values: lines) + Environment.NewLine;
 
@@ -445,14 +448,29 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 
         this.Output.WriteLine(result);
 
-        Assert.Equal(expected: 2, actual: result.AsSpan().Count(value: "- package-ecosystem: npm"));
-        Assert.Equal(expected: 2, actual: result.AsSpan().Count(value: "    groups:"));
-        Assert.Equal(expected: 2, actual: result.AsSpan().Count(value: "      vitest:"));
-        Assert.Equal(expected: 2, actual: result.AsSpan().Count(value: "      vitest-security:"));
-        Assert.Equal(expected: 2, actual: result.AsSpan().Count(value: "        applies-to: version-updates"));
-        Assert.Equal(expected: 2, actual: result.AsSpan().Count(value: "        applies-to: security-updates"));
-        Assert.Equal(expected: 4, actual: result.AsSpan().Count(value: "          - \"vitest\""));
-        Assert.Equal(expected: 4, actual: result.AsSpan().Count(value: "          - \"@vitest/*\""));
+        IReadOnlyList<string> sections = result.Split(
+            separator: "  - package-ecosystem: ",
+            options: StringSplitOptions.None
+        );
+
+        Assert.Equal(expected: 3, actual: sections.Count);
+        AssertNpmSectionHasVitestGroups(sections: sections, directory: "/");
+        AssertNpmSectionHasVitestGroups(sections: sections, directory: "/web");
+    }
+
+    private static void AssertNpmSectionHasVitestGroups(IReadOnlyList<string> sections, string directory)
+    {
+        string section = Assert.Single(
+            sections,
+            candidate => candidate.Contains($"    directory: \"{directory}\"", StringComparison.Ordinal)
+        );
+
+        Assert.StartsWith("npm", section, StringComparison.Ordinal);
+        Assert.Contains(
+            string.Join(separator: Environment.NewLine, values: VitestGroupLines),
+            section,
+            StringComparison.Ordinal
+        );
     }
 
     [Fact]
