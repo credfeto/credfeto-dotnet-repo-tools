@@ -18,6 +18,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Resynced the label descriptions in docs/github-labels.md to match the generated labels
 - Generated Dependabot config now groups vitest and @vitest/* updates into a single PR for each npm/yarn directory
 - Switched projects to EnableConfigurationBindingGenerator so dotnet buildcheck passes
+- Dependencies - Updated FunFair.BuildCheck.Runner to 474.2.21.2862
 ### Deprecated
 ### Removed
 ### Deployment Changes
