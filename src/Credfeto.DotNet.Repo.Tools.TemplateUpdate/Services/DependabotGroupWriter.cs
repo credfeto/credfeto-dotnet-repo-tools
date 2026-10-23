@@ -18,6 +18,7 @@ public static class DependabotGroupWriter
         foreach (DependabotGroup group in groups)
         {
             config.Add($"      {group.Name}:");
+            config.Add($"        applies-to: {group.AppliesTo}");
             config.Add("        patterns:");
             config.AddRange(group.Patterns.Select(pattern => $"          - \"{pattern}\""));
         }
