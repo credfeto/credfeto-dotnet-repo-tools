@@ -17,6 +17,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - The never-close label description now uses a semicolon instead of an em dash; managed repositories pick up the new description on their next update-template run
 - Resynced the label descriptions in docs/github-labels.md to match the generated labels
 - Dependencies - Updated Nullable.Extended.Analyzer to 1.17.1
+- Dependencies - Updated FunFair.BuildCheck to 474.2.21.2862
 ### Deprecated
 ### Removed
 ### Deployment Changes
