@@ -19,6 +19,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Nullable.Extended.Analyzer to 1.17.1
 - Dependencies - Updated FunFair.BuildCheck to 474.2.21.2862
 - SDK - Updated DotNet SDK to 10.0.403
+- Dependencies - Updated Meziantou.Analyzer to 3.0.317
 ### Deprecated
 ### Removed
 ### Deployment Changes
