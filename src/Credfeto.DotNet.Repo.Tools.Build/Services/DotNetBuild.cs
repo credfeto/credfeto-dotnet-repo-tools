@@ -299,20 +299,19 @@ public sealed class DotNetBuild : IDotNetBuild
     )
     {
         string noWarn = BuildNoWarn(buildContext);
+        string parameters = BuildEnvironmentParameters(
+            ("DisableSwagger", "False"),
+            ("IncludeNativeLibrariesForSelfExtract", "false"),
+            ("PublishReadyToRun", "False"),
+            ("PublishReadyToRunShowWarnings", "True"),
+            ("PublishSingleFile", "true"),
+            ("PublishTrimmed", "False"),
+            ("TreatWarningsAsErrors", "True"),
+            ("Version", BUILD_VERSION)
+        );
 
         if (string.IsNullOrWhiteSpace(framework))
         {
-            string parameters = BuildEnvironmentParameters(
-                ("DisableSwagger", "False"),
-                ("IncludeNativeLibrariesForSelfExtract", "false"),
-                ("PublishReadyToRun", "False"),
-                ("PublishReadyToRunShowWarnings", "True"),
-                ("PublishSingleFile", "true"),
-                ("PublishTrimmed", "False"),
-                ("TreatWarningsAsErrors", "True"),
-                ("Version", BUILD_VERSION)
-            );
-
             this._logger.LogPublishingNoFramework();
             return this.ExecRequireCleanAsync(
                 buildContext: buildContext,
@@ -320,25 +319,13 @@ public sealed class DotNetBuild : IDotNetBuild
                 cancellationToken: cancellationToken
             );
         }
-        else
-        {
-            string parameters = BuildEnvironmentParameters(
-                ("DisableSwagger", "False"),
-                ("IncludeNativeLibrariesForSelfExtract", "false"),
-                ("PublishReadyToRun", "False"),
-                ("PublishReadyToRunShowWarnings", "True"),
-                ("PublishSingleFile", "true"),
-                ("PublishTrimmed", "False"),
-                ("TreatWarningsAsErrors", "True"),
-                ("Version", BUILD_VERSION)
-            );
-            this._logger.LogPublishingWithFramework(framework);
-            return this.ExecRequireCleanAsync(
-                buildContext: buildContext,
-                $"publish -warnaserror --configuration:Release -r:linux-x64 --framework:{framework} --self-contained {parameters} -nodeReuse:False {noWarn}",
-                cancellationToken: cancellationToken
-            );
-        }
+
+        this._logger.LogPublishingWithFramework(framework);
+        return this.ExecRequireCleanAsync(
+            buildContext: buildContext,
+            $"publish -warnaserror --configuration:Release -r:linux-x64 --framework:{framework} --self-contained {parameters} -nodeReuse:False {noWarn}",
+            cancellationToken: cancellationToken
+        );
     }
 
     private static string BuildNoWarn(in BuildContext buildContext)
