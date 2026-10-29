@@ -48,16 +48,26 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
         {
             string lockFile = Path.Combine(path1: workingDirectory, path2: ".git", path3: "lock.json");
 
-            if (!File.Exists(lockFile))
+            if (File.Exists(lockFile))
             {
-                return this.OpenRepoAsync(
-                    repoUrl: repoUrl,
-                    workingDirectory: workingDirectory,
-                    cancellationToken: cancellationToken
-                );
+                this._logger.DestroyingAndReCloning(repoUrl: repoUrl, repoPath: workingDirectory);
             }
+            else
+            {
+                string? repoPath = FindValidRepository(workingDirectory);
 
-            this._logger.DestroyingAndReCloning(repoUrl: repoUrl, repoPath: workingDirectory);
+                if (repoPath is not null)
+                {
+                    return this.OpenRepoAsync(
+                        repoUrl: repoUrl,
+                        workingDirectory: workingDirectory,
+                        repoPath: repoPath,
+                        cancellationToken: cancellationToken
+                    );
+                }
+
+                this._logger.DestroyingInvalidAndReCloning(repoUrl: repoUrl, repoPath: workingDirectory);
+            }
 
             // clear repo before cloning - no idea what the state is going to be at this point
             Directory.Delete(path: workingDirectory, recursive: true);
@@ -71,9 +81,17 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
         );
     }
 
+    private static string? FindValidRepository(string workingDirectory)
+    {
+        string? repoPath = Repository.Discover(workingDirectory);
+
+        return repoPath is not null && Repository.IsValid(repoPath) ? repoPath : null;
+    }
+
     private async ValueTask<IGitRepository> OpenRepoAsync(
         string repoUrl,
         string workingDirectory,
+        string repoPath,
         CancellationToken cancellationToken
     )
     {
@@ -85,7 +103,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
             repo = new GitRepository(
                 clonePath: repoUrl,
                 workingDirectory: workingDirectory,
-                new(Repository.Discover(workingDirectory)),
+                new(repoPath),
                 logger: this._loggerFactory.CreateLogger<GitRepository>()
             );
 
@@ -127,10 +145,14 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
             throw new GitException($"Failed to clone repo {repoUrl} to {workDir}");
         }
 
+        string repoPath =
+            Repository.Discover(path)
+            ?? throw new GitException($"Cloned repo {repoUrl} to {destinationPath} but no repository was found there");
+
         return new GitRepository(
             clonePath: repoUrl,
             workingDirectory: destinationPath,
-            new(Repository.Discover(path)),
+            new(repoPath),
             logger: this._loggerFactory.CreateLogger<GitRepository>()
         );
     }
