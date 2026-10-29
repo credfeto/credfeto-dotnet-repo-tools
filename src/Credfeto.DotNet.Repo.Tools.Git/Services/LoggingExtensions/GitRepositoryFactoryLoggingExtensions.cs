@@ -20,4 +20,15 @@ internal static partial class GitRepositoryFactoryLoggingExtensions
         string repoUrl,
         string repoPath
     );
+
+    [LoggerMessage(
+        EventId = 4,
+        Level = LogLevel.Warning,
+        Message = "Destroying {repoPath} and re-cloning {repoUrl} as it does not contain a valid repository"
+    )]
+    public static partial void DestroyingInvalidAndReCloning(
+        this ILogger<GitRepositoryFactory> logger,
+        string repoUrl,
+        string repoPath
+    );
 }
