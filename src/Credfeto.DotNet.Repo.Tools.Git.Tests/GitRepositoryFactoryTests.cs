@@ -118,6 +118,62 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
         Assert.NotEmpty(repo.HeadRev);
     }
 
+    [Fact]
+    public async Task OpenOrCloneAsync_WithExistingDirectoryWithoutRepository_ReClonesAsync()
+    {
+        string sourceRepoPath = Path.Combine(this.TempFolder, "source-repo");
+        await CreateMinimalGitRepoAsync(repoPath: sourceRepoPath, cancellationToken: this.CancellationToken());
+
+        string destinationPath = Path.Combine(this.TempFolder, "destination");
+        Directory.CreateDirectory(destinationPath);
+
+        string junkFile = Path.Combine(destinationPath, "junk.txt");
+        await File.WriteAllTextAsync(path: junkFile, contents: "junk", cancellationToken: this.CancellationToken());
+
+        await this.AssertReClonedAsync(
+            sourceRepoPath: sourceRepoPath,
+            destinationPath: destinationPath,
+            leftoverPath: junkFile
+        );
+    }
+
+    [Fact]
+    public async Task OpenOrCloneAsync_WithExistingDirectoryWithEmptyGitFolder_ReClonesAsync()
+    {
+        string sourceRepoPath = Path.Combine(this.TempFolder, "source-repo");
+        await CreateMinimalGitRepoAsync(repoPath: sourceRepoPath, cancellationToken: this.CancellationToken());
+
+        string destinationPath = Path.Combine(this.TempFolder, "destination");
+        Directory.CreateDirectory(Path.Combine(destinationPath, ".git"));
+
+        string junkFile = Path.Combine(destinationPath, ".git", "junk.txt");
+        await File.WriteAllTextAsync(path: junkFile, contents: "junk", cancellationToken: this.CancellationToken());
+
+        await this.AssertReClonedAsync(
+            sourceRepoPath: sourceRepoPath,
+            destinationPath: destinationPath,
+            leftoverPath: junkFile
+        );
+    }
+
+    private async Task AssertReClonedAsync(string sourceRepoPath, string destinationPath, string leftoverPath)
+    {
+        IGitRepositoryFactory factory = this.CreateFactory(destinationPath);
+
+        using IGitRepository repo = await factory.OpenOrCloneAsync(
+            workDir: this.TempFolder,
+            repoUrl: sourceRepoPath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.False(condition: File.Exists(leftoverPath), userMessage: "Invalid directory contents should be removed");
+        Assert.True(
+            condition: Directory.Exists(Path.Combine(destinationPath, ".git", "objects")),
+            userMessage: "Repository should have been re-cloned"
+        );
+        Assert.NotEmpty(repo.HeadRev);
+    }
+
     [Fact(Skip = "Requires SSH to be setup")]
     public Task CanCloneSshAsync()
     {
