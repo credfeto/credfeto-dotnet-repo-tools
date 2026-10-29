@@ -11,8 +11,19 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
-- Generated Dependabot config now groups vitest and @vitest/* version and security updates into a single PR for each npm/yarn directory
 ### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+
+## [1.5.18] - 2026-10-29
+### Added
+- Generated Dependabot config now groups vitest and @vitest/* version and security updates into a single PR for each npm/yarn directory
 ### Changed
 - Replaced em dash characters with plain punctuation across this repository's own documentation, code comments, tests, and label definitions, so generated text no longer contains them
 - The never-close label description now uses a semicolon instead of an em dash; managed repositories pick up the new description on their next update-template run
@@ -21,13 +32,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.BuildCheck to 474.2.21.2862
 - SDK - Updated DotNet SDK to 10.0.403
 - Dependencies - Updated Meziantou.Analyzer to 3.0.317
-### Deprecated
-### Removed
-### Deployment Changes
-
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 
 ## [1.5.17] - 2026-10-22
 ### Fixed
