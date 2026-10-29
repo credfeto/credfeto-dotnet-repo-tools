@@ -11,6 +11,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+- Generated Dependabot config now groups vitest and @vitest/* version and security updates into a single PR for each npm/yarn directory
 ### Fixed
 ### Changed
 - Replaced em dash characters with plain punctuation across this repository's own documentation, code comments, tests, and label definitions, so generated text no longer contains them
