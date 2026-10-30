@@ -17,6 +17,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Tracking hash generator no longer includes generated obj/bin/.git files, so no-change detection works reliably
 ### Changed
 - Dependencies - Updated Nullable.Extended.Analyzer to 1.19.0
+- Dependencies - Updated FunFair.Test to 6.4.7.2960
 ### Deprecated
 ### Removed
 ### Deployment Changes
