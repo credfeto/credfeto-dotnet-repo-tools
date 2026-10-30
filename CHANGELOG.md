@@ -30,6 +30,7 @@ Releases that have at least been deployed to staging, BUT NOT necessarily releas
 - Generated dependabot npm section now emits a valid directory value (e.g. "/") for a root-level package.json instead of an empty string, and normalizes directory separators to forward slashes, so GitHub no longer rejects the generated dependabot.yml
 - Tracking hash generator no longer includes generated obj/bin/.git files, so no-change detection works reliably
 - GitRepositoryFactory now deletes and re-clones when the working directory exists but is not a valid git repository (Repository.Discover returned null) instead of throwing ArgumentNullException, so a broken working directory no longer blocks the repository permanently; if the re-clone does not produce a repository, a descriptive GitException is thrown (#219)
+- TrackingItemsConverter now throws JsonException for non-string values and case-duplicate keys in tracking.json so TrackingCache recovers from corrupt files instead of crashing (#218)
 ### Changed
 - Dependencies - Updated Nullable.Extended.Analyzer to 1.19.0
 - Dependencies - Updated FunFair.Test to 6.4.7.2960
