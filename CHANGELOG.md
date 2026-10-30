@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Generated dependabot npm section now emits a valid directory value (e.g. "/") for a root-level package.json instead of an empty string, and normalizes directory separators to forward slashes, so GitHub no longer rejects the generated dependabot.yml
 - Tracking hash generator no longer includes generated obj/bin/.git files, so no-change detection works reliably
 ### Changed
+- Dependencies - Updated Nullable.Extended.Analyzer to 1.19.0
 ### Deprecated
 ### Removed
 ### Deployment Changes
