@@ -29,7 +29,11 @@ internal sealed class TrackingItemsConverter : JsonConverter<TrackingItems>
         while (reader.TokenType != JsonTokenType.EndObject)
         {
             (string key, string value) = ReadEntry(reader: ref reader);
-            instance.Add(key: key, value: value);
+
+            if (!instance.TryAdd(key: key, value: value))
+            {
+                return ThrowDuplicateKey(key);
+            }
         }
 
         return new(instance);
@@ -61,17 +65,34 @@ internal sealed class TrackingItemsConverter : JsonConverter<TrackingItems>
         writer.WriteEndObject();
     }
 
+    [DoesNotReturn]
+    private static TrackingItems ThrowDuplicateKey(string key)
+    {
+        throw new JsonException(message: $"Duplicate key: {key}");
+    }
+
     private static (string Key, string Value) ReadEntry(ref Utf8JsonReader reader)
     {
-        string key = reader.GetString() ?? RequiredString();
+        string key = ReadString(reader: ref reader, expectedTokenType: JsonTokenType.PropertyName);
 
         reader.Read();
 
-        string value = reader.GetString() ?? RequiredString();
+        string value = ReadString(reader: ref reader, expectedTokenType: JsonTokenType.String);
 
         reader.Read();
 
         return (key, value);
+    }
+
+    private static string ReadString(ref Utf8JsonReader reader, JsonTokenType expectedTokenType)
+    {
+        if (reader.TokenType != expectedTokenType)
+        {
+            return RequiredString();
+        }
+
+        // ! GetString only returns null for a Null token, which the token type check above has already rejected
+        return reader.GetString()!;
     }
 
     [DoesNotReturn]
