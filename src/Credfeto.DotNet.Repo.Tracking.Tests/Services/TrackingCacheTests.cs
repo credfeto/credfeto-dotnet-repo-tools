@@ -259,6 +259,64 @@ public sealed class TrackingCacheTests : LoggingFolderCleanupTestBase
         Assert.Null(result);
     }
 
+    [Theory]
+    [InlineData("{\"Test1\":123}")]
+    [InlineData("{\"Test1\":true}")]
+    [InlineData("{\"Test1\":false}")]
+    [InlineData("{\"Test1\":{\"Nested\":\"Value\"}}")]
+    [InlineData("{\"Test1\":[\"Value\"]}")]
+    [InlineData("{\"Test1\":\"Hello World\",\"test1\":\"Banana\"}")]
+    [InlineData("{\"Test1\":\"Hello World\",\"Test1\":\"Banana\"}")]
+    public async Task LoadMalformedTrackingContentRecoversAsEmptyAsync(string contents)
+    {
+        string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
+        this.Output.WriteLine(trackingFile);
+
+        await File.WriteAllTextAsync(
+            path: trackingFile,
+            contents: contents,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: this.CancellationToken());
+
+        string? result = this._trackingCache.Get("Test1");
+        Assert.Null(result);
+
+        await this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: this.CancellationToken());
+
+        string content = await File.ReadAllTextAsync(path: trackingFile, cancellationToken: this.CancellationToken());
+        Assert.Equal(expected: "{}", actual: content);
+    }
+
+    [Fact]
+    public async Task LoadThenSaveValidContentRoundTripsUnchangedAsync()
+    {
+        const string original = "{\"Test1\":\"Hello World\",\"Test2\":\"Banana\"}";
+        string trackingFile = Path.Combine(path1: this.TempFolder, $"{NewId}.json");
+        this.Output.WriteLine(trackingFile);
+
+        await File.WriteAllTextAsync(
+            path: trackingFile,
+            contents: original,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: this.CancellationToken());
+
+        Assert.Equal(expected: "Hello World", actual: this._trackingCache.Get("test1"));
+        Assert.Equal(expected: "Banana", actual: this._trackingCache.Get("TEST2"));
+
+        // SaveAsync skips writing unless the cache has changed since load, so add then remove an entry
+        this._trackingCache.Set(repoUrl: "Test3", value: "Cherry");
+        this._trackingCache.Set(repoUrl: "Test3", value: null);
+
+        await this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: this.CancellationToken());
+
+        string content = await File.ReadAllTextAsync(path: trackingFile, cancellationToken: this.CancellationToken());
+        Assert.Equal(expected: original, actual: content);
+    }
+
     [Fact]
     public async Task LoadCorruptJsonWritesValidFileOnNextSaveAsync()
     {
