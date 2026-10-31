@@ -12,6 +12,17 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+
+## [1.5.19] - 2026-10-31
+### Fixed
 - Formatter glob patterns without a directory prefix (e.g. "Foo*.cs") are matched against the current directory correctly instead of being mis-sliced by its length, which previously caused no-match or wrong-file results
 - Generated dependabot npm section now emits a valid directory value (e.g. "/") for a root-level package.json instead of an empty string, and normalizes directory separators to forward slashes, so GitHub no longer rejects the generated dependabot.yml
 - Tracking hash generator no longer includes generated obj/bin/.git files, so no-change detection works reliably
@@ -23,13 +34,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Microsoft.Extensions to 10.0.14
 - Dependencies - Updated Credfeto.Enumeration to 1.2.156.2472
 - Dependencies - Updated Meziantou.Analyzer to 3.0.318
-### Deprecated
-### Removed
-### Deployment Changes
-
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 
 ## [1.5.18] - 2026-10-29
 ### Added
