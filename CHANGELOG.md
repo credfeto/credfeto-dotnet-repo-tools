@@ -13,7 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 - TrackingItemsConverter now throws JsonException for non-string tokens and case-insensitive duplicate keys in tracking.json so TrackingCache recovers from corrupt tracking.json instead of crashing (#218)
-- Fixed dotnet build/test commands breaking on paths containing spaces (#254)
+- dotnet build, test and publish now pass their arguments individually, so project and solution paths containing spaces are no longer split into separate arguments (#254)
 ### Changed
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.210.2808
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.164.2139
