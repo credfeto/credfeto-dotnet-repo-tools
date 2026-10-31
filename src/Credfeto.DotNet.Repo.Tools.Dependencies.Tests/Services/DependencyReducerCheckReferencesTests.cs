@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -100,6 +101,51 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         dotNetBuild
             .When(async b => await b.BuildAsync(Arg.Any<BuildContext>(), Arg.Any<CancellationToken>()))
             .Do(_ => throw new DotNetBuildErrorException(message));
+    }
+
+    [SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    private static void MockIDotNetBuildBuildFailWhenProjectLacksSomePackage(
+        IDotNetBuild dotNetBuild,
+        string projectFile
+    )
+    {
+        dotNetBuild
+            .BuildAsync(projectFile, Arg.Any<BuildContext>(), Arg.Any<CancellationToken>())
+            .Returns(ci =>
+                EnsureProjectHasSomePackageAsync(
+                    projectFile: projectFile,
+                    cancellationToken: ci.ArgAt<CancellationToken>(2)
+                )
+            );
+    }
+
+    private static async ValueTask EnsureProjectHasSomePackageAsync(
+        string projectFile,
+        CancellationToken cancellationToken
+    )
+    {
+        string content = await File.ReadAllTextAsync(path: projectFile, cancellationToken: cancellationToken);
+
+        if (!content.Contains(value: "SomePackage", comparisonType: StringComparison.Ordinal))
+        {
+            throw new DotNetBuildErrorException("Project needs SomePackage");
+        }
+    }
+
+    private static ReferenceConfig BuildCapturingConfig(List<(string Project, string Message)> removals)
+    {
+        return new ReferenceConfig(
+            onSuccessfulRemoval: (project, message, _) =>
+            {
+                removals.Add((project, message));
+
+                return ValueTask.CompletedTask;
+            }
+        );
     }
 
     private static ValueTask NoOpRemovalAsync(
@@ -588,6 +634,112 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
         );
 
         Assert.True(condition: result, userMessage: "Multiple projects with changes should return true");
+    }
+
+    [Fact]
+    public async ValueTask CheckReferencesAsyncWithMultiProjectGraphShouldProduceSamePerProjectResultsAsync()
+    {
+        string childDir = Path.Combine(path1: this.TempFolder, path2: "Child");
+        Directory.CreateDirectory(childDir);
+        string childFile = Path.Combine(path1: childDir, path2: "Child.csproj");
+        await File.WriteAllTextAsync(
+            path: childFile,
+            contents: MINIMAL_SDK_WITH_SOME_PACKAGE_XML,
+            cancellationToken: this.CancellationToken()
+        );
+
+        const string parentXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"SomePackage\" Version=\"1.0.0\" /><ProjectReference Include=\"Child/Child.csproj\" /></ItemGroup></Project>";
+        string parentFile = await this.WriteProjectFileAsync(parentXml, fileName: "Parent.csproj");
+
+        MockIDotNetBuildBuildFailWhenProjectLacksSomePackage(dotNetBuild: this._dotNetBuild, projectFile: childFile);
+
+        List<(string Project, string Message)> removals = [];
+        DotNetFiles dotNetFiles = this.BuildDotNetFiles(parentFile, childFile);
+
+        bool result = await this._sut.CheckReferencesAsync(
+            dotNetFiles: dotNetFiles,
+            config: BuildCapturingConfig(removals),
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.True(condition: result, userMessage: "Parent references should be removable");
+        Assert.Equal(
+            expected: [(parentFile, "Removed reference to Child"), (parentFile, "Removed reference to SomePackage")],
+            actual: removals
+        );
+
+        string parentAfter = await File.ReadAllTextAsync(path: parentFile, cancellationToken: this.CancellationToken());
+        Assert.DoesNotContain(
+            expectedSubstring: "SomePackage",
+            actualString: parentAfter,
+            comparisonType: StringComparison.Ordinal
+        );
+        Assert.DoesNotContain(
+            expectedSubstring: "Child.csproj",
+            actualString: parentAfter,
+            comparisonType: StringComparison.Ordinal
+        );
+
+        string childAfter = await File.ReadAllTextAsync(path: childFile, cancellationToken: this.CancellationToken());
+        Assert.Contains(
+            expectedSubstring: "SomePackage",
+            actualString: childAfter,
+            comparisonType: StringComparison.Ordinal
+        );
+    }
+
+    [Fact]
+    public async ValueTask CheckReferencesAsyncShouldSeeChildProjectRewrittenEarlierInRunAsync()
+    {
+        string childDir = Path.Combine(path1: this.TempFolder, path2: "Child");
+        Directory.CreateDirectory(childDir);
+        string childFile = Path.Combine(path1: childDir, path2: "Child.csproj");
+        await File.WriteAllTextAsync(
+            path: childFile,
+            contents: MINIMAL_SDK_WITH_SOME_PACKAGE_XML,
+            cancellationToken: this.CancellationToken()
+        );
+
+        const string referrerXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><ProjectReference Include=\"Child/Child.csproj\" /></ItemGroup></Project>";
+        string referrerFile = await this.WriteProjectFileAsync(referrerXml, fileName: "Referrer.csproj");
+
+        const string parentXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"SomePackage\" Version=\"1.0.0\" /><ProjectReference Include=\"Child/Child.csproj\" /></ItemGroup></Project>";
+        string parentFile = await this.WriteProjectFileAsync(parentXml, fileName: "Parent.csproj");
+
+        MockIDotNetBuildBuildFailWhenProjectLacksSomePackage(dotNetBuild: this._dotNetBuild, projectFile: parentFile);
+
+        List<(string Project, string Message)> removals = [];
+
+        // Referrer loads Child into the shared cache before Child drops SomePackage, so Parent only sees the
+        // rewrite (and must build without the package, which fails) if the cache entry was refreshed
+        DotNetFiles dotNetFiles = this.BuildDotNetFiles(referrerFile, childFile, parentFile);
+
+        bool result = await this._sut.CheckReferencesAsync(
+            dotNetFiles: dotNetFiles,
+            config: BuildCapturingConfig(removals),
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.True(condition: result, userMessage: "Child package should be removable");
+        Assert.Contains(expected: (childFile, "Removed reference to SomePackage"), collection: removals);
+        Assert.DoesNotContain(expected: (parentFile, "Removed reference to SomePackage"), collection: removals);
+
+        string childAfter = await File.ReadAllTextAsync(path: childFile, cancellationToken: this.CancellationToken());
+        Assert.DoesNotContain(
+            expectedSubstring: "SomePackage",
+            actualString: childAfter,
+            comparisonType: StringComparison.Ordinal
+        );
+
+        string parentAfter = await File.ReadAllTextAsync(path: parentFile, cancellationToken: this.CancellationToken());
+        Assert.Contains(
+            expectedSubstring: "SomePackage",
+            actualString: parentAfter,
+            comparisonType: StringComparison.Ordinal
+        );
     }
 
     [Fact]
