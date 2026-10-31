@@ -34,6 +34,11 @@ public sealed class DependencyReducer : IDependencyReducer
         this._logger = logger;
     }
 
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop OrdinalIgnoreCase and change lookup semantics"
+    )]
     public async ValueTask<bool> CheckReferencesAsync(
         DotNetFiles dotNetFiles,
         ReferenceConfig config,
@@ -52,6 +57,7 @@ public sealed class DependencyReducer : IDependencyReducer
 
         Stopwatch stopwatch = Stopwatch.StartNew();
         DependencyTracking tracking = new();
+        Dictionary<string, XmlDocument> xmlCache = new(StringComparer.OrdinalIgnoreCase);
 
         int projectCount = dotNetFiles.Projects.Count;
         int projectInstance = 0;
@@ -75,10 +81,19 @@ public sealed class DependencyReducer : IDependencyReducer
                 Tracking: tracking
             );
 
-            await this.CheckProjectDependenciesAsync(
-                projectUpdateContext: projectUpdateContext,
-                cancellationToken: cancellationToken
-            );
+            try
+            {
+                await this.CheckProjectDependenciesAsync(
+                    projectUpdateContext: projectUpdateContext,
+                    xmlCache: xmlCache,
+                    cancellationToken: cancellationToken
+                );
+            }
+            finally
+            {
+                // The checks rewrite this project's file on disk, so its cached XML is stale for any later project that references it
+                xmlCache.Remove(GetCanonicalPath(project));
+            }
         }
 
         this._logger.FinishedCheckingProjects();
@@ -104,13 +119,9 @@ public sealed class DependencyReducer : IDependencyReducer
         this._logger.WriteStatistics(section: "Reduce", value: tracking.ReduceReferences.Count);
     }
 
-    [SuppressMessage(
-        category: "Style",
-        checkId: "IDE0028: Collection initialization can be simplified",
-        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop OrdinalIgnoreCase and change lookup semantics"
-    )]
     private async ValueTask CheckProjectDependenciesAsync(
         ProjectUpdateContext projectUpdateContext,
+        Dictionary<string, XmlDocument> xmlCache,
         CancellationToken cancellationToken
     )
     {
@@ -129,8 +140,6 @@ public sealed class DependencyReducer : IDependencyReducer
             projectUpdateContext: projectUpdateContext,
             cancellationToken: cancellationToken
         );
-
-        Dictionary<string, XmlDocument> xmlCache = new(StringComparer.OrdinalIgnoreCase);
 
         IReadOnlyList<FilePackageReference> childPackageReferences = GetPackageReferences(
             fileName: projectUpdateContext.Project,
