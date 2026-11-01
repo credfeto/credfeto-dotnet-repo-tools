@@ -18,6 +18,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.210.2808
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.164.2139
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.141.1746
+- Dependency reducer: reuse one repo-level XML cache for the whole run, evicting each project's entry once it is rewritten, instead of building a new cache for every project (#253)
 ### Deprecated
 ### Removed
 ### Deployment Changes
