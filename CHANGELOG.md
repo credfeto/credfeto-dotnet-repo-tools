@@ -19,6 +19,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.164.2139
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.141.1746
 - Dependency reducer: reuse one repo-level XML cache for the whole run, evicting each project's entry once it is rewritten, instead of building a new cache for every project (#253)
+- Dependencies - Updated FunFair.CodeAnalysis to 7.2.23.2624
 ### Deprecated
 ### Removed
 ### Deployment Changes
