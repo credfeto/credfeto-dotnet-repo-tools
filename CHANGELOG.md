@@ -14,7 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 - TrackingItemsConverter now throws JsonException for non-string tokens and case-insensitive duplicate keys in tracking.json so TrackingCache recovers from corrupt tracking.json instead of crashing (#218)
 - dotnet build, test and publish now pass their arguments individually, so project and solution paths containing spaces are no longer split into separate arguments (#254)
-- Fixed shared tracking cache slot being written with raw HeadRev by BulkDependencyReducer, BulkCodeCleanUp and BulkTemplateUpdater (#299)
+- BulkDependencyReducer, BulkCodeCleanUp and BulkTemplateUpdater now write the tracking content hash instead of raw HeadRev to the shared tracking cache (#299)
 ### Changed
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.164.2139
 - Dependency reducer: reuse one repo-level XML cache for the whole run, evicting each project's entry once it is rewritten, instead of building a new cache for every project (#253)
