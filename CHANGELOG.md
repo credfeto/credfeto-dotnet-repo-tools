@@ -22,6 +22,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Enumeration to 1.2.157.2500
 ### Deprecated
 ### Removed
+- code-cleanup no longer requires or loads the unused --release config file (#320)
 ### Deployment Changes
 
 <!--

@@ -3,7 +3,6 @@ using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
-using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.Tsql.Formatter;
 using FunFair.Test.Common;
@@ -60,7 +59,6 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
             .AddMockedService<ITrackingCache>()
             .AddMockedService<IGitRepositoryFactory>()
             .AddMockedService<IGlobalJson>()
-            .AddMockedService<IReleaseConfigLoader>()
             .AddMockedService<IDotNetVersion>()
             .AddMockedService<IDotNetBuild>()
             .AddMockedService<IDotNetFilesDetector>()
