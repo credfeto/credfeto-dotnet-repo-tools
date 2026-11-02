@@ -31,17 +31,20 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests.Services;
 public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
 {
     private const string REPO_URL = "git@github.com:test/test-repo.git";
+    private const string TRACKING_HASH = "template-tracking-hash";
 
     private readonly string _tempFolder;
     private readonly IBulkTemplateUpdater _bulkTemplateUpdater;
 
     private readonly ITrackingCache _trackingCache;
+    private readonly ITrackingHashGenerator _trackingHashGenerator;
     private readonly ITemplateConfigLoader _templateConfigLoader;
     private readonly IGlobalJson _globalJson;
     private readonly IDotNetVersion _dotNetVersion;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IDependaBotConfigBuilder _dependaBotConfigBuilder;
     private readonly IGitRepositoryFactory _gitRepositoryFactory;
+    private readonly IFileUpdater _fileUpdater;
 
     public BulkTemplateUpdaterTests()
     {
@@ -49,11 +52,13 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         Directory.CreateDirectory(this._tempFolder);
 
         this._trackingCache = GetSubstitute<ITrackingCache>();
+        this._trackingHashGenerator = GetSubstitute<ITrackingHashGenerator>();
         this._templateConfigLoader = GetSubstitute<ITemplateConfigLoader>();
         this._globalJson = GetSubstitute<IGlobalJson>();
         this._dotNetVersion = GetSubstitute<IDotNetVersion>();
         this._dotNetFilesDetector = GetSubstitute<IDotNetFilesDetector>();
         this._dependaBotConfigBuilder = GetSubstitute<IDependaBotConfigBuilder>();
+        this._fileUpdater = GetSubstitute<IFileUpdater>();
 
         IBulkPackageConfigLoader bulkPackageConfigLoader = GetSubstitute<IBulkPackageConfigLoader>();
         this._gitRepositoryFactory = GetSubstitute<IGitRepositoryFactory>();
@@ -66,6 +71,7 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
 
         this._bulkTemplateUpdater = new BulkTemplateUpdater(
             trackingCache: this._trackingCache,
+            trackingHashGenerator: this._trackingHashGenerator,
             globalJson: this._globalJson,
             dotNetFilesDetector: this._dotNetFilesDetector,
             dotNetVersion: this._dotNetVersion,
@@ -75,7 +81,7 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
             releaseGeneration: GetSubstitute<IReleaseGeneration>(),
             gitRepositoryFactory: this._gitRepositoryFactory,
             bulkPackageConfigLoader: bulkPackageConfigLoader,
-            fileUpdater: GetSubstitute<IFileUpdater>(),
+            fileUpdater: this._fileUpdater,
             dependaBotConfigBuilder: this._dependaBotConfigBuilder,
             labelsBuilder: GetSubstitute<ILabelsBuilder>(),
             templateConfigLoader: this._templateConfigLoader,
@@ -439,6 +445,20 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         return repoDir;
     }
 
+    [SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    private void MockTrackingHash(string trackingHash)
+    {
+        this._trackingHashGenerator.GenerateTrackingHashAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(trackingHash);
+    }
+
     private void MockDependabotUpdateContext(string repoDir, string dependabotContent)
     {
         this._templateConfigLoader.LoadConfigAsync(
@@ -514,6 +534,7 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         string repoDir = await this.PrepareRepoWithChangeLogAsync();
         const string dependabotContent = "updates: []\n";
         this.MockDependabotUpdateContext(repoDir: repoDir, dependabotContent: dependabotContent);
+        this.MockTrackingHash(TRACKING_HASH);
 
         string dependabotConfigPath = Path.Combine(repoDir, ".github", "dependabot.yml");
         await File.WriteAllTextAsync(
@@ -554,6 +575,45 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
                     cancellationToken: Arg.Any<CancellationToken>()
                 );
             await repoRepository.DidNotReceive().PushAsync(Arg.Any<CancellationToken>());
+            this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: TRACKING_HASH);
+        }
+    }
+
+    [Fact]
+    public async Task BulkUpdateWithNoChangeLogRecordsTrackingHashAsync()
+    {
+        string repoDir = Path.Combine(this._tempFolder, "repo");
+        Directory.CreateDirectory(repoDir);
+        LibGit2Sharp.Repository.Init(repoDir);
+        this.MockTrackingHash(TRACKING_HASH);
+
+        IGitRepository repoRepository = GetSubstitute<IGitRepository>();
+        MockRepositoryMetadata(repository: repoRepository, repoDir: repoDir);
+
+        using (LibGit2Sharp.Repository realRepo = new(repoDir))
+        {
+            repoRepository.Active.Returns(realRepo);
+
+            this._gitRepositoryFactory.OpenOrCloneAsync(
+                    workDir: Arg.Any<string>(),
+                    repoUrl: REPO_URL,
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(repoRepository);
+
+            await this._bulkTemplateUpdater.BulkUpdateAsync(
+                templateRepository: "git@github.com:template/repo.git",
+                trackingFileName: string.Empty,
+                packagesFileName: "/packages.json",
+                workFolder: this._tempFolder,
+                templateConfigFileName: "/template.json",
+                releaseConfigFileName: "/release.json",
+                repositories: [REPO_URL],
+                cancellationToken: this.CancellationToken()
+            );
+
+            this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: TRACKING_HASH);
+            this._trackingCache.DidNotReceive().Set(repoUrl: Arg.Any<string>(), value: "abc123deadbeef");
         }
     }
 
@@ -670,6 +730,99 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
                     cancellationToken: Arg.Any<CancellationToken>()
                 );
             await repoRepository.Received(1).PushAsync(Arg.Any<CancellationToken>());
+        }
+    }
+
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop Ordinal and change lookup semantics"
+    )]
+    private static TemplateConfig GlobalJsonEnabledTemplateConfig()
+    {
+        return new TemplateConfig(
+            general: new GeneralTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal)),
+            gitHub: new GitHubTemplateConfig(
+                issueTemplates: false,
+                pullRequestTemplates: false,
+                actions: false,
+                linters: false,
+                files: new Dictionary<string, string>(StringComparer.Ordinal),
+                dependabot: new DependabotTemplateConfig(generate: false),
+                labels: new LabelsTemplateConfig(generate: false)
+            ),
+            dotNet: new DotnetTemplateConfig(
+                globalJson: true,
+                jetBrainsDotSettings: false,
+                files: new Dictionary<string, string>(StringComparer.Ordinal)
+            ),
+            cleanup: new CleanupTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal))
+        );
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    public async Task BulkUpdateWithChangedGlobalJsonRecordsTrackingHashAsync()
+    {
+        string repoDir = await this.PrepareRepoWithChangeLogAsync();
+        string repoGlobalJson = Path.Combine(repoDir, "global.json");
+        await File.WriteAllTextAsync(path: repoGlobalJson, contents: "{}", cancellationToken: this.CancellationToken());
+
+        this._templateConfigLoader.LoadConfigAsync(
+                path: Arg.Any<string>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(GlobalJsonEnabledTemplateConfig());
+
+        this._dotNetFilesDetector.FindAsync(baseFolder: repoDir, cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(
+                new DotNetFiles(SourceDirectory: repoDir, Solutions: [Path.Combine(repoDir, "test.sln")], Projects: [])
+            );
+
+        this._fileUpdater.UpdateFileAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                copyInstruction: Arg.Is<CopyInstruction>(c =>
+                    StringComparer.Ordinal.Equals(x: c.TargetFileName, y: repoGlobalJson)
+                ),
+                changelogUpdate: Arg.Any<Func<CancellationToken, ValueTask>>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(true);
+
+        this.MockTrackingHash(TRACKING_HASH);
+
+        IGitRepository repoRepository = GetSubstitute<IGitRepository>();
+        MockRepositoryMetadata(repository: repoRepository, repoDir: repoDir);
+
+        using (LibGit2Sharp.Repository realRepo = new(repoDir))
+        {
+            repoRepository.Active.Returns(realRepo);
+
+            this._gitRepositoryFactory.OpenOrCloneAsync(
+                    workDir: Arg.Any<string>(),
+                    repoUrl: REPO_URL,
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(repoRepository);
+
+            await this._bulkTemplateUpdater.BulkUpdateAsync(
+                templateRepository: "git@github.com:template/repo.git",
+                trackingFileName: string.Empty,
+                packagesFileName: "/packages.json",
+                workFolder: this._tempFolder,
+                templateConfigFileName: "/template.json",
+                releaseConfigFileName: "/release.json",
+                repositories: [REPO_URL],
+                cancellationToken: this.CancellationToken()
+            );
+
+            await repoRepository.Received(1).PushAsync(Arg.Any<CancellationToken>());
+            this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: TRACKING_HASH);
+            this._trackingCache.DidNotReceive().Set(repoUrl: Arg.Any<string>(), value: "abc123deadbeef");
         }
     }
 }

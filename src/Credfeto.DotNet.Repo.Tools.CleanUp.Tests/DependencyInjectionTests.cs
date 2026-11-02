@@ -57,6 +57,7 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
     {
         return services
             .AddMockedService<ITrackingCache>()
+            .AddMockedService<ITrackingHashGenerator>()
             .AddMockedService<IGitRepositoryFactory>()
             .AddMockedService<IGlobalJson>()
             .AddMockedService<IDotNetVersion>()

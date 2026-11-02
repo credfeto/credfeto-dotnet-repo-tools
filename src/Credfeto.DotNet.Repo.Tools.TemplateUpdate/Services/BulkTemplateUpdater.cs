@@ -55,9 +55,11 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     private readonly IReleaseGeneration _releaseGeneration;
     private readonly ITemplateConfigLoader _templateConfigLoader;
     private readonly ITrackingCache _trackingCache;
+    private readonly ITrackingHashGenerator _trackingHashGenerator;
 
     public BulkTemplateUpdater(
         ITrackingCache trackingCache,
+        ITrackingHashGenerator trackingHashGenerator,
         IGlobalJson globalJson,
         IDotNetFilesDetector dotNetFilesDetector,
         IDotNetVersion dotNetVersion,
@@ -78,6 +80,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     )
     {
         this._trackingCache = trackingCache;
+        this._trackingHashGenerator = trackingHashGenerator;
         this._globalJson = globalJson;
         this._dotNetFilesDetector = dotNetFilesDetector;
         this._dotNetVersion = dotNetVersion;
@@ -248,10 +251,9 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             if (!this.TryFindChangeLog(repository.Active.Info.WorkingDirectory, out string? changeLogFileName))
             {
                 this._logger.LogNoChangelogFound();
-                await this._trackingCache.UpdateTrackingAsync(
-                    new(Repository: repository, ChangeLogFileName: "?"),
+                await this.UpdateTrackingHashAsync(
+                    repoContext: new(Repository: repository, ChangeLogFileName: "?"),
                     updateContext: updateContext,
-                    value: repository.HeadRev,
                     cancellationToken: cancellationToken
                 );
 
@@ -267,6 +269,25 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 cancellationToken: cancellationToken
             );
         }
+    }
+
+    private async ValueTask UpdateTrackingHashAsync(
+        RepoContext repoContext,
+        TemplateUpdateContext updateContext,
+        CancellationToken cancellationToken
+    )
+    {
+        string trackingHash = await this._trackingHashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: cancellationToken
+        );
+
+        await this._trackingCache.UpdateTrackingAsync(
+            repoContext: repoContext,
+            updateContext: updateContext,
+            value: trackingHash,
+            cancellationToken: cancellationToken
+        );
     }
 
     private async ValueTask ProcessRepoUpdatesAsync(
@@ -315,10 +336,9 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         else
         {
             this._logger.LogNoDotNetFilesFound();
-            await this._trackingCache.UpdateTrackingAsync(
+            await this.UpdateTrackingHashAsync(
                 repoContext: repoContext,
                 updateContext: updateContext,
-                value: repoContext.Repository.HeadRev,
                 cancellationToken: cancellationToken
             );
         }
@@ -1175,11 +1195,9 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                     );
                 }
 
-                string lastKnownGoodBuild = repoContext.Repository.HeadRev;
-                await this._trackingCache.UpdateTrackingAsync(
+                await this.UpdateTrackingHashAsync(
                     repoContext: repoContext,
                     updateContext: updateContext,
-                    value: lastKnownGoodBuild,
                     cancellationToken: cancellationToken
                 );
             }
