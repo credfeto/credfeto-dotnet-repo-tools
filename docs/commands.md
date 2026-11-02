@@ -75,11 +75,7 @@ dotnet updaterepo \
     --template git@github.com:credfeto/cs-template.git
 ```
 
-Also accepts the [Common Options](#common-options).
-
-| Option | Short | Required | Description |
-| --- | --- | --- | --- |
-| `--packages` | `-p` | Yes | Accepted but currently has no effect ([#319](https://github.com/credfeto/credfeto-dotnet-repo-tools/issues/319)) |
+Accepts only the [Common Options](#common-options); no additional options.
 
 ## reduce-dependencies
 
