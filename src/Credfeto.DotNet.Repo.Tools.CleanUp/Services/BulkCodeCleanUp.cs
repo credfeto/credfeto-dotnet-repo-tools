@@ -39,12 +39,14 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     private readonly ISourceFileReformatter _sourceFileReformatter;
     private readonly ISourceFileSuppressionRemover _sourceFileSuppressionRemover;
     private readonly ITrackingCache _trackingCache;
+    private readonly ITrackingHashGenerator _trackingHashGenerator;
     private readonly ITransactSqlFormatter _tsqlFormatter;
 
     private readonly IXmlDocCommentRemover _xmlDocCommentRemover;
 
     public BulkCodeCleanUp(
         ITrackingCache trackingCache,
+        ITrackingHashGenerator trackingHashGenerator,
         IGitRepositoryFactory gitRepositoryFactory,
         IGlobalJson globalJson,
         IDotNetFilesDetector dotNetFilesDetector,
@@ -61,6 +63,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     )
     {
         this._trackingCache = trackingCache;
+        this._trackingHashGenerator = trackingHashGenerator;
         this._gitRepositoryFactory = gitRepositoryFactory;
         this._globalJson = globalJson;
         this._dotNetFilesDetector = dotNetFilesDetector;
@@ -256,10 +259,9 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             if (!this.TryFindChangeLog(repository.Active.Info.WorkingDirectory, out string? changeLogFileName))
             {
                 this._logger.LogNoChangelogFound();
-                await this._trackingCache.UpdateTrackingAsync(
-                    new(Repository: repository, ChangeLogFileName: "?"),
+                await this.UpdateTrackingHashAsync(
+                    repoContext: new(Repository: repository, ChangeLogFileName: "?"),
                     updateContext: updateContext,
-                    value: repository.HeadRev,
                     cancellationToken: cancellationToken
                 );
 
@@ -317,10 +319,28 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             this._logger.LogNoDotNetFilesFound();
         }
 
+        await this.UpdateTrackingHashAsync(
+            repoContext: repoContext,
+            updateContext: updateContext,
+            cancellationToken: cancellationToken
+        );
+    }
+
+    private async ValueTask UpdateTrackingHashAsync(
+        RepoContext repoContext,
+        CleanupUpdateContext updateContext,
+        CancellationToken cancellationToken
+    )
+    {
+        string trackingHash = await this._trackingHashGenerator.GenerateTrackingHashAsync(
+            repoContext: repoContext,
+            cancellationToken: cancellationToken
+        );
+
         await this._trackingCache.UpdateTrackingAsync(
             repoContext: repoContext,
             updateContext: updateContext,
-            value: repoContext.Repository.HeadRev,
+            value: trackingHash,
             cancellationToken: cancellationToken
         );
     }

@@ -180,10 +180,9 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
             {
                 this._logger.LogNoChangelogFound();
 
-                await this._trackingCache.UpdateTrackingAsync(
+                await this.UpdateTrackingCacheAsync(
                     repoContext: new(Repository: repository, ChangeLogFileName: "?"),
                     updateContext: updateContext,
-                    value: repository.HeadRev,
                     cancellationToken: cancellationToken
                 );
 
@@ -259,10 +258,9 @@ public sealed class BulkDependencyReducer : IBulkDependencyReducer
     {
         this._logger.LogNoDotNetFilesFound();
 
-        return this._trackingCache.UpdateTrackingAsync(
+        return this.UpdateTrackingCacheAsync(
             repoContext: repoContext,
             updateContext: updateContext,
-            value: repoContext.Repository.HeadRev,
             cancellationToken: cancellationToken
         );
     }

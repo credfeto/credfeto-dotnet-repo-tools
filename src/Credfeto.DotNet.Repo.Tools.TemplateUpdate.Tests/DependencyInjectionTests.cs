@@ -70,6 +70,7 @@ public sealed class DependencyInjectionTests : DependencyInjectionTestsBase
             .AddMockedService<IReleaseConfigLoader>()
             .AddMockedService<IReleaseGeneration>()
             .AddMockedService<ITrackingCache>()
+            .AddMockedService<ITrackingHashGenerator>()
             .AddMockedService<IDotNetFilesDetector>()
             .AddMockedService<IChangeLogDetector>()
             .AddMockedService<IChangeLogUpdater>()

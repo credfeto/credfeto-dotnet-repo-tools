@@ -12,6 +12,7 @@ using Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
+using Credfeto.DotNet.Repo.Tools.Models;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.Tsql.Formatter;
@@ -44,6 +45,7 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
     private readonly ISourceFileReformatter _sourceFileReformatter;
     private readonly ISourceFileSuppressionRemover _sourceFileSuppressionRemover;
     private readonly ITrackingCache _trackingCache;
+    private readonly ITrackingHashGenerator _trackingHashGenerator;
     private readonly ITransactSqlFormatter _tsqlFormatter;
     private readonly IXmlDocCommentRemover _xmlDocCommentRemover;
 
@@ -51,6 +53,7 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         : base(output)
     {
         this._trackingCache = GetSubstitute<ITrackingCache>();
+        this._trackingHashGenerator = GetSubstitute<ITrackingHashGenerator>();
         this._gitRepositoryFactory = GetSubstitute<IGitRepositoryFactory>();
         this._globalJson = GetSubstitute<IGlobalJson>();
         this._dotNetVersion = GetSubstitute<IDotNetVersion>();
@@ -66,9 +69,12 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         this._globalJson.LoadGlobalJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(DotNetSettings);
         this._dotNetVersion.GetInstalledSdksAsync(Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<System.Version>>([]);
+        this._trackingHashGenerator.GenerateTrackingHashAsync(Arg.Any<RepoContext>(), Arg.Any<CancellationToken>())
+            .Returns(call => TrackingHashFor(call.ArgAt<RepoContext>(0).Repository.HeadRev));
 
         this._sut = new BulkCodeCleanUp(
             trackingCache: this._trackingCache,
+            trackingHashGenerator: this._trackingHashGenerator,
             gitRepositoryFactory: this._gitRepositoryFactory,
             globalJson: this._globalJson,
             dotNetFilesDetector: this._dotNetFilesDetector,
@@ -83,6 +89,11 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             changeLogDetector: this._changeLogDetector,
             logger: this.GetTypedLogger<BulkCodeCleanUp>()
         );
+    }
+
+    private static string TrackingHashFor(string headRev)
+    {
+        return "hash-of-" + headRev;
     }
 
     private void SetupTemplateRepo(IGitRepository templateRepo)
@@ -301,7 +312,8 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             cancellationToken: this.CancellationToken()
         );
 
-        this._trackingCache.Received(1).Set(repoUrl: "https://github.com/test/noop-repo.git", value: "abc123");
+        this._trackingCache.Received(1)
+            .Set(repoUrl: "https://github.com/test/noop-repo.git", value: TrackingHashFor("abc123"));
     }
 
     [Fact]
@@ -339,7 +351,8 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             cancellationToken: this.CancellationToken()
         );
 
-        this._trackingCache.Received(1).Set(repoUrl: "https://github.com/test/changelog-repo.git", value: "def456");
+        this._trackingCache.Received(1)
+            .Set(repoUrl: "https://github.com/test/changelog-repo.git", value: TrackingHashFor("def456"));
     }
 
     [Fact]
@@ -401,7 +414,8 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             cancellationToken: this.CancellationToken()
         );
 
-        this._trackingCache.Received(1).Set(repoUrl: "https://github.com/test/dotnet-repo.git", value: "ghi789");
+        this._trackingCache.Received(1)
+            .Set(repoUrl: "https://github.com/test/dotnet-repo.git", value: TrackingHashFor("ghi789"));
     }
 
     [Fact]
@@ -935,7 +949,7 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             await this.RunBulkUpdateAsync("https://github.com/test/includes-reorder-repo.git");
 
             this._trackingCache.Received(1)
-                .Set(repoUrl: "https://github.com/test/includes-reorder-repo.git", value: "incl001");
+                .Set(repoUrl: "https://github.com/test/includes-reorder-repo.git", value: TrackingHashFor("incl001"));
         }
     }
 
@@ -964,7 +978,7 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             await this.RunBulkUpdateAsync("https://github.com/test/reference-metadata-repo.git");
 
             this._trackingCache.Received(1)
-                .Set(repoUrl: "https://github.com/test/reference-metadata-repo.git", value: "meta001");
+                .Set(repoUrl: "https://github.com/test/reference-metadata-repo.git", value: TrackingHashFor("meta001"));
         }
     }
 
@@ -993,7 +1007,7 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             await this.RunBulkUpdateAsync("https://github.com/test/cleanup-exception-repo.git");
 
             this._trackingCache.Received(1)
-                .Set(repoUrl: "https://github.com/test/cleanup-exception-repo.git", value: "exc001");
+                .Set(repoUrl: "https://github.com/test/cleanup-exception-repo.git", value: TrackingHashFor("exc001"));
         }
     }
 }
