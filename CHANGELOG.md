@@ -20,6 +20,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.141.1746
 - Dependency reducer: reuse one repo-level XML cache for the whole run, evicting each project's entry once it is rewritten, instead of building a new cache for every project (#253)
 - Dependencies - Updated Credfeto.Enumeration to 1.2.157.2500
+- code-cleanup: removed unused required --packages option
 ### Deprecated
 ### Removed
 - code-cleanup no longer requires or loads the unused --release config file (#320)
