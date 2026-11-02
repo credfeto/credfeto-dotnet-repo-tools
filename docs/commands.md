@@ -80,7 +80,6 @@ Also accepts the [Common Options](#common-options).
 | Option | Short | Required | Description |
 | --- | --- | --- | --- |
 | `--packages` | `-p` | Yes | Accepted but currently has no effect ([#319](https://github.com/credfeto/credfeto-dotnet-repo-tools/issues/319)) |
-| `--release` | `-l` | Yes | Accepted but currently has no effect ([#320](https://github.com/credfeto/credfeto-dotnet-repo-tools/issues/320)) |
 
 ## reduce-dependencies
 
