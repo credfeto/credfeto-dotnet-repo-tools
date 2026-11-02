@@ -17,7 +17,6 @@ using Credfeto.DotNet.Repo.Tools.Extensions;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Models;
-using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.Tsql.Formatter;
@@ -36,7 +35,6 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     private readonly IGlobalJson _globalJson;
     private readonly ILogger<BulkCodeCleanUp> _logger;
     private readonly IProjectXmlRewriter _projectXmlRewriter;
-    private readonly IReleaseConfigLoader _releaseConfigLoader;
     private readonly IResharperSuppressionToSuppressMessage _resharperSuppressionToSuppressMessage;
     private readonly ISourceFileReformatter _sourceFileReformatter;
     private readonly ISourceFileSuppressionRemover _sourceFileSuppressionRemover;
@@ -51,7 +49,6 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         IGlobalJson globalJson,
         IDotNetFilesDetector dotNetFilesDetector,
         IDotNetVersion dotNetVersion,
-        IReleaseConfigLoader releaseConfigLoader,
         IProjectXmlRewriter projectXmlRewriter,
         ISourceFileReformatter sourceFileReformatter,
         IXmlDocCommentRemover xmlDocCommentRemover,
@@ -68,7 +65,6 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         this._globalJson = globalJson;
         this._dotNetFilesDetector = dotNetFilesDetector;
         this._dotNetVersion = dotNetVersion;
-        this._releaseConfigLoader = releaseConfigLoader;
         this._projectXmlRewriter = projectXmlRewriter;
         this._sourceFileReformatter = sourceFileReformatter;
         this._xmlDocCommentRemover = xmlDocCommentRemover;
@@ -157,7 +153,6 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         string trackingFileName,
         string packagesFileName,
         string workFolder,
-        string releaseConfigFileName,
         IReadOnlyList<string> repositories,
         CancellationToken cancellationToken
     )
@@ -176,7 +171,6 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                 templateRepo: templateRepo,
                 workFolder: workFolder,
                 trackingFileName: trackingFileName,
-                releaseConfigFileName: releaseConfigFileName,
                 cancellationToken: cancellationToken
             );
 
@@ -806,7 +800,6 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         IGitRepository templateRepo,
         string workFolder,
         string trackingFileName,
-        string releaseConfigFileName,
         CancellationToken cancellationToken
     )
     {
@@ -830,17 +823,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             }
         }
 
-        ReleaseConfig releaseConfig = await this._releaseConfigLoader.LoadAsync(
-            path: releaseConfigFileName,
-            cancellationToken: cancellationToken
-        );
-
-        return new(
-            WorkFolder: workFolder,
-            TrackingFileName: trackingFileName,
-            DotNetSettings: dotNetSettings,
-            ReleaseConfig: releaseConfig
-        );
+        return new(WorkFolder: workFolder, TrackingFileName: trackingFileName);
     }
 
     private ValueTask LoadTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)

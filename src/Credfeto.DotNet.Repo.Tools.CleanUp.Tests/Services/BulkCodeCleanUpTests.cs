@@ -12,7 +12,6 @@ using Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
-using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Release.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using Credfeto.Tsql.Formatter;
@@ -33,15 +32,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         RollForward: "major"
     );
 
-    private static readonly ReleaseConfig ReleaseConfig = new(
-        AutoReleasePendingPackages: 0,
-        MinimumHoursBeforeAutoRelease: 1,
-        InactivityHoursBeforeAutoRelease: 24,
-        NeverRelease: [],
-        AllowedAutoUpgrade: [],
-        AlwaysMatch: []
-    );
-
     private readonly IChangeLogDetector _changeLogDetector = new ChangeLogDetector();
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
@@ -54,7 +44,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
     private readonly ISourceFileReformatter _sourceFileReformatter;
     private readonly ISourceFileSuppressionRemover _sourceFileSuppressionRemover;
     private readonly ITrackingCache _trackingCache;
-    private readonly IReleaseConfigLoader _releaseConfigLoader;
     private readonly ITransactSqlFormatter _tsqlFormatter;
     private readonly IXmlDocCommentRemover _xmlDocCommentRemover;
 
@@ -65,7 +54,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         this._gitRepositoryFactory = GetSubstitute<IGitRepositoryFactory>();
         this._globalJson = GetSubstitute<IGlobalJson>();
         this._dotNetVersion = GetSubstitute<IDotNetVersion>();
-        this._releaseConfigLoader = GetSubstitute<IReleaseConfigLoader>();
         this._dotNetBuild = GetSubstitute<IDotNetBuild>();
         this._dotNetFilesDetector = GetSubstitute<IDotNetFilesDetector>();
         this._projectXmlRewriter = GetSubstitute<IProjectXmlRewriter>();
@@ -78,7 +66,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         this._globalJson.LoadGlobalJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(DotNetSettings);
         this._dotNetVersion.GetInstalledSdksAsync(Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<System.Version>>([]);
-        this._releaseConfigLoader.LoadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(ReleaseConfig);
 
         this._sut = new BulkCodeCleanUp(
             trackingCache: this._trackingCache,
@@ -86,7 +73,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             globalJson: this._globalJson,
             dotNetFilesDetector: this._dotNetFilesDetector,
             dotNetVersion: this._dotNetVersion,
-            releaseConfigLoader: this._releaseConfigLoader,
             projectXmlRewriter: this._projectXmlRewriter,
             sourceFileReformatter: this._sourceFileReformatter,
             xmlDocCommentRemover: this._xmlDocCommentRemover,
@@ -139,7 +125,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             trackingFileName: string.Empty,
             packagesFileName: string.Empty,
             workFolder: this.TempFolder,
-            releaseConfigFileName: "release.json",
             repositories: [],
             cancellationToken: this.CancellationToken()
         );
@@ -159,7 +144,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             trackingFileName: trackingFile,
             packagesFileName: string.Empty,
             workFolder: this.TempFolder,
-            releaseConfigFileName: "release.json",
             repositories: [],
             cancellationToken: this.CancellationToken()
         );
@@ -185,7 +169,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             trackingFileName: trackingFile,
             packagesFileName: string.Empty,
             workFolder: this.TempFolder,
-            releaseConfigFileName: "release.json",
             repositories: [],
             cancellationToken: this.CancellationToken()
         );
@@ -210,7 +193,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             trackingFileName: string.Empty,
             packagesFileName: string.Empty,
             workFolder: this.TempFolder,
-            releaseConfigFileName: "release.json",
             repositories: ["https://github.com/test/locked-repo.git"],
             cancellationToken: this.CancellationToken()
         );
@@ -230,7 +212,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             trackingFileName: string.Empty,
             packagesFileName: string.Empty,
             workFolder: this.TempFolder,
-            releaseConfigFileName: "release.json",
             repositories: ["https://github.com/test/failing-solution-repo.git"],
             cancellationToken: this.CancellationToken()
         );
@@ -250,7 +231,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             trackingFileName: string.Empty,
             packagesFileName: string.Empty,
             workFolder: this.TempFolder,
-            releaseConfigFileName: "release.json",
             repositories: ["https://github.com/test/build-error-repo.git"],
             cancellationToken: this.CancellationToken()
         );
@@ -270,7 +250,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             trackingFileName: string.Empty,
             packagesFileName: string.Empty,
             workFolder: this.TempFolder,
-            releaseConfigFileName: "release.json",
             repositories: ["https://github.com/test/release-repo.git"],
             cancellationToken: this.CancellationToken()
         );
@@ -326,7 +305,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             trackingFileName: string.Empty,
             packagesFileName: string.Empty,
             workFolder: this.TempFolder,
-            releaseConfigFileName: "release.json",
             repositories: ["https://github.com/test/noop-repo.git"],
             cancellationToken: this.CancellationToken()
         );
@@ -366,7 +344,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             trackingFileName: string.Empty,
             packagesFileName: string.Empty,
             workFolder: this.TempFolder,
-            releaseConfigFileName: "release.json",
             repositories: ["https://github.com/test/changelog-repo.git"],
             cancellationToken: this.CancellationToken()
         );
@@ -430,7 +407,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             trackingFileName: string.Empty,
             packagesFileName: string.Empty,
             workFolder: this.TempFolder,
-            releaseConfigFileName: "release.json",
             repositories: ["https://github.com/test/dotnet-repo.git"],
             cancellationToken: this.CancellationToken()
         );
@@ -486,7 +462,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             trackingFileName: string.Empty,
             packagesFileName: string.Empty,
             workFolder: this.TempFolder,
-            releaseConfigFileName: "release.json",
             repositories: ["https://github.com/test/changes-repo.git"],
             cancellationToken: this.CancellationToken()
         );
@@ -509,7 +484,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             trackingFileName: trackingFile,
             packagesFileName: string.Empty,
             workFolder: this.TempFolder,
-            releaseConfigFileName: "release.json",
             repositories: ["https://github.com/test/locked-repo-2.git"],
             cancellationToken: this.CancellationToken()
         );
@@ -537,12 +511,35 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
                     trackingFileName: string.Empty,
                     packagesFileName: string.Empty,
                     workFolder: this.TempFolder,
-                    releaseConfigFileName: "release.json",
                     repositories: [],
                     cancellationToken: this.CancellationToken()
                 )
                 .AsTask()
         );
+    }
+
+    [Fact]
+    public async Task BulkUpdateAsyncShouldRunWithoutAReleaseConfigFileAsync()
+    {
+        IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+        this.SetupTemplateRepo(templateRepo);
+
+        Assert.False(
+            condition: File.Exists(Path.Combine(path1: this.TempFolder, path2: "release.json")),
+            userMessage: "No release config file should exist for code cleanup"
+        );
+
+        await this._sut.BulkUpdateAsync(
+            templateRepository: "https://github.com/template/repo.git",
+            trackingFileName: string.Empty,
+            packagesFileName: string.Empty,
+            workFolder: this.TempFolder,
+            repositories: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        await this._globalJson.Received(1).LoadGlobalJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await this._dotNetVersion.Received(1).GetInstalledSdksAsync(Arg.Any<CancellationToken>());
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -624,7 +621,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             trackingFileName: string.Empty,
             packagesFileName: string.Empty,
             workFolder: this.TempFolder,
-            releaseConfigFileName: "release.json",
             repositories: [repoUrl],
             cancellationToken: this.CancellationToken()
         );

@@ -241,8 +241,7 @@ public sealed class Commands
         [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")]
             string trackingFileName,
         [Option(name: "packages", ['p'], Description = "Packages.json file to load")] string packagesFileName,
-        [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder,
-        [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName
+        [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder
     )
     {
         try
@@ -252,8 +251,7 @@ public sealed class Commands
                 templateRepository: templateRepository,
                 trackingFileName: trackingFileName,
                 packagesFileName: packagesFileName,
-                workFolder: workFolder,
-                releaseConfigFileName: releaseConfigFileName
+                workFolder: workFolder
             );
 
             return ExitCodes.Success;
@@ -271,8 +269,7 @@ public sealed class Commands
         string templateRepository,
         string trackingFileName,
         string packagesFileName,
-        string workFolder,
-        string releaseConfigFileName
+        string workFolder
     )
     {
         IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
@@ -288,7 +285,6 @@ public sealed class Commands
             trackingFileName: trackingFileName,
             packagesFileName: packagesFileName,
             workFolder: workFolder,
-            releaseConfigFileName: releaseConfigFileName,
             repositories: repositories,
             cancellationToken: this.CurrentCancellationToken
         );

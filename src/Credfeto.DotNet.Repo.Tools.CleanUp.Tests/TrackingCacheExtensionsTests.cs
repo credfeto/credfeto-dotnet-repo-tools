@@ -1,9 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Models;
-using Credfeto.DotNet.Repo.Tools.Release.Interfaces;
 using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using FunFair.Test.Common;
 using NSubstitute;
@@ -13,21 +11,6 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests;
 
 public sealed class TrackingCacheExtensionsTests : LoggingTestBase
 {
-    private static readonly DotNetVersionSettings DotNetSettings = new(
-        SdkVersion: null,
-        AllowPreRelease: false,
-        RollForward: "major"
-    );
-
-    private static readonly ReleaseConfig ReleaseConfig = new(
-        AutoReleasePendingPackages: 0,
-        MinimumHoursBeforeAutoRelease: 1,
-        InactivityHoursBeforeAutoRelease: 24,
-        NeverRelease: [],
-        AllowedAutoUpgrade: [],
-        AlwaysMatch: []
-    );
-
     public TrackingCacheExtensionsTests(ITestOutputHelper output)
         : base(output) { }
 
@@ -47,12 +30,7 @@ public sealed class TrackingCacheExtensionsTests : LoggingTestBase
     {
         ITrackingCache trackingCache = GetSubstitute<ITrackingCache>();
         RepoContext repoContext = BuildRepoContext(clonePath: "/repo", defaultBranch: "main");
-        CleanupUpdateContext updateContext = new(
-            WorkFolder: "/work",
-            TrackingFileName: string.Empty,
-            DotNetSettings: DotNetSettings,
-            ReleaseConfig: ReleaseConfig
-        );
+        CleanupUpdateContext updateContext = new(WorkFolder: "/work", TrackingFileName: string.Empty);
 
         await trackingCache.UpdateTrackingAsync(
             repoContext: repoContext,
@@ -69,12 +47,7 @@ public sealed class TrackingCacheExtensionsTests : LoggingTestBase
     {
         ITrackingCache trackingCache = GetSubstitute<ITrackingCache>();
         RepoContext repoContext = BuildRepoContext(clonePath: "/repo", defaultBranch: "main");
-        CleanupUpdateContext updateContext = new(
-            WorkFolder: "/work",
-            TrackingFileName: string.Empty,
-            DotNetSettings: DotNetSettings,
-            ReleaseConfig: ReleaseConfig
-        );
+        CleanupUpdateContext updateContext = new(WorkFolder: "/work", TrackingFileName: string.Empty);
 
         await trackingCache.UpdateTrackingAsync(
             repoContext: repoContext,
@@ -91,12 +64,7 @@ public sealed class TrackingCacheExtensionsTests : LoggingTestBase
     {
         ITrackingCache trackingCache = GetSubstitute<ITrackingCache>();
         RepoContext repoContext = BuildRepoContext(clonePath: "/repo", defaultBranch: "main");
-        CleanupUpdateContext updateContext = new(
-            WorkFolder: "/work",
-            TrackingFileName: "   ",
-            DotNetSettings: DotNetSettings,
-            ReleaseConfig: ReleaseConfig
-        );
+        CleanupUpdateContext updateContext = new(WorkFolder: "/work", TrackingFileName: "   ");
 
         await trackingCache.UpdateTrackingAsync(
             repoContext: repoContext,
@@ -113,12 +81,7 @@ public sealed class TrackingCacheExtensionsTests : LoggingTestBase
     {
         ITrackingCache trackingCache = GetSubstitute<ITrackingCache>();
         RepoContext repoContext = BuildRepoContext(clonePath: "/repo", defaultBranch: "main");
-        CleanupUpdateContext updateContext = new(
-            WorkFolder: "/work",
-            TrackingFileName: "tracking.json",
-            DotNetSettings: DotNetSettings,
-            ReleaseConfig: ReleaseConfig
-        );
+        CleanupUpdateContext updateContext = new(WorkFolder: "/work", TrackingFileName: "tracking.json");
 
         await trackingCache.UpdateTrackingAsync(
             repoContext: repoContext,
