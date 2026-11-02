@@ -15,13 +15,13 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - TrackingItemsConverter now throws JsonException for non-string tokens and case-insensitive duplicate keys in tracking.json so TrackingCache recovers from corrupt tracking.json instead of crashing (#218)
 - dotnet build, test and publish now pass their arguments individually, so project and solution paths containing spaces are no longer split into separate arguments (#254)
 ### Changed
-- Dependencies - Updated Credfeto.ChangeLog to 1.10.210.2808
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.164.2139
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.141.1746
 - Dependency reducer: reuse one repo-level XML cache for the whole run, evicting each project's entry once it is rewritten, instead of building a new cache for every project (#253)
 - Dependencies - Updated Credfeto.Enumeration to 1.2.157.2500
 - code-cleanup: removed unused required --packages option
 - Dependencies - Updated Meziantou.Analyzer to 3.0.320
+- Dependencies - Updated Credfeto.ChangeLog to 1.10.211.2823
 ### Deprecated
 ### Removed
 - code-cleanup no longer requires or loads the unused --release config file (#320)
