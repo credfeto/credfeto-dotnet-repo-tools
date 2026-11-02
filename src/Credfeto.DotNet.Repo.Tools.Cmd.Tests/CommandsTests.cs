@@ -137,7 +137,7 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     {
         return this
             ._bulkCodeCleanUp.ReceivedWithAnyArgs(times)
-            .BulkUpdateAsync(string.Empty, string.Empty, string.Empty, string.Empty, [], default);
+            .BulkUpdateAsync(string.Empty, string.Empty, string.Empty, [], default);
     }
 
     private ValueTask ReceivedBulkDependencyReduceAsync(int times)
@@ -377,7 +377,6 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
             repositoriesFileName: "repos.lst",
             templateRepository: "https://template.git",
             trackingFileName: "tracking.json",
-            packagesFileName: "packages.json",
             workFolder: "/work"
         );
 

@@ -240,7 +240,6 @@ public sealed class Commands
         [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
         [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")]
             string trackingFileName,
-        [Option(name: "packages", ['p'], Description = "Packages.json file to load")] string packagesFileName,
         [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder
     )
     {
@@ -250,7 +249,6 @@ public sealed class Commands
                 repositoriesFileName: repositoriesFileName,
                 templateRepository: templateRepository,
                 trackingFileName: trackingFileName,
-                packagesFileName: packagesFileName,
                 workFolder: workFolder
             );
 
@@ -268,7 +266,6 @@ public sealed class Commands
         string repositoriesFileName,
         string templateRepository,
         string trackingFileName,
-        string packagesFileName,
         string workFolder
     )
     {
@@ -283,7 +280,6 @@ public sealed class Commands
         await this._bulkCodeCleanUp.BulkUpdateAsync(
             templateRepository: templateRepository,
             trackingFileName: trackingFileName,
-            packagesFileName: packagesFileName,
             workFolder: workFolder,
             repositories: repositories,
             cancellationToken: this.CurrentCancellationToken

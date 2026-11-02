@@ -123,7 +123,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: string.Empty,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: [],
             cancellationToken: this.CancellationToken()
@@ -142,7 +141,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: trackingFile,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: [],
             cancellationToken: this.CancellationToken()
@@ -167,7 +165,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: trackingFile,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: [],
             cancellationToken: this.CancellationToken()
@@ -191,7 +188,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: string.Empty,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: ["https://github.com/test/locked-repo.git"],
             cancellationToken: this.CancellationToken()
@@ -210,7 +206,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: string.Empty,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: ["https://github.com/test/failing-solution-repo.git"],
             cancellationToken: this.CancellationToken()
@@ -229,7 +224,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: string.Empty,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: ["https://github.com/test/build-error-repo.git"],
             cancellationToken: this.CancellationToken()
@@ -248,7 +242,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: string.Empty,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: ["https://github.com/test/release-repo.git"],
             cancellationToken: this.CancellationToken()
@@ -303,7 +296,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: string.Empty,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: ["https://github.com/test/noop-repo.git"],
             cancellationToken: this.CancellationToken()
@@ -342,7 +334,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: string.Empty,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: ["https://github.com/test/changelog-repo.git"],
             cancellationToken: this.CancellationToken()
@@ -405,7 +396,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: string.Empty,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: ["https://github.com/test/dotnet-repo.git"],
             cancellationToken: this.CancellationToken()
@@ -460,7 +450,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: string.Empty,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: ["https://github.com/test/changes-repo.git"],
             cancellationToken: this.CancellationToken()
@@ -482,7 +471,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: trackingFile,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: ["https://github.com/test/locked-repo-2.git"],
             cancellationToken: this.CancellationToken()
@@ -509,7 +497,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
                 ._sut.BulkUpdateAsync(
                     templateRepository: "https://github.com/template/repo.git",
                     trackingFileName: string.Empty,
-                    packagesFileName: string.Empty,
                     workFolder: this.TempFolder,
                     repositories: [],
                     cancellationToken: this.CancellationToken()
@@ -532,7 +519,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: string.Empty,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: [],
             cancellationToken: this.CancellationToken()
@@ -619,7 +605,6 @@ public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
         await this._sut.BulkUpdateAsync(
             templateRepository: "https://github.com/template/repo.git",
             trackingFileName: string.Empty,
-            packagesFileName: string.Empty,
             workFolder: this.TempFolder,
             repositories: [repoUrl],
             cancellationToken: this.CancellationToken()

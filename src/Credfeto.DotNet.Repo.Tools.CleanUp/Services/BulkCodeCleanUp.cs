@@ -151,7 +151,6 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     public async ValueTask BulkUpdateAsync(
         string templateRepository,
         string trackingFileName,
-        string packagesFileName,
         string workFolder,
         IReadOnlyList<string> repositories,
         CancellationToken cancellationToken
