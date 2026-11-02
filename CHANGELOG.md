@@ -21,6 +21,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependency reducer: reuse one repo-level XML cache for the whole run, evicting each project's entry once it is rewritten, instead of building a new cache for every project (#253)
 ### Deprecated
 ### Removed
+- code-cleanup no longer requires or loads the unused --release config file (#320)
 ### Deployment Changes
 
 <!--
