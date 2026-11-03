@@ -22,6 +22,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - code-cleanup: removed unused required --packages option
 - Dependencies - Updated Meziantou.Analyzer to 3.0.320
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.211.2823
+- Dependencies - Updated FunFair.CodeAnalysis to 7.2.24.2629
 ### Deprecated
 ### Removed
 - code-cleanup no longer requires or loads the unused --release config file (#320)
