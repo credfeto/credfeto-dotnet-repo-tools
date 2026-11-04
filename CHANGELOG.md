@@ -22,6 +22,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Meziantou.Analyzer to 3.0.320
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.211.2823
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.142.1766
+- SDK - Updated DotNet SDK to 11.0.100-rc.3.26522.148
 ### Deprecated
 ### Removed
 - code-cleanup no longer requires or loads the unused --release config file (#320)
