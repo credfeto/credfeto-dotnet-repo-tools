@@ -4,7 +4,7 @@ using BenchmarkDotNet.Attributes;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace Credfeto.DotNet.Repo.Tools.CleanUp.Benchmarks.Tests.Bench;
+namespace Credfeto.DotNet.Repo.Tools.CleanUp.Benchmark.Tests.Bench;
 
 [SimpleJob]
 [MemoryDiagnoser(false)]
