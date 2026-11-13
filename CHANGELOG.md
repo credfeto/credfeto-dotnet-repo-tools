@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+- Dependencies - Updated CSharpier to 1.4.0
 ### Deprecated
 ### Removed
 ### Deployment Changes
