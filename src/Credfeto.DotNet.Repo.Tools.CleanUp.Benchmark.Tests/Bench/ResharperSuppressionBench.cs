@@ -4,7 +4,8 @@ using Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Benchmark.Tests.Bench;
 
-[SimpleJob]
+// In-process: BenchmarkDotNet 0.15.8's out-of-process toolchain cannot validate the SDK for net11.0
+[InProcess]
 [MemoryDiagnoser(false)]
 [SuppressMessage(
     category: "FunFair.CodeAnalysis",
