@@ -1,10 +1,10 @@
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Reports;
-using Credfeto.DotNet.Repo.Tools.CleanUp.Benchmarks.Tests.Bench;
+using Credfeto.DotNet.Repo.Tools.CleanUp.Benchmark.Tests.Bench;
 using FunFair.Test.Common;
 using Xunit;
 
-namespace Credfeto.DotNet.Repo.Tools.CleanUp.Benchmarks.Tests;
+namespace Credfeto.DotNet.Repo.Tools.CleanUp.Benchmark.Tests;
 
 public sealed class ProjectXmlRewriterBenchmarkTests : LoggingTestBase
 {

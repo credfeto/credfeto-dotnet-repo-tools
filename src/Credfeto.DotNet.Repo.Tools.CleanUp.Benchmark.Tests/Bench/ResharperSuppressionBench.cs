@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using BenchmarkDotNet.Attributes;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Services;
 
-namespace Credfeto.DotNet.Repo.Tools.CleanUp.Benchmarks.Tests.Bench;
+namespace Credfeto.DotNet.Repo.Tools.CleanUp.Benchmark.Tests.Bench;
 
 [SimpleJob]
 [MemoryDiagnoser(false)]
@@ -19,7 +19,7 @@ public class ResharperSuppressionBench
         using System;
         using System.Collections.Generic;
 
-        namespace Example;
+        namespace Credfeto.DotNet.Repo.Tools.CleanUp.Benchmark.Tests.Example;
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("ReSharper", "ClassNeverInstantiated.Global", Justification="TODO: Review")]
         public sealed class MyService

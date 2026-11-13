@@ -339,10 +339,11 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 
         const string cloneUrl = "https://github.com/test/noop-repo.git";
         testRepo.HeadRev.Returns("no-changelog-head-rev");
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, "no-changelog-hash");
 
         await this.RunBulkUpdateWithTrackingAsync(cloneUrl, string.Empty);
 
-        this._trackingCache.Received(1).Set(repoUrl: cloneUrl, value: "no-changelog-head-rev");
+        this._trackingCache.Received(1).Set(repoUrl: cloneUrl, value: "no-changelog-hash");
     }
 
     [Fact]
@@ -369,6 +370,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         const string cloneUrl = "https://github.com/test/changelog-nodotnet-repo.git";
         SetupTestGitRepository(testRepo, activeRepo, repoDir, cloneUrl);
         testRepo.HeadRev.Returns("no-dotnet-files-head-rev");
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, "no-dotnet-files-hash");
 
         MockIGitRepositoryFactoryOpenOrClone(
             factory: this._gitRepositoryFactory,
@@ -382,7 +384,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
         await testRepo
             .Received(1)
             .ResetToDefaultBranchAsync(upstream: Arg.Any<string>(), cancellationToken: Arg.Any<CancellationToken>());
-        this._trackingCache.Received(1).Set(repoUrl: cloneUrl, value: "no-dotnet-files-head-rev");
+        this._trackingCache.Received(1).Set(repoUrl: cloneUrl, value: "no-dotnet-files-hash");
     }
 
     [Fact]
