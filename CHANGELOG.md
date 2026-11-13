@@ -14,6 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated CSharpier to 1.4.0
+- Dependencies - Updated FunFair.CodeAnalysis to 7.2.25.2636
 ### Deprecated
 ### Removed
 ### Deployment Changes
