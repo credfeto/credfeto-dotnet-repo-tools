@@ -66,7 +66,8 @@
     <ProjectReference Include="../Credfeto.DotNet.Repo.Tracking.Interfaces/Credfeto.DotNet.Repo.Tracking.Interfaces.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.211.2823" IncludeAssets="compile;runtime" />  </ItemGroup>
+    <PackageReference Include="Credfeto.ChangeLog" Version="1.10.211.2823" IncludeAssets="compile;runtime" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="2.1.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="codecracker.CSharp" Version="1.1.0" PrivateAssets="All" ExcludeAssets="runtime" />
