@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated CSharpier to 1.4.0
 - Dependencies - Updated Meziantou.Analyzer to 3.0.339
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.36.0.15337
+- Target .NET 11 (SDK 11.0.100-rc.3.26522.148) and enable runtime-async
 ### Deprecated
 ### Removed
 ### Deployment Changes
