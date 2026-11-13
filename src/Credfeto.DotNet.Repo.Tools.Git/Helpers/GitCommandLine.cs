@@ -13,6 +13,17 @@ namespace Credfeto.DotNet.Repo.Tools.Git.Helpers;
 
 public static class GitCommandLine
 {
+    // Set by git for hooks (e.g. pre-commit); when inherited they redirect a child git to the caller's repository.
+    private static readonly string[] RepositoryOverrideVariables =
+    [
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_PREFIX",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    ];
+
     [SuppressMessage(
         category: "SonarAnalyzer.CSharp",
         checkId: "S4036: Use an absolute path for this command",
@@ -42,11 +53,21 @@ public static class GitCommandLine
             psi.ArgumentList.Add(argument);
         }
 
+        RemoveRepositoryOverrides(psi);
+
         return ProcessRunner.ExecAsync(
             psi: psi,
             failedToStartMessage: "Failed to start git",
             cancellationToken: cancellationToken
         );
+    }
+
+    public static void RemoveRepositoryOverrides(ProcessStartInfo psi)
+    {
+        foreach (string variable in RepositoryOverrideVariables)
+        {
+            psi.Environment.Remove(variable);
+        }
     }
 
     private static void EnsureNotLocked(string repoUrl, string workingDirectory)
