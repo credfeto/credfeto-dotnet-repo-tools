@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Credfeto.DotNet.Repo.Tools.Git.Helpers;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces.Exceptions;
 using Credfeto.DotNet.Repo.Tools.Git.Services;
 using FunFair.Test.Common;
@@ -1188,6 +1189,8 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
             RedirectStandardError = true,
             CreateNoWindow = true,
         };
+
+        GitCommandLine.RemoveRepositoryOverrides(psi);
 
         using Process process = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start git");
 
