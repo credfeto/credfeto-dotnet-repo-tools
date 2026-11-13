@@ -12,6 +12,17 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+
+## [1.5.20] - 2026-11-13
+### Fixed
 - TrackingItemsConverter now throws JsonException for non-string tokens and case-insensitive duplicate keys in tracking.json so TrackingCache recovers from corrupt tracking.json instead of crashing (#218)
 - dotnet build, test and publish now pass their arguments individually, so project and solution paths containing spaces are no longer split into separate arguments (#254)
 - BulkDependencyReducer, BulkCodeCleanUp and BulkTemplateUpdater now write the tracking content hash instead of raw HeadRev to the shared tracking cache (#299)
@@ -25,14 +36,8 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.142.1766
 - Dependencies - Updated Credfeto.Enumeration to 1.2.158.2511
 - SDK - Updated DotNet SDK to 11.0.100-rc.3.26522.148
-### Deprecated
 ### Removed
 - code-cleanup no longer requires or loads the unused --release config file (#320)
-### Deployment Changes
-
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 
 ## [1.5.19] - 2026-10-31
 ### Fixed
