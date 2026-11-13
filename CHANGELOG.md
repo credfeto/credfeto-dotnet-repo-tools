@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+- Target .NET 11 (SDK 11.0.100-rc.3.26522.148) and enable runtime-async
 ### Deprecated
 ### Removed
 ### Deployment Changes
