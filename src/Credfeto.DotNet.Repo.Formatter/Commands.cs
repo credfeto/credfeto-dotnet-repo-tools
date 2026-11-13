@@ -262,6 +262,7 @@ public sealed class Commands
             content: content,
             cancellationToken: this.CurrentCancellationToken
         );
+        content = LineEndings.MatchOriginal(original: original, updated: content);
 
         if (buildContext is { } ctx)
         {
@@ -321,9 +322,12 @@ public sealed class Commands
             return false;
         }
 
-        string rewritten = await ProjectXmlSerializer.ToProjectFileTextAsync(
-            document: doc,
-            cancellationToken: this.CurrentCancellationToken
+        string rewritten = LineEndings.MatchOriginal(
+            original: original,
+            updated: await ProjectXmlSerializer.ToProjectFileTextAsync(
+                document: doc,
+                cancellationToken: this.CurrentCancellationToken
+            )
         );
 
         if (StringComparer.Ordinal.Equals(x: original, y: rewritten))

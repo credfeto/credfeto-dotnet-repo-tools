@@ -68,6 +68,10 @@ For each `.csproj` file:
 1. Reorders `<PropertyGroup>` elements into a canonical order
 2. Reorders `<ItemGroup>` includes into a canonical order
 
+## Line endings
+
+Each file keeps the line endings it already has. The tool counts the file's `\r\n` and `\n` line breaks and writes its output using whichever is more common (`\n` on a tie), regardless of any `end_of_line` setting in `.editorconfig`. A file with no line breaks at all keeps whatever the formatter produces. A file that needs no changes is not rewritten.
+
 ## Use as a pre-commit hook
 
 Add to `.git/hooks/pre-commit` (or via a hook manager such as [pre-commit][pre-commit]):

@@ -519,10 +519,13 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                 cancellationToken: cancellationToken
             );
 
-            string formatted = await this._tsqlFormatter.FormatAsync(
-                source: original,
-                options: options,
-                cancellationToken: cancellationToken
+            string formatted = LineEndings.MatchOriginal(
+                original: original,
+                updated: await this._tsqlFormatter.FormatAsync(
+                    source: original,
+                    options: options,
+                    cancellationToken: cancellationToken
+                )
             );
 
             this._logger.CleaningFile(sourceFile);
@@ -663,7 +666,10 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                 encoding: TextEncoding.Utf8NoBom,
                 cancellationToken: cancellationToken
             );
-            string cleanedContent = await asyncCleanup(arg1: fileName, arg2: content, arg3: cancellationToken);
+            string cleanedContent = LineEndings.MatchOriginal(
+                original: content,
+                updated: await asyncCleanup(arg1: fileName, arg2: content, arg3: cancellationToken)
+            );
 
             if (StringComparer.OrdinalIgnoreCase.Equals(x: content, y: cleanedContent))
             {
@@ -745,11 +751,26 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                 return false;
             }
 
-            await SaveProjectAsync(project: project, doc: doc, cancellationToken: cancellationToken);
+            string rewritten = LineEndings.MatchOriginal(
+                original: content,
+                updated: await ProjectXmlSerializer.ToProjectFileTextAsync(
+                    document: doc,
+                    cancellationToken: cancellationToken
+                )
+            );
 
-            string contentAfter = await LoadProjectTextAsync(path: project, cancellationToken: cancellationToken);
+            if (StringComparer.Ordinal.Equals(x: rewritten, y: content))
+            {
+                return false;
+            }
 
-            return !StringComparer.Ordinal.Equals(x: contentAfter, y: content);
+            await ProjectXmlSerializer.WriteAsync(
+                filePath: project,
+                content: rewritten,
+                cancellationToken: cancellationToken
+            );
+
+            return true;
         }
     }
 
@@ -786,11 +807,6 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         this._logger.CompletingProjectCleanup(filename: projectFile, changes: changes);
 
         return changes != 0;
-    }
-
-    private static ValueTask SaveProjectAsync(string project, XmlDocument doc, in CancellationToken cancellationToken)
-    {
-        return ProjectXmlSerializer.SaveAsync(document: doc, filePath: project, cancellationToken: cancellationToken);
     }
 
     private static async ValueTask<(XmlDocument doc, string content)> LoadProjectAsync(
