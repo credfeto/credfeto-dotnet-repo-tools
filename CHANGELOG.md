@@ -14,6 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated CSharpier to 1.4.0
+- Dependencies - Updated FunFair.CodeAnalysis to 7.2.25.2636
 - Dependencies - Updated Meziantou.Analyzer to 3.0.339
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.36.0.15337
 - Dependencies - Updated xunit.analyzers to 2.3.0
