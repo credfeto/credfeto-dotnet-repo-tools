@@ -25,7 +25,7 @@ using Xunit;
 
 namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests.Services;
 
-public sealed class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
+public sealed partial class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
 {
     private static readonly DotNetVersionSettings DotNetSettings = new(
         SdkVersion: null,

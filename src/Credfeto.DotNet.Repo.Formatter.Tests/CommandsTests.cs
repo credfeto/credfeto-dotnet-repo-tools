@@ -20,7 +20,7 @@ using Xunit;
 
 namespace Credfeto.DotNet.Repo.Formatter.Tests;
 
-public sealed class CommandsTests : LoggingFolderCleanupTestBase
+public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
 {
     private readonly Commands _commands;
     private readonly ICoconaAppContextAccessor _coconaAppContextAccessor;
