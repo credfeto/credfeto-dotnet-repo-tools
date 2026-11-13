@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Git.Helpers;
@@ -12,6 +13,35 @@ public sealed class GitCommandLineTests : LoggingFolderCleanupTestBase
 {
     public GitCommandLineTests(ITestOutputHelper output)
         : base(output) { }
+
+    [Fact]
+    public void RemoveRepositoryOverrides_RemovesGitRepositoryVariablesOnly()
+    {
+        ProcessStartInfo psi = new() { FileName = "git" };
+        psi.Environment["GIT_DIR"] = "/elsewhere/.git";
+        psi.Environment["GIT_WORK_TREE"] = "/elsewhere";
+        psi.Environment["GIT_INDEX_FILE"] = "/elsewhere/.git/index";
+        psi.Environment["GIT_PREFIX"] = "sub/";
+        psi.Environment["GIT_OBJECT_DIRECTORY"] = "/elsewhere/.git/objects";
+        psi.Environment["GIT_ALTERNATE_OBJECT_DIRECTORIES"] = "/elsewhere/alt";
+        psi.Environment["GIT_AUTHOR_NAME"] = "Test User";
+
+        GitCommandLine.RemoveRepositoryOverrides(psi);
+
+        Assert.False(psi.Environment.ContainsKey("GIT_DIR"), userMessage: "GIT_DIR should be removed");
+        Assert.False(psi.Environment.ContainsKey("GIT_WORK_TREE"), userMessage: "GIT_WORK_TREE should be removed");
+        Assert.False(psi.Environment.ContainsKey("GIT_INDEX_FILE"), userMessage: "GIT_INDEX_FILE should be removed");
+        Assert.False(psi.Environment.ContainsKey("GIT_PREFIX"), userMessage: "GIT_PREFIX should be removed");
+        Assert.False(
+            psi.Environment.ContainsKey("GIT_OBJECT_DIRECTORY"),
+            userMessage: "GIT_OBJECT_DIRECTORY should be removed"
+        );
+        Assert.False(
+            psi.Environment.ContainsKey("GIT_ALTERNATE_OBJECT_DIRECTORIES"),
+            userMessage: "GIT_ALTERNATE_OBJECT_DIRECTORIES should be removed"
+        );
+        Assert.Equal(expected: "Test User", actual: psi.Environment["GIT_AUTHOR_NAME"]);
+    }
 
     [Fact]
     public async Task ExecAsync_WithoutGitFolder_RunsSuccessfully()
