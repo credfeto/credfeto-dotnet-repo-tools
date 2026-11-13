@@ -24,7 +24,7 @@
   - any: ['src/Credfeto.DotNet.Repo.Tools.Build.Tests/**/*']
 "credfeto-dotnet-repo-tools-cleanup":
   - any: ['src/Credfeto.DotNet.Repo.Tools.CleanUp/**/*']
-"credfeto-dotnet-repo-tools-cleanup-benchmarks-tests":
+"credfeto-dotnet-repo-tools-cleanup-benchmark-tests":
   - any: ['src/Credfeto.DotNet.Repo.Tools.CleanUp.Benchmark.Tests/**/*']
 "credfeto-dotnet-repo-tools-cleanup-interfaces":
   - any: ['src/Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces/**/*']

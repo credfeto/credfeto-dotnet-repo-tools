@@ -68,7 +68,7 @@
   color: "96f7d2"
   description: "Changes in Credfeto.DotNet.Repo.Tools.CleanUp project"
 
-- name: "credfeto-dotnet-repo-tools-cleanup-benchmarks-tests"
+- name: "credfeto-dotnet-repo-tools-cleanup-benchmark-tests"
   color: "0e8a16"
   description: "Changes in Credfeto.DotNet.Repo.Tools.CleanUp.Benchmark.Tests project"
 
