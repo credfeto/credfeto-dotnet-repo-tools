@@ -20,9 +20,9 @@ public static class LineEndings
         int lineFeeds = 0;
 
         for (
-            int position = content.IndexOf(value: '\n', startIndex: 0);
+            int position = content.IndexOf(value: '\n', startIndex: 0, comparisonType: StringComparison.Ordinal);
             position >= 0;
-            position = content.IndexOf(value: '\n', startIndex: position + 1)
+            position = content.IndexOf(value: '\n', startIndex: position + 1, comparisonType: StringComparison.Ordinal)
         )
         {
             if (position > 0 && content[position - 1] == '\r')
