@@ -14,6 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated CSharpier to 1.4.0
+- Dependencies - Updated Meziantou.Analyzer to 3.0.339
 ### Deprecated
 ### Removed
 ### Deployment Changes
