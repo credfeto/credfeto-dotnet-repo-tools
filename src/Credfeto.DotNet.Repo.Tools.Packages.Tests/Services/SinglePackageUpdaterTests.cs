@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -618,6 +618,75 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
 
         Assert.True(result, userMessage: "Update should return true when packages were updated and build succeeded");
         await this._repository.Received(1).PushAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData("1.2.3-beta.1", "1.2.3")]
+    [InlineData("1.2.3", "1.2.3-beta.1")]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Unit Test"
+    )]
+    public async Task UpdateWithStableAndPreReleaseOfSameVersionCommitsStableVersionAsync(
+        string firstVersion,
+        string secondVersion
+    )
+    {
+        string changelogPath = await this.CreateChangelogFileAsync();
+        RepoContext repoContext = this.CreateRepoContext(changelogPath);
+        PackageUpdateContext updateContext = CreateUpdateContext();
+        PackageUpdate package = CreatePackage();
+
+        this._repository.HasUncommittedChanges().Returns(false);
+        MockITrackingCacheGet(this._trackingCache, CLONE_PATH, TRACKING_HASH);
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, TRACKING_HASH);
+
+        PackageUpdateConfiguration config = new(
+            PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
+            ExcludedPackages: []
+        );
+        this._packageUpdateConfigurationBuilder.Build(package).Returns(config);
+
+        IReadOnlyList<PackageVersion> packageUpdates =
+        [
+            new(packageId: "Test.Package", version: NuGetVersion.Parse(firstVersion)),
+            new(packageId: "Test.Package.Other", version: NuGetVersion.Parse(secondVersion)),
+        ];
+        this._packageUpdater.UpdateAsync(
+                basePath: Arg.Any<string>(),
+                configuration: Arg.Any<PackageUpdateConfiguration>(),
+                packageSources: Arg.Any<IReadOnlyList<string>>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(packageUpdates);
+
+        this._dotNetSolutionCheck.PostCheckAsync(
+                solutions: Arg.Any<IReadOnlyList<string>>(),
+                repositoryDotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                templateDotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(true);
+
+        await this._singlePackageUpdater.UpdateAsync(
+            updateContext: updateContext,
+            repoContext: repoContext,
+            solutions: [],
+            sourceDirectory: this.TempFolder,
+            buildSettings: EmptyBuildSettings,
+            dotNetSettings: DefaultDotNetSettings,
+            package: package,
+            knownTrackingHash: null,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await this
+            ._repository.Received(1)
+            .CommitAsync(
+                message: "[Dependencies] Updating Test.Package (nuget) to 1.2.3",
+                cancellationToken: Arg.Any<CancellationToken>()
+            );
     }
 
     [Fact]
