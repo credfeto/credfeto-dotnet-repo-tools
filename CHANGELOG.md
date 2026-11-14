@@ -21,6 +21,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.165.2159
 - Dependencies - Updated Microsoft.Extensions to 11.0.0
 - Dependencies - Updated NuGet to 8.0.0
+- Dependencies - Updated FunFair.CodeAnalysis to 7.2.26.2691
 ### Deprecated
 ### Removed
 ### Deployment Changes
