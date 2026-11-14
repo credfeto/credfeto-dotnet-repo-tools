@@ -14,7 +14,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated CSharpier to 1.4.0
-- Dependencies - Updated Meziantou.Analyzer to 3.0.339
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.36.0.15337
 - Dependencies - Updated xunit.analyzers to 2.3.0
 - Dependencies - Updated xunit.v3 to 4.0.3
@@ -22,6 +21,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Microsoft.Extensions to 11.0.0
 - Dependencies - Updated NuGet to 8.0.0
 - Dependencies - Updated FunFair.CodeAnalysis to 7.2.26.2691
+- Dependencies - Updated Meziantou.Analyzer to 3.0.340
 ### Deprecated
 ### Removed
 ### Deployment Changes
