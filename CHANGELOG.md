@@ -20,11 +20,11 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.165.2159
 - Dependencies - Updated Microsoft.Extensions to 11.0.0
 - Dependencies - Updated NuGet to 8.0.0
-- Dependencies - Updated FunFair.CodeAnalysis to 7.2.26.2691
 - Target .NET 11 (SDK 11.0.100-rc.3.26522.148) and enable runtime-async
 - Dependencies - Updated Meziantou.Analyzer to 3.0.340
 - Dependencies - Updated Philips.CodeAnalysis.MaintainabilityAnalyzers to 2.2.0
 - Dependencies - Updated Credfeto.Enumeration to 1.2.159.2554
+- Dependencies - Updated FunFair.CodeAnalysis to 7.2.27.2695
 ### Deprecated
 ### Removed
 ### Deployment Changes
