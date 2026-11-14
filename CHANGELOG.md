@@ -22,6 +22,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Microsoft.Extensions to 11.0.0
 - Dependencies - Updated NuGet to 8.0.0
 - Dependencies - Updated FunFair.CodeAnalysis to 7.2.26.2691
+- Target .NET 11 (SDK 11.0.100-rc.3.26522.148) and enable runtime-async
 ### Deprecated
 ### Removed
 ### Deployment Changes
