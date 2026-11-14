@@ -23,6 +23,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated FunFair.CodeAnalysis to 7.2.26.2691
 - Target .NET 11 (SDK 11.0.100-rc.3.26522.148) and enable runtime-async
 - Dependencies - Updated Meziantou.Analyzer to 3.0.340
+- Dependencies - Updated Philips.CodeAnalysis.MaintainabilityAnalyzers to 2.2.0
 ### Deprecated
 ### Removed
 ### Deployment Changes
