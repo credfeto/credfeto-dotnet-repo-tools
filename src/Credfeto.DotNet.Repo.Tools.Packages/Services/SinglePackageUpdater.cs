@@ -319,7 +319,8 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
 
     private static NuGetVersion GetUpdateVersion(IReadOnlyList<PackageVersion> updatesMade)
     {
-        return updatesMade.Select(x => x.Version).OrderByDescending(x => x.Version).First();
+        return updatesMade.Max(x => x.Version)
+            ?? throw new InvalidOperationException("No package updates were made to determine a version from");
     }
 
     private async ValueTask CommitToRepositoryAsync(
