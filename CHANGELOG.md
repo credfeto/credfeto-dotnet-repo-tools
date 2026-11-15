@@ -12,6 +12,17 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+
+## [1.5.21] - 2026-11-15
+### Fixed
 - Package updates now pick the highest version using SemVer-aware comparison, so a stable release is no longer replaced by a prerelease of the same version
 ### Changed
 - Dependencies - Updated CSharpier to 1.4.0
@@ -27,13 +38,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Enumeration to 1.2.159.2554
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.216.2909
 - Dependencies - Updated FunFair.CodeAnalysis to 7.2.28.2699
-### Deprecated
-### Removed
-### Deployment Changes
-
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 
 ## [1.5.20] - 2026-11-13
 ### Fixed
