@@ -24,6 +24,7 @@ Releases that have at least been deployed to staging, BUT NOT necessarily releas
 ## [1.5.21] - 2026-11-15
 ### Fixed
 - Package updates now pick the highest version using SemVer-aware comparison, so a stable release is no longer replaced by a prerelease of the same version
+- Mirror folders are now copied correctly when the work folder is passed as a relative path (#235)
 ### Changed
 - Dependencies - Updated CSharpier to 1.4.0
 - Dependencies - Updated SonarAnalyzer.CSharp to 10.36.0.15337
