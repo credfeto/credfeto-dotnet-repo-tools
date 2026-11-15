@@ -18,7 +18,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.166.2220
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.143.1843
 - Dependencies - Updated Meziantou.Analyzer to 3.0.341
-- Moved all Dependabot YAML writing into DependabotConfigWriter so every output path is unit-testable (#331)
+- Dependabot YAML writing is consolidated in DependabotConfigWriter (renamed from DependabotGroupWriter), and DependaBotConfigBuilder now only detects ecosystems (#331)
 ### Deprecated
 ### Removed
 ### Deployment Changes
