@@ -372,6 +372,79 @@ public sealed class GitRepositoryTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task ResetToDefaultBranchAsync_WhenRemoteDefaultBranchChangedAfterClone_SwitchesToNewDefaultBranch()
+    {
+        const string newDefaultBranch = "main";
+
+        string sourceRepoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+        string bareRemotePath = await this.CreateLocalBareRemoteAsync(
+            sourceRepoPath: sourceRepoPath,
+            cancellationToken: this.CancellationToken()
+        );
+        string testRepoPath = await this.CloneBareRemoteAsync(
+            bareRemotePath: bareRemotePath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await RunGitAsync(
+            repoPath: bareRemotePath,
+            arguments: $"branch {newDefaultBranch} {DEFAULT_BRANCH}",
+            cancellationToken: this.CancellationToken()
+        );
+        await RunGitAsync(
+            repoPath: bareRemotePath,
+            arguments: $"symbolic-ref HEAD refs/heads/{newDefaultBranch}",
+            cancellationToken: this.CancellationToken()
+        );
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: testRepoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepository>()
+        );
+
+        await repo.ResetToDefaultBranchAsync(upstream: "origin", cancellationToken: this.CancellationToken());
+
+        Assert.Equal(expected: newDefaultBranch, actual: repo.GetDefaultBranch("origin"));
+
+        using Repository libGitRepo = new(testRepoPath);
+        Assert.Equal(expected: newDefaultBranch, actual: libGitRepo.Head.FriendlyName);
+    }
+
+    [Fact]
+    public async Task ResetToDefaultBranchAsync_WhenRemoteUnreachable_UsesExistingRemoteHead()
+    {
+        string sourceRepoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
+        string bareRemotePath = await this.CreateLocalBareRemoteAsync(
+            sourceRepoPath: sourceRepoPath,
+            cancellationToken: this.CancellationToken()
+        );
+        string testRepoPath = await this.CloneBareRemoteAsync(
+            bareRemotePath: bareRemotePath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        await RunGitAsync(
+            repoPath: testRepoPath,
+            arguments: "remote set-url origin /nonexistent/fake/remote.git",
+            cancellationToken: this.CancellationToken()
+        );
+
+        using GitRepository repo = new(
+            clonePath: "https://example.com/repo.git",
+            workingDirectory: testRepoPath,
+            repo: null,
+            logger: this.GetTypedLogger<GitRepository>()
+        );
+
+        await repo.ResetToDefaultBranchAsync(upstream: "origin", cancellationToken: this.CancellationToken());
+
+        using Repository libGitRepo = new(testRepoPath);
+        Assert.Equal(expected: DEFAULT_BRANCH, actual: libGitRepo.Head.FriendlyName);
+    }
+
+    [Fact]
     public async Task RemoveAllLocalBranches_WithNoBranchesToRemove_DoesNotThrow()
     {
         string repoPath = await this.CreateTempGitRepoAsync(this.CancellationToken());
