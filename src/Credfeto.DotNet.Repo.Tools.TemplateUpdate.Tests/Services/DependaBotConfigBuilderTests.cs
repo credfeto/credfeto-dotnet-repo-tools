@@ -90,97 +90,6 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
     }
 
     [Fact]
-    public async Task WithDotNetAndWildcardPackageGeneratesIgnoreSection()
-    {
-        IGitRepository repository = this.CreateRepository();
-        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
-
-        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
-            repoContext: repoContext,
-            templateFolder: this._tempFolder,
-            dotNetFiles: DotNetFilesWithSolutionsAndProjects(),
-            packages: [WildcardPackage("FunFair")],
-            cancellationToken: this.CancellationToken()
-        );
-
-        this.Output.WriteLine(result);
-        Assert.Contains("- package-ecosystem: nuget", result, StringComparison.Ordinal);
-        Assert.Contains("ignore:", result, StringComparison.Ordinal);
-        Assert.Contains("dependency-name: \"FunFair.*\"", result, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task WithDotNetAndExactPackageGeneratesIgnoreSection()
-    {
-        IGitRepository repository = this.CreateRepository();
-        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
-
-        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
-            repoContext: repoContext,
-            templateFolder: this._tempFolder,
-            dotNetFiles: DotNetFilesWithSolutionsAndProjects(),
-            packages: [ExactPackage("FunFair.Test.Common")],
-            cancellationToken: this.CancellationToken()
-        );
-
-        this.Output.WriteLine(result);
-        Assert.Contains("- package-ecosystem: nuget", result, StringComparison.Ordinal);
-        Assert.Contains("ignore:", result, StringComparison.Ordinal);
-        Assert.Contains("dependency-name: \"FunFair.Test.Common\"", result, StringComparison.Ordinal);
-        Assert.DoesNotContain("\"FunFair.Test.Common.*\"", result, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task GeneratesYamllintConformingDocument()
-    {
-        IGitRepository repository = this.CreateRepository();
-        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
-
-        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
-            repoContext: repoContext,
-            templateFolder: this._tempFolder,
-            dotNetFiles: DotNetFilesWithSolutionsAndProjects(),
-            packages: [ExactPackage("FunFair.Test.Common"), WildcardPackage("Meziantou")],
-            cancellationToken: this.CancellationToken()
-        );
-
-        this.Output.WriteLine(result);
-
-        string expected =
-            string.Join(
-                separator: Environment.NewLine,
-                values:
-                [
-                    "---",
-                    "version: 2",
-                    "updates:",
-                    "  - package-ecosystem: nuget",
-                    "    directory: \"/\"",
-                    "    schedule:",
-                    "      interval: daily",
-                    "      time: \"03:00\"",
-                    "      timezone: \"Europe/London\"",
-                    "    open-pull-requests-limit: 99",
-                    "    assignees:",
-                    "      - credfeto",
-                    "    commit-message:",
-                    "      prefix: \"[Dependencies]\"",
-                    "    labels:",
-                    "      - \"nuget\"",
-                    "      - \"dependencies\"",
-                    "      - \"Changelog Not Required\"",
-                    "    allow:",
-                    "      - dependency-type: all",
-                    "    ignore:",
-                    "      - dependency-name: \"FunFair.Test.Common\"",
-                    "      - dependency-name: \"Meziantou.*\"",
-                ]
-            ) + Environment.NewLine;
-
-        Assert.Equal(expected: expected, actual: result, StringComparer.Ordinal);
-    }
-
-    [Fact]
     public async Task WithSubmodulesGeneratesGitSubmoduleSection()
     {
         IGitRepository repository = this.CreateRepository(hasSubmodules: true);
@@ -199,34 +108,86 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
     }
 
     [Fact]
-    public async Task WithMultipleEcosystemsOmitsBlankLineAfterUpdatesButKeepsBlankLineBetweenSections()
+    public async Task WithEveryEcosystemGeneratesExactDocument()
     {
         IGitRepository repository = this.CreateRepository(hasSubmodules: true);
         RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
-        await File.WriteAllTextAsync(
-            path: Path.Combine(this._tempFolder, "Dockerfile"),
-            contents: "FROM ubuntu:latest",
-            cancellationToken: this.CancellationToken()
-        );
+
+        string templateFolder = await this.CreateEveryEcosystemRepositoryFilesAsync();
 
         string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
             repoContext: repoContext,
-            templateFolder: this._tempFolder,
-            dotNetFiles: EmptyDotNetFiles(),
-            packages: [],
+            templateFolder: templateFolder,
+            dotNetFiles: DotNetFilesWithSolutionsAndProjects(),
+            packages: [ExactPackage("FunFair.Test.Common"), WildcardPackage("Meziantou")],
             cancellationToken: this.CancellationToken()
         );
 
         this.Output.WriteLine(result);
 
-        List<string> lines = ["---", "version: 2", "updates:"];
-        lines.AddRange(EcosystemBlock(ecoSystem: "gitsubmodule", packageTypeLabel: "submodule"));
-        lines.Add("");
-        lines.AddRange(EcosystemBlock(ecoSystem: "docker", packageTypeLabel: "docker"));
+        Assert.Equal(expected: EveryEcosystemExpectedDocument(), actual: result, comparer: StringComparer.Ordinal);
+    }
 
-        string expected = string.Join(separator: Environment.NewLine, values: lines) + Environment.NewLine;
+    private async Task<string> CreateEveryEcosystemRepositoryFilesAsync()
+    {
+        await File.WriteAllTextAsync(
+            path: Path.Combine(this._tempFolder, "package.json"),
+            contents: "{}",
+            cancellationToken: this.CancellationToken()
+        );
+        await File.WriteAllTextAsync(
+            path: Path.Combine(this._tempFolder, "Dockerfile"),
+            contents: "FROM ubuntu:latest",
+            cancellationToken: this.CancellationToken()
+        );
+        await File.WriteAllTextAsync(
+            path: Path.Combine(this._tempFolder, "requirements.txt"),
+            contents: "requests==2.28.0",
+            cancellationToken: this.CancellationToken()
+        );
 
-        Assert.Equal(expected: expected, actual: result, StringComparer.Ordinal);
+        string workflowsDir = Path.Combine(this._tempFolder, ".github", "workflows");
+        Directory.CreateDirectory(workflowsDir);
+        await File.WriteAllTextAsync(
+            path: Path.Combine(workflowsDir, "custom.yml"),
+            contents: "name: custom workflow",
+            cancellationToken: this.CancellationToken()
+        );
+
+        string templateFolder = Path.Combine(this._tempFolder, "template");
+        Directory.CreateDirectory(templateFolder);
+
+        return templateFolder;
+    }
+
+    private static string EveryEcosystemExpectedDocument()
+    {
+        List<string> npmBlock = [.. EcosystemBlock(ecoSystem: "npm", packageTypeLabel: "npm")];
+        npmBlock.Insert(index: npmBlock.IndexOf("    allow:"), item: "    versioning-strategy: increase-if-necessary");
+
+        List<string> lines =
+        [
+            "---",
+            "version: 2",
+            "updates:",
+            .. EcosystemBlock(ecoSystem: "gitsubmodule", packageTypeLabel: "submodule"),
+            "",
+            .. EcosystemBlock(ecoSystem: "nuget", packageTypeLabel: "nuget"),
+            "    ignore:",
+            "      - dependency-name: \"FunFair.Test.Common\"",
+            "      - dependency-name: \"Meziantou.*\"",
+            "",
+            .. npmBlock,
+            .. VitestGroupLines,
+            "",
+            .. EcosystemBlock(ecoSystem: "docker", packageTypeLabel: "docker"),
+            "",
+            .. EcosystemBlock(ecoSystem: "github-actions", packageTypeLabel: "github-actions"),
+            "",
+            .. EcosystemBlock(ecoSystem: "pip", packageTypeLabel: "python"),
+        ];
+
+        return string.Join(separator: Environment.NewLine, values: lines) + Environment.NewLine;
     }
 
     private static IEnumerable<string> EcosystemBlock(string ecoSystem, string packageTypeLabel)
@@ -384,42 +345,6 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
     }
 
     [Fact]
-    public async Task WithRootNpmFileGeneratesNpmSectionWithVitestGroup()
-    {
-        IGitRepository repository = this.CreateRepository();
-        RepoContext repoContext = new(Repository: repository, ChangeLogFileName: "CHANGELOG.md");
-        await File.WriteAllTextAsync(
-            path: Path.Combine(this._tempFolder, "package.json"),
-            contents: "{}",
-            cancellationToken: this.CancellationToken()
-        );
-
-        string result = await this._dependaBotConfigBuilder.BuildDependabotConfigAsync(
-            repoContext: repoContext,
-            templateFolder: this._tempFolder,
-            dotNetFiles: EmptyDotNetFiles(),
-            packages: [],
-            cancellationToken: this.CancellationToken()
-        );
-
-        this.Output.WriteLine(result);
-
-        List<string> lines =
-        [
-            "---",
-            "version: 2",
-            "updates:",
-            .. EcosystemBlock(ecoSystem: "npm", packageTypeLabel: "npm"),
-        ];
-        lines.Insert(index: lines.IndexOf("    allow:"), item: "    versioning-strategy: increase-if-necessary");
-        lines.AddRange(VitestGroupLines);
-
-        string expected = string.Join(separator: Environment.NewLine, values: lines) + Environment.NewLine;
-
-        Assert.Equal(expected: expected, actual: result, StringComparer.Ordinal);
-    }
-
-    [Fact]
     public async Task WithMultipleNpmFilesGeneratesVitestGroupForEachNpmSection()
     {
         IGitRepository repository = this.CreateRepository();
@@ -460,9 +385,8 @@ public sealed class DependaBotConfigBuilderTests : LoggingTestBase, IDisposable
 
     private static void AssertNpmSectionHasVitestGroups(IReadOnlyList<string> sections, string directory)
     {
-        string section = Assert.Single(
-            sections,
-            candidate => candidate.Contains($"    directory: \"{directory}\"", StringComparison.Ordinal)
+        string section = Assert.Single(sections, candidate =>
+            candidate.Contains($"    directory: \"{directory}\"", StringComparison.Ordinal)
         );
 
         Assert.StartsWith("npm", section, StringComparison.Ordinal);
