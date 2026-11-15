@@ -695,7 +695,7 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     {
         string sourceFolderName = Path.Combine(path1: fileContext.UpdateContext.TemplateFolder, path2: sourceFolder);
 
-        int sourceFolderNamePrefixLength = TemplateFolderLength(fileContext);
+        string templateFolderFullPath = Path.GetFullPath(fileContext.UpdateContext.TemplateFolder);
 
         if (Directory.Exists(sourceFolderName))
         {
@@ -705,16 +705,13 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                     searchPattern: search,
                     searchOption: SearchOption.AllDirectories
                 )
-                .Select(issueSourceFile => issueSourceFile[sourceFolderNamePrefixLength..])
+                .Select(issueSourceFile =>
+                    Path.GetRelativePath(relativeTo: templateFolderFullPath, path: Path.GetFullPath(issueSourceFile))
+                )
                 .Select(fileName => fileContext.MakeFile(fileName: fileName, prefix: prefix, apply: apply));
         }
 
         return [];
-    }
-
-    private static int TemplateFolderLength(in FileContext fileContext)
-    {
-        return fileContext.UpdateContext.TemplateFolder.Length + 1;
     }
 
     private async ValueTask UpdateDotNetAsync(
