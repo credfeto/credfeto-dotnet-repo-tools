@@ -16,7 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Refresh the remote's HEAD (git remote set-head --auto, after fetch) before resolving the default branch so renamed default branches are detected (#222)
 ### Changed
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.166.2220
-- Moved all Dependabot YAML writing into DependabotConfigWriter so every output path is unit-testable (#331)
+- Dependabot YAML writing is consolidated in DependabotConfigWriter (renamed from DependabotGroupWriter), and DependaBotConfigBuilder now only detects ecosystems (#331)
 ### Deprecated
 ### Removed
 ### Deployment Changes
