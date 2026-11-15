@@ -54,11 +54,13 @@ public sealed class GitRepository : IGitRepository
     {
         this.ResetActiveRepoLink();
 
+        await this.FetchRemoteAsync(upstream: upstream, cancellationToken: cancellationToken);
+
+        await this.RefreshRemoteHeadAsync(upstream: upstream, cancellationToken: cancellationToken);
+
         string defaultBranch = this.GetDefaultBranch(upstream: upstream);
 
         this.ResetActiveRepoLink();
-
-        await this.FetchRemoteAsync(upstream: upstream, cancellationToken: cancellationToken);
 
         await this.ResetHeadHardAsync(cancellationToken);
 
@@ -148,11 +150,9 @@ public sealed class GitRepository : IGitRepository
         this.ResetActiveRepoLink();
 
         Repository repo = this.Active;
-        Branch headBranch =
-            repo.Branches.FirstOrDefault(IsHeadBranch)
+        Branch headBranch = repo.Branches.FirstOrDefault(IsHeadBranch)
             ?? throw new GitException($"Failed to find remote branches for {upstream}");
-        string target =
-            headBranch.Reference.TargetIdentifier
+        string target = headBranch.Reference.TargetIdentifier
             ?? throw new GitException($"Failed to find remote branches for {upstream}");
         string prefix = string.Concat(str0: "refs/remotes/", str1: upstream, str2: "/");
 
@@ -602,6 +602,31 @@ public sealed class GitRepository : IGitRepository
             if (exitCode != 0)
             {
                 this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Fetch {remote.Name}");
+            }
+        }
+        finally
+        {
+            this.ResetActiveRepoLink();
+        }
+    }
+
+    // A clone's refs/remotes/<upstream>/HEAD is only set at clone time, so it goes stale when the remote's
+    // default branch is renamed. set-head --auto must run after a fetch, as it requires the remote-tracking
+    // ref of the new default branch to already exist locally.
+    private async ValueTask RefreshRemoteHeadAsync(string upstream, CancellationToken cancellationToken)
+    {
+        try
+        {
+            (string[] result, int exitCode) = await GitCommandLine.ExecAsync(
+                clonePath: this.ClonePath,
+                repoPath: this.WorkingDirectory,
+                ["remote", "set-head", upstream, "--auto"],
+                cancellationToken: cancellationToken
+            );
+
+            if (exitCode != 0)
+            {
+                this.DumpExitCodeResult(result: result, exitCode: exitCode, $"Set HEAD for {upstream}");
             }
         }
         finally
