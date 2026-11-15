@@ -1,7 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
@@ -15,6 +12,9 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Services;
 
 public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
 {
+    private const string Reviewer = "credfeto";
+    private const string RootDirectory = "/";
+
     private static readonly IReadOnlyList<string> VitestPatterns = ["vitest", "@vitest/*"];
 
     private static readonly IReadOnlyList<DependabotGroup> NpmGroups =
@@ -38,203 +38,80 @@ public sealed class DependaBotConfigBuilder : IDependaBotConfigBuilder
         CancellationToken cancellationToken
     )
     {
-        List<string> config = ["---", "version: 2", "updates:"];
+        List<string> config = DependabotConfigWriter.StartConfig();
 
         if (repoContext.HasSubModules())
         {
-            this.AddEcosystemSection(
-                config: config,
-                ecoSystem: "gitsubmodule",
-                directory: "/",
-                packageTypeLabel: "submodule"
-            );
+            this.AddEcosystemSection(config: config, ecoSystem: "gitsubmodule", packageTypeLabel: "submodule");
         }
 
         if (dotNetFiles.HasSolutionsAndProjects)
         {
-            this.AddDotNetConfig(config: config, packages: packages);
+            this.AddNuGetSection(config: config, packages: packages);
         }
 
         if (repoContext.HasNpmAndYarn(out IReadOnlyList<string>? directories))
         {
             foreach (string dir in directories)
             {
-                this.AddBaseConfig(
-                    config: config,
-                    ecoSystem: "npm",
-                    directory: dir,
-                    packageTypeLabel: "npm",
-                    reviewer: "credfeto"
-                );
-                config.Add("    versioning-strategy: increase-if-necessary");
-                AllowAllDependencies(config);
-                DependabotGroupWriter.AddGroups(config: config, groups: NpmGroups);
+                this.AddNpmSection(config: config, directory: dir);
             }
         }
 
         if (repoContext.HasDockerFiles())
         {
-            this.AddEcosystemSection(config: config, ecoSystem: "docker", directory: "/", packageTypeLabel: "docker");
+            this.AddEcosystemSection(config: config, ecoSystem: "docker", packageTypeLabel: "docker");
         }
 
         if (repoContext.HasNonStandardGithubActions(templateFolder))
         {
-            this.AddEcosystemSection(
-                config: config,
-                ecoSystem: "github-actions",
-                directory: "/",
-                packageTypeLabel: "github-actions"
-            );
+            this.AddEcosystemSection(config: config, ecoSystem: "github-actions", packageTypeLabel: "github-actions");
         }
 
         if (repoContext.HasPython())
         {
-            this.AddEcosystemSection(config: config, ecoSystem: "pip", directory: "/", packageTypeLabel: "python");
+            this.AddEcosystemSection(config: config, ecoSystem: "pip", packageTypeLabel: "python");
         }
 
-        return ValueTask.FromResult(string.Join(separator: Environment.NewLine, values: config) + Environment.NewLine);
+        return ValueTask.FromResult(DependabotConfigWriter.ToDocument(config));
     }
 
-    private void AddEcosystemSection(List<string> config, string ecoSystem, string directory, string packageTypeLabel)
+    private void AddEcosystemSection(List<string> config, string ecoSystem, string packageTypeLabel)
     {
-        this.AddBaseConfig(
+        this._logger.LogAddingConfigForEcosystem(ecoSystem: ecoSystem, directory: RootDirectory);
+
+        DependabotConfigWriter.AddEcosystemSection(
             config: config,
             ecoSystem: ecoSystem,
-            directory: directory,
+            directory: RootDirectory,
             packageTypeLabel: packageTypeLabel,
-            reviewer: "credfeto"
+            reviewer: Reviewer
         );
-        AllowAllDependencies(config);
     }
 
-    private void AddDotNetConfig(List<string> config, IReadOnlyList<PackageUpdate> packages)
+    private void AddNuGetSection(List<string> config, IReadOnlyList<PackageUpdate> packages)
     {
-        this.AddBaseConfig(
+        this._logger.LogAddingConfigForEcosystem(ecoSystem: "nuget", directory: RootDirectory);
+
+        DependabotConfigWriter.AddNuGetSection(
             config: config,
-            ecoSystem: "nuget",
-            directory: "/",
+            directory: RootDirectory,
             packageTypeLabel: "nuget",
-            reviewer: "credfeto"
-        );
-        AllowAllDependencies(config);
-
-        if (packages is [])
-        {
-            return;
-        }
-
-        // Add packages to ignore
-        config.Add("    ignore:");
-
-        IReadOnlyList<PackageUpdate> packagesToAdd =
-        [
-            .. DetermineMinimalDotnetPackages(packages)
-                .OrderBy(keySelector: p => p.PackageId, comparer: StringComparer.OrdinalIgnoreCase),
-        ];
-
-        config.AddRange(
-            packagesToAdd.Select(package =>
-                package.ExactMatch
-                    ? $"      - dependency-name: \"{package.PackageId}\""
-                    : $"      - dependency-name: \"{package.PackageId}.*\""
-            )
+            reviewer: Reviewer,
+            packages: packages
         );
     }
 
-    [SuppressMessage(
-        category: "Style",
-        checkId: "IDE0028: Collection initialization can be simplified",
-        Justification = "A collection expression cannot pass an IEqualityComparer to the HashSet constructor; simplifying would silently drop OrdinalIgnoreCase and change lookup semantics"
-    )]
-    private static IEnumerable<PackageUpdate> DetermineMinimalDotnetPackages(IReadOnlyList<PackageUpdate> packages)
+    private void AddNpmSection(List<string> config, string directory)
     {
-        // Add Wildcard packages
-        List<string> wildcardPackages = [];
+        this._logger.LogAddingConfigForEcosystem(ecoSystem: "npm", directory: directory);
 
-        foreach (
-            PackageUpdate package in packages
-                .Where(package => !package.ExactMatch)
-                .OrderBy(package => package.PackageId.Length)
-        )
-        {
-            if (wildcardPackages.Exists(candidate => IsWildcardMatch(package: package, wildcardPackage: candidate)))
-            {
-                continue;
-            }
-
-            wildcardPackages.Add(package.PackageId);
-
-            yield return package;
-        }
-
-        // Add exact match packages
-        HashSet<string> exactPackages = new(StringComparer.OrdinalIgnoreCase);
-
-        foreach (
-            PackageUpdate package in packages
-                .Where(package => package.ExactMatch)
-                .OrderBy(package => package.PackageId.Length)
-        )
-        {
-            if (wildcardPackages.Exists(candidate => IsWildcardMatch(package: package, wildcardPackage: candidate)))
-            {
-                // Excluded by a wildcard
-                continue;
-            }
-
-            if (!exactPackages.Add(package.PackageId))
-            {
-                // Excluded as already added
-                continue;
-            }
-
-            yield return package;
-        }
-    }
-
-    private static bool IsWildcardMatch(PackageUpdate package, string wildcardPackage)
-    {
-        return StringComparer.OrdinalIgnoreCase.Equals(x: package.PackageId, y: wildcardPackage)
-            || package.PackageId.StartsWith(wildcardPackage + ".", comparisonType: StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static void AllowAllDependencies(List<string> config)
-    {
-        // allow all packages
-        config.AddRange(["    allow:", "      - dependency-type: all"]);
-    }
-
-    private void AddBaseConfig(
-        List<string> config,
-        string ecoSystem,
-        string directory,
-        string packageTypeLabel,
-        string reviewer
-    )
-    {
-        this._logger.LogAddingConfigForEcosystem(ecoSystem: ecoSystem, directory: directory);
-
-        if (!StringComparer.Ordinal.Equals(x: config[^1], y: "updates:"))
-        {
-            config.Add("");
-        }
-
-        config.AddRange([
-            $"  - package-ecosystem: {ecoSystem}",
-            $"    directory: \"{directory}\"",
-            "    schedule:",
-            "      interval: daily",
-            "      time: \"03:00\"",
-            "      timezone: \"Europe/London\"",
-            "    open-pull-requests-limit: 99",
-            "    assignees:",
-            $"      - {reviewer}",
-            "    commit-message:",
-            "      prefix: \"[Dependencies]\"",
-            "    labels:",
-            $"      - \"{packageTypeLabel}\"",
-            "      - \"dependencies\"",
-            "      - \"Changelog Not Required\"",
-        ]);
+        DependabotConfigWriter.AddNpmSection(
+            config: config,
+            directory: directory,
+            packageTypeLabel: "npm",
+            reviewer: Reviewer,
+            groups: NpmGroups
+        );
     }
 }
