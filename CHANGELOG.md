@@ -13,7 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 - Mirror folders are now copied correctly when the work folder is passed as a relative path (#235)
-- TBD - to be finalized after review
+- Refresh the remote's HEAD (git remote set-head --auto, after fetch) before resolving the default branch so renamed default branches are detected (#222)
 ### Changed
 ### Deprecated
 ### Removed
