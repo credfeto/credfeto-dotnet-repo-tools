@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Mirror folders are now copied correctly when the work folder is passed as a relative path (#235)
 ### Changed
 ### Deprecated
 ### Removed
