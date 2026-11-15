@@ -14,6 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 - Mirror folders are now copied correctly when the work folder is passed as a relative path (#235)
 ### Changed
+- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.166.2220
 ### Deprecated
 ### Removed
 ### Deployment Changes
