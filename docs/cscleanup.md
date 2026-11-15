@@ -65,8 +65,9 @@ For each `.cs` file:
 
 For each `.csproj` file:
 
-1. Reorders `<PropertyGroup>` elements into a canonical order
-2. Reorders `<ItemGroup>` includes into a canonical order
+1. Converts reference metadata written as child elements (e.g. `<Version>` inside a `<PackageReference>`) to attributes
+2. Reorders `<PropertyGroup>` elements into a canonical order
+3. Reorders `<ItemGroup>` includes into a canonical order
 
 ## Line endings
 

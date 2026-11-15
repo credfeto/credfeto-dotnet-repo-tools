@@ -413,6 +413,41 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task CleanupAsyncRewritesProjectFileWhenReferenceMetadataNormalisedAsync()
+    {
+        const string projectXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><ItemGroup><PackageReference Include=\"Alpha\"><Version>1.0.0</Version></PackageReference></ItemGroup></Project>";
+        string file = await this.CreateFileAsync(relativePath: "Test.csproj", content: projectXml);
+        this._projectXmlRewriter.NormaliseReferenceMetadata(Arg.Any<XmlDocument>(), Arg.Any<string>()).Returns(true);
+
+        int result = await this._commands.CleanupAsync(inputs: [file]);
+
+        Assert.Equal(expected: ExitCodes.Success, actual: result);
+        Assert.NotEqual(expected: projectXml, actual: await this.ReadFileAsync(file), comparer: StringComparer.Ordinal);
+        Received.InOrder(() =>
+        {
+            this._projectXmlRewriter.NormaliseReferenceMetadata(Arg.Any<XmlDocument>(), file);
+            this._projectXmlRewriter.ReOrderPropertyGroups(Arg.Any<XmlDocument>(), file);
+            this._projectXmlRewriter.ReOrderIncludes(Arg.Any<XmlDocument>(), file);
+        });
+    }
+
+    [Fact]
+    public async Task CleanupAsyncConvertsReferenceMetadataChildElementsToAttributesAsync()
+    {
+        const string projectXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <PackageReference Include=\"Alpha\">\n      <Version>1.0.0</Version>\n    </PackageReference>\n  </ItemGroup>\n</Project>\n";
+        const string expectedXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <PackageReference Include=\"Alpha\" Version=\"1.0.0\" />\n  </ItemGroup>\n</Project>\n";
+        string file = await this.CreateFileAsync(relativePath: "Test.csproj", content: projectXml);
+
+        int result = await this.CreateCommandsWithRealCleaners().CleanupAsync(inputs: [file]);
+
+        Assert.Equal(expected: ExitCodes.Success, actual: result);
+        Assert.Equal(expected: expectedXml, actual: await this.ReadFileAsync(file));
+    }
+
+    [Fact]
     public async Task CleanupAsyncDoesNotRewriteProjectFileWhenAlreadyCanonicalAsync()
     {
         const string rawXml = "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup></PropertyGroup></Project>";
