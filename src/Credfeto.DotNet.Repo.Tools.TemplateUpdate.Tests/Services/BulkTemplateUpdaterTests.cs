@@ -137,7 +137,7 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
                 baseFolder: Arg.Any<string>(),
                 cancellationToken: Arg.Any<CancellationToken>()
             )
-            .Returns(new DotNetVersionSettings(SdkVersion: null, AllowPreRelease: false, RollForward: "latestMajor"));
+            .Returns(new DotNetVersionSettings(SdkVersion: null, AllowPreRelease: false));
 
         IReadOnlyList<Version> noInstalledSdks = [];
         this._dotNetVersion.GetInstalledSdksAsync(cancellationToken: Arg.Any<CancellationToken>())
@@ -275,13 +275,7 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
                 baseFolder: Arg.Any<string>(),
                 cancellationToken: Arg.Any<CancellationToken>()
             )
-            .Returns(
-                new DotNetVersionSettings(
-                    SdkVersion: sdkVersion.ToString(),
-                    AllowPreRelease: false,
-                    RollForward: "latestMajor"
-                )
-            );
+            .Returns(new DotNetVersionSettings(SdkVersion: sdkVersion.ToString(), AllowPreRelease: false));
 
         IReadOnlyList<Version> installedSdks = [sdkVersion];
         this._dotNetVersion.GetInstalledSdksAsync(cancellationToken: Arg.Any<CancellationToken>())
@@ -310,13 +304,7 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
                 baseFolder: Arg.Any<string>(),
                 cancellationToken: Arg.Any<CancellationToken>()
             )
-            .Returns(
-                new DotNetVersionSettings(
-                    SdkVersion: sdkVersion.ToString(),
-                    AllowPreRelease: false,
-                    RollForward: "latestMajor"
-                )
-            );
+            .Returns(new DotNetVersionSettings(SdkVersion: sdkVersion.ToString(), AllowPreRelease: false));
 
         IReadOnlyList<Version> noSdks = [];
         this._dotNetVersion.GetInstalledSdksAsync(cancellationToken: Arg.Any<CancellationToken>()).Returns(noSdks);

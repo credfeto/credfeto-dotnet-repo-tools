@@ -27,11 +27,7 @@ namespace Credfeto.DotNet.Repo.Tools.CleanUp.Tests.Services;
 
 public sealed partial class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
 {
-    private static readonly DotNetVersionSettings DotNetSettings = new(
-        SdkVersion: null,
-        AllowPreRelease: false,
-        RollForward: "major"
-    );
+    private static readonly DotNetVersionSettings DotNetSettings = new(SdkVersion: null, AllowPreRelease: false);
 
     private readonly IChangeLogDetector _changeLogDetector = new ChangeLogDetector();
     private readonly IDotNetBuild _dotNetBuild;
@@ -499,7 +495,7 @@ public sealed partial class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
     public Task BulkUpdateAsyncShouldThrowWhenSdkVersionNotInstalledAsync()
     {
         this._globalJson.LoadGlobalJsonAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns(new DotNetVersionSettings(SdkVersion: "99.0.0", AllowPreRelease: false, RollForward: "major"));
+            .Returns(new DotNetVersionSettings(SdkVersion: "99.0.0", AllowPreRelease: false));
         this._dotNetVersion.GetInstalledSdksAsync(Arg.Any<CancellationToken>())
             .Returns<IReadOnlyList<System.Version>>([new System.Version(10, 0, 0)]);
 

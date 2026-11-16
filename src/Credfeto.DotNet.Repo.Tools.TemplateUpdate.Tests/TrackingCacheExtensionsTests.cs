@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
@@ -77,11 +77,7 @@ public sealed class TrackingCacheExtensionsTests : TestBase
             TemplateFolder: "/tmp/template",
             TrackingFileName: trackingFileName,
             TemplateConfig: CreateMinimalTemplateConfig(),
-            DotNetSettings: new DotNetVersionSettings(
-                SdkVersion: null,
-                AllowPreRelease: false,
-                RollForward: "latestMajor"
-            ),
+            DotNetSettings: new DotNetVersionSettings(SdkVersion: null, AllowPreRelease: false),
             ReleaseConfig: new ReleaseConfig(
                 AutoReleasePendingPackages: 0,
                 MinimumHoursBeforeAutoRelease: 0,

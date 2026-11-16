@@ -11,8 +11,7 @@ public sealed class FrameworkSettingsTests : TestBase
 {
     private static readonly DotNetVersionSettings DefaultDotNetSettings = new(
         SdkVersion: "10.0.100",
-        AllowPreRelease: false,
-        RollForward: "latestPatch"
+        AllowPreRelease: false
     );
 
     [Theory]
@@ -112,7 +111,7 @@ public sealed class FrameworkSettingsTests : TestBase
     {
         return FrameWorkSettingsBuilder.DefineFrameworkSettings(
             repositoryDotNetSettings: dotNetSettings,
-            templateDotNetSettings: new(SdkVersion: null, AllowPreRelease: false, RollForward: "latestPatch")
+            templateDotNetSettings: new(SdkVersion: null, AllowPreRelease: false)
         );
     }
 }

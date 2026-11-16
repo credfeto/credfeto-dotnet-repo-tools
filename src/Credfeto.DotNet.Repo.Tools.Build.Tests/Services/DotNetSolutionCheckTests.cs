@@ -10,11 +10,7 @@ namespace Credfeto.DotNet.Repo.Tools.Build.Tests.Services;
 
 public sealed class DotNetSolutionCheckTests : TestBase
 {
-    private static readonly DotNetVersionSettings DotNetSettings = new(
-        SdkVersion: "10.0.100",
-        AllowPreRelease: false,
-        RollForward: "latestPatch"
-    );
+    private static readonly DotNetVersionSettings DotNetSettings = new(SdkVersion: "10.0.100", AllowPreRelease: false);
 
     private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
 
