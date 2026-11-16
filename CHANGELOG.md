@@ -15,6 +15,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Mirror folders are now copied correctly when the work folder is passed as a relative path (#235)
 - Refresh the remote's HEAD (git remote set-head --auto, after fetch) before resolving the default branch so renamed default branches are detected (#222)
 - cscleanup (Repo.Formatter) now runs NormaliseReferenceMetadata on .csproj files, matching code-cleanup (#324)
+- check-dependencies now commits each successful dependency removal instead of leaving it uncommitted in the working tree (#322)
 ### Changed
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.166.2220
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.143.1843
