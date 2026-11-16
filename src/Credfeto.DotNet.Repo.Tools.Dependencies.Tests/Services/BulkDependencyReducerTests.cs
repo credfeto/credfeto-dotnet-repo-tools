@@ -23,11 +23,7 @@ namespace Credfeto.DotNet.Repo.Tools.Dependencies.Tests.Services;
 
 public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
 {
-    private static readonly DotNetVersionSettings DotNetSettings = new(
-        SdkVersion: null,
-        AllowPreRelease: false,
-        RollForward: "major"
-    );
+    private static readonly DotNetVersionSettings DotNetSettings = new(SdkVersion: null, AllowPreRelease: false);
 
     private readonly IChangeLogDetector _changeLogDetector = new ChangeLogDetector();
     private readonly IDependencyReducer _dependencyReducer;
@@ -243,7 +239,7 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
     {
         MockIGlobalJsonLoadGlobalJson(
             this._globalJson,
-            new DotNetVersionSettings(SdkVersion: "99.0.0", AllowPreRelease: false, RollForward: "major")
+            new DotNetVersionSettings(SdkVersion: "99.0.0", AllowPreRelease: false)
         );
         MockIDotNetVersionGetInstalledSdks(this._dotNetVersion, [new System.Version(10, 0, 0)]);
 
