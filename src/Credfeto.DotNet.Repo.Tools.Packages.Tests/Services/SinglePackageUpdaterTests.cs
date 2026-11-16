@@ -30,11 +30,7 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
     private const string HEAD_REV = "abc123def456";
     private const string TRACKING_HASH = "content-hash-matching-last-good-build";
 
-    private static readonly DotNetVersionSettings DefaultDotNetSettings = new(
-        SdkVersion: null,
-        AllowPreRelease: false,
-        RollForward: "latestMajor"
-    );
+    private static readonly DotNetVersionSettings DefaultDotNetSettings = new(SdkVersion: null, AllowPreRelease: false);
 
     private static readonly BuildSettings EmptyBuildSettings = new(
         PublishableProjects: [],

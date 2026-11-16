@@ -17,11 +17,7 @@ public sealed class TrackingCacheExtensionsTests : TestBase
     private const string DEFAULT_BRANCH = "main";
     private const string TRACKING_FILE = "/tmp/tracking.json";
 
-    private static readonly DotNetVersionSettings DefaultDotNetSettings = new(
-        SdkVersion: null,
-        AllowPreRelease: false,
-        RollForward: "latestMajor"
-    );
+    private static readonly DotNetVersionSettings DefaultDotNetSettings = new(SdkVersion: null, AllowPreRelease: false);
 
     private static readonly ReleaseConfig DefaultReleaseConfig = new(
         AutoReleasePendingPackages: 1,
