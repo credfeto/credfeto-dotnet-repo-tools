@@ -99,58 +99,9 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         }
     }
 
-    /*
-     * Foreach repo
-     *   ResetToMaster
-     *   For each $solution
-     *      IfExistsBranch cleanup/$solutionName
-     *          continue
-     *
-     *      If !CodeBuilds
-     *          continue
-     *
-     *      OK = RunCodeCleanup
-     *
-     *      If !OK
-     *          CreateBranch cleanup/$solutionName/broken/$sha
-     *          CommitAndPush
-     *          ResetToMaster
-     *      Else
-     *          CreateBranch cleanup/$solutionName/clean/$sha
-     *          CommitAndPush
-     *          ResetToMaster
-     *      End
-     *
-     */
-
-    /*
-     * RunCodeCleanup
-     *
-     *  If RemoveXmlDocsComments
-     *     RemoveXmlDocComments
-     *     if !CodeBuilds
-     *       return false
-     *
-     *  Convert Resharper Suppression To SuppressMessage
-     *     if !CodeBuilds
-     *       return false
-     *
-     *  Foreach project in solution
-     *    Project_cleanup (ordering)
-     *
-     *    if Changes && !CodeBuilds
-     *     return false
-     *
-     *    Project_cleanup (jetbrains)
-     *    if !CodeBuilds
-     *      return false
-     *
-     *  Solution Cleanup (jetbrains)
-     *    if !CodeBuilds
-     *      return false
-     *
-     *  Return true
-     */
+    // Each cleaned file is committed and pushed straight to the default branch on its own, and only
+    // once the solution still builds, so a change that breaks the build is reset away without losing
+    // the files already cleaned. T-SQL formatting is committed per file without a build check.
     public async ValueTask BulkUpdateAsync(
         string templateRepository,
         string trackingFileName,
