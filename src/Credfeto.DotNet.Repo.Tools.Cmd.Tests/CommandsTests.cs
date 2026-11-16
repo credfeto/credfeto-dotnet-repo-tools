@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +32,8 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     private readonly ICoconaAppContextAccessor _coconaAppContextAccessor;
     private readonly IDependencyReducer _dependencyReducer;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
+    private readonly IGitRepository _gitRepository;
+    private readonly IGitRepositoryFactory _gitRepositoryFactory;
     private readonly IGitRepositoryListLoader _gitRepositoryListLoader;
 
     public CommandsTests(ITestOutputHelper output)
@@ -43,6 +46,9 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         this._bulkDependencyReducer = GetSubstitute<IBulkDependencyReducer>();
         this._dependencyReducer = GetSubstitute<IDependencyReducer>();
         this._dotNetFilesDetector = GetSubstitute<IDotNetFilesDetector>();
+        this._gitRepository = GetSubstitute<IGitRepository>();
+        this._gitRepositoryFactory = GetSubstitute<IGitRepositoryFactory>();
+        this._gitRepositoryFactory.OpenExisting(Arg.Any<string>()).Returns(this._gitRepository);
         this._coconaAppContextAccessor = GetSubstitute<ICoconaAppContextAccessor>();
         MockCoconaAppContextAccessorCurrent(
             accessor: this._coconaAppContextAccessor,
@@ -56,6 +62,7 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
             bulkDependencyReducer: this._bulkDependencyReducer,
             dependencyReducer: this._dependencyReducer,
             dotNetFilesDetector: this._dotNetFilesDetector,
+            gitRepositoryFactory: this._gitRepositoryFactory,
             coconaAppContextAccessor: this._coconaAppContextAccessor,
             logger: this.GetTypedLogger<Commands>()
         );
@@ -511,5 +518,86 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
                 config: Arg.Any<ReferenceConfig>(),
                 cancellationToken: Arg.Any<CancellationToken>()
             );
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "SmartAnalyzers.CSharpExtensions.Annotations",
+        checkId: "CSE007:DisposeObjectsBeforeLosingScope",
+        Justification = "NSubstitute call verification does not create a repository"
+    )]
+    public async Task CheckDependenciesOpensExistingRepositoryForSourceFolderAsync()
+    {
+        await this._commands.CheckDependenciesAsync(workFolder: "/work");
+
+        this._gitRepositoryFactory.Received(1).OpenExisting("/work");
+        this._gitRepository.Received(1).Dispose();
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    public async Task CheckDependenciesCommitsEachSuccessfulRemovalAsync()
+    {
+        string firstProject = Path.Combine(path1: this.TempFolder, path2: "First.csproj");
+        string secondProject = Path.Combine(path1: this.TempFolder, path2: "Second.csproj");
+        CancellationToken cancellationToken = this.CancellationToken();
+
+        this._dependencyReducer.CheckReferencesAsync(
+                dotNetFiles: Arg.Any<DotNetFiles>(),
+                config: Arg.Any<ReferenceConfig>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(call =>
+                RemoveTwoReferencesAsync(
+                    config: call.ArgAt<ReferenceConfig>(1),
+                    firstProject: firstProject,
+                    secondProject: secondProject,
+                    cancellationToken: cancellationToken
+                )
+            );
+
+        int exitCode = await this._commands.CheckDependenciesAsync(workFolder: "/work");
+
+        Assert.Equal(expected: 0, actual: exitCode);
+        await this
+            ._gitRepository.Received(1)
+            .CommitNamedAsync(
+                message: "Removed reference to A",
+                files: Arg.Is<IReadOnlyList<string>>(f => IsSingleFile(f, firstProject)),
+                cancellationToken: cancellationToken
+            );
+        await this
+            ._gitRepository.Received(1)
+            .CommitNamedAsync(
+                message: "Removed reference to B",
+                files: Arg.Is<IReadOnlyList<string>>(f => IsSingleFile(f, secondProject)),
+                cancellationToken: cancellationToken
+            );
+        await this._gitRepository.DidNotReceiveWithAnyArgs().PushAsync(cancellationToken);
+        await this
+            ._gitRepository.DidNotReceiveWithAnyArgs()
+            .ResetToDefaultBranchAsync(upstream: string.Empty, cancellationToken: cancellationToken);
+    }
+
+    private static bool IsSingleFile(IReadOnlyList<string> files, string expected)
+    {
+        return files.Count == 1 && StringComparer.Ordinal.Equals(files[0], expected);
+    }
+
+    private static async ValueTask<bool> RemoveTwoReferencesAsync(
+        ReferenceConfig config,
+        string firstProject,
+        string secondProject,
+        CancellationToken cancellationToken
+    )
+    {
+        await config.OnSuccessfulRemoval(arg1: firstProject, arg2: "Removed reference to A", arg3: cancellationToken);
+        await config.OnSuccessfulRemoval(arg1: secondProject, arg2: "Removed reference to B", arg3: cancellationToken);
+
+        return true;
     }
 }

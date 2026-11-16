@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +13,7 @@ using Credfeto.DotNet.Repo.Tools.Cmd.Constants;
 using Credfeto.DotNet.Repo.Tools.Cmd.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.Dependencies;
 using Credfeto.DotNet.Repo.Tools.Dependencies.Interfaces;
+using Credfeto.DotNet.Repo.Tools.Dependencies.Services;
 using Credfeto.DotNet.Repo.Tools.Git.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 using Credfeto.DotNet.Repo.Tools.TemplateUpdate.Interfaces;
@@ -28,6 +30,7 @@ public sealed class Commands
     private readonly ICoconaAppContextAccessor _coconaAppContextAccessor;
     private readonly IDependencyReducer _dependencyReducer;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
+    private readonly IGitRepositoryFactory _gitRepositoryFactory;
     private readonly IGitRepositoryListLoader _gitRepositoryListLoader;
     private readonly ILogger<Commands> _logger;
 
@@ -44,6 +47,7 @@ public sealed class Commands
         IBulkDependencyReducer bulkDependencyReducer,
         IDependencyReducer dependencyReducer,
         IDotNetFilesDetector dotNetFilesDetector,
+        IGitRepositoryFactory gitRepositoryFactory,
         ICoconaAppContextAccessor coconaAppContextAccessor,
         ILogger<Commands> logger
     )
@@ -55,6 +59,7 @@ public sealed class Commands
         this._bulkDependencyReducer = bulkDependencyReducer;
         this._dependencyReducer = dependencyReducer;
         this._dotNetFilesDetector = dotNetFilesDetector;
+        this._gitRepositoryFactory = gitRepositoryFactory;
         this._coconaAppContextAccessor = coconaAppContextAccessor;
         this._logger = logger;
     }
@@ -369,17 +374,29 @@ public sealed class Commands
             cancellationToken: this.CurrentCancellationToken
         );
 
-        await this._dependencyReducer.CheckReferencesAsync(
-            dotNetFiles: dotNetFiles,
-            new(CommitAsync),
-            cancellationToken: this.CurrentCancellationToken
-        );
+        using (IGitRepository repository = this._gitRepositoryFactory.OpenExisting(workFolder))
+        {
+            await this._dependencyReducer.CheckReferencesAsync(
+                dotNetFiles: dotNetFiles,
+                CreateCommittingReferenceConfig(repository),
+                cancellationToken: this.CurrentCancellationToken
+            );
+        }
 
         this.Done();
+    }
 
-        static ValueTask CommitAsync(string projectFileName, string message, CancellationToken cancellationToken)
+    private static ReferenceConfig CreateCommittingReferenceConfig(IGitRepository repository)
+    {
+        return new(CommitAsync);
+
+        ValueTask CommitAsync(string projectFileName, string message, CancellationToken cancellationToken)
         {
-            return ValueTask.CompletedTask;
+            return repository.CommitNamedAsync(
+                message: message,
+                [Path.GetFullPath(projectFileName)],
+                cancellationToken: cancellationToken
+            );
         }
     }
 

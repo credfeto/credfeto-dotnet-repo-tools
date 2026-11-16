@@ -94,7 +94,7 @@ Accepts only the [Common Options](#common-options); no additional options.
 
 ## check-dependencies
 
-Check for unnecessary dependencies in a single already-checked-out folder, without cloning or committing anything.
+Check for unnecessary dependencies in a single already-checked-out folder, without cloning anything. The folder must be inside a git repository: each successful reference removal is committed to the currently checked-out branch, staging only the changed project file. Nothing is pushed, the branch is not switched or reset, and any other uncommitted changes are left untouched.
 
 ```bash
 dotnet updaterepo \

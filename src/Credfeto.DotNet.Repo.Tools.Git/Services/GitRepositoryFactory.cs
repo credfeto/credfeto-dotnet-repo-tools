@@ -81,6 +81,36 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
         );
     }
 
+    public IGitRepository OpenExisting(string folder)
+    {
+        string fullPath = Path.GetFullPath(folder);
+        string repoPath = FindValidRepository(fullPath)
+            ?? throw new GitException($"No git repository found at {fullPath}");
+
+        Repository repository = new(repoPath);
+
+        try
+        {
+            string workingDirectory = repository.Info.WorkingDirectory
+                ?? throw new GitException($"Git repository at {repoPath} has no working directory");
+
+            this._logger.OpeningRepo(repoUrl: workingDirectory, repoPath: workingDirectory);
+
+            return new GitRepository(
+                clonePath: workingDirectory,
+                workingDirectory: workingDirectory,
+                repo: repository,
+                logger: this._loggerFactory.CreateLogger<GitRepository>()
+            );
+        }
+        catch
+        {
+            repository.Dispose();
+
+            throw;
+        }
+    }
+
     private static string? FindValidRepository(string workingDirectory)
     {
         string? repoPath = Repository.Discover(workingDirectory);
@@ -145,8 +175,7 @@ public sealed class GitRepositoryFactory : IGitRepositoryFactory
             throw new GitException($"Failed to clone repo {repoUrl} to {workDir}");
         }
 
-        string repoPath =
-            Repository.Discover(path)
+        string repoPath = Repository.Discover(path)
             ?? throw new GitException($"Cloned repo {repoUrl} to {destinationPath} but no repository was found there");
 
         return new GitRepository(
