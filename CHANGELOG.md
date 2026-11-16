@@ -20,9 +20,9 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.143.1843
 - Dependencies - Updated Meziantou.Analyzer to 3.0.341
 - Dependabot YAML writing is consolidated in DependabotConfigWriter (renamed from DependabotGroupWriter), and DependaBotConfigBuilder now only detects ecosystems (#331)
-- Removed the unused global.json rollForward setting from DotNetVersionSettings (#323)
 ### Deprecated
 ### Removed
+- The unused global.json rollForward setting is no longer read, as it had no effect on SDK selection (#323)
 ### Deployment Changes
 
 <!--
