@@ -175,6 +175,62 @@ public sealed class GitRepositoryFactoryTests : LoggingFolderCleanupTestBase
         Assert.NotEmpty(repo.HeadRev);
     }
 
+    [Fact]
+    public void OpenExisting_WithFolderThatIsNotARepository_ThrowsGitException()
+    {
+        string folder = Path.Combine(path1: this.TempFolder, path2: "not-a-repo");
+        Directory.CreateDirectory(folder);
+
+        Assert.Throws<GitException>(() => this._gitRepositoryFactory.OpenExisting(folder));
+    }
+
+    [Fact]
+    public async Task OpenExisting_WithBareRepository_ThrowsGitExceptionAsync()
+    {
+        string folder = Path.Combine(path1: this.TempFolder, path2: "bare-repo");
+        Directory.CreateDirectory(folder);
+        await RunGitAsync(repoPath: folder, arguments: "init --bare", cancellationToken: this.CancellationToken());
+
+        Assert.Throws<GitException>(() => this._gitRepositoryFactory.OpenExisting(folder));
+    }
+
+    [Fact]
+    public async Task OpenExisting_WithSubfolderOfRepository_CommitsWithoutResettingBranchAsync()
+    {
+        string repoPath = Path.Combine(path1: this.TempFolder, path2: "existing-repo");
+        await CreateMinimalGitRepoAsync(repoPath: repoPath, cancellationToken: this.CancellationToken());
+
+        string subFolder = Path.Combine(path1: repoPath, path2: "src");
+        Directory.CreateDirectory(subFolder);
+        string projectFile = Path.Combine(path1: subFolder, path2: "Project.csproj");
+        await File.WriteAllTextAsync(
+            path: projectFile,
+            contents: "<Project />",
+            cancellationToken: this.CancellationToken()
+        );
+        string unrelatedFile = Path.Combine(path1: repoPath, path2: "unrelated.txt");
+        await File.WriteAllTextAsync(
+            path: unrelatedFile,
+            contents: "keep",
+            cancellationToken: this.CancellationToken()
+        );
+
+        using IGitRepository repo = this._gitRepositoryFactory.OpenExisting(subFolder);
+
+        string initialHead = repo.HeadRev;
+
+        await repo.CommitNamedAsync(
+            message: "Removed reference to Something",
+            [projectFile],
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.NotEqual(expected: initialHead, actual: repo.HeadRev, comparer: StringComparer.Ordinal);
+        Assert.Equal(expected: "refs/heads/feature/test", actual: repo.Active.Head.CanonicalName);
+        Assert.True(condition: File.Exists(unrelatedFile), userMessage: "Unrelated working tree files should be kept");
+        Assert.True(condition: repo.HasUncommittedChanges(), userMessage: "Unrelated changes should not be committed");
+    }
+
     [Fact(Skip = "Requires SSH to be setup")]
     public Task CanCloneSshAsync()
     {

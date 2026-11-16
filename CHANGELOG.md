@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- check-dependencies now commits each successful dependency removal instead of leaving it uncommitted in the working tree (#322)
 ### Changed
 ### Deprecated
 ### Removed
