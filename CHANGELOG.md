@@ -15,6 +15,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - check-dependencies now commits each successful dependency removal instead of leaving it uncommitted in the working tree (#322)
 ### Changed
 - Dependencies - Updated FunFair.CodeAnalysis to 7.2.29.2704
+- BulkCodeCleanUp design comment now describes actual behaviour (no per-solution branches or JetBrains cleanup steps) (#321)
 ### Deprecated
 ### Removed
 ### Deployment Changes
