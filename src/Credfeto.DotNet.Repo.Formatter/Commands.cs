@@ -313,7 +313,9 @@ public sealed class Commands
         XmlDocument doc = new();
         doc.LoadXml(original);
 
-        bool changed = this._projectXmlRewriter.ReOrderPropertyGroups(projectDocument: doc, filename: filePath);
+        bool changed = this._projectXmlRewriter.NormaliseReferenceMetadata(projectDocument: doc, filename: filePath);
+
+        changed |= this._projectXmlRewriter.ReOrderPropertyGroups(projectDocument: doc, filename: filePath);
 
         changed |= this._projectXmlRewriter.ReOrderIncludes(projectDocument: doc, filename: filePath);
 
