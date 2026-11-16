@@ -38,11 +38,7 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
     private const string PACKAGES_FILE = "/tmp/packages.json";
     private const string RELEASE_CONFIG_FILE = "/tmp/release.json";
 
-    private static readonly DotNetVersionSettings DefaultDotNetSettings = new(
-        SdkVersion: null,
-        AllowPreRelease: false,
-        RollForward: "latestMajor"
-    );
+    private static readonly DotNetVersionSettings DefaultDotNetSettings = new(SdkVersion: null, AllowPreRelease: false);
 
     private static readonly ReleaseConfig DefaultReleaseConfig = new(
         AutoReleasePendingPackages: 1,
@@ -626,11 +622,7 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
     )]
     public Task BulkUpdateWithMissingSdkThrowsDotNetBuildErrorExceptionAsync()
     {
-        DotNetVersionSettings settingsWithSdk = new(
-            SdkVersion: "10.0.100",
-            AllowPreRelease: false,
-            RollForward: "latestMajor"
-        );
+        DotNetVersionSettings settingsWithSdk = new(SdkVersion: "10.0.100", AllowPreRelease: false);
 
         this._templateRepository.WorkingDirectory.Returns("/template");
         this._gitRepositoryFactory.OpenOrCloneAsync(

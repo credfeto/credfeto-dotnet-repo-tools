@@ -14,8 +14,7 @@ public sealed class PackageUpdateContextTests : TestBase
 
     private static readonly DotNetVersionSettings DefaultDotNetSettings = new(
         SdkVersion: "9.0.100",
-        AllowPreRelease: false,
-        RollForward: "latestMajor"
+        AllowPreRelease: false
     );
 
     private static readonly ReleaseConfig DefaultReleaseConfig = new(

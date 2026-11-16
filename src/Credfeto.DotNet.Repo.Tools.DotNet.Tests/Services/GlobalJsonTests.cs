@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using Credfeto.DotNet.Repo.Tools.DotNet.Interfaces;
@@ -38,6 +38,7 @@ public sealed class GlobalJsonTests : LoggingTestBase, IDisposable
         string rollForward
     )
     {
+        // rollForward stays in the input to prove an unmodelled global.json field is ignored, not rejected
         string json = $$"""
             {
               "sdk": {
@@ -57,7 +58,6 @@ public sealed class GlobalJsonTests : LoggingTestBase, IDisposable
 
         Assert.Equal(expected: version, actual: settings.SdkVersion);
         Assert.Equal(expected: allowPrerelease, actual: settings.AllowPreRelease);
-        Assert.Equal(expected: rollForward, actual: settings.RollForward);
     }
 
     [Fact]
@@ -80,7 +80,6 @@ public sealed class GlobalJsonTests : LoggingTestBase, IDisposable
 
         Assert.Equal(expected: "9.0.100", actual: settings.SdkVersion);
         Assert.False(condition: settings.AllowPreRelease, userMessage: "AllowPreRelease should default to false");
-        Assert.Equal(expected: "latestPatch", actual: settings.RollForward);
     }
 
     [Fact]

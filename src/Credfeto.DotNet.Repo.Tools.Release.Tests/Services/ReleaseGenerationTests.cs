@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -43,11 +43,7 @@ public sealed class ReleaseGenerationTests : LoggingFolderCleanupTestBase
         offset: TimeSpan.Zero
     );
 
-    private static readonly DotNetVersionSettings DefaultDotNetSettings = new(
-        SdkVersion: null,
-        AllowPreRelease: false,
-        RollForward: "latestMajor"
-    );
+    private static readonly DotNetVersionSettings DefaultDotNetSettings = new(SdkVersion: null, AllowPreRelease: false);
 
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
