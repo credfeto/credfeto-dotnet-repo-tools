@@ -12,6 +12,17 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+
+## [1.5.22] - 2026-11-16
+### Fixed
 - Mirror folders are now copied correctly when the work folder is passed as a relative path (#235)
 - Refresh the remote's HEAD (git remote set-head --auto, after fetch) before resolving the default branch so renamed default branches are detected (#222)
 - cscleanup (Repo.Formatter) now runs NormaliseReferenceMetadata on .csproj files, matching code-cleanup (#324)
@@ -22,14 +33,8 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependabot YAML writing is consolidated in DependabotConfigWriter (renamed from DependabotGroupWriter), and DependaBotConfigBuilder now only detects ecosystems (#331)
 - Dependencies - Updated Credfeto.Enumeration to 1.2.160.2579
 - Removed the unused global.json rollForward setting from DotNetVersionSettings (#323)
-### Deprecated
 ### Removed
 - The unused global.json rollForward setting is no longer read, as it had no effect on SDK selection (#323)
-### Deployment Changes
-
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 
 ## [1.5.21] - 2026-11-15
 ### Fixed
