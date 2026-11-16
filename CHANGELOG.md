@@ -16,6 +16,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - Dependencies - Updated FunFair.CodeAnalysis to 7.2.29.2704
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.144.1853
+- BulkCodeCleanUp design comment now describes actual behaviour (no per-solution branches or JetBrains cleanup steps) (#321)
 ### Deprecated
 ### Removed
 ### Deployment Changes
