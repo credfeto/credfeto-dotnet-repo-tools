@@ -4,13 +4,16 @@ using Cocona;
 using Cocona.Builder;
 using Credfeto.DotNet.Repo.Formatter.Constants;
 using Credfeto.DotNet.Repo.Formatter.Setup;
+using Credfeto.DotNet.Repo.Formatter.Tests.Setup;
 using FunFair.Test.Common;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace Credfeto.DotNet.Repo.Formatter.Tests;
 
-// Tests in one class share an xunit collection, so the tests that read the process-wide exit code never run in parallel.
+// Shares an xunit collection with every other class that calls CoconaAppBuilderFactory.Create, so these tests, which read the process-wide exit code
+// and run Create, which changes a process-wide environment variable, never run in parallel with each other or with those classes.
+[Collection(CoconaAppBuilderFactoryTestGroup.NAME)]
 public sealed class SelfTestCommandLineTests : TestBase
 {
     private const int EXIT_CODE_NOT_SET = 42;

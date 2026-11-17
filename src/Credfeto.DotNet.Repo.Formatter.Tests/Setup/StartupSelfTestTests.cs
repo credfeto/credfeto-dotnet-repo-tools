@@ -10,6 +10,8 @@ using Xunit;
 
 namespace Credfeto.DotNet.Repo.Formatter.Tests.Setup;
 
+// Joins the CoconaAppBuilderFactory collection, because CoconaAppBuilderFactory.Create changes a process-wide environment variable.
+[Collection(CoconaAppBuilderFactoryTestGroup.NAME)]
 public sealed class StartupSelfTestTests : TestBase
 {
     [Fact]
