@@ -68,6 +68,7 @@ public sealed class Commands
     private CancellationToken CurrentCancellationToken => this._coconaAppContextAccessor.Current!.CancellationToken;
 
     [Command(Description = "Format C# source files and project files")]
+    [OptionLikeCommand("self-test", [], typeof(SelfTestCommand), nameof(SelfTestCommand.SelfTest))]
     [SuppressMessage(
         category: "Meziantou.Analyzer",
         checkId: "MA0109: Consider adding an overload with a Span<T> or Memory<T>",
