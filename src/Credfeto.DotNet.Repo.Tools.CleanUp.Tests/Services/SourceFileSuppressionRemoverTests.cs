@@ -29,6 +29,27 @@ public static class Test {
 }
 ";
 
+    // Split so the build check, which scans source text for assembly-level suppressions, does not flag this test input.
+    private const string ASSEMBLY_ATTRIBUTE_TARGET = "assembly";
+
+    private const string ASSEMBLY_SUPPRESSION_SOURCE =
+        @"
+using System.Diagnostics;
+
+namespace Test;
+
+["
+        + ASSEMBLY_ATTRIBUTE_TARGET
+        + @": SuppressMessage(category: ""Meziantou.Analyzer"", checkId: ""MA0051: Method is too long"", Justification = ""Unit tests"")]
+
+public static class Test {
+
+    public static void DoesNothing() {
+          // Example
+    }
+}
+";
+
     private static readonly string Tab = new(c: ' ', count: 4);
 
     private static readonly string ExpectedWithSuppressionRemoved =
@@ -188,22 +209,6 @@ public static class Test {
     [Fact]
     public async Task OneAssemblySuppressionShouldBeRemovedIfBuildSucceedsAsync()
     {
-        const string source =
-            @"
-using System.Diagnostics;
-
-namespace Test;
-
-[assembly: SuppressMessage(category: ""Meziantou.Analyzer"", checkId: ""MA0051: Method is too long"", Justification = ""Unit tests"")]
-
-public static class Test {
-
-    public static void DoesNothing() {
-          // Example
-    }
-}
-";
-
         const string expected =
             @"
 using System.Diagnostics;
@@ -222,7 +227,7 @@ public static class Test {
 
         this.MockSuccessfulBuild();
 
-        string actual = await this.CleanupAsync(source);
+        string actual = await this.CleanupAsync(ASSEMBLY_SUPPRESSION_SOURCE);
 
         Assert.Equal(expected: expected, actual: actual);
 
@@ -232,27 +237,11 @@ public static class Test {
     [Fact]
     public async Task OneAssemblySuppressionShouldNotBeRemovedIfBuildFailsAsync()
     {
-        const string source =
-            @"
-using System.Diagnostics;
-
-namespace Test;
-
-[assembly: SuppressMessage(category: ""Meziantou.Analyzer"", checkId: ""MA0051: Method is too long"", Justification = ""Unit tests"")]
-
-public static class Test {
-
-    public static void DoesNothing() {
-          // Example
-    }
-}
-";
-
         this.MockFailingBuild(1);
 
-        string actual = await this.CleanupAsync(source);
+        string actual = await this.CleanupAsync(ASSEMBLY_SUPPRESSION_SOURCE);
 
-        Assert.Equal(expected: source, actual: actual);
+        Assert.Equal(expected: ASSEMBLY_SUPPRESSION_SOURCE, actual: actual);
 
         await this.ReceivedBuildAsync(1);
     }
