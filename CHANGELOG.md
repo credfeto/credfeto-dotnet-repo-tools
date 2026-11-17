@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 - check-dependencies now commits each successful dependency removal instead of leaving it uncommitted in the working tree (#322)
+- DependencyReducer source scans now ignore obj/ and bin/ folders (#252)
 ### Changed
 - Dependencies - Updated FunFair.CodeAnalysis to 7.2.29.2704
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.144.1853
