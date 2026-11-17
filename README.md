@@ -41,6 +41,8 @@ dotnet tool install --global Credfeto.DotNet.Repo.Formatter
 cscleanup src/MyProject/
 ```
 
+Run `cscleanup --self-test` to check the tool can start without processing any files: it exits `0` on success, or non-zero with a one-line reason on stderr.
+
 See the [cscleanup Reference][cscleanup] for all options, input resolution rules, and pre-commit hook setup.
 
 ## Documentation

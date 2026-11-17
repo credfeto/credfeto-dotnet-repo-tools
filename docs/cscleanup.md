@@ -6,13 +6,19 @@
 
 ```text
 cscleanup [--remove-suppressions] [--build-root <path>] <inputs...>
+cscleanup --self-test
 ```
 
 | Argument / Option | Required | Description |
 | --- | --- | --- |
-| `inputs` | Yes | One or more files, glob patterns, or folders to process |
+| `inputs` | Yes (except with `--self-test`) | One or more files, glob patterns, or folders to process |
+| `--self-test` | No | Check the tool can start, then exit without processing any files |
 | `--remove-suppressions` | No | Remove redundant `[SuppressMessage]` attributes (requires `--build-root`) |
 | `--build-root <path>` | Conditional | Root directory used for `dotnet build` when `--remove-suppressions` is enabled |
+
+## Self-test
+
+`cscleanup --self-test` builds the tool's configuration and services, then exits without touching any repository, file or network. It exits with code `0` when the tool can start. When it cannot start, it writes a one-line reason to stderr and exits with a non-zero code. Use it to check that an installed or packaged copy of the tool works.
 
 ## Input resolution
 

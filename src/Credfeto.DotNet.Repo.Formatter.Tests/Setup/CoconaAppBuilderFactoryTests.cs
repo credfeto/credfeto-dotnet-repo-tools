@@ -11,7 +11,8 @@ using Xunit;
 
 namespace Credfeto.DotNet.Repo.Formatter.Tests.Setup;
 
-// Tests in one class share an xunit collection, so the tests that change this process-wide variable never run in parallel.
+// Shares an xunit collection with every other class that calls CoconaAppBuilderFactory.Create, so the tests that change this process-wide variable never run in parallel.
+[Collection(CoconaAppBuilderFactoryTestGroup.NAME)]
 public sealed class CoconaAppBuilderFactoryTests : TestBase
 {
     private const string RELOAD_CONFIG_ON_CHANGE_VARIABLE = "DOTNET_hostBuilder__reloadConfigOnChange";
