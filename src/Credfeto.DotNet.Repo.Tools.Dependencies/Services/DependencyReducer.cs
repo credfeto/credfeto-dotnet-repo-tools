@@ -1119,18 +1119,14 @@ public sealed class DependencyReducer : IDependencyReducer
         CancellationToken cancellationToken
     )
     {
-        string[] files = Directory.GetFiles(
-            path: projectFolder,
-            searchPattern: "*.cs",
-            searchOption: SearchOption.AllDirectories
-        );
+        IReadOnlyList<string> files = ProjectSourceFiles.Find(projectFolder: projectFolder, searchPattern: "*.cs");
 
-        if (files.Length == 0)
+        if (files.Count == 0)
         {
             return [];
         }
 
-        List<string> contents = new(capacity: files.Length);
+        List<string> contents = new(capacity: files.Count);
 
         foreach (string file in files)
         {
@@ -1186,30 +1182,28 @@ public sealed class DependencyReducer : IDependencyReducer
 
         if (StringComparer.Ordinal.Equals(x: sdk, y: "Microsoft.NET.Sdk.Razor"))
         {
-            string[] cshtmlFiles = Directory.GetFiles(
-                path: projectFolder,
-                searchPattern: "*.cshtml",
-                searchOption: SearchOption.AllDirectories
+            IReadOnlyList<string> cshtmlFiles = ProjectSourceFiles.Find(
+                projectFolder: projectFolder,
+                searchPattern: "*.cshtml"
             );
 
-            if (cshtmlFiles.Length != 0)
+            if (cshtmlFiles.Count != 0)
             {
                 return false;
             }
 
-            string[] razorFiles = Directory.GetFiles(
-                path: projectFolder,
-                searchPattern: "*.razor",
-                searchOption: SearchOption.AllDirectories
+            IReadOnlyList<string> razorFiles = ProjectSourceFiles.Find(
+                projectFolder: projectFolder,
+                searchPattern: "*.razor"
             );
 
-            return razorFiles.Length == 0;
+            return razorFiles.Count == 0;
         }
 
         if (StringComparer.Ordinal.Equals(x: sdk, y: "Microsoft.NET.Sdk.Web"))
         {
-            XPathNavigator navigator =
-                xml.CreateNavigator() ?? throw new InvalidDataException("Could not create navigator");
+            XPathNavigator navigator = xml.CreateNavigator()
+                ?? throw new InvalidDataException("Could not create navigator");
             XPathNavigator? outputTypeNode = navigator.SelectSingleNode("/Project/PropertyGroup/OutputType");
 
             if (outputTypeNode is not null)
