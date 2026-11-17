@@ -11,6 +11,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+- Added a --self-test switch to cscleanup that proves the tool can start without doing any work
 ### Fixed
 - check-dependencies now commits each successful dependency removal instead of leaving it uncommitted in the working tree (#322)
 - DependencyReducer source scans now ignore obj/ and bin/ folders (#252)
