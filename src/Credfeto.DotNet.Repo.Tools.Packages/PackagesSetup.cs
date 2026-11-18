@@ -4,6 +4,7 @@ using System.Net.Http;
 using Credfeto.DotNet.Repo.Tools.Packages.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Packages.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http.Resilience;
 using Polly;
 
 namespace Credfeto.DotNet.Repo.Tools.Packages;
@@ -32,11 +33,23 @@ public static class PackagesSetup
             .AddHttpClient(nameof(BulkPackageConfigLoader), configureClient: ConfigureClient)
             .SetHandlerLifetime(TimeSpan.FromMinutes(5))
             .ConfigurePrimaryHttpMessageHandler(configureHandler: CreateHandler)
-            .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(ClientPolicyTimeout))
-            .AddTransientHttpErrorPolicy(x =>
-                x.WaitAndRetryAsync(retryCount: RETRY_COUNT, sleepDurationProvider: _ => SleepDuration)
-            )
+            .AddResilienceHandler(pipelineName: nameof(BulkPackageConfigLoader), configure: ConfigureResilience)
             .Services;
+    }
+
+    private static void ConfigureResilience(ResiliencePipelineBuilder<HttpResponseMessage> builder)
+    {
+        builder
+            .AddTimeout(ClientPolicyTimeout)
+            .AddRetry(
+                new HttpRetryStrategyOptions
+                {
+                    MaxRetryAttempts = RETRY_COUNT,
+                    BackoffType = DelayBackoffType.Constant,
+                    Delay = SleepDuration,
+                    UseJitter = false,
+                }
+            );
     }
 
     private static HttpClientHandler CreateHandler(IServiceProvider serviceProvider)

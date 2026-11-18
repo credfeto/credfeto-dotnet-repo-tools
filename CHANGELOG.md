@@ -15,6 +15,9 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - Dependencies - Updated Credfeto.Enumeration to 1.2.161.2590
 - Dependencies - Updated Serilog.Extensions.Logging to 11.0.0
+- Moved HTTP client resilience from deprecated Microsoft.Extensions.Http.Polly to Microsoft.Extensions.Http.Resilience (timeout and 3 constant-delay retries) in Git, Packages, Release and TemplateUpdate
+- Internal library projects are no longer packable; only the updaterepo and cscleanup tool packages are published
+- (build) Removed the transitive Microsoft.Gen.Logging analyzer to avoid clashing with the built-in logging source generator
 ### Deprecated
 ### Removed
 ### Deployment Changes

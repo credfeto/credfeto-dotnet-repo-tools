@@ -50,7 +50,7 @@ internal static partial class ReleaseGenerationLoggingExtensions
     }
 
     [LoggerMessage(
-        EventId = 3,
+        EventId = 7,
         Level = LogLevel.Information,
         Message = "{clonePath}: Found Matching Update: {packageId} for score {score}"
     )]
@@ -116,7 +116,7 @@ internal static partial class ReleaseGenerationLoggingExtensions
     }
 
     [LoggerMessage(
-        EventId = 6,
+        EventId = 8,
         Level = LogLevel.Warning,
         Message = "Skipping release as project is publishable: {project}"
     )]
