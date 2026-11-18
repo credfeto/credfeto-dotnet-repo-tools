@@ -23,6 +23,7 @@
     <IlcOptimizationPreference>Size</IlcOptimizationPreference>
     <ImplicitUsings>disable</ImplicitUsings>
     <IncludeSymbols>false</IncludeSymbols>
+    <InvariantGlobalization>true</InvariantGlobalization>
     <IsPackable>true</IsPackable>
     <IsPublishable>true</IsPublishable>
     <IsTool>true</IsTool>
@@ -39,14 +40,23 @@
     <OutputType>Exe</OutputType>
     <PackAsTool>true</PackAsTool>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/credfeto/credfeto-dotnet-repo-tools</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageReleaseNotes>$(ReleaseNotes)</PackageReleaseNotes>
     <PackageTags>dotnet;format;cleanup;tool;csharp</PackageTags>
     <Product>C# Source and Project Formatter</Product>
+    <!-- Native AOT and trimming are not possible while warnings are errors: Cocona, Microsoft.Extensions.Configuration.Binder 6.0,
+         Serilog and Ben.Demystifier produce IL2104/IL3053/IL3000/IL3002 and Cocona binds commands by reflection.
+         Ship self-contained ReadyToRun packages instead so the tool starts without JIT warm-up or an installed runtime. -->
     <PublishAot>false</PublishAot>
+    <PublishReadyToRun>true</PublishReadyToRun>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/credfeto/credfeto-dotnet-repo-tools</RepositoryUrl>
     <RunAOTCompilation>false</RunAOTCompilation>
-    <RuntimeIdentifiers>win-x64;win-arm64;osx-x64;osx-arm64;linux-x64;linux-arm64</RuntimeIdentifiers>
+    <!-- ReadyToRun images can only be cross-compiled for Linux from the Linux build runners -->
+    <RuntimeIdentifiers>linux-x64;linux-arm64</RuntimeIdentifiers>
+    <!-- Only the RID-specific tool packages are self-contained so the test project can still reference the executable -->
+    <SelfContained Condition="'$(RuntimeIdentifier)' != ''">true</SelfContained>
     <TargetFramework>net11.0</TargetFramework>
     <TieredCompilation>true</TieredCompilation>
     <TieredPGO>true</TieredPGO>
@@ -70,6 +80,10 @@
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-447r-wph3-92pm" />
     <!-- error NU1901: Warning As Error: Package 'NuGet.Protocol' 6.14.0 has a known low severity vulnerability -->
     <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-g4vj-cjjj-v7hg" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Packaging.props evaluates IsPackable before this project sets it, so the readme has to be packed here -->
+    <None Include="../../README.md" Pack="true" PackagePath="\" Visible="false" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Credfeto.DotNet.Repo.Tools.Build/Credfeto.DotNet.Repo.Tools.Build.csproj" />
