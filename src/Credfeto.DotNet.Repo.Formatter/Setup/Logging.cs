@@ -32,7 +32,6 @@ internal static class Logging
     {
         return new LoggerConfiguration()
             .Enrich.FromLogContext()
-            .Enrich.WithDemystifiedStackTraces()
             .Enrich.WithMachineName()
             .Enrich.WithProcessId()
             .Enrich.WithThreadId()
