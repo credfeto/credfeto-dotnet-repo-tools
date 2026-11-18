@@ -15,6 +15,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Changed
 - Dependencies - Updated FunFair.CodeAnalysis to 7.2.30.2708
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.168.2245
+- Publish cscleanup as a native AOT, trimmed dotnet tool (#369)
 ### Deprecated
 ### Removed
 ### Deployment Changes
