@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+- Publish cscleanup as a native AOT, trimmed dotnet tool (#369)
 ### Deprecated
 ### Removed
 ### Deployment Changes
