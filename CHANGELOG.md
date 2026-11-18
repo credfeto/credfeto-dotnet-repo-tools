@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
+- Moved HTTP client resilience from deprecated Microsoft.Extensions.Http.Polly to Microsoft.Extensions.Http.Resilience and stopped packing internal libraries - #384
 ### Deprecated
 ### Removed
 ### Deployment Changes
