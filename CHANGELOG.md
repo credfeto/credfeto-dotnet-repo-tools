@@ -11,6 +11,18 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ## [Unreleased]
 ### Security
 ### Added
+### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+
+## [1.5.23] - 2026-11-18
+### Added
 - Added a --self-test switch to cscleanup that proves the tool can start without doing any work
 ### Fixed
 - check-dependencies now commits each successful dependency removal instead of leaving it uncommitted in the working tree (#322)
@@ -21,13 +33,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.167.2236
 - BulkCodeCleanUp design comment now describes actual behaviour (no per-solution branches or JetBrains cleanup steps) (#321)
 - Dependencies - Updated FunFair.BuildCheck to 474.2.22.2985
-### Deprecated
-### Removed
-### Deployment Changes
-
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 
 ## [1.5.22] - 2026-11-16
 ### Fixed
