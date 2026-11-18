@@ -13,7 +13,8 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- Publish cscleanup as a native AOT, trimmed dotnet tool (#369)
+- cscleanup is now published as self-contained ReadyToRun tool packages for linux-x64 and linux-arm64 only, instead of native AOT, because third-party trimming and AOT warnings block native AOT publishing; Windows and macOS runtime identifiers are no longer published
+- cscleanup now runs with InvariantGlobalization enabled, and its package includes a readme and project URL metadata
 ### Deprecated
 ### Removed
 ### Deployment Changes
