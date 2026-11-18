@@ -46,7 +46,7 @@
     <PackageTags>dotnet;format;cleanup;tool;csharp</PackageTags>
     <Product>C# Source and Project Formatter</Product>
     <!-- Native AOT and trimming are not possible while warnings are errors: Cocona, Microsoft.Extensions.Configuration.Binder 6.0,
-         Serilog and Ben.Demystifier produce IL2104/IL3053/IL3000/IL3002 and Cocona binds commands by reflection.
+         and Serilog produce IL2104/IL3053/IL3000/IL3002 and Cocona binds commands by reflection.
          Ship self-contained ReadyToRun packages instead so the tool starts without JIT warm-up or an installed runtime. -->
     <PublishAot>false</PublishAot>
     <PublishReadyToRun>true</PublishReadyToRun>
@@ -91,7 +91,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Cocona" Version="2.2.0" IncludeAssets="compile;runtime" />
-    <PackageReference Include="Serilog.Enrichers.Demystifier" Version="1.0.3" IncludeAssets="compile;runtime" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" IncludeAssets="compile;runtime" />
     <PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" IncludeAssets="compile;runtime" />
     <PackageReference Include="Serilog.Enrichers.Thread" Version="4.0.0" IncludeAssets="compile;runtime" />
