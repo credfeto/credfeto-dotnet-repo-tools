@@ -2,12 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Cocona;
-using Cocona.Application;
-using Cocona.Command;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Dependencies;
@@ -29,7 +25,6 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     private readonly IBulkPackageUpdater _bulkPackageUpdater;
     private readonly IBulkTemplateUpdater _bulkTemplateUpdater;
     private readonly Commands _commands;
-    private readonly ICoconaAppContextAccessor _coconaAppContextAccessor;
     private readonly IDependencyReducer _dependencyReducer;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IGitRepository _gitRepository;
@@ -49,11 +44,6 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         this._gitRepository = GetSubstitute<IGitRepository>();
         this._gitRepositoryFactory = GetSubstitute<IGitRepositoryFactory>();
         this._gitRepositoryFactory.OpenExisting(Arg.Any<string>()).Returns(this._gitRepository);
-        this._coconaAppContextAccessor = GetSubstitute<ICoconaAppContextAccessor>();
-        MockCoconaAppContextAccessorCurrent(
-            accessor: this._coconaAppContextAccessor,
-            cancellationToken: this.CancellationToken()
-        );
         this._commands = new Commands(
             gitRepositoryListLoader: this._gitRepositoryListLoader,
             bulkCodeCleanUp: this._bulkCodeCleanUp,
@@ -63,34 +53,8 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
             dependencyReducer: this._dependencyReducer,
             dotNetFilesDetector: this._dotNetFilesDetector,
             gitRepositoryFactory: this._gitRepositoryFactory,
-            coconaAppContextAccessor: this._coconaAppContextAccessor,
             logger: this.GetTypedLogger<Commands>()
         );
-    }
-
-    private static void MockCoconaAppContextAccessorCurrent(
-        ICoconaAppContextAccessor accessor,
-        in CancellationToken cancellationToken
-    )
-    {
-        // ! object.ToString() is always resolvable via reflection
-        CommandDescriptor descriptor = new(
-            methodInfo: typeof(object).GetMethod(nameof(ToString), BindingFlags.Public | BindingFlags.Instance)!,
-            target: null,
-            name: "test-command",
-            aliases: [],
-            description: string.Empty,
-            metadata: [],
-            parameters: [],
-            options: [],
-            arguments: [],
-            overloads: [],
-            optionLikeCommands: [],
-            flags: CommandFlags.None,
-            subCommands: null
-        );
-
-        accessor.Current.Returns(new CoconaAppContext(descriptor, cancellationToken));
     }
 
     private void SetupRepositories(IReadOnlyList<string> repos)
@@ -182,14 +146,15 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         this.SetupOneRepository();
 
         await this._commands.UpdatePackagesAsync(
-            repositoriesFileName: "repos.lst",
-            templateRepository: "https://template.git",
-            cacheFileName: null,
-            trackingFileName: "tracking.json",
-            packagesFileName: "packages.json",
-            workFolder: "/work",
-            releaseConfigFileName: "release.config",
-            source: null
+            repositories: "repos.lst",
+            template: "https://template.git",
+            tracking: "tracking.json",
+            packages: "packages.json",
+            work: "/work",
+            release: "release.config",
+            cache: null,
+            source: null,
+            cancellationToken: this.CancellationToken()
         );
 
         await this.ReceivedBulkPackageUpdateAsync(1);
@@ -201,39 +166,37 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         this.SetupOneRepository();
 
         await this._commands.UpdatePackagesAsync(
-            repositoriesFileName: "repos.lst",
-            templateRepository: "https://template.git",
-            cacheFileName: null,
-            trackingFileName: "tracking.json",
-            packagesFileName: "packages.json",
-            workFolder: "/work",
-            releaseConfigFileName: "release.config",
-            source: ["https://nuget.org/v3/index.json"]
+            repositories: "repos.lst",
+            template: "https://template.git",
+            tracking: "tracking.json",
+            packages: "packages.json",
+            work: "/work",
+            release: "release.config",
+            cache: null,
+            source: ["https://nuget.org/v3/index.json"],
+            cancellationToken: this.CancellationToken()
         );
 
         await this.ReceivedBulkPackageUpdateAsync(1);
     }
 
     [Fact]
-    public async Task UpdatePackagesPropagatesCoconaContextCancellationTokenAsync()
+    public async Task UpdatePackagesPropagatesCancellationTokenAsync()
     {
         using CancellationTokenSource cancellationTokenSource = new();
         CancellationToken cancellationToken = cancellationTokenSource.Token;
-        MockCoconaAppContextAccessorCurrent(
-            accessor: this._coconaAppContextAccessor,
-            cancellationToken: cancellationToken
-        );
         this.SetupOneRepository();
 
         await this._commands.UpdatePackagesAsync(
-            repositoriesFileName: "repos.lst",
-            templateRepository: "https://template.git",
-            cacheFileName: null,
-            trackingFileName: "tracking.json",
-            packagesFileName: "packages.json",
-            workFolder: "/work",
-            releaseConfigFileName: "release.config",
-            source: null
+            repositories: "repos.lst",
+            template: "https://template.git",
+            tracking: "tracking.json",
+            packages: "packages.json",
+            work: "/work",
+            release: "release.config",
+            cache: null,
+            source: null,
+            cancellationToken: cancellationToken
         );
 
         await this
@@ -255,28 +218,25 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task UpdatePackagesStopsAtFirstAwaitWhenCoconaContextCancellationTokenAlreadyCancelledAsync()
+    public async Task UpdatePackagesStopsAtFirstAwaitWhenCancellationTokenAlreadyCancelledAsync()
     {
         using CancellationTokenSource cancellationTokenSource = new();
         await cancellationTokenSource.CancelAsync();
         CancellationToken cancellationToken = cancellationTokenSource.Token;
-        MockCoconaAppContextAccessorCurrent(
-            accessor: this._coconaAppContextAccessor,
-            cancellationToken: cancellationToken
-        );
         this._gitRepositoryListLoader.LoadAsync(path: Arg.Any<string>(), cancellationToken: cancellationToken)
             .Returns<IReadOnlyList<string>>(_ => throw new OperationCanceledException(cancellationToken));
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
             this._commands.UpdatePackagesAsync(
-                repositoriesFileName: "repos.lst",
-                templateRepository: "https://template.git",
-                cacheFileName: null,
-                trackingFileName: "tracking.json",
-                packagesFileName: "packages.json",
-                workFolder: "/work",
-                releaseConfigFileName: "release.config",
-                source: null
+                repositories: "repos.lst",
+                template: "https://template.git",
+                tracking: "tracking.json",
+                packages: "packages.json",
+                work: "/work",
+                release: "release.config",
+                cache: null,
+                source: null,
+                cancellationToken: cancellationToken
             )
         );
 
@@ -289,14 +249,15 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         this.SetupRepositories([]);
 
         int exitCode = await this._commands.UpdatePackagesAsync(
-            repositoriesFileName: "repos.lst",
-            templateRepository: "https://template.git",
-            cacheFileName: null,
-            trackingFileName: "tracking.json",
-            packagesFileName: "packages.json",
-            workFolder: "/work",
-            releaseConfigFileName: "release.config",
-            source: null
+            repositories: "repos.lst",
+            template: "https://template.git",
+            tracking: "tracking.json",
+            packages: "packages.json",
+            work: "/work",
+            release: "release.config",
+            cache: null,
+            source: null,
+            cancellationToken: this.CancellationToken()
         );
 
         Assert.Equal(1, exitCode);
@@ -308,14 +269,15 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         this.SetupRepositories(["https://template.git", "https://repo1.git"]);
 
         await this._commands.UpdatePackagesAsync(
-            repositoriesFileName: "repos.lst",
-            templateRepository: "https://template.git",
-            cacheFileName: null,
-            trackingFileName: "tracking.json",
-            packagesFileName: "packages.json",
-            workFolder: "/work",
-            releaseConfigFileName: "release.config",
-            source: null
+            repositories: "repos.lst",
+            template: "https://template.git",
+            tracking: "tracking.json",
+            packages: "packages.json",
+            work: "/work",
+            release: "release.config",
+            cache: null,
+            source: null,
+            cancellationToken: this.CancellationToken()
         );
 
         await this.ReceivedBulkPackageUpdateWithSingleRepoAsync("https://repo1.git");
@@ -327,13 +289,14 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         this.SetupOneRepository();
 
         await this._commands.UpdateFromTemplateAsync(
-            repositoriesFileName: "repos.lst",
-            templateRepository: "https://template.git",
-            templateConfigFileName: "template.config",
-            trackingFileName: "tracking.json",
-            packagesFileName: "packages.json",
-            workFolder: "/work",
-            releaseConfigFileName: "release.config"
+            repositories: "repos.lst",
+            template: "https://template.git",
+            templateConfig: "template.config",
+            tracking: "tracking.json",
+            packages: "packages.json",
+            work: "/work",
+            release: "release.config",
+            cancellationToken: this.CancellationToken()
         );
 
         await this.ReceivedBulkTemplateUpdateAsync(1);
@@ -363,13 +326,14 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
             );
 
         int exitCode = await this._commands.UpdateFromTemplateAsync(
-            repositoriesFileName: "repos.lst",
-            templateRepository: "https://template.git",
-            templateConfigFileName: "template.config",
-            trackingFileName: "tracking.json",
-            packagesFileName: "packages.json",
-            workFolder: "/work",
-            releaseConfigFileName: "release.config"
+            repositories: "repos.lst",
+            template: "https://template.git",
+            templateConfig: "template.config",
+            tracking: "tracking.json",
+            packages: "packages.json",
+            work: "/work",
+            release: "release.config",
+            cancellationToken: this.CancellationToken()
         );
 
         Assert.Equal(1, exitCode);
@@ -381,10 +345,11 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         this.SetupOneRepository();
 
         await this._commands.CodeCleanupAsync(
-            repositoriesFileName: "repos.lst",
-            templateRepository: "https://template.git",
-            trackingFileName: "tracking.json",
-            workFolder: "/work"
+            repositories: "repos.lst",
+            template: "https://template.git",
+            tracking: "tracking.json",
+            work: "/work",
+            cancellationToken: this.CancellationToken()
         );
 
         await this.ReceivedBulkCodeCleanUpAsync(1);
@@ -396,31 +361,29 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
         this.SetupOneRepository();
 
         await this._commands.ReduceDependenciesAsync(
-            repositoriesFileName: "repos.lst",
-            templateRepository: "https://template.git",
-            trackingFileName: "tracking.json",
-            workFolder: "/work"
+            repositories: "repos.lst",
+            template: "https://template.git",
+            tracking: "tracking.json",
+            work: "/work",
+            cancellationToken: this.CancellationToken()
         );
 
         await this.ReceivedBulkDependencyReduceAsync(1);
     }
 
     [Fact]
-    public async Task ReduceDependenciesPropagatesCoconaContextCancellationTokenAsync()
+    public async Task ReduceDependenciesPropagatesCancellationTokenAsync()
     {
         using CancellationTokenSource cancellationTokenSource = new();
         CancellationToken cancellationToken = cancellationTokenSource.Token;
-        MockCoconaAppContextAccessorCurrent(
-            accessor: this._coconaAppContextAccessor,
-            cancellationToken: cancellationToken
-        );
         this.SetupOneRepository();
 
         await this._commands.ReduceDependenciesAsync(
-            repositoriesFileName: "repos.lst",
-            templateRepository: "https://template.git",
-            trackingFileName: "tracking.json",
-            workFolder: "/work"
+            repositories: "repos.lst",
+            template: "https://template.git",
+            tracking: "tracking.json",
+            work: "/work",
+            cancellationToken: cancellationToken
         );
 
         await this
@@ -438,24 +401,21 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task ReduceDependenciesStopsAtFirstAwaitWhenCoconaContextCancellationTokenAlreadyCancelledAsync()
+    public async Task ReduceDependenciesStopsAtFirstAwaitWhenCancellationTokenAlreadyCancelledAsync()
     {
         using CancellationTokenSource cancellationTokenSource = new();
         await cancellationTokenSource.CancelAsync();
         CancellationToken cancellationToken = cancellationTokenSource.Token;
-        MockCoconaAppContextAccessorCurrent(
-            accessor: this._coconaAppContextAccessor,
-            cancellationToken: cancellationToken
-        );
         this._gitRepositoryListLoader.LoadAsync(path: Arg.Any<string>(), cancellationToken: cancellationToken)
             .Returns<IReadOnlyList<string>>(_ => throw new OperationCanceledException(cancellationToken));
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
             this._commands.ReduceDependenciesAsync(
-                repositoriesFileName: "repos.lst",
-                templateRepository: "https://template.git",
-                trackingFileName: "tracking.json",
-                workFolder: "/work"
+                repositories: "repos.lst",
+                template: "https://template.git",
+                tracking: "tracking.json",
+                work: "/work",
+                cancellationToken: cancellationToken
             )
         );
 
@@ -465,22 +425,18 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     [Fact]
     public async Task CheckDependenciesCallsDotNetFilesDetectorAsync()
     {
-        await this._commands.CheckDependenciesAsync(workFolder: "/work");
+        await this._commands.CheckDependenciesAsync(sourceFolder: "/work", cancellationToken: this.CancellationToken());
 
         await this.ReceivedFindAsync(1);
     }
 
     [Fact]
-    public async Task CheckDependenciesPropagatesCoconaContextCancellationTokenAsync()
+    public async Task CheckDependenciesPropagatesCancellationTokenAsync()
     {
         using CancellationTokenSource cancellationTokenSource = new();
         CancellationToken cancellationToken = cancellationTokenSource.Token;
-        MockCoconaAppContextAccessorCurrent(
-            accessor: this._coconaAppContextAccessor,
-            cancellationToken: cancellationToken
-        );
 
-        await this._commands.CheckDependenciesAsync(workFolder: "/work");
+        await this._commands.CheckDependenciesAsync(sourceFolder: "/work", cancellationToken: cancellationToken);
 
         await this
             ._dotNetFilesDetector.Received(1)
@@ -495,20 +451,16 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task CheckDependenciesStopsAtFirstAwaitWhenCoconaContextCancellationTokenAlreadyCancelledAsync()
+    public async Task CheckDependenciesStopsAtFirstAwaitWhenCancellationTokenAlreadyCancelledAsync()
     {
         using CancellationTokenSource cancellationTokenSource = new();
         await cancellationTokenSource.CancelAsync();
         CancellationToken cancellationToken = cancellationTokenSource.Token;
-        MockCoconaAppContextAccessorCurrent(
-            accessor: this._coconaAppContextAccessor,
-            cancellationToken: cancellationToken
-        );
         this._dotNetFilesDetector.FindAsync(baseFolder: Arg.Any<string>(), cancellationToken: cancellationToken)
             .Returns<DotNetFiles>(_ => throw new OperationCanceledException(cancellationToken));
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            this._commands.CheckDependenciesAsync(workFolder: "/work")
+            this._commands.CheckDependenciesAsync(sourceFolder: "/work", cancellationToken: cancellationToken)
         );
 
         await this
@@ -528,7 +480,7 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
     )]
     public async Task CheckDependenciesOpensExistingRepositoryForSourceFolderAsync()
     {
-        await this._commands.CheckDependenciesAsync(workFolder: "/work");
+        await this._commands.CheckDependenciesAsync(sourceFolder: "/work", cancellationToken: this.CancellationToken());
 
         this._gitRepositoryFactory.Received(1).OpenExisting("/work");
         this._gitRepository.Received(1).Dispose();
@@ -560,7 +512,10 @@ public sealed class CommandsTests : LoggingFolderCleanupTestBase
                 )
             );
 
-        int exitCode = await this._commands.CheckDependenciesAsync(workFolder: "/work");
+        int exitCode = await this._commands.CheckDependenciesAsync(
+            sourceFolder: "/work",
+            cancellationToken: cancellationToken
+        );
 
         Assert.Equal(expected: 0, actual: exitCode);
         await this
