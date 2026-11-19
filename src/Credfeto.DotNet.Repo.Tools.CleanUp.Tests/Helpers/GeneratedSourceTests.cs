@@ -18,6 +18,16 @@ public sealed class GeneratedSourceTests : TestBase
     }
 
     [Fact]
+    public void IsGeneratedShouldReturnTrueForPathContainingBinDirectory()
+    {
+        string path = Path.Combine("C:", "project", "bin", "Debug", "file.cs");
+        Assert.True(
+            GeneratedSource.IsGenerated(path),
+            userMessage: "Expected path containing /bin/ to be detected as generated"
+        );
+    }
+
+    [Fact]
     public void IsGeneratedShouldReturnTrueForPathContainingGeneratedDirectory()
     {
         string path = Path.Combine("C:", "project", "generated", "file.cs");

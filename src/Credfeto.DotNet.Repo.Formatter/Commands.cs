@@ -12,6 +12,7 @@ using Cocona.Application;
 using Credfeto.DotNet.Repo.Formatter.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp;
+using Credfeto.DotNet.Repo.Tools.CleanUp.Helpers;
 using Credfeto.DotNet.Repo.Tools.Extensions;
 using Microsoft.Extensions.FileSystemGlobbing;
 using Microsoft.Extensions.Logging;
@@ -25,6 +26,8 @@ public sealed class Commands
         ".cs",
         ".csproj"
     );
+
+    private static readonly IReadOnlyList<string> SupportedSearchPatterns = ["*.cs", "*.csproj"];
 
     private readonly ICoconaAppContextAccessor _coconaAppContextAccessor;
     private readonly IDotNetBuild _dotNetBuild;
@@ -408,17 +411,13 @@ public sealed class Commands
 
     private static IEnumerable<string> ScanDirectory(string directory)
     {
-        return Directory
-            .EnumerateFiles(path: directory, searchPattern: "*.*", searchOption: SearchOption.AllDirectories)
-            .Where(f =>
-            {
-                string ext = Path.GetExtension(f);
-
-                return (
-                        StringComparer.OrdinalIgnoreCase.Equals(x: ext, y: ".cs")
-                        || StringComparer.OrdinalIgnoreCase.Equals(x: ext, y: ".csproj")
-                    ) && !IsGeneratedFile(f);
-            });
+        return SourceTree
+            .EnumerateFiles(directory: directory, searchPatterns: SupportedSearchPatterns)
+            .Where(file =>
+                GeneratedSource.IsNonGenerated(
+                    Path.DirectorySeparatorChar + Path.GetRelativePath(relativeTo: directory, path: file)
+                )
+            );
     }
 
     public static IEnumerable<string> ExpandGlob(string glob, string currentDirectory)
@@ -460,18 +459,5 @@ public sealed class Commands
     {
         return input.Contains(value: '*', comparisonType: StringComparison.Ordinal)
             || input.Contains(value: '?', comparisonType: StringComparison.Ordinal);
-    }
-
-    private static bool IsGeneratedFile(string filePath)
-    {
-        return filePath.Contains(
-                value: Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar,
-                comparisonType: StringComparison.Ordinal
-            )
-            || filePath.Contains(
-                value: Path.DirectorySeparatorChar + "generated" + Path.DirectorySeparatorChar,
-                comparisonType: StringComparison.Ordinal
-            )
-            || filePath.Contains(value: ".generated.", comparisonType: StringComparison.Ordinal);
     }
 }
