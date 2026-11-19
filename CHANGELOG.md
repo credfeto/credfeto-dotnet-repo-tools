@@ -14,6 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 - SDK and package updates no longer add or remove CHANGELOG.md entries for *-template repositories (issue #351)
 ### Changed
+- Switched the updaterepo and cscleanup command lines from Cocona to ConsoleAppFramework (source generated, no reflection); command and option names, aliases and defaults are unchanged, and exit codes are unchanged except that an unknown option now exits 1 instead of 129
 ### Deprecated
 ### Removed
 ### Deployment Changes
