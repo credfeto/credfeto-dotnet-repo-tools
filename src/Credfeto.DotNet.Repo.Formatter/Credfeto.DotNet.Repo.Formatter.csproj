@@ -76,7 +76,7 @@
     <ProjectReference Include="../Credfeto.DotNet.Repo.Tools.CleanUp/Credfeto.DotNet.Repo.Tools.CleanUp.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Cocona" Version="2.2.0" IncludeAssets="compile;runtime" />
+    <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="11.0.0" IncludeAssets="compile;runtime" />
     <PackageReference Include="Serilog.Enrichers.Demystifier" Version="1.0.3" IncludeAssets="compile;runtime" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="3.0.1" IncludeAssets="compile;runtime" />
     <PackageReference Include="Serilog.Enrichers.Process" Version="3.0.0" IncludeAssets="compile;runtime" />
@@ -87,6 +87,7 @@
   <ItemGroup>
     <PackageReference Include="AsyncFixer" Version="2.1.0" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="codecracker.CSharp" Version="1.1.0" PrivateAssets="All" ExcludeAssets="runtime" />
+    <PackageReference Include="ConsoleAppFramework" Version="5.8.1" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Credfeto.Enumeration.Source.Generation" Version="1.2.161.2590" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="Credfeto.Version.Information.Generator" Version="1.0.144.1853" PrivateAssets="All" ExcludeAssets="runtime" />
     <PackageReference Include="CSharpIsNullAnalyzer" Version="0.2.19" PrivateAssets="all" ExcludeAssets="runtime" />

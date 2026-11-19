@@ -62,7 +62,6 @@ public sealed partial class CommandsTests
             sourceFileSuppressionRemover: this._sourceFileSuppressionRemover,
             dotNetBuild: this._dotNetBuild,
             dotNetFilesDetector: this._dotNetFilesDetector,
-            coconaAppContextAccessor: this._coconaAppContextAccessor,
             logger: this.GetTypedLogger<Commands>()
         );
     }
@@ -97,7 +96,13 @@ public sealed partial class CommandsTests
         await this.WriteEditorConfigAsync(endOfLine);
         string file = await this.CreateFileAsync(relativePath: relativePath, content: content);
 
-        int result = await this.CreateCommandsWithRealCleaners().CleanupAsync(inputs: [file]);
+        int result = await this.CreateCommandsWithRealCleaners()
+            .CleanupAsync(
+                inputs: [file],
+                removeSuppressions: false,
+                buildRoot: null,
+                cancellationToken: this.CancellationToken()
+            );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
 
@@ -111,7 +116,13 @@ public sealed partial class CommandsTests
         byte[] bytesBefore = await File.ReadAllBytesAsync(path: file, cancellationToken: this.CancellationToken());
         DateTime lastWriteBefore = File.GetLastWriteTimeUtc(file);
 
-        int result = await this.CreateCommandsWithRealCleaners().CleanupAsync(inputs: [file]);
+        int result = await this.CreateCommandsWithRealCleaners()
+            .CleanupAsync(
+                inputs: [file],
+                removeSuppressions: false,
+                buildRoot: null,
+                cancellationToken: this.CancellationToken()
+            );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         Assert.Equal(

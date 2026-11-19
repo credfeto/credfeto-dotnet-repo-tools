@@ -7,8 +7,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Cocona;
-using Cocona.Application;
 using Credfeto.DotNet.Repo.Formatter.LoggingExtensions;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp;
@@ -26,7 +24,6 @@ public sealed class Commands
         ".csproj"
     );
 
-    private readonly ICoconaAppContextAccessor _coconaAppContextAccessor;
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly ILogger<Commands> _logger;
@@ -49,7 +46,6 @@ public sealed class Commands
         ISourceFileSuppressionRemover sourceFileSuppressionRemover,
         IDotNetBuild dotNetBuild,
         IDotNetFilesDetector dotNetFilesDetector,
-        ICoconaAppContextAccessor coconaAppContextAccessor,
         ILogger<Commands> logger
     )
     {
@@ -60,32 +56,14 @@ public sealed class Commands
         this._sourceFileSuppressionRemover = sourceFileSuppressionRemover;
         this._dotNetBuild = dotNetBuild;
         this._dotNetFilesDetector = dotNetFilesDetector;
-        this._coconaAppContextAccessor = coconaAppContextAccessor;
         this._logger = logger;
     }
 
-    // ! Current is always set once Cocona has started invoking a command
-    private CancellationToken CurrentCancellationToken => this._coconaAppContextAccessor.Current!.CancellationToken;
-
-    [Command(Description = "Format C# source files and project files")]
-    [OptionLikeCommand("self-test", [], typeof(SelfTestCommand), nameof(SelfTestCommand.SelfTest))]
-    [SuppressMessage(
-        category: "Meziantou.Analyzer",
-        checkId: "MA0109: Consider adding an overload with a Span<T> or Memory<T>",
-        Justification = "string[] is required for Cocona to bind CLI positional arguments"
-    )]
     public async Task<int> CleanupAsync(
-        [Argument(Description = "Files, globs, or folders to process")] string[] inputs,
-        [Option(
-            name: "remove-suppressions",
-            Description = "Remove redundant [SuppressMessage] attributes (requires --build-root)"
-        )]
-            bool removeSuppressions = false,
-        [Option(
-            name: "build-root",
-            Description = "Root directory used for dotnet build when --remove-suppressions is enabled"
-        )]
-            string? buildRoot = null
+        IReadOnlyList<string> inputs,
+        bool removeSuppressions,
+        string? buildRoot,
+        CancellationToken cancellationToken
     )
     {
         if (removeSuppressions && string.IsNullOrWhiteSpace(buildRoot))
@@ -127,12 +105,14 @@ public sealed class Commands
         {
             BuildContext? buildContext = await this.BuildContextOrNullAsync(
                 removeSuppressions: removeSuppressions,
-                buildRoot: buildRoot
+                buildRoot: buildRoot,
+                cancellationToken: cancellationToken
             );
 
             (int updatedCount, bool hadFailures) = await this.ProcessAllFilesAsync(
                 resolvedFiles: resolvedFiles,
-                buildContext: buildContext
+                buildContext: buildContext,
+                cancellationToken: cancellationToken
             );
 
             this._logger.LogCompleted(fileCount: resolvedFiles.Count, updatedCount: updatedCount);
@@ -157,7 +137,8 @@ public sealed class Commands
 
     private async Task<(int UpdatedCount, bool HadFailures)> ProcessAllFilesAsync(
         IReadOnlyList<string> resolvedFiles,
-        BuildContext? buildContext
+        BuildContext? buildContext,
+        CancellationToken cancellationToken
     )
     {
         int updatedCount = 0;
@@ -168,18 +149,18 @@ public sealed class Commands
 
         await Parallel.ForEachAsync(
             source: resolvedFiles,
-            parallelOptions: new()
-            {
-                MaxDegreeOfParallelism = maxDegree,
-                CancellationToken = this.CurrentCancellationToken,
-            },
+            parallelOptions: new() { MaxDegreeOfParallelism = maxDegree, CancellationToken = cancellationToken },
             body: async (file, _) =>
             {
                 this._logger.LogProcessingFile(file);
 
                 try
                 {
-                    bool updated = await this.ProcessFileAsync(filePath: file, buildContext: buildContext);
+                    bool updated = await this.ProcessFileAsync(
+                        filePath: file,
+                        buildContext: buildContext,
+                        cancellationToken: cancellationToken
+                    );
 
                     if (updated)
                     {
@@ -206,7 +187,11 @@ public sealed class Commands
         return (updatedCount, failureCount != 0);
     }
 
-    private async ValueTask<BuildContext?> BuildContextOrNullAsync(bool removeSuppressions, string? buildRoot)
+    private async ValueTask<BuildContext?> BuildContextOrNullAsync(
+        bool removeSuppressions,
+        string? buildRoot,
+        CancellationToken cancellationToken
+    )
     {
         if (!removeSuppressions || buildRoot is null)
         {
@@ -215,12 +200,12 @@ public sealed class Commands
 
         DotNetFiles dotNetFiles = await this._dotNetFilesDetector.FindAsync(
             baseFolder: buildRoot,
-            cancellationToken: this.CurrentCancellationToken
+            cancellationToken: cancellationToken
         );
 
         BuildSettings buildSettings = await this._dotNetBuild.LoadBuildSettingsAsync(
             projects: dotNetFiles.Projects,
-            cancellationToken: this.CurrentCancellationToken
+            cancellationToken: cancellationToken
         );
 
         return new BuildContext(
@@ -230,29 +215,41 @@ public sealed class Commands
         );
     }
 
-    private async ValueTask<bool> ProcessFileAsync(string filePath, BuildContext? buildContext)
+    private async ValueTask<bool> ProcessFileAsync(
+        string filePath,
+        BuildContext? buildContext,
+        CancellationToken cancellationToken
+    )
     {
         string extension = Path.GetExtension(filePath);
 
         if (StringComparer.OrdinalIgnoreCase.Equals(x: extension, y: ".cs"))
         {
-            return await this.ProcessCSharpFileAsync(filePath: filePath, buildContext: buildContext);
+            return await this.ProcessCSharpFileAsync(
+                filePath: filePath,
+                buildContext: buildContext,
+                cancellationToken: cancellationToken
+            );
         }
 
         if (StringComparer.OrdinalIgnoreCase.Equals(x: extension, y: ".csproj"))
         {
-            return await this.ProcessProjectFileAsync(filePath);
+            return await this.ProcessProjectFileAsync(filePath: filePath, cancellationToken: cancellationToken);
         }
 
         return false;
     }
 
-    private async ValueTask<bool> ProcessCSharpFileAsync(string filePath, BuildContext? buildContext)
+    private async ValueTask<bool> ProcessCSharpFileAsync(
+        string filePath,
+        BuildContext? buildContext,
+        CancellationToken cancellationToken
+    )
     {
         string original = await File.ReadAllTextAsync(
             path: filePath,
             encoding: TextEncoding.Utf8NoBom,
-            cancellationToken: this.CurrentCancellationToken
+            cancellationToken: cancellationToken
         );
 
         string content = original;
@@ -261,7 +258,7 @@ public sealed class Commands
         content = await this._sourceFileReformatter.ReformatAsync(
             fileName: filePath,
             content: content,
-            cancellationToken: this.CurrentCancellationToken
+            cancellationToken: cancellationToken
         );
         content = LineEndings.MatchOriginal(original: original, updated: content);
 
@@ -271,7 +268,7 @@ public sealed class Commands
                 fileName: filePath,
                 content: content,
                 buildContext: ctx,
-                cancellationToken: this.CurrentCancellationToken
+                cancellationToken: cancellationToken
             );
         }
 
@@ -281,11 +278,8 @@ public sealed class Commands
         }
 
         if (
-            RoslynSyntaxValidation.CountSyntaxErrors(content: content, cancellationToken: this.CurrentCancellationToken)
-            > RoslynSyntaxValidation.CountSyntaxErrors(
-                content: original,
-                cancellationToken: this.CurrentCancellationToken
-            )
+            RoslynSyntaxValidation.CountSyntaxErrors(content: content, cancellationToken: cancellationToken)
+            > RoslynSyntaxValidation.CountSyntaxErrors(content: original, cancellationToken: cancellationToken)
         )
         {
             this._logger.LogUnparseableResultNotWritten(filePath);
@@ -297,18 +291,18 @@ public sealed class Commands
             path: filePath,
             contents: content,
             encoding: TextEncoding.Utf8NoBom,
-            cancellationToken: this.CurrentCancellationToken
+            cancellationToken: cancellationToken
         );
 
         return true;
     }
 
-    private async ValueTask<bool> ProcessProjectFileAsync(string filePath)
+    private async ValueTask<bool> ProcessProjectFileAsync(string filePath, CancellationToken cancellationToken)
     {
         string original = await File.ReadAllTextAsync(
             path: filePath,
             encoding: TextEncoding.Utf8NoBom,
-            cancellationToken: this.CurrentCancellationToken
+            cancellationToken: cancellationToken
         );
 
         XmlDocument doc = new();
@@ -329,7 +323,7 @@ public sealed class Commands
             original: original,
             updated: await ProjectXmlSerializer.ToProjectFileTextAsync(
                 document: doc,
-                cancellationToken: this.CurrentCancellationToken
+                cancellationToken: cancellationToken
             )
         );
 
@@ -341,7 +335,7 @@ public sealed class Commands
         await ProjectXmlSerializer.WriteAsync(
             filePath: filePath,
             content: rewritten,
-            cancellationToken: this.CurrentCancellationToken
+            cancellationToken: cancellationToken
         );
 
         return true;
