@@ -345,6 +345,18 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
             relativePath: Path.Combine("obj", "Debug", "Foo.cs"),
             content: "public class Foo2 { }"
         );
+        await this.CreateFileAsync(
+            relativePath: Path.Combine("bin", "Debug", "Foo.cs"),
+            content: "public class Foo3 { }"
+        );
+        await this.CreateFileAsync(
+            relativePath: Path.Combine("src", "bin", "Release", "Foo.cs"),
+            content: "public class Foo4 { }"
+        );
+        await this.CreateFileAsync(
+            relativePath: Path.Combine(".git", "objects", "Foo.cs"),
+            content: "public class Foo5 { }"
+        );
         await this.CreateFileAsync(relativePath: Path.Combine("generated", "Bar.cs"), content: "public class Bar { }");
         await this.CreateFileAsync(relativePath: "Baz.generated.cs", content: "public class Baz { }");
         await this.CreateFileAsync(relativePath: "readme.txt", content: "hello");
@@ -355,6 +367,36 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         await this
             ._sourceFileReformatter.Received(1)
             .ReformatAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CleanupAsyncProcessesDirectoryInputWhoseParentIsNamedBinAsync()
+    {
+        string file = await this.CreateFileAsync(
+            relativePath: Path.Combine("bin", "repo", "src", "Foo.cs"),
+            content: "public class Foo { }"
+        );
+        string directory = Path.Combine(this.TempFolder, "bin", "repo");
+
+        int result = await this._commands.CleanupAsync(inputs: [directory]);
+
+        Assert.Equal(expected: ExitCodes.Success, actual: result);
+        await this
+            ._sourceFileReformatter.Received(1)
+            .ReformatAsync(file, Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CleanupAsyncProcessesProjectFilesInDirectoryInputAsync()
+    {
+        const string projectXml = "<Project Sdk=\"Microsoft.NET.Sdk\"></Project>";
+        await this.CreateFileAsync(relativePath: Path.Combine("src", "Test.csproj"), content: projectXml);
+        await this.CreateFileAsync(relativePath: Path.Combine("obj", "Test.csproj"), content: projectXml);
+
+        int result = await this._commands.CleanupAsync(inputs: [this.TempFolder]);
+
+        Assert.Equal(expected: ExitCodes.Success, actual: result);
+        this._projectXmlRewriter.Received(1).ReOrderIncludes(Arg.Any<XmlDocument>(), Arg.Any<string>());
     }
 
     [Fact]
