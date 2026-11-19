@@ -471,6 +471,43 @@ public sealed class DependencyReducerCheckReferencesTests : LoggingFolderCleanup
     }
 
     [Fact]
+    public async ValueTask CheckReferencesAsyncShouldRemoveSerilogOnceItsSinkHasBeenRemovedAsync()
+    {
+        const string projectXml =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><TargetFramework>net10.0</TargetFramework></PropertyGroup><ItemGroup><PackageReference Include=\"Serilog.Sinks.Console\" Version=\"6.0.0\" /><PackageReference Include=\"Serilog\" Version=\"4.0.0\" /></ItemGroup></Project>";
+        string projectFile = await this.WriteProjectFileAsync(projectXml);
+
+        List<(string Project, string Message)> removals = [];
+        DotNetFiles dotNetFiles = this.BuildDotNetFiles(projectFile);
+
+        bool result = await this._sut.CheckReferencesAsync(
+            dotNetFiles: dotNetFiles,
+            config: BuildCapturingConfig(removals),
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.True(condition: result, userMessage: "Serilog sink and then Serilog should be removable");
+        Assert.Equal(
+            expected:
+            [
+                (projectFile, "Removed reference to Serilog.Sinks.Console"),
+                (projectFile, "Removed reference to Serilog"),
+            ],
+            actual: removals
+        );
+
+        string projectAfter = await File.ReadAllTextAsync(
+            path: projectFile,
+            cancellationToken: this.CancellationToken()
+        );
+        Assert.DoesNotContain(
+            expectedSubstring: "Serilog",
+            actualString: projectAfter,
+            comparisonType: StringComparison.Ordinal
+        );
+    }
+
+    [Fact]
     public async ValueTask CheckReferencesAsyncWithRemovableProjectReferenceShouldReturnTrueAndCallOnSuccessfulRemovalAsync()
     {
         string childDir = Path.Combine(path1: this.TempFolder, path2: "ChildProject");
