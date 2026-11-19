@@ -1,12 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Cocona;
-using Cocona.Builder;
 using Credfeto.DotNet.Repo.Formatter.Constants;
 using Credfeto.DotNet.Repo.Formatter.Setup;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 namespace Credfeto.DotNet.Repo.Formatter;
 
@@ -19,17 +15,13 @@ internal static class Program
 
         try
         {
-            using (CoconaApp host = CreateApp(args))
-            {
-                ILoggerFactory loggerFactory = host.Services.GetRequiredService<ILoggerFactory>();
-                Logging.InitializeLogging(loggerFactory: loggerFactory);
-
-                host.AddCommands<Commands>();
-
-                await host.RunAsync(CancellationToken.None);
-
-                return Environment.ExitCode;
-            }
+            return await CommandLineRunner.RunAsync(
+                args: args,
+                configureServices: static services => services.AddServices(),
+                output: Console.Out,
+                error: Console.Error,
+                cancellationToken: CancellationToken.None
+            );
         }
         catch (Exception exception)
         {
@@ -37,17 +29,5 @@ internal static class Program
 
             return ExitCodes.Error;
         }
-    }
-
-    private static CoconaApp CreateApp(string[] args)
-    {
-        CoconaAppBuilder builder = CoconaAppBuilderFactory.Create(args);
-        builder.Services.AddServices();
-        builder
-            .Logging.AddFilter(category: "Microsoft", level: LogLevel.Warning)
-            .AddFilter(category: "System.Net.Http.HttpClient", level: LogLevel.Warning)
-            .ClearProviders();
-
-        return builder.Build();
     }
 }

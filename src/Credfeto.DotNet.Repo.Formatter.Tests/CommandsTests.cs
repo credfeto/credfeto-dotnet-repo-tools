@@ -3,13 +3,9 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
-using Cocona;
-using Cocona.Application;
-using Cocona.Command;
 using Credfeto.DotNet.Repo.Formatter.Constants;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp;
@@ -23,7 +19,6 @@ namespace Credfeto.DotNet.Repo.Formatter.Tests;
 public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
 {
     private readonly Commands _commands;
-    private readonly ICoconaAppContextAccessor _coconaAppContextAccessor;
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IProjectXmlRewriter _projectXmlRewriter;
@@ -42,11 +37,6 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         this._sourceFileSuppressionRemover = GetSubstitute<ISourceFileSuppressionRemover>();
         this._dotNetBuild = GetSubstitute<IDotNetBuild>();
         this._dotNetFilesDetector = GetSubstitute<IDotNetFilesDetector>();
-        this._coconaAppContextAccessor = GetSubstitute<ICoconaAppContextAccessor>();
-        MockCoconaAppContextAccessorCurrent(
-            accessor: this._coconaAppContextAccessor,
-            cancellationToken: this.CancellationToken()
-        );
 
         this.SetupPassThroughCsCleaners();
 
@@ -58,34 +48,8 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
             sourceFileSuppressionRemover: this._sourceFileSuppressionRemover,
             dotNetBuild: this._dotNetBuild,
             dotNetFilesDetector: this._dotNetFilesDetector,
-            coconaAppContextAccessor: this._coconaAppContextAccessor,
             logger: this.GetTypedLogger<Commands>()
         );
-    }
-
-    private static void MockCoconaAppContextAccessorCurrent(
-        ICoconaAppContextAccessor accessor,
-        in CancellationToken cancellationToken
-    )
-    {
-        // ! object.ToString() is always resolvable via reflection
-        CommandDescriptor descriptor = new(
-            methodInfo: typeof(object).GetMethod(nameof(ToString), BindingFlags.Public | BindingFlags.Instance)!,
-            target: null,
-            name: "test-command",
-            aliases: [],
-            description: string.Empty,
-            metadata: [],
-            parameters: [],
-            options: [],
-            arguments: [],
-            overloads: [],
-            optionLikeCommands: [],
-            flags: CommandFlags.None,
-            subCommands: null
-        );
-
-        accessor.Current.Returns(new CoconaAppContext(descriptor, cancellationToken));
     }
 
     [SuppressMessage(
@@ -154,7 +118,8 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         int result = await this._commands.CleanupAsync(
             inputs: ["file.cs"],
             removeSuppressions: true,
-            buildRoot: buildRoot
+            buildRoot: buildRoot,
+            cancellationToken: this.CancellationToken()
         );
 
         Assert.Equal(expected: ExitCodes.Error, actual: result);
@@ -169,7 +134,8 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         int result = await this._commands.CleanupAsync(
             inputs: ["file.cs"],
             removeSuppressions: false,
-            buildRoot: missingBuildRoot
+            buildRoot: missingBuildRoot,
+            cancellationToken: this.CancellationToken()
         );
 
         Assert.Equal(expected: ExitCodes.Error, actual: result);
@@ -179,7 +145,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
     [Fact]
     public async Task CleanupAsyncReturnsErrorWhenNoInputFilesAsync()
     {
-        int result = await this._commands.CleanupAsync(inputs: []);
+        int result = await this._commands.CleanupAsync(
+            inputs: [],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Error, actual: result);
     }
@@ -189,7 +160,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
     {
         string glob = Path.Combine(path1: this.TempFolder, path2: "*.doesnotexist");
 
-        int result = await this._commands.CleanupAsync(inputs: [glob]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [glob],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Error, actual: result);
     }
@@ -199,7 +175,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
     {
         string file = await this.CreateFileAsync(relativePath: "readme.txt", content: "hello");
 
-        int result = await this._commands.CleanupAsync(inputs: [file]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [file],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Error, actual: result);
         await this
@@ -208,17 +189,18 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task CleanupAsyncPropagatesCoconaContextCancellationTokenToReformatterAsync()
+    public async Task CleanupAsyncPropagatesCancellationTokenToReformatterAsync()
     {
         using CancellationTokenSource cancellationTokenSource = new();
         CancellationToken cancellationToken = cancellationTokenSource.Token;
-        MockCoconaAppContextAccessorCurrent(
-            accessor: this._coconaAppContextAccessor,
-            cancellationToken: cancellationToken
-        );
         string file = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
 
-        int result = await this._commands.CleanupAsync(inputs: [file]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [file],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: cancellationToken
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         await this
@@ -227,22 +209,23 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
-    public async Task CleanupAsyncPropagatesCancellationBeforeProcessingFilesWhenCoconaContextCancellationTokenAlreadyCancelledAsync()
+    public async Task CleanupAsyncPropagatesCancellationBeforeProcessingFilesWhenCancellationTokenAlreadyCancelledAsync()
     {
         using CancellationTokenSource cancellationTokenSource = new();
         await cancellationTokenSource.CancelAsync();
         CancellationToken cancellationToken = cancellationTokenSource.Token;
-        MockCoconaAppContextAccessorCurrent(
-            accessor: this._coconaAppContextAccessor,
-            cancellationToken: cancellationToken
-        );
         string buildRoot = this.TempFolder;
         string csFile = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
         this._dotNetFilesDetector.FindAsync(baseFolder: buildRoot, cancellationToken: cancellationToken)
             .Returns<DotNetFiles>(_ => throw new OperationCanceledException(cancellationToken));
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            this._commands.CleanupAsync(inputs: [csFile], removeSuppressions: true, buildRoot: buildRoot)
+            this._commands.CleanupAsync(
+                inputs: [csFile],
+                removeSuppressions: true,
+                buildRoot: buildRoot,
+                cancellationToken: cancellationToken
+            )
         );
 
         await this
@@ -255,7 +238,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
     {
         string file = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
 
-        int result = await this._commands.CleanupAsync(inputs: [file]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [file],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         Assert.Equal(expected: "public class Foo { }", actual: await this.ReadFileAsync(file));
@@ -276,7 +264,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
                 ValueTask.FromException<string>(new InvalidOperationException("Simulated unexpected failure"))
             );
 
-        int result = await this._commands.CleanupAsync(inputs: [file]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [file],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Error, actual: result);
     }
@@ -290,7 +283,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         );
         this._resharperSuppressionToSuppressMessage.Replace(Arg.Any<string>()).Returns("public class Foo { }");
 
-        int result = await this._commands.CleanupAsync(inputs: [file]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [file],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         Assert.Equal(expected: "public class Foo { }", actual: await this.ReadFileAsync(file));
@@ -305,7 +303,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         );
         this._xmlDocCommentRemover.RemoveXmlDocComments(Arg.Any<string>()).Returns("public class Foo { }");
 
-        int result = await this._commands.CleanupAsync(inputs: [file]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [file],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         Assert.Equal(expected: "public class Foo { }", actual: await this.ReadFileAsync(file));
@@ -318,7 +321,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         string file = await this.CreateFileAsync(relativePath: "Foo.cs", content: original);
         this._resharperSuppressionToSuppressMessage.Replace(Arg.Any<string>()).Returns("public class Foo {");
 
-        int result = await this._commands.CleanupAsync(inputs: [file]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [file],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         Assert.Equal(expected: original, actual: await this.ReadFileAsync(file));
@@ -329,7 +337,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
     {
         string file = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
 
-        int result = await this._commands.CleanupAsync(inputs: [file, file]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [file, file],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         await this
@@ -349,7 +362,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         await this.CreateFileAsync(relativePath: "Baz.generated.cs", content: "public class Baz { }");
         await this.CreateFileAsync(relativePath: "readme.txt", content: "hello");
 
-        int result = await this._commands.CleanupAsync(inputs: [this.TempFolder]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [this.TempFolder],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         await this
@@ -364,7 +382,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         await this.CreateFileAsync(relativePath: "readme.txt", content: "hello");
         string glob = Path.Combine(path1: this.TempFolder, path2: "*.cs");
 
-        int result = await this._commands.CleanupAsync(inputs: [glob]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [glob],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         await this
@@ -378,7 +401,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         const string projectXml = "<Project Sdk=\"Microsoft.NET.Sdk\"></Project>";
         string file = await this.CreateFileAsync(relativePath: "Test.csproj", content: projectXml);
 
-        int result = await this._commands.CleanupAsync(inputs: [file]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [file],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         Assert.Equal(expected: projectXml, actual: await this.ReadFileAsync(file));
@@ -392,7 +420,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         string file = await this.CreateFileAsync(relativePath: "Test.csproj", content: projectXml);
         this._projectXmlRewriter.ReOrderPropertyGroups(Arg.Any<XmlDocument>(), Arg.Any<string>()).Returns(true);
 
-        int result = await this._commands.CleanupAsync(inputs: [file]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [file],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         Assert.NotEqual(expected: projectXml, actual: await this.ReadFileAsync(file), comparer: StringComparer.Ordinal);
@@ -406,7 +439,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         string file = await this.CreateFileAsync(relativePath: "Test.csproj", content: projectXml);
         this._projectXmlRewriter.ReOrderIncludes(Arg.Any<XmlDocument>(), Arg.Any<string>()).Returns(true);
 
-        int result = await this._commands.CleanupAsync(inputs: [file]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [file],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         Assert.NotEqual(expected: projectXml, actual: await this.ReadFileAsync(file), comparer: StringComparer.Ordinal);
@@ -420,7 +458,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         string file = await this.CreateFileAsync(relativePath: "Test.csproj", content: projectXml);
         this._projectXmlRewriter.NormaliseReferenceMetadata(Arg.Any<XmlDocument>(), Arg.Any<string>()).Returns(true);
 
-        int result = await this._commands.CleanupAsync(inputs: [file]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [file],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         Assert.NotEqual(expected: projectXml, actual: await this.ReadFileAsync(file), comparer: StringComparer.Ordinal);
@@ -441,7 +484,13 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
             "<Project Sdk=\"Microsoft.NET.Sdk\">\n  <ItemGroup>\n    <PackageReference Include=\"Alpha\" Version=\"1.0.0\" />\n  </ItemGroup>\n</Project>\n";
         string file = await this.CreateFileAsync(relativePath: "Test.csproj", content: projectXml);
 
-        int result = await this.CreateCommandsWithRealCleaners().CleanupAsync(inputs: [file]);
+        int result = await this.CreateCommandsWithRealCleaners()
+            .CleanupAsync(
+                inputs: [file],
+                removeSuppressions: false,
+                buildRoot: null,
+                cancellationToken: this.CancellationToken()
+            );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         Assert.Equal(expected: expectedXml, actual: await this.ReadFileAsync(file));
@@ -460,7 +509,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         string file = await this.CreateFileAsync(relativePath: "Test.csproj", content: canonicalXml);
         this._projectXmlRewriter.ReOrderPropertyGroups(Arg.Any<XmlDocument>(), Arg.Any<string>()).Returns(true);
 
-        int result = await this._commands.CleanupAsync(inputs: [file]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [file],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         Assert.Equal(expected: canonicalXml, actual: await this.ReadFileAsync(file));
@@ -480,7 +534,8 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         int result = await this._commands.CleanupAsync(
             inputs: [csFile],
             removeSuppressions: true,
-            buildRoot: buildRoot
+            buildRoot: buildRoot,
+            cancellationToken: this.CancellationToken()
         );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
@@ -495,7 +550,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
     {
         string csFile = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
 
-        int result = await this._commands.CleanupAsync(inputs: [csFile]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [csFile],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
         await this.ReceivedRemoveSuppressionsAsync(0);
@@ -515,7 +575,8 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         int result = await this._commands.CleanupAsync(
             inputs: [project],
             removeSuppressions: true,
-            buildRoot: buildRoot
+            buildRoot: buildRoot,
+            cancellationToken: this.CancellationToken()
         );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
@@ -531,7 +592,8 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         int result = await this._commands.CleanupAsync(
             inputs: [csFile],
             removeSuppressions: false,
-            buildRoot: buildRoot
+            buildRoot: buildRoot,
+            cancellationToken: this.CancellationToken()
         );
 
         Assert.Equal(expected: ExitCodes.Success, actual: result);
@@ -547,7 +609,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         this._projectXmlRewriter.ReOrderPropertyGroups(Arg.Any<XmlDocument>(), badProject)
             .Returns(_ => throw new XmlException("Duplicate property"));
 
-        int result = await this._commands.CleanupAsync(inputs: [badProject, goodFile]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [badProject, goodFile],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Error, actual: result);
         await this
@@ -561,7 +628,12 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
         string missingFile = Path.Combine(path1: this.TempFolder, path2: "does-not-exist.cs");
         string goodFile = await this.CreateFileAsync(relativePath: "Foo.cs", content: "public class Foo { }");
 
-        int result = await this._commands.CleanupAsync(inputs: [missingFile, goodFile]);
+        int result = await this._commands.CleanupAsync(
+            inputs: [missingFile, goodFile],
+            removeSuppressions: false,
+            buildRoot: null,
+            cancellationToken: this.CancellationToken()
+        );
 
         Assert.Equal(expected: ExitCodes.Error, actual: result);
         await this
