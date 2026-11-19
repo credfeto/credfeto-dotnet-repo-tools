@@ -5,8 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Cocona;
-using Cocona.Application;
+using ConsoleAppFramework;
 using Credfeto.DotNet.Repo.Tools.Build.Interfaces;
 using Credfeto.DotNet.Repo.Tools.CleanUp.Interfaces;
 using Credfeto.DotNet.Repo.Tools.Cmd.Constants;
@@ -27,7 +26,6 @@ public sealed class Commands
     private readonly IBulkDependencyReducer _bulkDependencyReducer;
     private readonly IBulkPackageUpdater _bulkPackageUpdater;
     private readonly IBulkTemplateUpdater _bulkTemplateUpdater;
-    private readonly ICoconaAppContextAccessor _coconaAppContextAccessor;
     private readonly IDependencyReducer _dependencyReducer;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
     private readonly IGitRepositoryFactory _gitRepositoryFactory;
@@ -48,7 +46,6 @@ public sealed class Commands
         IDependencyReducer dependencyReducer,
         IDotNetFilesDetector dotNetFilesDetector,
         IGitRepositoryFactory gitRepositoryFactory,
-        ICoconaAppContextAccessor coconaAppContextAccessor,
         ILogger<Commands> logger
     )
     {
@@ -60,39 +57,39 @@ public sealed class Commands
         this._dependencyReducer = dependencyReducer;
         this._dotNetFilesDetector = dotNetFilesDetector;
         this._gitRepositoryFactory = gitRepositoryFactory;
-        this._coconaAppContextAccessor = coconaAppContextAccessor;
         this._logger = logger;
     }
 
-    // ! Current is always set once Cocona has started invoking a command
-    private CancellationToken CurrentCancellationToken => this._coconaAppContextAccessor.Current!.CancellationToken;
-
-    [Command("update-packages", Description = "Update all packages in all repositories")]
+    [Command(CommandNames.UpdatePackages)]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0109: Consider adding an overload with a Span<T> or Memory<T>",
+        Justification = "ConsoleAppFramework binds array options to string[]"
+    )]
     public async Task<int> UpdatePackagesAsync(
-        [Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")]
-            string repositoriesFileName,
-        [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
-        [Option(name: "cache", ['c'], Description = "package cache file")] string? cacheFileName,
-        [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")]
-            string trackingFileName,
-        [Option(name: "packages", ['p'], Description = "Packages.json file to load")] string packagesFileName,
-        [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder,
-        [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName,
-        [Option(name: "source", ['s'], Description = "Urls to additional NuGet feeds to load")]
-            IEnumerable<string>? source
+        string repositories,
+        string template,
+        string tracking,
+        string packages,
+        string work,
+        string release,
+        string? cache = null,
+        string[]? source = null,
+        CancellationToken cancellationToken = default
     )
     {
         try
         {
             await this.UpdatePackagesCoreAsync(
-                repositoriesFileName: repositoriesFileName,
-                templateRepository: templateRepository,
-                cacheFileName: cacheFileName,
-                trackingFileName: trackingFileName,
-                packagesFileName: packagesFileName,
-                workFolder: workFolder,
-                releaseConfigFileName: releaseConfigFileName,
-                source: source
+                repositoriesFileName: repositories,
+                templateRepository: template,
+                cacheFileName: cache,
+                trackingFileName: tracking,
+                packagesFileName: packages,
+                workFolder: work,
+                releaseConfigFileName: release,
+                source: source,
+                cancellationToken: cancellationToken
             );
 
             return ExitCodes.Success;
@@ -113,18 +110,19 @@ public sealed class Commands
         string packagesFileName,
         string workFolder,
         string releaseConfigFileName,
-        IEnumerable<string>? source
+        IReadOnlyList<string>? source,
+        CancellationToken cancellationToken
     )
     {
         IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
             repositoriesFileName: repositoriesFileName,
             templateRepository: templateRepository,
-            cancellationToken: this.CurrentCancellationToken
+            cancellationToken: cancellationToken
         );
 
         this.Dump(repositories);
 
-        IReadOnlyList<string> nugetSources = source?.ToArray() ?? [];
+        IReadOnlyList<string> nugetSources = source ?? [];
         await this._bulkPackageUpdater.BulkUpdateAsync(
             templateRepository: templateRepository,
             cacheFileName: cacheFileName,
@@ -134,41 +132,35 @@ public sealed class Commands
             releaseConfigFileName: releaseConfigFileName,
             additionalNugetSources: nugetSources,
             repositories: repositories,
-            cancellationToken: this.CurrentCancellationToken
+            cancellationToken: cancellationToken
         );
 
         this.Done();
     }
 
-    private void Done()
-    {
-        this._logger.LogCompleted();
-    }
-
-    [Command("update-template", Description = "Update repos from template in all repositories")]
+    [Command(CommandNames.UpdateTemplate)]
     public async Task<int> UpdateFromTemplateAsync(
-        [Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")]
-            string repositoriesFileName,
-        [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
-        [Option(name: "template-config", ['c'], Description = "template.config file to load")]
-            string templateConfigFileName,
-        [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")]
-            string trackingFileName,
-        [Option(name: "packages", ['p'], Description = "Packages.json file to load")] string packagesFileName,
-        [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder,
-        [Option(name: "release", ['l'], Description = "release.config file to load")] string releaseConfigFileName
+        string repositories,
+        string template,
+        string templateConfig,
+        string tracking,
+        string packages,
+        string work,
+        string release,
+        CancellationToken cancellationToken = default
     )
     {
         try
         {
             await this.UpdateFromTemplateCoreAsync(
-                repositoriesFileName: repositoriesFileName,
-                templateRepository: templateRepository,
-                templateConfigFileName: templateConfigFileName,
-                trackingFileName: trackingFileName,
-                packagesFileName: packagesFileName,
-                workFolder: workFolder,
-                releaseConfigFileName: releaseConfigFileName
+                repositoriesFileName: repositories,
+                templateRepository: template,
+                templateConfigFileName: templateConfig,
+                trackingFileName: tracking,
+                packagesFileName: packages,
+                workFolder: work,
+                releaseConfigFileName: release,
+                cancellationToken: cancellationToken
             );
 
             return ExitCodes.Success;
@@ -188,13 +180,14 @@ public sealed class Commands
         string trackingFileName,
         string packagesFileName,
         string workFolder,
-        string releaseConfigFileName
+        string releaseConfigFileName,
+        CancellationToken cancellationToken
     )
     {
         IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
             repositoriesFileName: repositoriesFileName,
             templateRepository: templateRepository,
-            cancellationToken: this.CurrentCancellationToken
+            cancellationToken: cancellationToken
         );
 
         this.Dump(repositories);
@@ -207,10 +200,163 @@ public sealed class Commands
             templateConfigFileName: templateConfigFileName,
             releaseConfigFileName: releaseConfigFileName,
             repositories: repositories,
-            cancellationToken: this.CurrentCancellationToken
+            cancellationToken: cancellationToken
         );
 
         this.Done();
+    }
+
+    [Command(CommandNames.CodeCleanup)]
+    public async Task<int> CodeCleanupAsync(
+        string repositories,
+        string template,
+        string tracking,
+        string work,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            await this.CodeCleanupCoreAsync(
+                repositoriesFileName: repositories,
+                templateRepository: template,
+                trackingFileName: tracking,
+                workFolder: work,
+                cancellationToken: cancellationToken
+            );
+
+            return ExitCodes.Success;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            this._logger.LogCommandFailed(exception.Message, exception: exception);
+
+            return ExitCodes.Error;
+        }
+    }
+
+    private async Task CodeCleanupCoreAsync(
+        string repositoriesFileName,
+        string templateRepository,
+        string trackingFileName,
+        string workFolder,
+        CancellationToken cancellationToken
+    )
+    {
+        IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
+            repositoriesFileName: repositoriesFileName,
+            templateRepository: templateRepository,
+            cancellationToken: cancellationToken
+        );
+
+        this.Dump(repositories);
+
+        await this._bulkCodeCleanUp.BulkUpdateAsync(
+            templateRepository: templateRepository,
+            trackingFileName: trackingFileName,
+            workFolder: workFolder,
+            repositories: repositories,
+            cancellationToken: cancellationToken
+        );
+
+        this.Done();
+    }
+
+    [Command(CommandNames.ReduceDependencies)]
+    public async Task<int> ReduceDependenciesAsync(
+        string repositories,
+        string template,
+        string tracking,
+        string work,
+        CancellationToken cancellationToken = default
+    )
+    {
+        try
+        {
+            await this.ReduceDependenciesCoreAsync(
+                repositoriesFileName: repositories,
+                templateRepository: template,
+                trackingFileName: tracking,
+                workFolder: work,
+                cancellationToken: cancellationToken
+            );
+
+            return ExitCodes.Success;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            this._logger.LogCommandFailed(exception.Message, exception: exception);
+
+            return ExitCodes.Error;
+        }
+    }
+
+    private async Task ReduceDependenciesCoreAsync(
+        string repositoriesFileName,
+        string templateRepository,
+        string trackingFileName,
+        string workFolder,
+        CancellationToken cancellationToken
+    )
+    {
+        IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
+            repositoriesFileName: repositoriesFileName,
+            templateRepository: templateRepository,
+            cancellationToken: cancellationToken
+        );
+
+        this.Dump(repositories);
+
+        await this._bulkDependencyReducer.BulkUpdateAsync(
+            templateRepository: templateRepository,
+            trackingFileName: trackingFileName,
+            workFolder: workFolder,
+            repositories: repositories,
+            cancellationToken: cancellationToken
+        );
+
+        this.Done();
+    }
+
+    [Command(CommandNames.CheckDependencies)]
+    public async Task<int> CheckDependenciesAsync(string sourceFolder, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            await this.CheckDependenciesCoreAsync(workFolder: sourceFolder, cancellationToken: cancellationToken);
+
+            return ExitCodes.Success;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            this._logger.LogCommandFailed(exception.Message, exception: exception);
+
+            return ExitCodes.Error;
+        }
+    }
+
+    private async Task CheckDependenciesCoreAsync(string workFolder, CancellationToken cancellationToken)
+    {
+        DotNetFiles dotNetFiles = await this._dotNetFilesDetector.FindAsync(
+            baseFolder: workFolder,
+            cancellationToken: cancellationToken
+        );
+
+        using (IGitRepository repository = this._gitRepositoryFactory.OpenExisting(workFolder))
+        {
+            await this._dependencyReducer.CheckReferencesAsync(
+                dotNetFiles: dotNetFiles,
+                CreateCommittingReferenceConfig(repository),
+                cancellationToken: cancellationToken
+            );
+        }
+
+        this.Done();
+    }
+
+    private void Done()
+    {
+        this._logger.LogCompleted();
     }
 
     private async ValueTask<IReadOnlyList<string>> LoadRepositoriesAsync(
@@ -236,154 +382,6 @@ public sealed class Commands
     private static IReadOnlyList<string> NoRepositories()
     {
         throw new InvalidOperationException("No Repositories found");
-    }
-
-    [Command("code-cleanup", Description = "Perform code cleanup in all repositories")]
-    public async Task<int> CodeCleanupAsync(
-        [Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")]
-            string repositoriesFileName,
-        [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
-        [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")]
-            string trackingFileName,
-        [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder
-    )
-    {
-        try
-        {
-            await this.CodeCleanupCoreAsync(
-                repositoriesFileName: repositoriesFileName,
-                templateRepository: templateRepository,
-                trackingFileName: trackingFileName,
-                workFolder: workFolder
-            );
-
-            return ExitCodes.Success;
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            this._logger.LogCommandFailed(exception.Message, exception: exception);
-
-            return ExitCodes.Error;
-        }
-    }
-
-    private async Task CodeCleanupCoreAsync(
-        string repositoriesFileName,
-        string templateRepository,
-        string trackingFileName,
-        string workFolder
-    )
-    {
-        IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
-            repositoriesFileName: repositoriesFileName,
-            templateRepository: templateRepository,
-            cancellationToken: this.CurrentCancellationToken
-        );
-
-        this.Dump(repositories);
-
-        await this._bulkCodeCleanUp.BulkUpdateAsync(
-            templateRepository: templateRepository,
-            trackingFileName: trackingFileName,
-            workFolder: workFolder,
-            repositories: repositories,
-            cancellationToken: this.CurrentCancellationToken
-        );
-
-        this.Done();
-    }
-
-    [Command("reduce-dependencies", Description = "Reduce dependencies in all repositories")]
-    public async Task<int> ReduceDependenciesAsync(
-        [Option(name: "repositories", ['r'], Description = "repos.lst file containing list of repositories")]
-            string repositoriesFileName,
-        [Option(name: "template", ['m'], Description = "Template repository to clone")] string templateRepository,
-        [Option(name: "tracking", ['t'], Description = "folder where to write tracking.json file")]
-            string trackingFileName,
-        [Option(name: "work", ['w'], Description = "folder where to clone repositories")] string workFolder
-    )
-    {
-        try
-        {
-            await this.ReduceDependenciesCoreAsync(
-                repositoriesFileName: repositoriesFileName,
-                templateRepository: templateRepository,
-                trackingFileName: trackingFileName,
-                workFolder: workFolder
-            );
-
-            return ExitCodes.Success;
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            this._logger.LogCommandFailed(exception.Message, exception: exception);
-
-            return ExitCodes.Error;
-        }
-    }
-
-    private async Task ReduceDependenciesCoreAsync(
-        string repositoriesFileName,
-        string templateRepository,
-        string trackingFileName,
-        string workFolder
-    )
-    {
-        IReadOnlyList<string> repositories = await this.LoadRepositoriesAsync(
-            repositoriesFileName: repositoriesFileName,
-            templateRepository: templateRepository,
-            cancellationToken: this.CurrentCancellationToken
-        );
-
-        this.Dump(repositories);
-
-        await this._bulkDependencyReducer.BulkUpdateAsync(
-            templateRepository: templateRepository,
-            trackingFileName: trackingFileName,
-            workFolder: workFolder,
-            repositories: repositories,
-            cancellationToken: this.CurrentCancellationToken
-        );
-
-        this.Done();
-    }
-
-    [Command("check-dependencies", Description = "Reduce dependencies one folder")]
-    public async Task<int> CheckDependenciesAsync(
-        [Option(name: "source-folder", ['s'], Description = "folder where the dotnet source is")] string workFolder
-    )
-    {
-        try
-        {
-            await this.CheckDependenciesCoreAsync(workFolder);
-
-            return ExitCodes.Success;
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            this._logger.LogCommandFailed(exception.Message, exception: exception);
-
-            return ExitCodes.Error;
-        }
-    }
-
-    private async Task CheckDependenciesCoreAsync(string workFolder)
-    {
-        DotNetFiles dotNetFiles = await this._dotNetFilesDetector.FindAsync(
-            baseFolder: workFolder,
-            cancellationToken: this.CurrentCancellationToken
-        );
-
-        using (IGitRepository repository = this._gitRepositoryFactory.OpenExisting(workFolder))
-        {
-            await this._dependencyReducer.CheckReferencesAsync(
-                dotNetFiles: dotNetFiles,
-                CreateCommittingReferenceConfig(repository),
-                cancellationToken: this.CurrentCancellationToken
-            );
-        }
-
-        this.Done();
     }
 
     private static ReferenceConfig CreateCommittingReferenceConfig(IGitRepository repository)

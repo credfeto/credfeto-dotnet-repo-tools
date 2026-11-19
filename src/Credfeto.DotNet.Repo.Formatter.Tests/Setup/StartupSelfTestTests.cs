@@ -1,7 +1,5 @@
 using System;
 using System.IO;
-using Cocona;
-using Cocona.Builder;
 using Credfeto.DotNet.Repo.Formatter.Constants;
 using Credfeto.DotNet.Repo.Formatter.Setup;
 using FunFair.Test.Common;
@@ -10,20 +8,17 @@ using Xunit;
 
 namespace Credfeto.DotNet.Repo.Formatter.Tests.Setup;
 
-// Joins the CoconaAppBuilderFactory collection, because CoconaAppBuilderFactory.Create changes a process-wide environment variable.
-[Collection(CoconaAppBuilderFactoryTestGroup.NAME)]
 public sealed class StartupSelfTestTests : TestBase
 {
     [Fact]
     public void SelfTestSucceedsWhenAllDependenciesResolve()
     {
-        CoconaAppBuilder builder = CoconaAppBuilderFactory.Create([]);
-        builder.Services.AddServices();
-
-        using (CoconaApp app = builder.Build())
+        using (
+            ServiceProvider serviceProvider = new ServiceCollection().AddLogging().AddServices().BuildServiceProvider()
+        )
         using (StringWriter errorOutput = new())
         {
-            int exitCode = StartupSelfTest.Run(serviceProvider: app.Services, errorOutput: errorOutput);
+            int exitCode = StartupSelfTest.Run(serviceProvider: serviceProvider, errorOutput: errorOutput);
 
             Assert.Equal(expected: ExitCodes.Success, actual: exitCode);
             Assert.Empty(errorOutput.ToString());
