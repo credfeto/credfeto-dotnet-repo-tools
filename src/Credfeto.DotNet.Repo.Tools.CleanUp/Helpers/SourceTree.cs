@@ -15,7 +15,7 @@ public static class SourceTree
     private static readonly EnumerationOptions RecursiveOptions = new()
     {
         RecurseSubdirectories = true,
-        IgnoreInaccessible = false,
+        IgnoreInaccessible = true,
         AttributesToSkip = default,
     };
 
