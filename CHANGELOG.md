@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 - Dependency reducer: recompute allPackageIds after each removal so guard packages (Serilog, JWT) are released once their partners are removed
+- Content comparison in bulk cleanup and path de-duplication in the formatter are now case-sensitive on non-Windows platforms so real changes and files are no longer dropped
 ### Changed
 - Dependencies - Updated FunFair.CodeAnalysis to 7.2.30.2708
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.168.2245
