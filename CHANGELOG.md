@@ -19,7 +19,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - cscleanup is now published as self-contained ReadyToRun tool packages for linux-x64 and linux-arm64 only, instead of native AOT, because third-party trimming and AOT warnings block native AOT publishing; Windows and macOS runtime identifiers are no longer published
 - cscleanup now runs with InvariantGlobalization enabled, and its package includes a readme and project URL metadata
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.145.1863
-- TBD - to be finalized after review
+- Formatter and cleanup directory scans now skip .git, bin and obj folders during enumeration and treat bin as generated output, so build-output copies are no longer processed
 ### Deprecated
 ### Removed
 ### Deployment Changes
