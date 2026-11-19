@@ -456,11 +456,10 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     {
         SqlScriptGeneratorOptions options = TSqlOptions.DefaultOptions;
 
-        IReadOnlyList<string> sourceFiles = Directory.GetFiles(
-            path: sourceDirectory,
-            searchPattern: "*.sql",
-            searchOption: SearchOption.AllDirectories
-        );
+        IReadOnlyList<string> sourceFiles =
+        [
+            .. SourceTree.EnumerateFiles(directory: sourceDirectory, searchPatterns: ["*.sql"]),
+        ];
 
         foreach (string sourceFile in sourceFiles)
         {
@@ -661,9 +660,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
     {
         return
         [
-            .. Directory
-                .GetFiles(path: sourceDirectory, searchPattern: "*.cs", searchOption: SearchOption.AllDirectories)
-                .Where(IsNonGenerated),
+            .. SourceTree.EnumerateFiles(directory: sourceDirectory, searchPatterns: ["*.cs"]).Where(IsNonGenerated),
         ];
 
         bool IsNonGenerated(string filename)

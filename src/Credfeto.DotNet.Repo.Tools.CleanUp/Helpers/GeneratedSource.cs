@@ -9,6 +9,7 @@ public static class GeneratedSource
 {
     private static readonly IReadOnlyList<string> Markers =
     [
+        Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar,
         Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar,
         Path.DirectorySeparatorChar + "generated" + Path.DirectorySeparatorChar,
         ".generated.",

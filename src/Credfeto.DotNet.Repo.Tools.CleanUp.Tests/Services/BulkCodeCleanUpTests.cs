@@ -662,6 +662,60 @@ public sealed partial class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task BulkUpdateAsyncShouldNotFormatSqlFilesInBuildOutputOrGitFoldersAsync()
+    {
+        (Repository activeRepo, string projectFile, IGitRepository testRepo) =
+            await this.SetupRepoDirWithChangelogAndProjectAsync(
+                repoDirName: "gitrepo-sql-excluded",
+                cloneUrl: "https://github.com/test/sql-excluded-repo.git",
+                headRev: "sql002"
+            );
+
+        using (activeRepo)
+        {
+            string repoDir = testRepo.WorkingDirectory;
+            const string sqlContent = "SELECT 1;";
+            string sqlFile = Path.Combine(repoDir, "schema.sql");
+            await File.WriteAllTextAsync(
+                path: sqlFile,
+                contents: sqlContent,
+                cancellationToken: this.CancellationToken()
+            );
+
+            string[] excludedFolders = ["bin", "obj", ".git"];
+
+            foreach (string excludedFolder in excludedFolders)
+            {
+                string folder = Path.Combine(repoDir, excludedFolder, "Debug");
+                Directory.CreateDirectory(folder);
+                await File.WriteAllTextAsync(
+                    path: Path.Combine(folder, "schema.sql"),
+                    contents: sqlContent,
+                    cancellationToken: this.CancellationToken()
+                );
+            }
+
+            this.SetupDotNetFilesAndBuild(repoDir: repoDir, projectFile: projectFile);
+
+            this._tsqlFormatter.FormatAsync(
+                    Arg.Any<string>(),
+                    Arg.Any<SqlScriptGeneratorOptions>(),
+                    Arg.Any<CancellationToken>()
+                )
+                .Returns(sqlContent);
+
+            IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+            this.SetupTwoRepos(templateRepo: templateRepo, testRepo: testRepo);
+
+            await this.RunBulkUpdateAsync("https://github.com/test/sql-excluded-repo.git");
+
+            await this
+                ._tsqlFormatter.Received(1)
+                .FormatAsync(Arg.Any<string>(), Arg.Any<SqlScriptGeneratorOptions>(), Arg.Any<CancellationToken>());
+        }
+    }
+
+    [Fact]
     public async Task BulkUpdateAsyncShouldNotCommitWhenCSharpSourceFilesAreUnchangedByCleanupAsync()
     {
         (Repository activeRepo, string projectFile, IGitRepository testRepo) =
