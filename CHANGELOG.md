@@ -12,6 +12,17 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+### Changed
+### Deprecated
+### Removed
+### Deployment Changes
+
+<!--
+Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
+-->
+
+## [1.5.25] - 2026-11-20
+### Fixed
 - Dependency reducer: recompute allPackageIds after each removal so guard packages (Serilog, JWT) are released once their partners are removed
 ### Changed
 - Dependencies - Updated FunFair.CodeAnalysis to 7.2.30.2708
@@ -21,13 +32,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 - Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.145.1863
 - Formatter and cleanup directory scans now skip .git, bin and obj folders during enumeration and treat bin as generated output, so build-output copies are no longer processed
 - Dependencies - Updated Credfeto.ChangeLog to 1.10.217.2983
-### Deprecated
-### Removed
-### Deployment Changes
-
-<!--
-Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
--->
 
 ## [1.5.24] - 2026-11-18
 ### Changed
