@@ -14,6 +14,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Fixed
 ### Changed
 - Dependencies - Updated CSharpier to 1.4.1
+- Dependencies - Updated Credfeto.Enumeration to 1.2.163.2606
 ### Deprecated
 ### Removed
 ### Deployment Changes
