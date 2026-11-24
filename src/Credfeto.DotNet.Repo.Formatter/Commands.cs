@@ -29,6 +29,13 @@ public sealed class Commands
 
     private static readonly IReadOnlyList<string> SupportedSearchPatterns = ["*.cs", "*.csproj"];
 
+    // Matches the platform default file system case sensitivity: case-insensitive on Windows/macOS,
+    // case-sensitive on Linux, so files whose names differ only by case are not collapsed into one.
+    private static readonly StringComparer PathComparer =
+        OperatingSystem.IsWindows() || OperatingSystem.IsMacOS()
+            ? StringComparer.OrdinalIgnoreCase
+            : StringComparer.Ordinal;
+
     private readonly ICoconaAppContextAccessor _coconaAppContextAccessor;
     private readonly IDotNetBuild _dotNetBuild;
     private readonly IDotNetFilesDetector _dotNetFilesDetector;
@@ -401,10 +408,7 @@ public sealed class Commands
             return ([], missing);
         }
 
-        IReadOnlyList<string> files =
-        [
-            .. resolved.Distinct(StringComparer.OrdinalIgnoreCase).Order(StringComparer.OrdinalIgnoreCase),
-        ];
+        IReadOnlyList<string> files = [.. resolved.Distinct(PathComparer).Order(PathComparer)];
 
         return (files, []);
     }

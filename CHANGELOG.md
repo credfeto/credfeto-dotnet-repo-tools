@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Bulk cleanup compares file content case-sensitively, and the formatter de-duplicates input paths case-sensitively on Linux, so case-only changes and files whose names differ only by case are no longer dropped
 ### Changed
 ### Deprecated
 ### Removed

@@ -621,7 +621,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                 updated: await asyncCleanup(arg1: fileName, arg2: content, arg3: cancellationToken)
             );
 
-            if (StringComparer.OrdinalIgnoreCase.Equals(x: content, y: cleanedContent))
+            if (StringComparer.Ordinal.Equals(x: content, y: cleanedContent))
             {
                 // no changes
                 return false;
