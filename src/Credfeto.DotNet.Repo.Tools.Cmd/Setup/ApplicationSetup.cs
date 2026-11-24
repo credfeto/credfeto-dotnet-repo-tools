@@ -17,7 +17,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Credfeto.DotNet.Repo.Tools.Cmd.Setup;
 
-internal static class ApplicationSetup
+public static class ApplicationSetup
 {
     public static IServiceCollection AddServices(this IServiceCollection services)
     {
