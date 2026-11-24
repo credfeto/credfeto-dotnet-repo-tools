@@ -122,7 +122,6 @@ public sealed class Commands
 
         this.Dump(repositories);
 
-        IReadOnlyList<string> nugetSources = source ?? [];
         await this._bulkPackageUpdater.BulkUpdateAsync(
             templateRepository: templateRepository,
             cacheFileName: cacheFileName,
@@ -130,7 +129,7 @@ public sealed class Commands
             packagesFileName: packagesFileName,
             workFolder: workFolder,
             releaseConfigFileName: releaseConfigFileName,
-            additionalNugetSources: nugetSources,
+            additionalNugetSources: source ?? [],
             repositories: repositories,
             cancellationToken: cancellationToken
         );
@@ -375,13 +374,12 @@ public sealed class Commands
             templateRepository: templateRepository
         );
 
-        return repositories is [] ? NoRepositories() : repositories;
-    }
+        if (repositories is [])
+        {
+            throw new InvalidOperationException("No Repositories found");
+        }
 
-    [DoesNotReturn]
-    private static IReadOnlyList<string> NoRepositories()
-    {
-        throw new InvalidOperationException("No Repositories found");
+        return repositories;
     }
 
     private static ReferenceConfig CreateCommittingReferenceConfig(IGitRepository repository)
