@@ -13,7 +13,9 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <EnablePackageValidation>true</EnablePackageValidation>
     <EnableRequestDelegateGenerator>true</EnableRequestDelegateGenerator>
-    <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
     <Features>strict;flow-analysis;runtime-async=on</Features>
@@ -26,7 +28,8 @@
     <IsPackable>true</IsPackable>
     <IsPublishable>true</IsPublishable>
     <IsTool>true</IsTool>
-    <IsTrimmable>false</IsTrimmable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
     <LangVersion>latest</LangVersion>
     <NeutralLanguage>en-GB</NeutralLanguage>
@@ -42,11 +45,17 @@
     <PackageReleaseNotes>$(ReleaseNotes)</PackageReleaseNotes>
     <PackageTags>Nuget;update;tool;packages</PackageTags>
     <Product>Repository Update Tool</Product>
+    <!-- Native AOT and trimming are not possible while warnings are errors: FunFair.BuildCheck.SolutionChecks
+         (from the FunFair.BuildCheck.Runner package) reports IL2026 when trimmed, as GlobalJsonLoader deserialises JSON by reflection.
+         Ship self-contained ReadyToRun packages instead so the tool starts without JIT warm-up or an installed runtime. -->
     <PublishAot>false</PublishAot>
+    <PublishReadyToRun>true</PublishReadyToRun>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/credfeto/credfeto-dotnet-repo-tools</RepositoryUrl>
     <RunAOTCompilation>false</RunAOTCompilation>
     <RuntimeIdentifiers>win-x64;win-arm64;osx-x64;osx-arm64;linux-x64;linux-arm64</RuntimeIdentifiers>
+    <!-- Only the RID-specific tool packages are self-contained so the test project can still reference the executable -->
+    <SelfContained Condition="'$(RuntimeIdentifier)' != ''">true</SelfContained>
     <TargetFramework>net11.0</TargetFramework>
     <TieredCompilation>true</TieredCompilation>
     <TieredPGO>true</TieredPGO>
