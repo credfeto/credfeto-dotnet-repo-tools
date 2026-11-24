@@ -338,6 +338,28 @@ public sealed partial class CommandsTests : LoggingFolderCleanupTestBase
     }
 
     [Fact]
+    public async Task CleanupAsyncProcessesFilesWhoseNamesDifferOnlyByCaseOnCaseSensitiveFileSystemsAsync()
+    {
+        Assert.SkipWhen(
+            OperatingSystem.IsWindows() || OperatingSystem.IsMacOS(),
+            reason: "Requires a case-sensitive file system"
+        );
+
+        string upper = await this.CreateFileAsync(relativePath: "Helper.cs", content: "public class Helper { }");
+        string lower = await this.CreateFileAsync(relativePath: "helper.cs", content: "public class helper { }");
+
+        int result = await this._commands.CleanupAsync(inputs: [upper, lower]);
+
+        Assert.Equal(expected: ExitCodes.Success, actual: result);
+        await this
+            ._sourceFileReformatter.Received(1)
+            .ReformatAsync(upper, Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await this
+            ._sourceFileReformatter.Received(1)
+            .ReformatAsync(lower, Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task CleanupAsyncProcessesDirectoryInputRecursivelyExcludingGeneratedFilesAsync()
     {
         await this.CreateFileAsync(relativePath: Path.Combine("src", "Foo.cs"), content: "public class Foo { }");
