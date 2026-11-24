@@ -5,7 +5,7 @@ namespace Credfeto.DotNet.Repo.Tools.Cmd.Setup;
 [DebuggerDisplay("--{Name}")]
 internal sealed record CommandLineOption(
     string Name,
-    char? ShortName,
+    char ShortName,
     string Description,
     bool IsRequired,
     bool IsRepeatable
@@ -16,7 +16,7 @@ internal sealed record CommandLineOption(
         return new(Name: name, ShortName: shortName, Description: description, IsRequired: true, IsRepeatable: false);
     }
 
-    public static CommandLineOption Optional(string name, char? shortName, string description)
+    public static CommandLineOption Optional(string name, char shortName, string description)
     {
         return new(Name: name, ShortName: shortName, Description: description, IsRequired: false, IsRepeatable: false);
     }
@@ -28,5 +28,5 @@ internal sealed record CommandLineOption(
 
     public string LongForm => "--" + this.Name;
 
-    public string? ShortForm => this.ShortName is { } shortName ? "-" + shortName : null;
+    public string ShortForm => "-" + this.ShortName;
 }

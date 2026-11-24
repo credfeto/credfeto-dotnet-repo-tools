@@ -13,13 +13,11 @@ internal sealed record CommandLineCommand(string Name, string Description, IRead
     // Rewrites each short alias (-r) to its long name (--repositories), which is the only name ConsoleAppFramework knows.
     public string[] ExpandShortNames(IReadOnlyList<string> args)
     {
-        Dictionary<string, string> longNames = this
-            .Options.Where(option => option.ShortForm is not null)
-            .ToDictionary(
-                keySelector: option => option.ShortForm ?? string.Empty,
-                elementSelector: option => option.LongForm,
-                comparer: StringComparer.Ordinal
-            );
+        Dictionary<string, string> longNames = this.Options.ToDictionary(
+            keySelector: option => option.ShortForm,
+            elementSelector: option => option.LongForm,
+            comparer: StringComparer.Ordinal
+        );
 
         bool endOfOptions = false;
 
