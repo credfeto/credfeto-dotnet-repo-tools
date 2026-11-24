@@ -12,8 +12,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
-- SDK and package updates no longer add or remove CHANGELOG.md entries for *-template repositories (issue #351)
-- Template updater now updates src/global.json in repositories without a .NET solution (#395)
 ### Changed
 ### Deprecated
 ### Removed
@@ -22,6 +20,11 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+
+## [1.5.32] - 2026-11-24
+### Fixed
+- SDK and package updates no longer add or remove CHANGELOG.md entries for *-template repositories (issue #351)
+- Template updater now updates src/global.json in repositories without a .NET solution (#395)
 
 ## [1.5.31] - 2026-11-23
 ### Changed
