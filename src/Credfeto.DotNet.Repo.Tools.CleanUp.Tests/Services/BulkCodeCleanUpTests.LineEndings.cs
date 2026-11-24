@@ -80,6 +80,27 @@ public sealed partial class BulkCodeCleanUpTests
         Assert.Equal(expected: expected, actual: result);
     }
 
+    [Fact]
+    public async Task BulkUpdateAsyncWritesCSharpFileWhenCleanupChangesOnlyCaseAsync()
+    {
+        const string original = "public class foo { }\n";
+        const string reformatted = "public class Foo { }\n";
+        this.SetupPassThroughCsCleaners();
+        MockSourceFileReformatterReformat(
+            reformatter: this._sourceFileReformatter,
+            original: original,
+            reformatted: reformatted
+        );
+
+        string result = await this.RunBulkCleanupOnFileAsync(
+            repoName: "gitrepo-cs-case-only",
+            fileName: "Foo.cs",
+            content: original
+        );
+
+        Assert.Equal(expected: reformatted, actual: result);
+    }
+
     [Theory]
     [InlineData("\n")]
     [InlineData("\r\n")]
