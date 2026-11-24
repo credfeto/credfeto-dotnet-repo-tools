@@ -33,11 +33,18 @@ public static class CommandLineRunner
 
         CommandLineCommand? command = args is [{ } name, ..] ? CommandLineSpecification.Find(name) : null;
 
-        if (CommandLineCompatibility.IsHelpRequest(args) || args is [])
+        if (args is [])
+        {
+            await WriteAsync(writer: output, text: Help(command: null), cancellationToken: cancellationToken);
+
+            return ExitCodes.Success;
+        }
+
+        if (CommandLineCompatibility.IsHelpRequest(args))
         {
             await WriteAsync(writer: output, text: Help(command), cancellationToken: cancellationToken);
 
-            return args is [] ? ExitCodes.Success : ExitCodes.HelpShown;
+            return ExitCodes.HelpShown;
         }
 
         if (args is [SELF_TEST_OPTION])
