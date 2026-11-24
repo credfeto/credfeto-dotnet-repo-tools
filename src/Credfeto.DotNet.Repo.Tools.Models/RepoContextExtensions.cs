@@ -9,6 +9,21 @@ namespace Credfeto.DotNet.Repo.Tools.Models;
 
 public static class RepoContextExtensions
 {
+    private const string TEMPLATE_REPO_SUFFIX = "-template";
+    private const string GIT_SUFFIX = ".git";
+
+    public static bool IsTemplateRepo(this in RepoContext repoContext)
+    {
+        ReadOnlySpan<char> repoName = repoContext.ClonePath.AsSpan().TrimEnd('/');
+
+        if (repoName.EndsWith(value: GIT_SUFFIX, comparisonType: StringComparison.OrdinalIgnoreCase))
+        {
+            repoName = repoName[..^GIT_SUFFIX.Length];
+        }
+
+        return repoName.EndsWith(value: TEMPLATE_REPO_SUFFIX, comparisonType: StringComparison.OrdinalIgnoreCase);
+    }
+
     public static bool HasSubModules(this in RepoContext repoContext)
     {
         return repoContext.Repository.HasSubmodules;

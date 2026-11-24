@@ -1224,20 +1224,23 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
 
         async ValueTask ChangelogUpdateAsync(CancellationToken token)
         {
-            await this._changeLogUpdater.RemoveEntryAsync(
-                changeLogFileName: repoContext.ChangeLogFileName,
-                language: this._changeLogLanguage,
-                type: CHANGELOG_ENTRY_TYPE,
-                message: messagePrefix,
-                cancellationToken: token
-            );
-            await this._changeLogUpdater.AddEntryAsync(
-                changeLogFileName: repoContext.ChangeLogFileName,
-                language: this._changeLogLanguage,
-                type: CHANGELOG_ENTRY_TYPE,
-                message: message,
-                cancellationToken: token
-            );
+            if (!repoContext.IsTemplateRepo())
+            {
+                await this._changeLogUpdater.RemoveEntryAsync(
+                    changeLogFileName: repoContext.ChangeLogFileName,
+                    language: this._changeLogLanguage,
+                    type: CHANGELOG_ENTRY_TYPE,
+                    message: messagePrefix,
+                    cancellationToken: token
+                );
+                await this._changeLogUpdater.AddEntryAsync(
+                    changeLogFileName: repoContext.ChangeLogFileName,
+                    language: this._changeLogLanguage,
+                    type: CHANGELOG_ENTRY_TYPE,
+                    message: message,
+                    cancellationToken: token
+                );
+            }
 
             bool ok =
                 dotNetFiles.Projects is []

@@ -227,8 +227,7 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
             return (false, null);
         }
 
-        string currentTrackingHash =
-            knownTrackingHash
+        string currentTrackingHash = knownTrackingHash
             ?? await this._trackingHashGenerator.GenerateTrackingHashAsync(
                 repoContext: repoContext,
                 cancellationToken: cancellationToken
@@ -244,8 +243,7 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
         CancellationToken cancellationToken
     )
     {
-        string hash =
-            currentTrackingHash
+        string hash = currentTrackingHash
             ?? await this._trackingHashGenerator.GenerateTrackingHashAsync(
                 repoContext: repoContext,
                 cancellationToken: cancellationToken
@@ -468,20 +466,23 @@ public sealed class SinglePackageUpdater : ISinglePackageUpdater
         CancellationToken cancellationToken
     )
     {
-        await this._changeLogUpdater.RemoveEntryAsync(
-            changeLogFileName: repoContext.ChangeLogFileName,
-            language: this._changeLogLanguage,
-            type: CHANGELOG_ENTRY_TYPE,
-            message: $"Dependencies - Updated {package.PackageId} to ",
-            cancellationToken: cancellationToken
-        );
-        await this._changeLogUpdater.AddEntryAsync(
-            changeLogFileName: repoContext.ChangeLogFileName,
-            language: this._changeLogLanguage,
-            type: CHANGELOG_ENTRY_TYPE,
-            message: $"Dependencies - Updated {package.PackageId} to {version}",
-            cancellationToken: cancellationToken
-        );
+        if (!repoContext.IsTemplateRepo())
+        {
+            await this._changeLogUpdater.RemoveEntryAsync(
+                changeLogFileName: repoContext.ChangeLogFileName,
+                language: this._changeLogLanguage,
+                type: CHANGELOG_ENTRY_TYPE,
+                message: $"Dependencies - Updated {package.PackageId} to ",
+                cancellationToken: cancellationToken
+            );
+            await this._changeLogUpdater.AddEntryAsync(
+                changeLogFileName: repoContext.ChangeLogFileName,
+                language: this._changeLogLanguage,
+                type: CHANGELOG_ENTRY_TYPE,
+                message: $"Dependencies - Updated {package.PackageId} to {version}",
+                cancellationToken: cancellationToken
+            );
+        }
 
         await repoContext.Repository.CommitAsync(
             $"[Dependencies] Updating {package.PackageId} ({package.PackageType}) to {version}",

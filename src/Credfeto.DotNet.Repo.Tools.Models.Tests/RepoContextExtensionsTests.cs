@@ -13,15 +13,49 @@ public sealed class RepoContextExtensionsTests : LoggingFolderCleanupTestBase
     public RepoContextExtensionsTests(ITestOutputHelper output)
         : base(output) { }
 
-    private RepoContext CreateContext(IGitRepository? repository = null, string? workingDirectory = null)
+    private RepoContext CreateContext(
+        IGitRepository? repository = null,
+        string? workingDirectory = null,
+        string? clonePath = null
+    )
     {
         return new(
-            ClonePath: this.TempFolder,
+            ClonePath: clonePath ?? this.TempFolder,
             Repository: repository ?? GetSubstitute<IGitRepository>(),
             WorkingDirectory: workingDirectory ?? this.TempFolder,
             DefaultBranch: "main",
             ChangeLogFileName: "CHANGELOG.md"
         );
+    }
+
+    [Theory]
+    [InlineData("git@github.com:example/foo-template.git")]
+    [InlineData("git@github.com:example/foo-template")]
+    [InlineData("https://github.com/example/foo-template.git")]
+    [InlineData("https://github.com/example/foo-template")]
+    [InlineData("https://github.com/example/foo-template/")]
+    [InlineData("https://github.com/example/Foo-Template.GIT")]
+    public void IsTemplateRepoReturnsTrueWhenRepoNameEndsWithTemplate(string clonePath)
+    {
+        RepoContext context = this.CreateContext(clonePath: clonePath);
+
+        Assert.True(condition: context.IsTemplateRepo(), userMessage: "Should be a template repo");
+    }
+
+    [Theory]
+    [InlineData("git@github.com:example/foo.git")]
+    [InlineData("https://github.com/example/foo")]
+    [InlineData("git@github.com:example/foo-templates.git")]
+    [InlineData("git@github.com:example/template-foo.git")]
+    [InlineData("git@github.com:example/footemplate.git")]
+    [InlineData("git@github.com:example/foo-template-tools.git")]
+    [InlineData("git@github.com:template/repo.git")]
+    [InlineData("")]
+    public void IsTemplateRepoReturnsFalseWhenRepoNameDoesNotEndWithTemplate(string clonePath)
+    {
+        RepoContext context = this.CreateContext(clonePath: clonePath);
+
+        Assert.False(condition: context.IsTemplateRepo(), userMessage: "Should not be a template repo");
     }
 
     [Theory]

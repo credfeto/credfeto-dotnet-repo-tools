@@ -31,6 +31,7 @@ namespace Credfeto.DotNet.Repo.Tools.TemplateUpdate.Tests.Services;
 public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
 {
     private const string REPO_URL = "git@github.com:test/test-repo.git";
+    private const string TEMPLATE_REPO_URL = "git@github.com:test/foo-template.git";
     private const string TRACKING_HASH = "template-tracking-hash";
 
     private readonly string _tempFolder;
@@ -45,6 +46,7 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
     private readonly IDependaBotConfigBuilder _dependaBotConfigBuilder;
     private readonly IGitRepositoryFactory _gitRepositoryFactory;
     private readonly IFileUpdater _fileUpdater;
+    private readonly IChangeLogUpdater _changeLogUpdater;
 
     public BulkTemplateUpdaterTests()
     {
@@ -64,8 +66,9 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         this._gitRepositoryFactory = GetSubstitute<IGitRepositoryFactory>();
         IReleaseConfigLoader releaseConfigLoader = GetSubstitute<IReleaseConfigLoader>();
 
+        this._changeLogUpdater = GetSubstitute<IChangeLogUpdater>();
+
         ServiceProvider changeLogServices = new ServiceCollection().AddChangeLog().BuildServiceProvider();
-        IChangeLogUpdater changeLogUpdater = changeLogServices.GetRequiredService<IChangeLogUpdater>();
         IChangeLogLanguageFactory changeLogLanguageFactory =
             changeLogServices.GetRequiredService<IChangeLogLanguageFactory>();
 
@@ -86,7 +89,7 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
             labelsBuilder: GetSubstitute<ILabelsBuilder>(),
             templateConfigLoader: this._templateConfigLoader,
             changeLogDetector: new ChangeLogDetector(),
-            changeLogUpdater: changeLogUpdater,
+            changeLogUpdater: this._changeLogUpdater,
             changeLogLanguageFactory: changeLogLanguageFactory,
             logger: GetSubstitute<ILogger<BulkTemplateUpdater>>()
         );
@@ -410,10 +413,10 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         );
     }
 
-    private static void MockRepositoryMetadata(IGitRepository repository, string repoDir)
+    private static void MockRepositoryMetadata(IGitRepository repository, string repoDir, string repoUrl = REPO_URL)
     {
         repository.WorkingDirectory.Returns(repoDir);
-        repository.ClonePath.Returns(REPO_URL);
+        repository.ClonePath.Returns(repoUrl);
         repository.GetDefaultBranch(GitConstants.Upstream).Returns("main");
         repository.HeadRev.Returns("abc123deadbeef");
     }
@@ -811,6 +814,113 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
             await repoRepository.Received(1).PushAsync(Arg.Any<CancellationToken>());
             this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: TRACKING_HASH);
             this._trackingCache.DidNotReceive().Set(repoUrl: Arg.Any<string>(), value: "abc123deadbeef");
+        }
+    }
+
+    private static async ValueTask<bool> InvokeChangelogUpdateAsync(
+        Func<CancellationToken, ValueTask> changelogUpdate,
+        CancellationToken cancellationToken
+    )
+    {
+        await changelogUpdate(cancellationToken);
+
+        return true;
+    }
+
+    [Theory]
+    [InlineData(REPO_URL, 1)]
+    [InlineData(TEMPLATE_REPO_URL, 0)]
+    [SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Unit Test"
+    )]
+    public async Task BulkUpdateWithChangedGlobalJsonOnlyWritesChangelogForNonTemplateReposAsync(
+        string repoUrl,
+        int expectedChangelogWrites
+    )
+    {
+        string repoDir = await this.PrepareRepoWithChangeLogAsync();
+        string repoGlobalJson = Path.Combine(repoDir, "global.json");
+        await File.WriteAllTextAsync(path: repoGlobalJson, contents: "{}", cancellationToken: this.CancellationToken());
+
+        this._templateConfigLoader.LoadConfigAsync(
+                path: Arg.Any<string>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(GlobalJsonEnabledTemplateConfig());
+
+        this._dotNetFilesDetector.FindAsync(baseFolder: repoDir, cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(
+                new DotNetFiles(SourceDirectory: repoDir, Solutions: [Path.Combine(repoDir, "test.sln")], Projects: [])
+            );
+
+        this._fileUpdater.UpdateFileAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                copyInstruction: Arg.Is<CopyInstruction>(c =>
+                    StringComparer.Ordinal.Equals(x: c.TargetFileName, y: repoGlobalJson)
+                ),
+                changelogUpdate: Arg.Any<Func<CancellationToken, ValueTask>>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(callInfo =>
+                InvokeChangelogUpdateAsync(
+                    changelogUpdate: callInfo.ArgAt<Func<CancellationToken, ValueTask>>(2),
+                    cancellationToken: callInfo.ArgAt<CancellationToken>(3)
+                )
+            );
+
+        this.MockTrackingHash(TRACKING_HASH);
+
+        IGitRepository repoRepository = GetSubstitute<IGitRepository>();
+        MockRepositoryMetadata(repository: repoRepository, repoDir: repoDir, repoUrl: repoUrl);
+
+        using (LibGit2Sharp.Repository realRepo = new(repoDir))
+        {
+            repoRepository.Active.Returns(realRepo);
+
+            this._gitRepositoryFactory.OpenOrCloneAsync(
+                    workDir: Arg.Any<string>(),
+                    repoUrl: repoUrl,
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(repoRepository);
+
+            await this._bulkTemplateUpdater.BulkUpdateAsync(
+                templateRepository: "git@github.com:template/repo.git",
+                trackingFileName: string.Empty,
+                packagesFileName: "/packages.json",
+                workFolder: this._tempFolder,
+                templateConfigFileName: "/template.json",
+                releaseConfigFileName: "/release.json",
+                repositories: [repoUrl],
+                cancellationToken: this.CancellationToken()
+            );
+
+            await this
+                ._changeLogUpdater.Received(expectedChangelogWrites)
+                .RemoveEntryAsync(
+                    changeLogFileName: Arg.Any<string>(),
+                    language: Arg.Any<ChangeLogLanguage>(),
+                    type: Arg.Any<string>(),
+                    message: Arg.Any<string>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                );
+            await this
+                ._changeLogUpdater.Received(expectedChangelogWrites)
+                .AddEntryAsync(
+                    changeLogFileName: Arg.Any<string>(),
+                    language: Arg.Any<ChangeLogLanguage>(),
+                    type: Arg.Any<string>(),
+                    message: Arg.Any<string>(),
+                    cancellationToken: Arg.Any<CancellationToken>()
+                );
+            await repoRepository.Received(1).PushAsync(Arg.Any<CancellationToken>());
         }
     }
 }
