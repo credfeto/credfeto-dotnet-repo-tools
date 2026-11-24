@@ -12,7 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
-- Skip CHANGELOG.md entries for *-template repositories in SDK, package and other update paths
+- SDK and package updates no longer add or remove CHANGELOG.md entries for *-template repositories (issue #351)
 ### Changed
 ### Deprecated
 ### Removed
