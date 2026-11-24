@@ -12,6 +12,7 @@ namespace Credfeto.DotNet.Repo.Tools.Cmd.Setup;
 
 public static class CommandLineRunner
 {
+    private const string SELF_TEST_OPTION = "--self-test";
     private const string VERSION_OPTION = "--version";
 
     // ConsoleAppFramework keeps its log writers, service provider and exit code in process-wide state,
@@ -36,6 +37,17 @@ public static class CommandLineRunner
             await WriteAsync(writer: output, text: Help(command), cancellationToken: cancellationToken);
 
             return args is [] ? ExitCodes.Success : ExitCodes.HelpShown;
+        }
+
+        if (args is [SELF_TEST_OPTION])
+        {
+            return await SelfTest.RunAsync(
+                configureLogging: ConfigureLogging,
+                configureServices: configureServices,
+                output: output,
+                error: error,
+                cancellationToken: cancellationToken
+            );
         }
 
         if (FindUsageError(args: args, command: command) is { } usageError)
