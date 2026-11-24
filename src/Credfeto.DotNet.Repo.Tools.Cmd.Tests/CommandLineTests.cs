@@ -246,6 +246,58 @@ public sealed class CommandLineTests : TestBase
     }
 
     [Fact]
+    public async Task ProgramSelfTestWithRealServicesSucceedsAsync()
+    {
+        try
+        {
+            int exitCode = await Program.Main(["--self-test"]);
+
+            Assert.Equal(expected: SUCCESS, actual: exitCode);
+        }
+        finally
+        {
+            Environment.ExitCode = SUCCESS;
+        }
+    }
+
+    [Fact]
+    public async Task SelfTestSucceedsWithoutRunningAnythingAsync()
+    {
+        CommandLineResult result = await this.RunAsync("--self-test");
+
+        Assert.Equal(expected: SUCCESS, actual: result.ExitCode);
+        Assert.Contains(expectedSubstring: "Self test passed", actualString: result.Output, StringComparison.Ordinal);
+        Assert.Empty(result.Error);
+        await this.ReceivedNoBulkPackageUpdateAsync();
+        await this
+            ._gitRepositoryListLoader.DidNotReceiveWithAnyArgs()
+            .LoadAsync(path: string.Empty, cancellationToken: this.CancellationToken());
+    }
+
+    [Fact]
+    public async Task SelfTestWithMissingServiceExitsWithErrorAsync()
+    {
+        await using (StringWriter output = new())
+        await using (StringWriter error = new())
+        {
+            int exitCode = await CommandLineRunner.RunAsync(
+                args: ["--self-test"],
+                configureServices: static _ => { },
+                output: output,
+                error: error,
+                cancellationToken: this.CancellationToken()
+            );
+
+            Assert.Equal(expected: ERROR, actual: exitCode);
+            Assert.StartsWith(
+                expectedStartString: "Self test failed: ",
+                actualString: error.ToString(),
+                StringComparison.Ordinal
+            );
+        }
+    }
+
+    [Fact]
     public async Task CommandFailureExitsWithErrorAsync()
     {
         this._gitRepositoryListLoader.LoadAsync(
@@ -281,8 +333,9 @@ public sealed class CommandLineTests : TestBase
             "  check-dependencies     Reduce dependencies one folder",
             "",
             "Options:",
-            "  -h, --help    Show help message",
-            "  --version     Show version"
+            "  -h, --help     Show help message",
+            "  --version      Show version",
+            "  --self-test    Check the application's services can be created"
         );
     }
 
@@ -337,6 +390,7 @@ public sealed class CommandLineTests : TestBase
     [Theory]
     [InlineData("no-such-command")]
     [InlineData("--bogus")]
+    [InlineData("--self-test extra")]
     [InlineData("update-packages")]
     [InlineData("update-packages -r repos.lst")]
     [InlineData("check-dependencies -s")]
