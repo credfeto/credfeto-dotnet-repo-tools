@@ -15,6 +15,11 @@ internal static class CommandLineHelp
     private static readonly (string Name, string Description) HelpOption = ("-h, --help", "Show help message");
     private static readonly (string Name, string Description) VersionOption = ("--version", "Show version");
 
+    private static readonly (string Name, string Description) SelfTestOption = (
+        "--self-test",
+        "Check the application's services can be created"
+    );
+
     public static string RenderCommandList(string application, IReadOnlyList<CommandLineCommand> commands)
     {
         StringBuilder help = new StringBuilder()
@@ -28,7 +33,7 @@ internal static class CommandLineHelp
         AppendTable(help: help, rows: [.. commands.Select(command => (command.Name, command.Description))]);
 
         help.AppendLine().AppendLine("Options:");
-        AppendTable(help: help, rows: [HelpOption, VersionOption]);
+        AppendTable(help: help, rows: [HelpOption, VersionOption, SelfTestOption]);
 
         return help.ToString().TrimEnd();
     }
