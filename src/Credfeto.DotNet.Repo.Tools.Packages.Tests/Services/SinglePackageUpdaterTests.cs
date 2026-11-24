@@ -26,6 +26,7 @@ namespace Credfeto.DotNet.Repo.Tools.Packages.Tests.Services;
 public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
 {
     private const string CLONE_PATH = "git@github.com:test/test-repo.git";
+    private const string TEMPLATE_CLONE_PATH = "git@github.com:test/foo-template.git";
     private const string DEFAULT_BRANCH = "main";
     private const string HEAD_REV = "abc123def456";
     private const string TRACKING_HASH = "content-hash-matching-last-good-build";
@@ -106,10 +107,10 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
         return changelogPath;
     }
 
-    private RepoContext CreateRepoContext(string changelogFileName)
+    private RepoContext CreateRepoContext(string changelogFileName, string clonePath = CLONE_PATH)
     {
         return new RepoContext(
-            ClonePath: CLONE_PATH,
+            ClonePath: clonePath,
             Repository: this._repository,
             WorkingDirectory: this.TempFolder,
             DefaultBranch: DEFAULT_BRANCH,
@@ -614,6 +615,96 @@ public sealed class SinglePackageUpdaterTests : LoggingFolderCleanupTestBase
 
         Assert.True(result, userMessage: "Update should return true when packages were updated and build succeeded");
         await this._repository.Received(1).PushAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(CLONE_PATH, true)]
+    [InlineData(TEMPLATE_CLONE_PATH, false)]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Unit Test"
+    )]
+    public async Task UpdateWithPackageUpdatesAndBuildOkOnlyWritesChangelogForNonTemplateReposAsync(
+        string clonePath,
+        bool expectChangelogEntry
+    )
+    {
+        string changelogPath = await this.CreateChangelogFileAsync();
+        string originalChangelog = await File.ReadAllTextAsync(
+            path: changelogPath,
+            cancellationToken: this.CancellationToken()
+        );
+        RepoContext repoContext = this.CreateRepoContext(changelogFileName: changelogPath, clonePath: clonePath);
+        PackageUpdateContext updateContext = CreateUpdateContext();
+        PackageUpdate package = CreatePackage();
+
+        this._repository.HasUncommittedChanges().Returns(false);
+        MockITrackingCacheGet(this._trackingCache, clonePath, HEAD_REV);
+        MockITrackingHashGeneratorGenerateTrackingHash(this._trackingHashGenerator, "newhash");
+
+        PackageUpdateConfiguration config = new(
+            PackageMatch: new PackageMatch(PackageId: "Test.Package", Prefix: true),
+            ExcludedPackages: []
+        );
+        this._packageUpdateConfigurationBuilder.Build(package).Returns(config);
+
+        IReadOnlyList<PackageVersion> packageUpdates =
+        [
+            new(packageId: "Test.Package", version: new NuGetVersion(1, 2, 3)),
+        ];
+        this._packageUpdater.UpdateAsync(
+                basePath: Arg.Any<string>(),
+                configuration: Arg.Any<PackageUpdateConfiguration>(),
+                packageSources: Arg.Any<IReadOnlyList<string>>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(packageUpdates);
+
+        this._dotNetSolutionCheck.PostCheckAsync(
+                solutions: Arg.Any<IReadOnlyList<string>>(),
+                repositoryDotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                templateDotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(true);
+
+        await this._singlePackageUpdater.UpdateAsync(
+            updateContext: updateContext,
+            repoContext: repoContext,
+            solutions: [],
+            sourceDirectory: this.TempFolder,
+            buildSettings: EmptyBuildSettings,
+            dotNetSettings: DefaultDotNetSettings,
+            package: package,
+            knownTrackingHash: null,
+            cancellationToken: this.CancellationToken()
+        );
+
+        string updatedChangelog = await File.ReadAllTextAsync(
+            path: changelogPath,
+            cancellationToken: this.CancellationToken()
+        );
+
+        Assert.Equal(
+            expected: expectChangelogEntry,
+            actual: updatedChangelog.Contains(
+                value: "Dependencies - Updated Test.Package to 1.2.3",
+                comparisonType: StringComparison.Ordinal
+            )
+        );
+
+        if (!expectChangelogEntry)
+        {
+            Assert.Equal(expected: originalChangelog, actual: updatedChangelog);
+        }
+
+        await this
+            ._repository.Received(1)
+            .CommitAsync(
+                message: "[Dependencies] Updating Test.Package (nuget) to 1.2.3",
+                cancellationToken: Arg.Any<CancellationToken>()
+            );
     }
 
     [Theory]
