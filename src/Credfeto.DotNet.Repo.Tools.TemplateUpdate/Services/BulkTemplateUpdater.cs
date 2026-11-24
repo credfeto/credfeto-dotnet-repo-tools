@@ -35,6 +35,12 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
     private const string CHANGELOG_ENTRY_TYPE = "Changed";
 
     private const string DOT_GITHUB_DIR = ".github";
+
+    private static readonly BuildSettings NoBuildSettings = new(
+        PublishableProjects: [],
+        PackableProjects: [],
+        Framework: null
+    );
     private readonly IBulkPackageConfigLoader _bulkPackageConfigLoader;
     private readonly ChangeLogLanguage _changeLogLanguage;
     private readonly IChangeLogDetector _changeLogDetector;
@@ -335,10 +341,10 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         }
         else
         {
-            this._logger.LogNoDotNetFilesFound();
-            await this.UpdateTrackingHashAsync(
-                repoContext: repoContext,
+            await this.UpdateRepoWithoutSolutionAsync(
                 updateContext: updateContext,
+                repoContext: repoContext,
+                dotNetFiles: dotNetFiles,
                 cancellationToken: cancellationToken
             );
         }
@@ -346,6 +352,59 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         await RemoveOldFilesAsync(
             updateContext: updateContext,
             repoContext: repoContext,
+            cancellationToken: cancellationToken
+        );
+    }
+
+    private async ValueTask UpdateRepoWithoutSolutionAsync(
+        TemplateUpdateContext updateContext,
+        RepoContext repoContext,
+        DotNetFiles dotNetFiles,
+        CancellationToken cancellationToken
+    )
+    {
+        this._logger.LogNoDotNetFilesFound();
+
+        bool globalJsonChanged = await this.UpdateGlobalJsonWithoutSolutionAsync(
+            updateContext: updateContext,
+            repoContext: repoContext,
+            dotNetFiles: dotNetFiles,
+            cancellationToken: cancellationToken
+        );
+
+        if (!globalJsonChanged)
+        {
+            await this.UpdateTrackingHashAsync(
+                repoContext: repoContext,
+                updateContext: updateContext,
+                cancellationToken: cancellationToken
+            );
+        }
+    }
+
+    // Non-.NET repositories can still pin an SDK in src/global.json for the dotnet tools their CI runs.
+    private async ValueTask<bool> UpdateGlobalJsonWithoutSolutionAsync(
+        TemplateUpdateContext updateContext,
+        RepoContext repoContext,
+        DotNetFiles dotNetFiles,
+        CancellationToken cancellationToken
+    )
+    {
+        string sourceDirectory = Path.Combine(path1: repoContext.WorkingDirectory, path2: "src");
+
+        if (!File.Exists(Path.Combine(path1: sourceDirectory, path2: "global.json")))
+        {
+            return false;
+        }
+
+        return await this.UpdateGlobalJsonAsync(
+            repoContext: repoContext,
+            updateContext: updateContext,
+            dotNetFiles: dotNetFiles with
+            {
+                SourceDirectory = sourceDirectory,
+            },
+            buildSettings: NoBuildSettings,
             cancellationToken: cancellationToken
         );
     }
@@ -1243,7 +1302,8 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             }
 
             bool ok =
-                dotNetFiles.Projects is []
+                !dotNetFiles.HasSolutions
+                || dotNetFiles.Projects is []
                 || await this.CheckBuildAsync(
                     updateContext: updateContext,
                     dotNetFiles: dotNetFiles,
