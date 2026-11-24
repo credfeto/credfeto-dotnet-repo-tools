@@ -61,7 +61,7 @@ internal static class CommandLineHelp
     {
         foreach (CommandLineOption option in command.Options)
         {
-            string name = option.ShortForm is { } shortForm ? shortForm + ", " + option.LongForm : option.LongForm;
+            string name = option.ShortForm + ", " + option.LongForm;
 
             yield return (
                 name + ValueText(option),
