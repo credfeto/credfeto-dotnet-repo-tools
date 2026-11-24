@@ -10,8 +10,6 @@ namespace Credfeto.DotNet.Repo.Tools.Cmd.Setup;
 [DebuggerDisplay("{Name}")]
 internal sealed record CommandLineCommand(string Name, string Description, IReadOnlyList<CommandLineOption> Options)
 {
-    private const string END_OF_OPTIONS = "--";
-
     // Rewrites each short alias (-r) to its long name (--repositories), which is the only name ConsoleAppFramework knows.
     public string[] ExpandShortNames(IReadOnlyList<string> args)
     {
@@ -29,7 +27,7 @@ internal sealed record CommandLineCommand(string Name, string Description, IRead
         [
             .. args.Select(arg =>
             {
-                endOfOptions |= StringComparer.Ordinal.Equals(x: arg, y: END_OF_OPTIONS);
+                endOfOptions |= StringComparer.Ordinal.Equals(x: arg, y: CommandLineCompatibility.END_OF_OPTIONS);
 
                 return !endOfOptions && longNames.TryGetValue(key: arg, out string? longName) ? longName : arg;
             }),

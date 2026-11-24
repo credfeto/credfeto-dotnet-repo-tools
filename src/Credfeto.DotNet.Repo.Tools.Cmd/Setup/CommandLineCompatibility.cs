@@ -9,7 +9,7 @@ namespace Credfeto.DotNet.Repo.Tools.Cmd.Setup;
 // Keeps the observable behaviour of the Cocona command line that ConsoleAppFramework does differently.
 internal static class CommandLineCompatibility
 {
-    private const string END_OF_OPTIONS = "--";
+    internal const string END_OF_OPTIONS = "--";
 
     private static readonly FrozenSet<string> HelpOptions = FrozenSet.Create(StringComparer.Ordinal, "-h", "--help");
 
