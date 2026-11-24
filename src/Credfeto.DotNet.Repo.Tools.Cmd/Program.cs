@@ -29,13 +29,7 @@ public static class Program
         {
             return ExitCodes.Error;
         }
-        catch (PackageUpdateException exception)
-        {
-            Console.WriteLine(exception.Message);
-
-            return ExitCodes.Error;
-        }
-        catch (UpdateFailedException exception)
+        catch (Exception exception) when (exception is PackageUpdateException or UpdateFailedException)
         {
             Console.WriteLine(exception.Message);
 
