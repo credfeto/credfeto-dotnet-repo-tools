@@ -47,6 +47,8 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
     private readonly IGitRepositoryFactory _gitRepositoryFactory;
     private readonly IFileUpdater _fileUpdater;
     private readonly IChangeLogUpdater _changeLogUpdater;
+    private readonly IDotNetBuild _dotNetBuild;
+    private readonly IDotNetSolutionCheck _dotNetSolutionCheck;
 
     public BulkTemplateUpdaterTests()
     {
@@ -61,6 +63,8 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         this._dotNetFilesDetector = GetSubstitute<IDotNetFilesDetector>();
         this._dependaBotConfigBuilder = GetSubstitute<IDependaBotConfigBuilder>();
         this._fileUpdater = GetSubstitute<IFileUpdater>();
+        this._dotNetBuild = GetSubstitute<IDotNetBuild>();
+        this._dotNetSolutionCheck = GetSubstitute<IDotNetSolutionCheck>();
 
         IBulkPackageConfigLoader bulkPackageConfigLoader = GetSubstitute<IBulkPackageConfigLoader>();
         this._gitRepositoryFactory = GetSubstitute<IGitRepositoryFactory>();
@@ -78,8 +82,8 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
             globalJson: this._globalJson,
             dotNetFilesDetector: this._dotNetFilesDetector,
             dotNetVersion: this._dotNetVersion,
-            dotNetSolutionCheck: GetSubstitute<IDotNetSolutionCheck>(),
-            dotNetBuild: GetSubstitute<IDotNetBuild>(),
+            dotNetSolutionCheck: this._dotNetSolutionCheck,
+            dotNetBuild: this._dotNetBuild,
             releaseConfigLoader: releaseConfigLoader,
             releaseGeneration: GetSubstitute<IReleaseGeneration>(),
             gitRepositoryFactory: this._gitRepositoryFactory,
@@ -922,5 +926,258 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
                 );
             await repoRepository.Received(1).PushAsync(Arg.Any<CancellationToken>());
         }
+    }
+
+    private async Task<string> PrepareRepoWithSourceFolderAsync(bool withGlobalJson)
+    {
+        string repoDir = await this.PrepareRepoWithChangeLogAsync();
+        string sourceDir = Path.Combine(repoDir, "src");
+        Directory.CreateDirectory(sourceDir);
+
+        if (withGlobalJson)
+        {
+            await File.WriteAllTextAsync(
+                path: Path.Combine(sourceDir, "global.json"),
+                contents: "{}",
+                cancellationToken: this.CancellationToken()
+            );
+        }
+
+        return repoDir;
+    }
+
+    private void MockTemplateConfig(TemplateConfig templateConfig)
+    {
+        this._templateConfigLoader.LoadConfigAsync(
+                path: Arg.Any<string>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(templateConfig);
+    }
+
+    private void MockDotNetFiles(string repoDir, in DotNetFiles dotNetFiles)
+    {
+        this._dotNetFilesDetector.FindAsync(baseFolder: repoDir, cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(dotNetFiles);
+    }
+
+    [SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    private void MockGlobalJsonUpdateRunningChangelogUpdate(string repoGlobalJson)
+    {
+        this._fileUpdater.UpdateFileAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                copyInstruction: Arg.Is<CopyInstruction>(c =>
+                    StringComparer.Ordinal.Equals(x: c.TargetFileName, y: repoGlobalJson)
+                ),
+                changelogUpdate: Arg.Any<Func<CancellationToken, ValueTask>>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(callInfo =>
+                InvokeChangelogUpdateAsync(
+                    changelogUpdate: callInfo.ArgAt<Func<CancellationToken, ValueTask>>(2),
+                    cancellationToken: callInfo.ArgAt<CancellationToken>(3)
+                )
+            );
+    }
+
+    private async Task<IGitRepository> UpdateSingleRepoAsync(string repoDir)
+    {
+        IGitRepository repoRepository = GetSubstitute<IGitRepository>();
+        MockRepositoryMetadata(repository: repoRepository, repoDir: repoDir);
+
+        using (LibGit2Sharp.Repository realRepo = new(repoDir))
+        {
+            repoRepository.Active.Returns(realRepo);
+
+            this._gitRepositoryFactory.OpenOrCloneAsync(
+                    workDir: Arg.Any<string>(),
+                    repoUrl: REPO_URL,
+                    cancellationToken: Arg.Any<CancellationToken>()
+                )
+                .Returns(repoRepository);
+
+            await this._bulkTemplateUpdater.BulkUpdateAsync(
+                templateRepository: "git@github.com:template/repo.git",
+                trackingFileName: string.Empty,
+                packagesFileName: "/packages.json",
+                workFolder: this._tempFolder,
+                templateConfigFileName: "/template.json",
+                releaseConfigFileName: "/release.json",
+                repositories: [REPO_URL],
+                cancellationToken: this.CancellationToken()
+            );
+        }
+
+        return repoRepository;
+    }
+
+    private async Task AssertNoBuildAsync()
+    {
+        await this
+            ._dotNetSolutionCheck.DidNotReceive()
+            .PreCheckAsync(
+                solutions: Arg.Any<IReadOnlyList<string>>(),
+                repositoryDotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                templateDotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            );
+        await this
+            ._dotNetBuild.DidNotReceive()
+            .BuildAsync(buildContext: Arg.Any<BuildContext>(), cancellationToken: Arg.Any<CancellationToken>());
+    }
+
+    private async Task AssertNoFileUpdatesAsync()
+    {
+        await this
+            ._fileUpdater.DidNotReceive()
+            .UpdateFileAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                copyInstruction: Arg.Any<CopyInstruction>(),
+                changelogUpdate: Arg.Any<Func<CancellationToken, ValueTask>>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            );
+    }
+
+    [Fact]
+    public async Task BulkUpdateWithNoSolutionAndSrcGlobalJsonUpdatesGlobalJsonWithoutBuildingAsync()
+    {
+        string repoDir = await this.PrepareRepoWithSourceFolderAsync(withGlobalJson: true);
+        string sourceDir = Path.Combine(repoDir, "src");
+        string repoGlobalJson = Path.Combine(sourceDir, "global.json");
+        string templateGlobalJson = Path.Combine(this._tempFolder, "src", "global.json");
+
+        this.MockTemplateConfig(GlobalJsonEnabledTemplateConfig());
+        this.MockDotNetFiles(
+            repoDir: repoDir,
+            new DotNetFiles(SourceDirectory: sourceDir, Solutions: [], Projects: [])
+        );
+        this.MockGlobalJsonUpdateRunningChangelogUpdate(repoGlobalJson);
+        this.MockTrackingHash(TRACKING_HASH);
+
+        IGitRepository repoRepository = await this.UpdateSingleRepoAsync(repoDir);
+
+        await this
+            ._fileUpdater.Received(1)
+            .UpdateFileAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                copyInstruction: Arg.Is<CopyInstruction>(c =>
+                    StringComparer.Ordinal.Equals(x: c.SourceFileName, y: templateGlobalJson)
+                    && StringComparer.Ordinal.Equals(x: c.TargetFileName, y: repoGlobalJson)
+                ),
+                changelogUpdate: Arg.Any<Func<CancellationToken, ValueTask>>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            );
+        await this
+            ._changeLogUpdater.Received(1)
+            .AddEntryAsync(
+                changeLogFileName: Arg.Any<string>(),
+                language: Arg.Any<ChangeLogLanguage>(),
+                type: Arg.Any<string>(),
+                message: Arg.Any<string>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            );
+        await this.AssertNoBuildAsync();
+        await repoRepository
+            .DidNotReceive()
+            .CreateBranchAsync(branchName: Arg.Any<string>(), cancellationToken: Arg.Any<CancellationToken>());
+        await repoRepository.Received(1).PushAsync(Arg.Any<CancellationToken>());
+        this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: TRACKING_HASH);
+    }
+
+    [Fact]
+    public async Task BulkUpdateWithNoSolutionAndNoGlobalJsonDoesNotUpdateGlobalJsonAsync()
+    {
+        string repoDir = await this.PrepareRepoWithSourceFolderAsync(withGlobalJson: false);
+
+        this.MockTemplateConfig(GlobalJsonEnabledTemplateConfig());
+        this.MockDotNetFiles(
+            repoDir: repoDir,
+            new DotNetFiles(SourceDirectory: Path.Combine(repoDir, "src"), Solutions: [], Projects: [])
+        );
+        this.MockTrackingHash(TRACKING_HASH);
+
+        IGitRepository repoRepository = await this.UpdateSingleRepoAsync(repoDir);
+
+        await this.AssertNoFileUpdatesAsync();
+        await this.AssertNoBuildAsync();
+        await repoRepository.DidNotReceive().PushAsync(Arg.Any<CancellationToken>());
+        this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: TRACKING_HASH);
+    }
+
+    [Fact]
+    public async Task BulkUpdateWithNoSolutionAndGlobalJsonDisabledDoesNotUpdateGlobalJsonAsync()
+    {
+        string repoDir = await this.PrepareRepoWithSourceFolderAsync(withGlobalJson: true);
+
+        this.MockDotNetFiles(
+            repoDir: repoDir,
+            new DotNetFiles(SourceDirectory: Path.Combine(repoDir, "src"), Solutions: [], Projects: [])
+        );
+        this.MockTrackingHash(TRACKING_HASH);
+
+        IGitRepository repoRepository = await this.UpdateSingleRepoAsync(repoDir);
+
+        await this.AssertNoFileUpdatesAsync();
+        await repoRepository.DidNotReceive().PushAsync(Arg.Any<CancellationToken>());
+        this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: TRACKING_HASH);
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    public async Task BulkUpdateWithSolutionUpdatesGlobalJsonOnceAndBuildsAsync()
+    {
+        string repoDir = await this.PrepareRepoWithSourceFolderAsync(withGlobalJson: true);
+        string sourceDir = Path.Combine(repoDir, "src");
+        string repoGlobalJson = Path.Combine(sourceDir, "global.json");
+
+        this.MockTemplateConfig(GlobalJsonEnabledTemplateConfig());
+        this.MockDotNetFiles(
+            repoDir: repoDir,
+            new DotNetFiles(
+                SourceDirectory: sourceDir,
+                Solutions: [Path.Combine(sourceDir, "test.sln")],
+                Projects: [Path.Combine(sourceDir, "test.csproj")]
+            )
+        );
+        this._dotNetBuild.LoadBuildSettingsAsync(
+                projects: Arg.Any<IReadOnlyList<string>>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(new BuildSettings(PublishableProjects: [], PackableProjects: [], Framework: null));
+        this.MockGlobalJsonUpdateRunningChangelogUpdate(repoGlobalJson);
+        this.MockTrackingHash(TRACKING_HASH);
+
+        IGitRepository repoRepository = await this.UpdateSingleRepoAsync(repoDir);
+
+        await repoRepository.Received(1).PushAsync(Arg.Any<CancellationToken>());
+        await this
+            ._fileUpdater.Received(1)
+            .UpdateFileAsync(
+                repoContext: Arg.Any<RepoContext>(),
+                copyInstruction: Arg.Is<CopyInstruction>(c =>
+                    StringComparer.Ordinal.Equals(x: c.TargetFileName, y: repoGlobalJson)
+                ),
+                changelogUpdate: Arg.Any<Func<CancellationToken, ValueTask>>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            );
+        await this
+            ._dotNetSolutionCheck.Received(1)
+            .PreCheckAsync(
+                solutions: Arg.Any<IReadOnlyList<string>>(),
+                repositoryDotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                templateDotNetSettings: Arg.Any<DotNetVersionSettings>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            );
+        await this
+            ._dotNetBuild.Received(1)
+            .BuildAsync(buildContext: Arg.Any<BuildContext>(), cancellationToken: Arg.Any<CancellationToken>());
     }
 }

@@ -13,6 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 - SDK and package updates no longer add or remove CHANGELOG.md entries for *-template repositories (issue #351)
+- Template updater now updates src/global.json in repositories without a .NET solution (#395)
 ### Changed
 ### Deprecated
 ### Removed
