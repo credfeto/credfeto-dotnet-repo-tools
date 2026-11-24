@@ -22,6 +22,7 @@
     <IlcOptimizationPreference>Size</IlcOptimizationPreference>
     <ImplicitUsings>disable</ImplicitUsings>
     <IncludeSymbols>true</IncludeSymbols>
+    <IsAotCompatible>true</IsAotCompatible>
     <IsPackable>false</IsPackable>
     <IsPublishable>false</IsPublishable>
     <IsTrimmable>true</IsTrimmable>
