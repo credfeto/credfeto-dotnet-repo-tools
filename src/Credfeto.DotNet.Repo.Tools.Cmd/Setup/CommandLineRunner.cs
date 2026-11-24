@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ConsoleAppFramework;
@@ -103,9 +104,14 @@ public static class CommandLineRunner
     {
         string[] expanded = command?.ExpandShortNames(args) ?? [.. args];
 
-        // Cocona collected a repeated --source into a list; ConsoleAppFramework keeps the last value of a repeated
+        // Cocona collected a repeated option into a list; ConsoleAppFramework keeps the last value of a repeated
         // option, but splits a comma-separated value into an array, so the repeats are joined into one value.
-        return CommandLineCompatibility.JoinRepeatedOption(args: expanded, longName: "--source");
+        return command
+            ?.Options.Where(option => option.IsRepeatable)
+            .Aggregate(seed: expanded, func: (current, option) =>
+                CommandLineCompatibility.JoinRepeatedOption(args: current, longName: option.LongForm)
+            )
+            ?? expanded;
     }
 
     private static ValueTask WriteAsync(TextWriter writer, string text, CancellationToken cancellationToken)
