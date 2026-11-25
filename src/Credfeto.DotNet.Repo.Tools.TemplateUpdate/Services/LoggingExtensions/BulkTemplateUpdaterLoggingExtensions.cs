@@ -222,4 +222,15 @@ internal static partial class BulkTemplateUpdaterLoggingExtensions
         string message,
         Exception exception
     );
+
+    [LoggerMessage(
+        EventId = 23,
+        Level = LogLevel.Information,
+        Message = "{clonePath}: Removed cleanup file {fileName}"
+    )]
+    public static partial void LogRemovedCleanupFile(
+        this ILogger<BulkTemplateUpdater> logger,
+        string clonePath,
+        string fileName
+    );
 }
