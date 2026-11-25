@@ -13,9 +13,6 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 ### Changed
-- The updaterepo command-line tool now uses a lightweight custom command-line runner instead of Cocona, and gains a --self-test command to verify the installed tool works. Trimming, Native AOT-style analysers and IsAotCompatible are enabled for the libraries, and each runtime identifier is packed as self-contained ReadyToRun (Native AOT and trimming are not yet possible, as IL2026 in FunFair.BuildCheck.Runner blocks them, so PublishAot stays disabled).
-- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.172.2273
-- Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.149.1891
 ### Deprecated
 ### Removed
 ### Deployment Changes
@@ -23,6 +20,12 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 <!--
 Releases that have at least been deployed to staging, BUT NOT necessarily released to live.  Changes should be moved from [Unreleased] into here as they are merged into the appropriate release branch
 -->
+
+## [1.5.34] - 2026-11-25
+### Changed
+- The updaterepo command-line tool now uses a lightweight custom command-line runner instead of Cocona, and gains a --self-test command to verify the installed tool works. Trimming, Native AOT-style analysers and IsAotCompatible are enabled for the libraries, and each runtime identifier is packed as self-contained ReadyToRun (Native AOT and trimming are not yet possible, as IL2026 in FunFair.BuildCheck.Runner blocks them, so PublishAot stays disabled).
+- Dependencies - Updated Credfeto.Extensions.Linq to 1.0.172.2273
+- Dependencies - Updated Credfeto.Version.Information.Generator to 1.0.149.1891
 
 ## [1.5.33] - 2026-11-25
 ### Fixed
