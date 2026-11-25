@@ -34,6 +34,8 @@ public sealed class CommandLineTests : TestBase
 
     private static readonly string[] ExpectedSources = ["https://a/index.json", "https://b/index.json"];
 
+    private static readonly string[] FirstSourceOnly = ["https://a/index.json"];
+
     private readonly IBulkCodeCleanUp _bulkCodeCleanUp;
     private readonly IBulkDependencyReducer _bulkDependencyReducer;
     private readonly IBulkPackageUpdater _bulkPackageUpdater;
@@ -211,6 +213,31 @@ public sealed class CommandLineTests : TestBase
     }
 
     [Fact]
+    public async Task RepeatedOptionAfterEndOfOptionsIsNotJoinedAsync()
+    {
+        CommandLineResult result = await this.RunAsync(
+            "update-packages -r repos.lst -m https://template.git -t tracking -p packages.json -w work -l release.config -s https://a/index.json -- -s https://b/index.json"
+        );
+
+        Assert.Equal(expected: SUCCESS, actual: result.ExitCode);
+        await this
+            ._bulkPackageUpdater.Received(1)
+            .BulkUpdateAsync(
+                templateRepository: "https://template.git",
+                cacheFileName: null,
+                trackingFileName: "tracking",
+                packagesFileName: "packages.json",
+                workFolder: "work",
+                releaseConfigFileName: "release.config",
+                additionalNugetSources: Arg.Is<IReadOnlyList<string>>(sources =>
+                    sources.SequenceEqual(FirstSourceOnly, StringComparer.Ordinal)
+                ),
+                repositories: Arg.Any<IReadOnlyList<string>>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            );
+    }
+
+    [Fact]
     public async Task ProgramShowsHelpAsync()
     {
         try
@@ -297,8 +324,12 @@ public sealed class CommandLineTests : TestBase
         }
     }
 
-    [Fact]
-    public async Task CommandFailureExitsWithErrorAsync()
+    [Theory]
+    [InlineData("update-packages -r repos.lst -m https://template.git -t t -p p -w w -l l")]
+    [InlineData("update-template -r repos.lst -m https://template.git -c c -t t -p p -w w -l l")]
+    [InlineData("code-cleanup -r repos.lst -m https://template.git -t t -w w")]
+    [InlineData("reduce-dependencies -r repos.lst -m https://template.git -t t -w w")]
+    public async Task CommandFailureExitsWithErrorAsync(string commandLine)
     {
         this._gitRepositoryListLoader.LoadAsync(
                 path: Arg.Any<string>(),
@@ -306,7 +337,7 @@ public sealed class CommandLineTests : TestBase
             )
             .Returns([]);
 
-        CommandLineResult result = await this.RunAsync("code-cleanup -r repos.lst -m https://template.git -t t -w w");
+        CommandLineResult result = await this.RunAsync(commandLine);
 
         Assert.Equal(expected: ERROR, actual: result.ExitCode);
     }
