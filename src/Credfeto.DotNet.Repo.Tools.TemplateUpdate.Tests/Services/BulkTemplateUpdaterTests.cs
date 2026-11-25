@@ -33,6 +33,8 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
     private const string REPO_URL = "git@github.com:test/test-repo.git";
     private const string TEMPLATE_REPO_URL = "git@github.com:test/foo-template.git";
     private const string TRACKING_HASH = "template-tracking-hash";
+    private const string CLEANUP_FILE_NAME = "obsolete-file.yml";
+    private const string CLEANUP_COMMIT_MESSAGE = "Removed: chore";
 
     private readonly string _tempFolder;
     private readonly IBulkTemplateUpdater _bulkTemplateUpdater;
@@ -1179,5 +1181,126 @@ public sealed class BulkTemplateUpdaterTests : TestBase, IDisposable
         await this
             ._dotNetBuild.Received(1)
             .BuildAsync(buildContext: Arg.Any<BuildContext>(), cancellationToken: Arg.Any<CancellationToken>());
+    }
+
+    [SuppressMessage(
+        category: "Style",
+        checkId: "IDE0028: Collection initialization can be simplified",
+        Justification = "A collection expression cannot pass an IEqualityComparer to the Dictionary constructor; simplifying would silently drop Ordinal and change lookup semantics"
+    )]
+    private static TemplateConfig CleanupEnabledTemplateConfig()
+    {
+        return new TemplateConfig(
+            general: new GeneralTemplateConfig(files: new Dictionary<string, string>(StringComparer.Ordinal)),
+            gitHub: new GitHubTemplateConfig(
+                issueTemplates: false,
+                pullRequestTemplates: false,
+                actions: false,
+                linters: false,
+                files: new Dictionary<string, string>(StringComparer.Ordinal),
+                dependabot: new DependabotTemplateConfig(generate: false),
+                labels: new LabelsTemplateConfig(generate: false)
+            ),
+            dotNet: new DotnetTemplateConfig(
+                globalJson: false,
+                jetBrainsDotSettings: false,
+                files: new Dictionary<string, string>(StringComparer.Ordinal)
+            ),
+            cleanup: new CleanupTemplateConfig(
+                files: new Dictionary<string, string>(StringComparer.Ordinal) { [CLEANUP_FILE_NAME] = "chore" }
+            )
+        );
+    }
+
+    private async Task<string> WriteCleanupFileAsync(string repoDir)
+    {
+        string cleanupFile = Path.Combine(repoDir, CLEANUP_FILE_NAME);
+        await File.WriteAllTextAsync(
+            path: cleanupFile,
+            contents: "obsolete",
+            cancellationToken: this.CancellationToken()
+        );
+
+        return cleanupFile;
+    }
+
+    private static async Task AssertCleanupFileRemovedAsync(IGitRepository repoRepository, string cleanupFile)
+    {
+        Assert.False(File.Exists(cleanupFile), "Expected the cleanup file to have been removed");
+        await repoRepository
+            .Received(1)
+            .CommitAsync(message: CLEANUP_COMMIT_MESSAGE, cancellationToken: Arg.Any<CancellationToken>());
+        await repoRepository.Received(1).PushAsync(Arg.Any<CancellationToken>());
+        await repoRepository
+            .Received(1)
+            .ResetToDefaultBranchAsync(
+                upstream: GitConstants.Upstream,
+                cancellationToken: Arg.Any<CancellationToken>()
+            );
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Microsoft.Reliability",
+        checkId: "CA2012: Use ValueTasks correctly",
+        Justification = "NSubstitute mock setup requires calling async methods without awaiting"
+    )]
+    public async Task BulkUpdateWithCleanupFileRemovesItEvenWhenLaterStepThrowsAsync()
+    {
+        string repoDir = await this.PrepareRepoWithChangeLogAsync();
+        string cleanupFile = await this.WriteCleanupFileAsync(repoDir);
+
+        this.MockTemplateConfig(CleanupEnabledTemplateConfig());
+        this._dotNetFilesDetector.FindAsync(baseFolder: repoDir, cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(_ =>
+                ValueTask.FromException<DotNetFiles>(
+                    new InvalidOperationException("Simulated failure in a later update step")
+                )
+            );
+
+        IGitRepository repoRepository = await this.UpdateSingleRepoAsync(repoDir);
+
+        await this
+            ._dotNetFilesDetector.Received(1)
+            .FindAsync(baseFolder: repoDir, cancellationToken: Arg.Any<CancellationToken>());
+        await AssertCleanupFileRemovedAsync(repoRepository: repoRepository, cleanupFile: cleanupFile);
+    }
+
+    [Fact]
+    public async Task BulkUpdateWithNoChangeLogStillRemovesCleanupFileAsync()
+    {
+        string repoDir = Path.Combine(this._tempFolder, "repo");
+        Directory.CreateDirectory(repoDir);
+        LibGit2Sharp.Repository.Init(repoDir);
+        string cleanupFile = await this.WriteCleanupFileAsync(repoDir);
+
+        this.MockTemplateConfig(CleanupEnabledTemplateConfig());
+        this.MockTrackingHash(TRACKING_HASH);
+
+        IGitRepository repoRepository = await this.UpdateSingleRepoAsync(repoDir);
+
+        await AssertCleanupFileRemovedAsync(repoRepository: repoRepository, cleanupFile: cleanupFile);
+        await this
+            ._dotNetFilesDetector.DidNotReceive()
+            .FindAsync(baseFolder: Arg.Any<string>(), cancellationToken: Arg.Any<CancellationToken>());
+        this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: TRACKING_HASH);
+    }
+
+    [Fact]
+    public async Task BulkUpdateWithCleanupFileAbsentDoesNotCommitRemovalAsync()
+    {
+        string repoDir = await this.PrepareRepoWithChangeLogAsync();
+
+        this.MockTemplateConfig(CleanupEnabledTemplateConfig());
+        this.MockDotNetFiles(repoDir: repoDir, new DotNetFiles(SourceDirectory: repoDir, Solutions: [], Projects: []));
+        this.MockTrackingHash(TRACKING_HASH);
+
+        IGitRepository repoRepository = await this.UpdateSingleRepoAsync(repoDir);
+
+        await repoRepository
+            .DidNotReceive()
+            .CommitAsync(message: CLEANUP_COMMIT_MESSAGE, cancellationToken: Arg.Any<CancellationToken>());
+        await repoRepository.DidNotReceive().PushAsync(Arg.Any<CancellationToken>());
+        this._trackingCache.Received(1).Set(repoUrl: REPO_URL, value: TRACKING_HASH);
     }
 }

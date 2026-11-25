@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Template update now removes the files listed in cleanup.files first for every repository, including those without a changelog, independent of later update steps, and logs each file it removes (#360)
 ### Changed
 ### Deprecated
 ### Removed
