@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Template update: cleanup.files obsolete files are now removed first, independent of later per-repository update steps failing and of a missing changelog (#360)
 ### Changed
 ### Deprecated
 ### Removed
