@@ -12,6 +12,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Security
 ### Added
 ### Fixed
+- Template update: cleanup.files obsolete files are now removed first, independent of later per-repository update steps failing and of a missing changelog (#360)
 ### Changed
 - The updaterepo command-line tool now uses a lightweight custom command-line runner instead of Cocona, and gains a --self-test command to verify the installed tool works. Trimming, Native AOT-style analysers and IsAotCompatible are enabled for the libraries, and each runtime identifier is packed as self-contained ReadyToRun (Native AOT and trimming are not yet possible, as IL2026 in FunFair.BuildCheck.Runner blocks them, so PublishAot stays disabled).
 - Dependencies - Updated Credfeto.Extensions.Linq to 1.0.172.2273
