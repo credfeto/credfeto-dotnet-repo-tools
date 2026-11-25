@@ -254,6 +254,14 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
             )
         )
         {
+            // Cleanup runs before anything else so that a failure or early exit in a later step
+            // (including a missing changelog) can never leave an obsolete file in place.
+            await this.RemoveOldFilesAsync(
+                updateContext: updateContext,
+                repository: repository,
+                cancellationToken: cancellationToken
+            );
+
             if (!this.TryFindChangeLog(repository.Active.Info.WorkingDirectory, out string? changeLogFileName))
             {
                 this._logger.LogNoChangelogFound();
@@ -348,12 +356,6 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
                 cancellationToken: cancellationToken
             );
         }
-
-        await RemoveOldFilesAsync(
-            updateContext: updateContext,
-            repoContext: repoContext,
-            cancellationToken: cancellationToken
-        );
     }
 
     private async ValueTask UpdateRepoWithoutSolutionAsync(
@@ -409,25 +411,27 @@ public sealed class BulkTemplateUpdater : IBulkTemplateUpdater
         );
     }
 
-    private static async ValueTask RemoveOldFilesAsync(
+    private async ValueTask RemoveOldFilesAsync(
         TemplateUpdateContext updateContext,
-        RepoContext repoContext,
+        IGitRepository repository,
         CancellationToken cancellationToken
     )
     {
         foreach ((string fileName, string prefix) in updateContext.TemplateConfig.Cleanup.Files)
         {
-            string repoFile = Path.Combine(path1: repoContext.WorkingDirectory, path2: fileName);
+            string repoFile = Path.Combine(path1: repository.WorkingDirectory, path2: fileName);
 
             if (File.Exists(repoFile))
             {
                 File.Delete(repoFile);
-                await repoContext.Repository.CommitAsync($"Removed: {prefix}", cancellationToken: cancellationToken);
-                await repoContext.Repository.PushAsync(cancellationToken: cancellationToken);
-                await repoContext.Repository.ResetToDefaultBranchAsync(
+                await repository.CommitAsync($"Removed: {prefix}", cancellationToken: cancellationToken);
+                await repository.PushAsync(cancellationToken: cancellationToken);
+                await repository.ResetToDefaultBranchAsync(
                     upstream: GitConstants.Upstream,
                     cancellationToken: cancellationToken
                 );
+
+                this._logger.LogRemovedCleanupFile(clonePath: repository.ClonePath, fileName: fileName);
             }
         }
     }
