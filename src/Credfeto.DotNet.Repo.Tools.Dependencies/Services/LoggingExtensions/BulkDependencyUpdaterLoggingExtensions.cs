@@ -112,4 +112,11 @@ public static partial class BulkDependencyUpdaterLoggingExtensions
         string repo,
         Exception exception
     );
+
+    [LoggerMessage(EventId = 24, Level = LogLevel.Error, Message = "Failed to save tracking cache to {fileName}")]
+    public static partial void LogFailedToSaveTrackingCache(
+        this ILogger<BulkDependencyReducer> logger,
+        string fileName,
+        Exception exception
+    );
 }
