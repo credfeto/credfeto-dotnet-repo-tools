@@ -1418,4 +1418,177 @@ public sealed class BulkPackageUpdaterTests : LoggingFolderCleanupTestBase
 
         await this._trackingCache.DidNotReceive().LoadAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
+
+    private void MockRepoOpenThrowsCancellation(string workDir)
+    {
+        this._gitRepositoryFactory.OpenOrCloneAsync(
+                workDir: workDir,
+                repoUrl: REPO_URL,
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .ThrowsAsync(new OperationCanceledException("Cancelled"));
+    }
+
+    private void MockTemplateRepositoryForBulkUpdate()
+    {
+        this._templateRepository.WorkingDirectory.Returns("/template");
+        this._gitRepositoryFactory.OpenOrCloneAsync(
+                workDir: this.TempFolder,
+                repoUrl: TEMPLATE_REPO_URL,
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(this._templateRepository);
+        this._bulkPackageConfigLoader.LoadAsync(
+                path: Arg.Any<string>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns([]);
+        this._globalJson.LoadGlobalJsonAsync(
+                baseFolder: Arg.Any<string>(),
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .Returns(DefaultDotNetSettings);
+        IReadOnlyList<System.Version> noSdks = [];
+        this._dotNetVersion.GetInstalledSdksAsync(Arg.Any<CancellationToken>()).Returns(noSdks);
+        this._releaseConfigLoader.LoadAsync(path: Arg.Any<string>(), cancellationToken: Arg.Any<CancellationToken>())
+            .Returns(DefaultReleaseConfig);
+        this._packageCache.GetAll().Returns([]);
+    }
+
+    [Fact]
+    public async Task UpdateRepositoriesWhenCancelledStillSavesBothCachesWithUncancelledTokenAsync()
+    {
+        PackageUpdateContext context = CreateUpdateContext(cacheFileName: CACHE_FILE);
+        this.MockRepoOpenThrowsCancellation(WORK_FOLDER);
+
+        using (CancellationTokenSource cancellationTokenSource = new())
+        {
+            await cancellationTokenSource.CancelAsync();
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() =>
+                this
+                    ._updater.UpdateRepositoriesAsync(
+                        updateContext: context,
+                        repositories: [REPO_URL],
+                        packages: [],
+                        cancellationToken: cancellationTokenSource.Token
+                    )
+                    .AsTask()
+            );
+        }
+
+        await this
+            ._packageCache.Received(1)
+            .SaveAsync(
+                fileName: CACHE_FILE,
+                cancellationToken: Arg.Is<CancellationToken>(t => !t.IsCancellationRequested)
+            );
+        await this
+            ._trackingCache.Received(1)
+            .SaveAsync(
+                fileName: TRACKING_FILE,
+                cancellationToken: Arg.Is<CancellationToken>(t => !t.IsCancellationRequested)
+            );
+    }
+
+    [Fact]
+    public async Task UpdateRepositoriesWhenPackageCacheSaveFailsStillSavesTrackingCacheAsync()
+    {
+        PackageUpdateContext context = CreateUpdateContext(cacheFileName: CACHE_FILE);
+
+        this._gitRepositoryFactory.OpenOrCloneAsync(
+                workDir: WORK_FOLDER,
+                repoUrl: REPO_URL,
+                cancellationToken: Arg.Any<CancellationToken>()
+            )
+            .ThrowsAsync(new SolutionCheckFailedException("Solution check failed"));
+        this._packageCache.SaveAsync(fileName: CACHE_FILE, cancellationToken: Arg.Any<CancellationToken>())
+            .ThrowsAsync(new IOException("Disk full"));
+
+        await this._updater.UpdateRepositoriesAsync(
+            updateContext: context,
+            repositories: [REPO_URL],
+            packages: [],
+            cancellationToken: this.CancellationToken()
+        );
+
+        await this
+            ._trackingCache.Received(1)
+            .SaveAsync(fileName: TRACKING_FILE, cancellationToken: Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task UpdateRepositoriesWhenCancelledAndCacheSavesFailPropagatesOriginalCancellationAsync()
+    {
+        PackageUpdateContext context = CreateUpdateContext(cacheFileName: CACHE_FILE);
+        this.MockRepoOpenThrowsCancellation(WORK_FOLDER);
+        this._packageCache.SaveAsync(fileName: CACHE_FILE, cancellationToken: Arg.Any<CancellationToken>())
+            .ThrowsAsync(new IOException("Disk full"));
+        this._trackingCache.SaveAsync(fileName: TRACKING_FILE, cancellationToken: Arg.Any<CancellationToken>())
+            .ThrowsAsync(new IOException("Disk full"));
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            this
+                ._updater.UpdateRepositoriesAsync(
+                    updateContext: context,
+                    repositories: [REPO_URL],
+                    packages: [],
+                    cancellationToken: this.CancellationToken()
+                )
+                .AsTask()
+        );
+
+        await this
+            ._trackingCache.Received(1)
+            .SaveAsync(fileName: TRACKING_FILE, cancellationToken: Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    [SuppressMessage(
+        category: "Meziantou.Analyzer",
+        checkId: "MA0051: Method is too long",
+        Justification = "Unit Test"
+    )]
+    public async Task BulkUpdateWhenCancelledStillSavesBothCachesWithUncancelledTokenAsync()
+    {
+        this.MockTemplateRepositoryForBulkUpdate();
+        this.MockRepoOpenThrowsCancellation(this.TempFolder);
+        this._packageCache.SaveAsync(fileName: CACHE_FILE, cancellationToken: Arg.Any<CancellationToken>())
+            .ThrowsAsync(new IOException("Disk full"));
+
+        using (CancellationTokenSource cancellationTokenSource = new())
+        {
+            await cancellationTokenSource.CancelAsync();
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() =>
+                this
+                    ._updater.BulkUpdateAsync(
+                        templateRepository: TEMPLATE_REPO_URL,
+                        cacheFileName: CACHE_FILE,
+                        trackingFileName: TRACKING_FILE,
+                        packagesFileName: PACKAGES_FILE,
+                        workFolder: this.TempFolder,
+                        releaseConfigFileName: RELEASE_CONFIG_FILE,
+                        additionalNugetSources: [],
+                        repositories: [REPO_URL],
+                        cancellationToken: cancellationTokenSource.Token
+                    )
+                    .AsTask()
+            );
+        }
+
+        // Saved once by the per-repo finally and once by the outer finally.
+        await this
+            ._packageCache.Received(2)
+            .SaveAsync(
+                fileName: CACHE_FILE,
+                cancellationToken: Arg.Is<CancellationToken>(t => !t.IsCancellationRequested)
+            );
+        await this
+            ._trackingCache.Received(2)
+            .SaveAsync(
+                fileName: TRACKING_FILE,
+                cancellationToken: Arg.Is<CancellationToken>(t => !t.IsCancellationRequested)
+            );
+    }
 }
