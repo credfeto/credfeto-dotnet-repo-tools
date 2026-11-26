@@ -181,8 +181,7 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         }
         finally
         {
-            await this.SavePackageCacheAsync(packageCacheFile: cacheFileName, cancellationToken: cancellationToken);
-            await this.SaveTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
+            await this.SaveCachesAsync(packageCacheFile: cacheFileName, trackingFile: trackingFileName);
         }
     }
 
@@ -228,21 +227,10 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
                 }
                 finally
                 {
-                    if (!string.IsNullOrWhiteSpace(updateContext.CacheFileName))
-                    {
-                        await this._packageCache.SaveAsync(
-                            fileName: updateContext.CacheFileName,
-                            cancellationToken: cancellationToken
-                        );
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(updateContext.TrackingFileName))
-                    {
-                        await this._trackingCache.SaveAsync(
-                            fileName: updateContext.TrackingFileName,
-                            cancellationToken: cancellationToken
-                        );
-                    }
+                    await this.SaveCachesAsync(
+                        packageCacheFile: updateContext.CacheFileName,
+                        trackingFile: updateContext.TrackingFileName
+                    );
                 }
             }
         }
@@ -580,21 +568,47 @@ public sealed class BulkPackageUpdater : IBulkPackageUpdater
         );
     }
 
-    private ValueTask SaveTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)
+    // Runs from finally blocks, including when the run is being cancelled: that is exactly when the caches
+    // most need persisting, so the saves ignore the caller's token, and each save's failure is logged rather
+    // than thrown so it can neither skip the other save nor replace the exception already propagating.
+    private async ValueTask SaveCachesAsync(string? packageCacheFile, string? trackingFile)
     {
-        return string.IsNullOrWhiteSpace(trackingFile)
-            ? ValueTask.CompletedTask
-            : this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
+        await this.TrySavePackageCacheAsync(packageCacheFile);
+        await this.TrySaveTrackingCacheAsync(trackingFile);
     }
 
-    private async ValueTask SavePackageCacheAsync(string? packageCacheFile, CancellationToken cancellationToken)
+    private async ValueTask TrySavePackageCacheAsync(string? packageCacheFile)
     {
         if (string.IsNullOrWhiteSpace(packageCacheFile))
         {
             return;
         }
 
-        await this._packageCache.SaveAsync(fileName: packageCacheFile, cancellationToken: cancellationToken);
+        try
+        {
+            await this._packageCache.SaveAsync(fileName: packageCacheFile, cancellationToken: CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            this._logger.LogFailedToSavePackageCache(fileName: packageCacheFile, exception: exception);
+        }
+    }
+
+    private async ValueTask TrySaveTrackingCacheAsync(string? trackingFile)
+    {
+        if (string.IsNullOrWhiteSpace(trackingFile))
+        {
+            return;
+        }
+
+        try
+        {
+            await this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            this._logger.LogFailedToSaveTrackingCache(fileName: trackingFile, exception: exception);
+        }
     }
 
     private ValueTask LoadTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)

@@ -13,7 +13,7 @@ Please ADD ALL Changes to the UNRELEASED SECTION and not a specific release
 ### Added
 ### Fixed
 - Template update now removes the files listed in cleanup.files first for every repository, including those without a changelog, independent of later update steps, and logs each file it removes (#360)
-- Package and tracking cache saves in BulkPackageUpdater now persist on cancellation instead of being skipped (#247)
+- Package, dependency, template and code clean-up caches are now saved even when the update is cancelled, so work completed before cancellation is no longer lost; each save is isolated so one failing save no longer prevents the others from running (#247)
 ### Changed
 ### Deprecated
 ### Removed
