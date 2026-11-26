@@ -199,4 +199,11 @@ public static partial class BulkCodeCleanUpLoggingExtensions
         string message,
         Exception exception
     );
+
+    [LoggerMessage(EventId = 27, Level = LogLevel.Error, Message = "Failed to save tracking cache to {fileName}")]
+    public static partial void LogFailedToSaveTrackingCache(
+        this ILogger<BulkCodeCleanUp> logger,
+        string fileName,
+        Exception exception
+    );
 }

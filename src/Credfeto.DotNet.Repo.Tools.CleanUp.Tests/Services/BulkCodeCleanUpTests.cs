@@ -491,6 +491,59 @@ public sealed partial class BulkCodeCleanUpTests : LoggingFolderCleanupTestBase
             .SaveAsync(fileName: trackingFile, cancellationToken: Arg.Any<CancellationToken>());
     }
 
+    private async Task RunCancelledBulkUpdateAsync(string trackingFile)
+    {
+        IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+        this.SetupTemplateRepoThrowingOnSubsequentCalls(
+            templateRepo: templateRepo,
+            new OperationCanceledException("Cancelled")
+        );
+
+        using CancellationTokenSource cts = new();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            this
+                ._sut.BulkUpdateAsync(
+                    templateRepository: "https://github.com/template/repo.git",
+                    trackingFileName: trackingFile,
+                    workFolder: this.TempFolder,
+                    repositories: ["https://github.com/test/cancelled-repo.git"],
+                    cancellationToken: cts.Token
+                )
+                .AsTask()
+        );
+    }
+
+    [Fact]
+    public async Task BulkUpdateAsyncWhenCancelledStillSavesTrackingCacheWithUncancelledTokenAsync()
+    {
+        string trackingFile = Path.Combine(path1: this.TempFolder, path2: "tracking-cancelled.json");
+
+        await this.RunCancelledBulkUpdateAsync(trackingFile);
+
+        await this
+            ._trackingCache.Received(2)
+            .SaveAsync(
+                fileName: trackingFile,
+                cancellationToken: Arg.Is<CancellationToken>(t => !t.IsCancellationRequested)
+            );
+    }
+
+    [Fact]
+    public async Task BulkUpdateAsyncWhenCancelledAndTrackingSaveFailsPropagatesOriginalCancellationAsync()
+    {
+        string trackingFile = Path.Combine(path1: this.TempFolder, path2: "tracking-cancelled-save-fails.json");
+        this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: Arg.Any<CancellationToken>())
+            .ThrowsAsync(new IOException("Disk full"));
+
+        await this.RunCancelledBulkUpdateAsync(trackingFile);
+
+        await this
+            ._trackingCache.Received(2)
+            .SaveAsync(fileName: trackingFile, cancellationToken: Arg.Any<CancellationToken>());
+    }
+
     [Fact]
     public Task BulkUpdateAsyncShouldThrowWhenSdkVersionNotInstalledAsync()
     {
