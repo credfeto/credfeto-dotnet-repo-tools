@@ -96,4 +96,18 @@ internal static partial class BulkPackageUpdaterLoggingExtensions
         string repo,
         Exception exception
     );
+
+    [LoggerMessage(EventId = 23, Level = LogLevel.Error, Message = "Failed to save package cache to {fileName}")]
+    public static partial void LogFailedToSavePackageCache(
+        this ILogger<BulkPackageUpdater> logger,
+        string fileName,
+        Exception exception
+    );
+
+    [LoggerMessage(EventId = 24, Level = LogLevel.Error, Message = "Failed to save tracking cache to {fileName}")]
+    public static partial void LogFailedToSaveTrackingCache(
+        this ILogger<BulkPackageUpdater> logger,
+        string fileName,
+        Exception exception
+    );
 }

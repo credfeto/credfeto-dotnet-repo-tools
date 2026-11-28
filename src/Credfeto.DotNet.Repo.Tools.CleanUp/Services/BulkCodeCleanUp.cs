@@ -137,7 +137,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
             }
             finally
             {
-                await this.SaveTrackingCacheAsync(trackingFile: trackingFileName, cancellationToken: cancellationToken);
+                await this.TrySaveTrackingCacheAsync(trackingFileName);
             }
         }
     }
@@ -174,13 +174,7 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
                 }
                 finally
                 {
-                    if (!string.IsNullOrWhiteSpace(updateContext.TrackingFileName))
-                    {
-                        await this._trackingCache.SaveAsync(
-                            fileName: updateContext.TrackingFileName,
-                            cancellationToken: cancellationToken
-                        );
-                    }
+                    await this.TrySaveTrackingCacheAsync(updateContext.TrackingFileName);
                 }
             }
         }
@@ -819,10 +813,23 @@ public sealed class BulkCodeCleanUp : IBulkCodeCleanUp
         return this._trackingCache.LoadAsync(fileName: trackingFile, cancellationToken: cancellationToken);
     }
 
-    private ValueTask SaveTrackingCacheAsync(string? trackingFile, in CancellationToken cancellationToken)
+    // Runs from finally blocks, including when the run is being cancelled: that is exactly when the cache
+    // most needs persisting, so the save ignores the caller's token, and its failure is logged rather than
+    // thrown so it cannot replace the exception already propagating.
+    private async ValueTask TrySaveTrackingCacheAsync(string? trackingFile)
     {
-        return string.IsNullOrWhiteSpace(trackingFile)
-            ? ValueTask.CompletedTask
-            : this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: cancellationToken);
+        if (string.IsNullOrWhiteSpace(trackingFile))
+        {
+            return;
+        }
+
+        try
+        {
+            await this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: CancellationToken.None);
+        }
+        catch (Exception exception)
+        {
+            this._logger.LogFailedToSaveTrackingCache(fileName: trackingFile, exception: exception);
+        }
     }
 }

@@ -233,4 +233,11 @@ internal static partial class BulkTemplateUpdaterLoggingExtensions
         string clonePath,
         string fileName
     );
+
+    [LoggerMessage(EventId = 24, Level = LogLevel.Error, Message = "Failed to save tracking cache to {fileName}")]
+    public static partial void LogFailedToSaveTrackingCache(
+        this ILogger<BulkTemplateUpdater> logger,
+        string fileName,
+        Exception exception
+    );
 }

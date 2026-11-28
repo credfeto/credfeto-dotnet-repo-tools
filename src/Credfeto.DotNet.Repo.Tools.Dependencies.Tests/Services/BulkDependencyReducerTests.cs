@@ -17,6 +17,7 @@ using Credfeto.DotNet.Repo.Tracking.Interfaces;
 using FunFair.Test.Common;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using Xunit;
 
 namespace Credfeto.DotNet.Repo.Tools.Dependencies.Tests.Services;
@@ -307,6 +308,61 @@ public sealed class BulkDependencyReducerTests : LoggingFolderCleanupTestBase
             repositories: ["https://github.com/test/locked-repo-2.git"],
             cancellationToken: this.CancellationToken()
         );
+
+        await this
+            ._trackingCache.Received(2)
+            .SaveAsync(fileName: trackingFile, cancellationToken: Arg.Any<CancellationToken>());
+    }
+
+    private async ValueTask RunCancelledBulkUpdateAsync(string trackingFile)
+    {
+        IGitRepository templateRepo = GetSubstitute<IGitRepository>();
+        MockIGitRepositoryFactoryOpenOrClone(
+            factory: this._gitRepositoryFactory,
+            templateRepo: templateRepo,
+            workingDirectory: this.TempFolder,
+            ex: new OperationCanceledException("Cancelled")
+        );
+
+        using CancellationTokenSource cts = new();
+        await cts.CancelAsync();
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+            this
+                ._sut.BulkUpdateAsync(
+                    templateRepository: "https://github.com/template/repo.git",
+                    trackingFileName: trackingFile,
+                    workFolder: this.TempFolder,
+                    repositories: ["https://github.com/test/cancelled-repo.git"],
+                    cancellationToken: cts.Token
+                )
+                .AsTask()
+        );
+    }
+
+    [Fact]
+    public async ValueTask BulkUpdateAsyncWhenCancelledStillSavesTrackingCacheWithUncancelledTokenAsync()
+    {
+        string trackingFile = Path.Combine(path1: this.TempFolder, path2: "tracking-cancelled.json");
+
+        await this.RunCancelledBulkUpdateAsync(trackingFile);
+
+        await this
+            ._trackingCache.Received(2)
+            .SaveAsync(
+                fileName: trackingFile,
+                cancellationToken: Arg.Is<CancellationToken>(t => !t.IsCancellationRequested)
+            );
+    }
+
+    [Fact]
+    public async ValueTask BulkUpdateAsyncWhenCancelledAndTrackingSaveFailsPropagatesOriginalCancellationAsync()
+    {
+        string trackingFile = Path.Combine(path1: this.TempFolder, path2: "tracking-cancelled-save-fails.json");
+        this._trackingCache.SaveAsync(fileName: trackingFile, cancellationToken: Arg.Any<CancellationToken>())
+            .ThrowsAsync(new IOException("Disk full"));
+
+        await this.RunCancelledBulkUpdateAsync(trackingFile);
 
         await this
             ._trackingCache.Received(2)
